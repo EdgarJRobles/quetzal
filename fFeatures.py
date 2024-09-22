@@ -7,15 +7,26 @@ __license__ = "LGPL 3"
 
 import FreeCAD, FreeCADGui, Part, csv, fCmd, pCmd, ArchProfile
 from Arch import makeStructure
+from Arch import makeProfile
 from Draft import makeCircle
-from PySide.QtCore import *
-from PySide.QtGui import *
+from PySide2.QtCore import *
+from PySide2.QtGui import *
 from os import listdir
 from os.path import join, dirname, abspath
 from math import degrees
 from uCmd import label3D
-from PySide.QtCore import QT_TRANSLATE_NOOP
-from DraftGui import translate
+from PySide2.QtCore import QT_TRANSLATE_NOOP
+from PySide2.QtWidgets import QDialog
+from PySide2.QtWidgets import QWidget
+from PySide2.QtWidgets import QListWidget
+from PySide2.QtWidgets import QCheckBox
+from PySide2.QtWidgets import QLabel
+from PySide2.QtWidgets import QComboBox
+from PySide2.QtWidgets import QHBoxLayout
+from PySide2.QtWidgets import QVBoxLayout
+from PySide2.QtWidgets import QPushButton
+# from DraftGui import translate
+from draftutils.translate import translate
 
 ################ FUNCTIONS ###########################
 
@@ -27,18 +38,10 @@ def newProfile(prop):
     if prop["stype"] == "C":
         profile = makeCircle(float(prop["H"]))
     else:
-        profile = ArchProfile.makeProfile(
-            [
-                0,
-                "SECTION",
-                prop["SSize"] + "-000",
-                prop["stype"],
-                float(prop["W"]),
-                float(prop["H"]),
-                float(prop["ta"]),
-                float(prop["tf"]),
-            ]
-        )
+        if int(FreeCAD.Version()[0]) >=1:
+            profile=makeProfile([0,"SECTION",prop["SSize"] + "-000",prop["stype"],float(prop["W"]),float(prop["H"]),float(prop["ta"]),float(prop["tf"]),])
+        else:
+            profile=ArchProfile.makeProfile([0,"SECTION",prop["SSize"] + "-000",prop["stype"],float(prop["W"]),float(prop["H"]),float(prop["ta"]),float(prop["tf"]),])
     return profile
 
 
@@ -105,7 +108,7 @@ class frameLineForm(QDialog):
         self.move(QPoint(100, 250))
         self.setWindowFlags(Qt.WindowStaysOnTopHint)
         self.setWindowTitle(winTitle)
-        from PySide.QtGui import QIcon
+        from PySide2.QtGui import QIcon
 
         Icon = QIcon()
         iconPath = join(dirname(abspath(__file__)), "iconz", icon)
@@ -536,7 +539,7 @@ class frameBranchForm(dodoDialogs.protoTypeDialog):
                 if self.form.editName.text():
                     name = self.form.editName.text()
                 else:
-                    name = "Travatura"
+                    name = translate("makeframenbranch","Travatura") 
                 a = FreeCAD.ActiveDocument.addObject("Part::FeaturePython", name)
                 FrameBranch(a, bases[0], profile)
                 ViewProviderFrameBranch(a.ViewObject)
@@ -579,7 +582,7 @@ class frameBranchForm(dodoDialogs.protoTypeDialog):
                     labText += ": part of " + fb.Label
                 if self.labTail:
                     self.labTail.removeLabel()
-                self.labTail = label3D(pl=obj.Placement, text="____TAIL")
+                self.labTail = label3D(pl=obj.Placement, text=translate("mouseActionB1","____TAIL"))
             else:
                 if self.labTail:
                     self.labTail.removeLabel()
@@ -666,7 +669,10 @@ class frameBranchForm(dodoDialogs.protoTypeDialog):
                     beam.addExtension("Part::AttachExtensionPython")
                 else:
                     beam.addExtension("Part::AttachExtensionPython", beam)
-                beam.Support = [(FB.Base, "Edge" + str(i + 1))]
+                if int(FreeCAD.Version()[0]) >= 1:
+                    beam.AttachmentSupport = [(FB.Base, "Edge" + str(i + 1))]
+                else:
+                    beam.Support = [(FB.Base, "Edge" + str(i + 1))]
                 beam.MapMode = "NormalToEdge"
                 beam.MapReversed = True
                 beamsList[i] = str(beam.Name)
@@ -759,7 +765,10 @@ class frameBranchForm(dodoDialogs.protoTypeDialog):
         for target in self.targets:
             for b in fCmd.beams():
                 if hasattr(b, "tailOffset") and hasattr(b, "headOffset"):
-                    edge = b.Support[0][0].Shape.getElement(b.Support[0][1][0])
+                    if int(FreeCAD.Version()[0]) >= 1:
+                        edge = b.AttachmentSupport[0][0].Shape.getElement(b.AttachmentSupport[0][1][0])
+                    else:
+                        edge = b.Support[0][0].Shape.getElement(b.Support[0][1][0])
                     ax = edge.tangentAt(0).normalize()  # fCmd.beamAx(b).normalize()
                     tail = edge.valueAt(0)  # b.Placement.Base
                     head = edge.valueAt(edge.LastParameter)  # tail+ax*float(b.Height)
@@ -983,7 +992,10 @@ class FrameBranch(object):
                     beam.addExtension("Part::AttachExtensionPython")
                 else:
                     beam.addExtension("Part::AttachExtensionPython", beam)
-                beam.Support = [(obj.Base, "Edge" + str(i + 1))]
+                if int(FreeCAD.Version()[0]) >= 1:
+                    beam.AttachmentSupport = [(obj.Base, "Edge" + str(i + 1))]
+                else:
+                    beam.Support = [(obj.Base, "Edge" + str(i + 1))]
                 beam.MapMode = "NormalToEdge"
                 beam.MapReversed = True
                 beamsList.append(str(beam.Name))

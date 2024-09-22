@@ -1,0 +1,41 @@
+{
+  "include": [
+    "iconz",
+    "dialogz",
+    "shapez",
+    "tablez",
+  ],
+
+  "exclude": [
+  ],
+
+  "ignore": [
+  ],
+
+  "stubPath": "/home/edgar/.platformio/penv/lib/python3.12/site-packages/FreeCAD-stubs",
+  "stubPath": "/home/edgar/.platformio/penv/lib/python3.12/site-packages/FreeCADGui-stubs",
+
+  "defineConstant": {
+    "DEBUG": true
+  },
+
+  "reportMissingImports": "error",
+  "reportMissingTypeStubs": false,
+
+  "pythonVersion": "3.10",
+  "pythonPlatform": "Linux",
+
+  "executionEnvironments": [
+    {
+      "root": ".",
+      "extraPaths": [
+        "/home/edgar/.platformio/penv/lib/python3.12/site-packages",
+        "/usr/local/Mod/Part",
+        "/usr/local/Mod/Draft",
+        "/usr/local/Mod/BIM",
+        "/usr/local/lib",
+        "/usr/local/Ext/PySide",
+      ]
+    },
+  ]
+}
