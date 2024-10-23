@@ -34,7 +34,7 @@ Log = FreeCAD.Console.PrintLog
 Msg = FreeCAD.Console.PrintMessage
 
 
-class dodo(Workbench):
+class QuetzalWorkbench(Workbench):
     def __init__(self):
         from quetzal_config import TRANSLATIONSPATH, ICONPATH
 
@@ -42,9 +42,11 @@ class dodo(Workbench):
         FreeCADGui.addLanguagePath(TRANSLATIONSPATH)
         FreeCADGui.updateLocale()
 
-        self.__class__.MenuText = FreeCAD.Qt.translate("Workbench", "Dodo")
+        self.__class__.MenuText = FreeCAD.Qt.translate("Workbench", "Quetzal")
         self.__class__.ToolTip = FreeCAD.Qt.translate(
-            "Workbench", "Dodo workbench \n(substitute of flamingo for Py3/Qt5)"
+            "Workbench",
+            "Quetzal is the fork of Dodo workbench for FreeCAD. "
+            "Extending Dodo workbench support and adding translation support. ",
         )
         self.__class__.Icon = os.path.join(ICONPATH, "dodo.svg")
 
@@ -59,7 +61,7 @@ class dodo(Workbench):
     v = sys.version_info[0]
     if v < 3:
         FreeCAD.Console.PrintWarning(
-            "Dodo is written for Py3 and Qt5\n You may experience mis-behaviuors\n"
+            "Quetzal is written for Py3 and Qt5\n You may experience mis-behaviuors\n"
         )
 
     def Initialize(self):
@@ -139,7 +141,7 @@ class dodo(Workbench):
         self.appendMenu(QT_TRANSLATE_NOOP("Workbench", "Frame tools"), self.frameList)
         self.appendMenu(QT_TRANSLATE_NOOP("Workbench", "Pype tools"), self.pypeList)
         self.appendMenu(QT_TRANSLATE_NOOP("Workbench", "Utils"), self.utilsList)
-        self.appendMenu(QT_TRANSLATE_NOOP("Workbench", "QkMenus"), self.qm)
+        self.appendMenu(QT_TRANSLATE_NOOP("Workbench", "QM Menus"), self.qm)
 
     def ContextMenu(self, recipient):
         QT_TRANSLATE_NOOP = FreeCAD.Qt.QT_TRANSLATE_NOOP
@@ -181,4 +183,4 @@ class dodo(Workbench):
         # Msg("dodo deactivated()\n")
 
 
-FreeCADGui.addWorkbench(dodo)
+FreeCADGui.addWorkbench(QuetzalWorkbench)

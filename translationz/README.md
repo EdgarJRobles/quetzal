@@ -1,4 +1,4 @@
-# About translating Dodo Workbench
+# About translating Quetzal Workbench
 
 > [!NOTE]
 > All commands **must** be run in `./translationz/` directory.
@@ -17,13 +17,13 @@ To update the template file from source files you should use this command:
 ```
 
 Once done you can commit the changes and upload the new file to CrowdIn platform
-at <https://crowdin.com/project/freecad-addons> webpage and find the **Dodo** project.
+at <https://crowdin.com/project/freecad-addons> webpage and find the **Quetzal** project.
 
 ## Creating file for missing locale
 
 ### Using script
 
-To create a file for a new language with all **Dodo** translatable strings execute
+To create a file for a new language with all **Quetzal** translatable strings execute
 the script with `-u` flag plus your locale:
 
 ```shell
@@ -32,8 +32,8 @@ the script with `-u` flag plus your locale:
 
 ### Renaming file
 
-Also you can rename new `Dodo.ts` file by appending the locale code,
-for example, `Dodo_es-ES.ts` for Spanish (Spain) and change
+Also you can rename new `Quetzal.ts` file by appending the locale code,
+for example, `Quetzal_es-ES.ts` for Spanish (Spain) and change
 
 ```xml
 <TS version="2.1">
@@ -71,7 +71,7 @@ package or in a text editor like `xed`, `mousepad`, `gedit`, `nano`, `vim`/`nvim
 
 Alternatively you can visit the **FreeCAD-addons** project on CrowdIn platform
 at <https://crowdin.com/project/freecad-addons> webpage and find your language,
-once done, look for the **Dodo** project.
+once done, look for the **Quetzal** project.
 
 ## Compiling translations
 
@@ -92,10 +92,10 @@ This will update the `.qm` file for your language (Spanish (Spain) in this case)
 
 ## Sending translations
 
-Now you can contribute your translated `.ts` file to **Dodo** repository,
+Now you can contribute your translated `.ts` file to **Quetzal** repository,
 also include the `.qm` file.
 
-<https://github.com/FreeCAD/freecad.plot>
+<https://github.com/EdgarJRobles/dodo>
 
 ## More information
 

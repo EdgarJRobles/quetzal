@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no" ?>
 <package format="1" xmlns="https://wiki.freecad.org/Package_Metadata">
 
-  <name>Dodo_Quetzal</name>
+  <name>Quetzal</name>
 
   <description>A set of commands and objects that help to speed-up the drawing of frames and pipelines. Py3/Qt5 port of flamingo.</description>
 
@@ -29,7 +29,7 @@
 
   <content>
     <workbench>
-      <classname>dodo</classname>
+      <classname>QuetzalWorkbench</classname>
       <subdirectory>./</subdirectory>
     </workbench>
   </content>
