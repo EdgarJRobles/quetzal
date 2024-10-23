@@ -1,4 +1,4 @@
-# Dodo Workbench
+# Quetzal Workbench
 
 [![Contributions welcome][ContribsW_badge]][ContribsW]
 [![license][license_badge]][license]
@@ -7,21 +7,19 @@
 [![Code style: black][black_badge]][black]
 [![GitHub Tag][tag_bagde]][tag]
 
-Dodo is the port of "Flamingo tools" for Py3/Qt5 builds of [FreeCAD](https://freecad.org).
-While providing basically the same features of flamingo and being compatible with
-its feature-pythons, it is also a general review of the instruments and interface.
-
-![screenshot1](https://www.freecadweb.org/wiki/images/8/85/FlamingoBlob.png)
+Quetzal is the fork of Dodo workbench for [FreeCAD](https://freecad.org).
+Extending Dodo workbench support & adding translation support.
+![screenshot1](https://github.com/user-attachments/assets/70e96920-34db-40d9-a8d6-102e690a13ee)
 
 ## Installation
 
 ### Automatic Installation
 
-The recommended way to install FreeGrid is via FreeCAD's
+The recommended way to install Quetzal is via FreeCAD's
 [Addon Manager](https://wiki.freecad.org/Std_AddonMgr) under
 `Tools > Addon Manager` dropdown menu.
 
-Search for **FreeGrid** in the workbench category.
+Search for **Quetzal** in the workbench category.
 
 ### Manual installation
 
@@ -43,7 +41,7 @@ Examples on different OS
 Use the CLI to enter the `Mod` directory and use Git to install Dodo:
 
 ```shell
-git clone https://github.com/oddtopus/dodo Dodo
+git clone https://github.com/EdgarJRobles/dodo Quetzal
 ```
 
 If you are updating the code, restarting FreeCAD is advised.
@@ -67,12 +65,12 @@ Discussion in the FreeCAD Forum:
 [ContribsW]: ./CONTRIBUTING.md
 [ContribsW_badge]: <https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat>
 [license]: ./LICENSE
-[license_badge]: <https://img.shields.io/github/license/oddtopus/dodo>
+[license_badge]: <https://img.shields.io/github/license/EdgarJRobles/dodo>
 [AddonMgr]: <https://github.com/FreeCAD/FreeCAD-addons>
 [AddonMgr_badge]: <https://img.shields.io/badge/FreeCAD%20addon%20manager-available-brightgreen>
 [pre-commit]: <https://github.com/pre-commit/pre-commit>
 [pre-commit_badge]: <https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit>
 [black]: <https://github.com/psf/black>
 [black_badge]: <https://img.shields.io/badge/code%20style-black-000000.svg>
-[tag]: <https://github.com/oddtopus/dodo/releases>
-[tag_bagde]: <https://img.shields.io/github/v/tag/oddtopus/dodo>
+[tag]: <https://github.com/EdgarJRobles/dodo/releases>
+[tag_bagde]: <https://img.shields.io/github/v/tag/EdgarJRobles/dodo>
