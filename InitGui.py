@@ -85,7 +85,7 @@ class dodo(Workbench):
         self.appendToolbar("Utils", self.utilsList)
         Log("Loading Utils: done\n")
         import CFrame
-
+        from cut_list.cut_list_commands import cutListCommand
         self.frameList = [
             "Quetzal_FrameIt",
             "Quetzal_FrameBranchManager",
@@ -102,6 +102,7 @@ class dodo(Workbench):
             "Quetzal_Extend",
             "Quetzal_AdjustFrameAngle",
             "Quetzal_InsertPath",
+            "Quetzal_CreateCutList",
         ]
         self.appendToolbar("frameTools", self.frameList)
         Log("Loading Frame tools: done\n")
