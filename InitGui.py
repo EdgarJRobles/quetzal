@@ -36,7 +36,7 @@ Msg = FreeCAD.Console.PrintMessage
 
 class dodo(Workbench):
     def __init__(self):
-        from quetzal_config import  TRANSLATIONSPATH, ICONPATH
+        from quetzal_config import TRANSLATIONSPATH, ICONPATH
 
         # Add translations path
         FreeCADGui.addLanguagePath(TRANSLATIONSPATH)
@@ -53,10 +53,8 @@ class dodo(Workbench):
     except Exception:
         import draftguitools.gui_snapper as DraftSnap
 
-        print("flag")  # patch
     if not hasattr(FreeCADGui, "Snapper"):
         FreeCADGui.Snapper = DraftSnap.Snapper()
-        print("flag2")  # patch
 
     v = sys.version_info[0]
     if v < 3:
@@ -86,6 +84,7 @@ class dodo(Workbench):
         Log("Loading Utils: done\n")
         import CFrame
         from cut_list.cut_list_commands import cutListCommand
+
         self.frameList = [
             "Quetzal_FrameIt",
             "Quetzal_FrameBranchManager",
