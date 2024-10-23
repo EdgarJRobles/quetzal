@@ -14,6 +14,7 @@ from PySide2.QtGui import *
 from os import listdir
 from os.path import join, dirname, abspath
 from math import degrees
+from quetzal_config import FREECADVERSION
 from uCmd import label3D
 from PySide2.QtCore import QT_TRANSLATE_NOOP
 from PySide2.QtWidgets import QDialog
@@ -742,7 +743,7 @@ class frameBranchForm(dodoDialogs.protoTypeDialog):
                     "FrameBranch",
                     QT_TRANSLATE_NOOP("App::Property", "The rotation of the section"),
                 )
-                if int(FreeCAD.Version()[1]) > 19:  # 20220704
+                if FREECADVERSION > 0.19:  # 20220704
                     beam.addExtension("Part::AttachExtensionPython")
                 else:
                     beam.addExtension("Part::AttachExtensionPython", beam)

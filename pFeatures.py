@@ -12,6 +12,7 @@ from copy import copy
 from os.path import join, dirname, abspath
 from PySide.QtCore import QT_TRANSLATE_NOOP
 from DraftGui import translate
+from quetzal_config import FREECADVERSION
 
 vO = FreeCAD.Vector(0, 0, 0)
 vX = FreeCAD.Vector(1, 0, 0)
@@ -57,7 +58,7 @@ class pypeType(object):
             "PBase",
             QT_TRANSLATE_NOOP("App::Property", "Flow factor (m3/h/bar)"),
         ).Kv
-        if int(FreeCAD.Version()[1]) > 19:
+        if FREECADVERSION > 0.19:
             obj.addExtension("Part::AttachExtensionPython")
         else:
             obj.addExtension("Part::AttachExtensionPython", obj)  # 20220704
@@ -982,7 +983,7 @@ class Shell:
 class ViewProviderPypeBranch:
     def __init__(self, vobj):
         vobj.Proxy = self
-        if int(FreeCAD.Version()[1]) > 19:
+        if FREECADVERSION > 0.19:
             vobj.addExtension("Gui::ViewProviderGroupExtensionPython")
         else:
             vobj.addExtension("Gui::ViewProviderGroupExtensionPython", self)  # 20220704
@@ -1094,7 +1095,7 @@ class PypeBranch2(pypeType):  # use AttachExtensionPython
         obj.PSize = DN
         obj.PRating = PRating
         # define specific properties
-        if int(FreeCAD.Version()[1]) > 19:
+        if FREECADVERSION > 0.19:
             obj.addExtension("App::GroupExtensionPython")
         else:
             obj.addExtension("App::GroupExtensionPython", obj)  # 20220704
