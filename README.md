@@ -65,12 +65,12 @@ Discussion in the FreeCAD Forum:
 [ContribsW]: ./CONTRIBUTING.md
 [ContribsW_badge]: <https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat>
 [license]: ./LICENSE
-[license_badge]: <https://img.shields.io/github/license/oddtopus/dodo>
+[license_badge]: <https://img.shields.io/github/license/EdgarJRobles/dodo>
 [AddonMgr]: <https://github.com/FreeCAD/FreeCAD-addons>
 [AddonMgr_badge]: <https://img.shields.io/badge/FreeCAD%20addon%20manager-available-brightgreen>
 [pre-commit]: <https://github.com/pre-commit/pre-commit>
 [pre-commit_badge]: <https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit>
 [black]: <https://github.com/psf/black>
 [black_badge]: <https://img.shields.io/badge/code%20style-black-000000.svg>
-[tag]: <https://github.com/oddtopus/dodo/releases>
-[tag_bagde]: <https://img.shields.io/github/v/tag/oddtopus/dodo>
+[tag]: <https://github.com/EdgarJRobles/dodo/releases>
+[tag_bagde]: <https://img.shields.io/github/v/tag/EdgarJRobles/dodo>
