@@ -52,6 +52,12 @@ def updatesPL(dialogqm):
 
 
 class insertPipe:
+    def IsActive(self):
+        if FreeCAD.ActiveDocument is None:
+            return False
+        else:
+            return True
+
     def Activated(self):
         import pForms
 
@@ -66,6 +72,12 @@ class insertPipe:
 
 
 class insertElbow:
+    def IsActive(self):
+        if FreeCAD.ActiveDocument is None:
+            return False
+        else:
+            return True
+
     def Activated(self):
         import pForms
 
@@ -80,6 +92,12 @@ class insertElbow:
 
 
 class insertReduct:
+    def IsActive(self):
+        if FreeCAD.ActiveDocument is None:
+            return False
+        else:
+            return True
+
     def Activated(self):
         import pForms
 
@@ -94,6 +112,12 @@ class insertReduct:
 
 
 class insertCap:
+    def IsActive(self):
+        if FreeCAD.ActiveDocument is None:
+            return False
+        else:
+            return True
+
     def Activated(self):
         import pForms
 
@@ -108,6 +132,12 @@ class insertCap:
 
 
 class insertFlange:
+    def IsActive(self):
+        if FreeCAD.ActiveDocument is None:
+            return False
+        else:
+            return True
+
     def Activated(self):
         import pForms
 
@@ -122,6 +152,12 @@ class insertFlange:
 
 
 class insertUbolt:
+    def IsActive(self):
+        if FreeCAD.ActiveDocument is None:
+            return False
+        else:
+            return True
+
     def Activated(self):
         import pForms
 
@@ -136,6 +172,12 @@ class insertUbolt:
 
 
 class insertPypeLine:
+    def IsActive(self):
+        if FreeCAD.ActiveDocument is None:
+            return False
+        else:
+            return True
+
     def Activated(self):
         import pForms
 
@@ -150,6 +192,12 @@ class insertPypeLine:
 
 
 class insertBranch:
+    def IsActive(self):
+        if FreeCAD.ActiveDocument is None:
+            return False
+        else:
+            return True
+
     def Activated(self):
         import pForms
 
@@ -165,6 +213,12 @@ class insertBranch:
 
 
 class breakPipe:
+    def IsActive(self):
+        if FreeCAD.ActiveDocument is None:
+            return False
+        else:
+            return True
+
     def Activated(self):
         import pForms
 
@@ -326,6 +380,12 @@ class joinPype:
 
 
 class insertValve:
+    def IsActive(self):
+        if FreeCAD.ActiveDocument is None:
+            return False
+        else:
+            return True
+
     def Activated(self):
         import pForms
 
