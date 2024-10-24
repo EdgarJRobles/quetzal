@@ -1,10 +1,14 @@
+import csv
+from os import listdir
+from os.path import abspath, dirname, join
+from sys import platform
+
+import FreeCAD
+import FreeCADGui
 from PySide.QtCore import *
 from PySide.QtGui import *
-from sys import platform
-from os.path import join, dirname, abspath
-from os import listdir
-import FreeCAD, FreeCADGui, csv
-from DraftGui import translate
+
+translate = FreeCAD.Qt.translate
 
 
 class protoTypeDialog(object):

@@ -5,8 +5,12 @@ __author__ = "oddtopus"
 __url__ = "github.com/oddtopus/dodo"
 __license__ = "LGPL 3"
 
-import FreeCAD, FreeCADGui, fCmd
-from DraftGui import translate
+import FreeCAD
+import FreeCADGui
+
+import fCmd
+
+translate = FreeCAD.Qt.translate
 
 
 class frameObserverPrototype(object):

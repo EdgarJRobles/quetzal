@@ -2,7 +2,8 @@ import os
 
 import FreeCAD
 import FreeCADGui
-from PySide.QtCore import QT_TRANSLATE_NOOP
+
+QT_TRANSLATE_NOOP = FreeCAD.Qt.QT_TRANSLATE_NOOP
 
 from . import RESOURCE_PATH, cut_list_ui
 

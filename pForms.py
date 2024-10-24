@@ -2,17 +2,24 @@
 
 __license__ = "LGPL 3"
 
-import FreeCAD, FreeCADGui, Part, csv
-
-pq = FreeCAD.Units.parseQuantity
-import fCmd, pCmd, dodoDialogs
+import csv
+from math import degrees
 from os import listdir
-from os.path import join, dirname, abspath
+from os.path import abspath, dirname, join
+
+import FreeCAD
+import FreeCADGui
+import Part
+from DraftVecUtils import rounded
 from PySide.QtCore import *
 from PySide.QtGui import *
-from math import degrees
-from DraftVecUtils import rounded
-from DraftGui import translate
+
+import dodoDialogs
+import fCmd
+import pCmd
+
+pq = FreeCAD.Units.parseQuantity
+translate = FreeCAD.Qt.translate
 
 mw = FreeCADGui.getMainWindow()
 x = mw.x() + int(mw.width() / 20)  # 100

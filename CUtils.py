@@ -3,8 +3,12 @@
 __license__ = "LGPL 3"
 
 # import FreeCAD modules
-import FreeCAD, FreeCADGui, inspect, os
-from PySide.QtCore import QT_TRANSLATE_NOOP
+import FreeCAD
+import FreeCADGui
+import inspect
+import os
+
+QT_TRANSLATE_NOOP = FreeCAD.Qt.QT_TRANSLATE_NOOP
 
 # helper -------------------------------------------------------------------
 # FreeCAD TemplatePyMod module
@@ -110,7 +114,8 @@ class offsetWorkPlane:
                 FreeCAD.DraftWorkingPlane.getPlacement(), scale=sc, offset=s
             )
             from PySide.QtGui import QInputDialog as qid
-            from DraftGui import translate
+
+            translate = FreeCAD.Qt.translate
 
             offset = qid.getInt(
                 None,

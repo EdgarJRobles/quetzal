@@ -6,9 +6,13 @@ __url__="github.com/oddtopus/dodo"
 __license__="LGPL 3"
 
 # import FreeCAD modules
-import FreeCAD, FreeCADGui, inspect, os
-from PySide.QtCore import QT_TRANSLATE_NOOP
-from DraftGui import translate
+import FreeCAD
+import FreeCADGui
+import inspect
+import os
+
+QT_TRANSLATE_NOOP = FreeCAD.Qt.QT_TRANSLATE_NOOP
+translate = FreeCAD.Qt.translate
 
 # helper -------------------------------------------------------------------
 # FreeCAD TemplatePyMod module

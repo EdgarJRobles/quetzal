@@ -3,8 +3,6 @@
 __title__ = "pypeTools functions"
 import FreeCAD, FreeCADGui, Part, fCmd, pFeatures
 from DraftVecUtils import rounded
-from PySide.QtCore import QT_TRANSLATE_NOOP
-from DraftGui import translate
 
 objToPaint = ["Pipe", "Elbow", "Reduct", "Flange", "Cap"]
 from math import degrees
@@ -15,6 +13,9 @@ __license__ = "LGPL 3"
 X = FreeCAD.Vector(1, 0, 0)
 Y = FreeCAD.Vector(0, 1, 0)
 Z = FreeCAD.Vector(0, 0, 1)
+
+translate = FreeCAD.Qt.translate
+QT_TRANSLATE_NOOP = FreeCAD.Qt.QT_TRANSLATE_NOOP
 
 ############### AUX FUNCTIONS ######################
 

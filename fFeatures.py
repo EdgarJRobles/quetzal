@@ -5,30 +5,38 @@ __author__ = "oddtopus"
 __url__ = "github.com/oddtopus/dodo"
 __license__ = "LGPL 3"
 
-import FreeCAD, FreeCADGui, Part, csv, fCmd, pCmd, ArchProfile
-from Arch import makeStructure
-from Arch import makeProfile
+import csv
+from math import degrees
+from os import listdir
+from os.path import abspath, dirname, join
+
+import ArchProfile
+import FreeCAD
+import FreeCADGui
+import Part
+from Arch import makeProfile, makeStructure
 from Draft import makeCircle
 from PySide2.QtCore import *
 from PySide2.QtGui import *
-from os import listdir
-from os.path import join, dirname, abspath
-from math import degrees
+from PySide2.QtWidgets import (
+    QCheckBox,
+    QComboBox,
+    QDialog,
+    QHBoxLayout,
+    QLabel,
+    QListWidget,
+    QPushButton,
+    QVBoxLayout,
+    QWidget,
+)
+
+import fCmd
+import pCmd
 from quetzal_config import FREECADVERSION
 from uCmd import label3D
-from PySide2.QtCore import QT_TRANSLATE_NOOP
-from PySide2.QtWidgets import QDialog
-from PySide2.QtWidgets import QWidget
-from PySide2.QtWidgets import QListWidget
-from PySide2.QtWidgets import QCheckBox
-from PySide2.QtWidgets import QLabel
-from PySide2.QtWidgets import QComboBox
-from PySide2.QtWidgets import QHBoxLayout
-from PySide2.QtWidgets import QVBoxLayout
-from PySide2.QtWidgets import QPushButton
 
-# from DraftGui import translate
-from draftutils.translate import translate
+translate = FreeCAD.Qt.translate
+QT_TRANSLATE_NOOP = FreeCAD.Qt.QT_TRANSLATE_NOOP
 
 ################ FUNCTIONS ###########################
 
@@ -1128,21 +1136,6 @@ class ViewProviderFrameBranch:
 
 import Draft
 from FreeCAD import Vector
-
-if FreeCAD.GuiUp:
-    # import FreeCADGui
-    # from PySide import QtCore, QtGui
-    from DraftGui import translate
-    from PySide.QtCore import QT_TRANSLATE_NOOP
-else:
-    # \cond
-    def translate(ctxt, txt):
-        return txt
-
-    def QT_TRANSLATE_NOOP(ctxt, txt):
-        return txt
-
-    # \endcond
 
 
 def doProfile(

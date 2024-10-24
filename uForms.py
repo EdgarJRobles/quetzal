@@ -5,9 +5,11 @@ __author__ = "oddtopus"
 __url__ = "github.com/oddtopus/dodo"
 __license__ = "LGPL 3"
 
-from PySide import QtGui, QtCore
-import FreeCAD, FreeCADGui
-from DraftGui import translate
+import FreeCAD
+import FreeCADGui
+from PySide import QtCore, QtGui
+
+translate = FreeCAD.Qt.translate
 
 # UI Class definitions
 

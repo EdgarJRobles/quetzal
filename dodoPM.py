@@ -6,12 +6,18 @@
 # Copyright (C) 2015,2016 looo @ FreeCAD
 # Copyright (C) 2015 microelly <microelly2@freecadbuch.de>
 
-import FreeCAD, FreeCADGui, math, platform, csv, pCmd
+import FreeCAD
+import FreeCADGui
+import math
+import platform
+import csv
+import pCmd
 from PySide import QtCore
 from PySide import QtGui
 from os.path import join, dirname, abspath
 from os import listdir
-from DraftGui import translate
+
+translate = FreeCAD.Qt.translate
 
 # definition of style
 styleButton = """

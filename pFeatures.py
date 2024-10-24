@@ -7,12 +7,18 @@ __license__ = "LGPL 3"
 objs = ["Pipe", "Elbow", "Reduct", "Cap", "Flange", "Ubolt", "Valve"]
 metaObjs = ["PypeLine", "PypeBranch"]
 
-import FreeCAD, FreeCADGui, Part, fCmd, pCmd
-from copy import copy
-from os.path import join, dirname, abspath
-from PySide.QtCore import QT_TRANSLATE_NOOP
-from DraftGui import translate
+from os.path import abspath, dirname, join
+
+import FreeCAD
+import FreeCADGui
+import Part
+
+import fCmd
+import pCmd
 from quetzal_config import FREECADVERSION
+
+QT_TRANSLATE_NOOP = FreeCAD.Qt.QT_TRANSLATE_NOOP
+translate = FreeCAD.Qt.translate
 
 vO = FreeCAD.Vector(0, 0, 0)
 vX = FreeCAD.Vector(1, 0, 0)

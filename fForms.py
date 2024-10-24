@@ -2,16 +2,21 @@
 
 __license__="LGPL 3"
 
-import FreeCAD,FreeCADGui
-import fCmd, dodoDialogs
+from os.path import abspath, dirname, join
+
+import FreeCAD
+import FreeCADGui
 from PySide.QtCore import *
 from PySide.QtGui import *
-from DraftGui import translate
-from os.path import join, dirname, abspath
-from sys import platform
+
+import dodoDialogs
+import fCmd
 from uCmd import label3D
 
-FTypes=['R','circle','T','H','U','L','Z','omega']
+translate = FreeCAD.Qt.translate
+
+FTypes = ["R", "circle", "T", "H", "U", "L", "Z", "omega"]
+
 
 class fillForm(dodoDialogs.protoTypeDialog):
   'dialog for fillFrame()'

@@ -2,15 +2,24 @@
 
 __license__ = "LGPL 3"
 
-import FreeCAD, FreeCADGui, fCmd, dodoDialogs
-from os.path import join, dirname, abspath
-from DraftGui import translate
+from os.path import abspath, dirname, join
+
+import FreeCAD
+import FreeCADGui
 from pivy import coin
+
+import dodoDialogs
+import fCmd
+
+translate = FreeCAD.Qt.translate
 
 
 def setWP():  # TARGET [working]: deal with App::Parts
     "function to change working plane"
-    import FreeCAD, FreeCADGui, fCmd
+    import FreeCAD
+    import FreeCADGui
+
+    import fCmd
 
     normal = point = None
     curves = []
