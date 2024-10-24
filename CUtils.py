@@ -6,7 +6,8 @@ __license__ = "LGPL 3"
 import FreeCAD
 import FreeCADGui
 import inspect
-import os
+
+from quetzal_config import get_icon_path
 
 QT_TRANSLATE_NOOP = FreeCAD.Qt.QT_TRANSLATE_NOOP
 
@@ -40,9 +41,7 @@ class queryModel:
 
     def GetResources(self):
         return {
-            "Pixmap": os.path.join(
-                os.path.dirname(os.path.abspath(__file__)), "iconz", "query.svg"
-            ),
+            "Pixmap": get_icon_path("query"),
             "Accel": "Q,M",
             "MenuText": QT_TRANSLATE_NOOP("Quetzal_QueryModel", "query the model"),
             "ToolTip": QT_TRANSLATE_NOOP("Quetzal_QueryModel", "Click objects to print infos"),
@@ -70,9 +69,7 @@ class moveWorkPlane:
 
     def GetResources(self):
         return {
-            "Pixmap": os.path.join(
-                os.path.dirname(os.path.abspath(__file__)), "iconz", "grid.svg"
-            ),
+            "Pixmap": get_icon_path("grid"),
             "Accel": "A,W",
             "MenuText": QT_TRANSLATE_NOOP("Quetzal_MoveWorkPlane", "align Workplane"),
             "ToolTip": QT_TRANSLATE_NOOP(
@@ -90,9 +87,7 @@ class rotateWorkPlane:
 
     def GetResources(self):
         return {
-            "Pixmap": os.path.join(
-                os.path.dirname(os.path.abspath(__file__)), "iconz", "rotWP.svg"
-            ),
+            "Pixmap": get_icon_path("rotWP"),
             "Accel": "R,W",
             "MenuText": QT_TRANSLATE_NOOP("Quetzal_RotateWorkPlane", "rotate Workplane"),
             "ToolTip": QT_TRANSLATE_NOOP(
@@ -129,9 +124,7 @@ class offsetWorkPlane:
 
     def GetResources(self):
         return {
-            "Pixmap": os.path.join(
-                os.path.dirname(os.path.abspath(__file__)), "iconz", "offsetWP.svg"
-            ),
+            "Pixmap": get_icon_path("offsetWP"),
             "Accel": "O,W",
             "MenuText": QT_TRANSLATE_NOOP("Quetzal_OffsetWorkPlane", "offset Workplane"),
             "ToolTip": QT_TRANSLATE_NOOP(
@@ -148,9 +141,7 @@ class hackedL:
 
     def GetResources(self):
         return {
-            "Pixmap": os.path.join(
-                os.path.dirname(os.path.abspath(__file__)), "iconz", "hackedL.svg"
-            ),
+            "Pixmap": get_icon_path("hackedL"),
             "Accel": "H,L",
             "MenuText": QT_TRANSLATE_NOOP("Quetzal_HackedL", "draw a DWire"),
             "ToolTip": QT_TRANSLATE_NOOP(
@@ -169,9 +160,7 @@ class moveHandle:
 
     def GetResources(self):
         return {
-            "Pixmap": os.path.join(
-                os.path.dirname(os.path.abspath(__file__)), "iconz", "moveHandle.svg"
-            ),
+            "Pixmap": get_icon_path("moveHandle"),
             "Accel": "M,H",
             "MenuText": QT_TRANSLATE_NOOP("Quetzal_MoveHandle", "Move objects"),
             "ToolTip": QT_TRANSLATE_NOOP("Quetzal_MoveHandle", "Move quickly objects inside viewport"),
@@ -186,9 +175,7 @@ class dpCalc:
 
     def GetResources(self):
         return {
-            "Pixmap": os.path.join(
-                os.path.dirname(os.path.abspath(__file__)), "iconz", "delta.svg"
-            ),
+            "Pixmap": get_icon_path("delta"),
             "MenuText": QT_TRANSLATE_NOOP("Quetzal_DpCalc", "Pressure loss calculator"),
             "ToolTip": QT_TRANSLATE_NOOP(
                 "Quetzal_DpCalc",
@@ -209,9 +196,7 @@ class selectSolids:
 
     def GetResources(self):
         return {
-            "Pixmap": os.path.join(
-                os.path.dirname(os.path.abspath(__file__)), "iconz", "solids.svg"
-            ),
+            "Pixmap": get_icon_path("solids"),
             "MenuText": QT_TRANSLATE_NOOP("Quetzal_SelectSolids", "Select solids"),
             "ToolTip": QT_TRANSLATE_NOOP(
                 "Quetzal_SelectSolids",

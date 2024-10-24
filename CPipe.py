@@ -9,7 +9,8 @@ __license__ = "LGPL 3"
 import FreeCAD
 import FreeCADGui
 import inspect
-import os
+
+from quetzal_config import get_icon_path
 
 QT_TRANSLATE_NOOP = FreeCAD.Qt.QT_TRANSLATE_NOOP
 translate = FreeCAD.Qt.translate
@@ -58,9 +59,7 @@ class insertPipe:
 
     def GetResources(self):
         return {
-            "Pixmap": os.path.join(
-                os.path.dirname(os.path.abspath(__file__)), "iconz", "pipe.svg"
-            ),
+            "Pixmap": get_icon_path("pipe"),
             "MenuText": QT_TRANSLATE_NOOP("Quetzal_InsertPipe", "Insert a tube"),
             "ToolTip": QT_TRANSLATE_NOOP("Quetzal_InsertPipe", "Insert a tube"),
         }
@@ -68,15 +67,13 @@ class insertPipe:
 
 class insertElbow:
     def Activated(self):
-        import pForms, FreeCAD
+        import pForms
 
         elbForm = pForms.insertElbowForm()
 
     def GetResources(self):
         return {
-            "Pixmap": os.path.join(
-                os.path.dirname(os.path.abspath(__file__)), "iconz", "elbow.svg"
-            ),
+            "Pixmap": get_icon_path("elbow"),
             "MenuText": QT_TRANSLATE_NOOP("Quetzal_InsertElbow", "Insert a curve"),
             "ToolTip": QT_TRANSLATE_NOOP("Quetzal_InsertElbow", "Insert a curve"),
         }
@@ -90,9 +87,7 @@ class insertReduct:
 
     def GetResources(self):
         return {
-            "Pixmap": os.path.join(
-                os.path.dirname(os.path.abspath(__file__)), "iconz", "reduct.svg"
-            ),
+            "Pixmap": get_icon_path("reduct"),
             "MenuText": QT_TRANSLATE_NOOP("Quetzal_InsertReduct", "Insert a reduction"),
             "ToolTip": QT_TRANSLATE_NOOP("Quetzal_InsertReduct", "Insert a reduction"),
         }
@@ -106,9 +101,7 @@ class insertCap:
 
     def GetResources(self):
         return {
-            "Pixmap": os.path.join(
-                os.path.dirname(os.path.abspath(__file__)), "iconz", "cap.svg"
-            ),
+            "Pixmap": get_icon_path("cap"),
             "MenuText": QT_TRANSLATE_NOOP("Quetzal_InsertCap", "Insert a cap"),
             "ToolTip": QT_TRANSLATE_NOOP("Quetzal_InsertCap", "Insert a cap"),
         }
@@ -122,9 +115,7 @@ class insertFlange:
 
     def GetResources(self):
         return {
-            "Pixmap": os.path.join(
-                os.path.dirname(os.path.abspath(__file__)), "iconz", "flange.svg"
-            ),
+            "Pixmap": get_icon_path("flange"),
             "MenuText": QT_TRANSLATE_NOOP("Quetzal_InsertFlange", "Insert a flange"),
             "ToolTip": QT_TRANSLATE_NOOP("Quetzal_InsertFlange", "Insert a flange"),
         }
@@ -138,9 +129,7 @@ class insertUbolt:
 
     def GetResources(self):
         return {
-            "Pixmap": os.path.join(
-                os.path.dirname(os.path.abspath(__file__)), "iconz", "clamp.svg"
-            ),
+            "Pixmap": get_icon_path("clamp"),
             "MenuText": QT_TRANSLATE_NOOP("Quetzal_InsertUbolt", "Insert a U-bolt"),
             "ToolTip": QT_TRANSLATE_NOOP("Quetzal_InsertUbolt", "Insert a U-bolt"),
         }
@@ -154,9 +143,7 @@ class insertPypeLine:
 
     def GetResources(self):
         return {
-            "Pixmap": os.path.join(
-                os.path.dirname(os.path.abspath(__file__)), "iconz", "pypeline.svg"
-            ),
+            "Pixmap": get_icon_path("pypeline"),
             "MenuText": QT_TRANSLATE_NOOP("Quetzal_InsertPypeLine", "PypeLine Manager"),
             "ToolTip": QT_TRANSLATE_NOOP("Quetzal_InsertPypeLine", "Open PypeLine Manager"),
         }
@@ -171,9 +158,7 @@ class insertBranch:
 
     def GetResources(self):
         return {
-            "Pixmap": os.path.join(
-                os.path.dirname(os.path.abspath(__file__)), "iconz", "branch.svg"
-            ),
+            "Pixmap": get_icon_path("branch"),
             "MenuText": QT_TRANSLATE_NOOP("Quetzal_InsertBranch", "Insert a branch"),
             "ToolTip": QT_TRANSLATE_NOOP("Quetzal_InsertBranch", "Insert a PypeBranch"),
         }
@@ -187,9 +172,7 @@ class breakPipe:
 
     def GetResources(self):
         return {
-            "Pixmap": os.path.join(
-                os.path.dirname(os.path.abspath(__file__)), "iconz", "break.svg"
-            ),
+            "Pixmap": get_icon_path("break"),
             "MenuText": QT_TRANSLATE_NOOP("Quetzal_BreakPipe", "Break the pipe"),
             "ToolTip": QT_TRANSLATE_NOOP(
                 "Quetzal_BreakPipe", "Break one pipe at point and insert gap"
@@ -208,9 +191,7 @@ class mateEdges:
 
     def GetResources(self):
         return {
-            "Pixmap": os.path.join(
-                os.path.dirname(os.path.abspath(__file__)), "iconz", "mate.svg"
-            ),
+            "Pixmap": get_icon_path("mate"),
             "Accel": "M,E",
             "MenuText": QT_TRANSLATE_NOOP("Quetzal_MateEdges", "Mate pipes edges"),
             "ToolTip": QT_TRANSLATE_NOOP(
@@ -227,11 +208,11 @@ class flat:
 
     def GetResources(self):
         return {
-            "Pixmap": os.path.join(
-                os.path.dirname(os.path.abspath(__file__)), "iconz", "flat.svg"
-            ),
+            "Pixmap": get_icon_path("flat"),
             "MenuText": QT_TRANSLATE_NOOP("Quetzal_Flat", "Fit one elbow"),
-            "ToolTip": QT_TRANSLATE_NOOP("Quetzal_Flat", "Place the elbow between two pipes or beams"),
+            "ToolTip": QT_TRANSLATE_NOOP(
+                "Quetzal_Flat", "Place the elbow between two pipes or beams"
+            ),
         }
 
 
@@ -246,9 +227,7 @@ class extend2intersection:
 
     def GetResources(self):
         return {
-            "Pixmap": os.path.join(
-                os.path.dirname(os.path.abspath(__file__)), "iconz", "intersect.svg"
-            ),
+            "Pixmap": get_icon_path("intersect"),
             "MenuText": QT_TRANSLATE_NOOP(
                 "Quetzal_Extend2intersection", "Extends pipes to intersection"
             ),
@@ -269,9 +248,7 @@ class extend1intersection:
 
     def GetResources(self):
         return {
-            "Pixmap": os.path.join(
-                os.path.dirname(os.path.abspath(__file__)), "iconz", "intersect1.svg"
-            ),
+            "Pixmap": get_icon_path("intersect1"),
             "MenuText": QT_TRANSLATE_NOOP(
                 "Quetzal_Extend1intersection", "Extends pipe to intersection"
             ),
@@ -296,11 +273,11 @@ class laydown:
 
     def GetResources(self):
         return {
-            "Pixmap": os.path.join(
-                os.path.dirname(os.path.abspath(__file__)), "iconz", "laydown.svg"
-            ),
+            "Pixmap": get_icon_path("laydown"),
             "MenuText": QT_TRANSLATE_NOOP("Quetzal_Laydown", "Lay-down the pipe"),
-            "ToolTip": QT_TRANSLATE_NOOP("Quetzal_Laydown", "Lay-down the pipe on the support plane"),
+            "ToolTip": QT_TRANSLATE_NOOP(
+                "Quetzal_Laydown", "Lay-down the pipe on the support plane"
+            ),
         }
 
 
@@ -325,9 +302,7 @@ class raiseup:
 
     def GetResources(self):
         return {
-            "Pixmap": os.path.join(
-                os.path.dirname(os.path.abspath(__file__)), "iconz", "raiseup.svg"
-            ),
+            "Pixmap": get_icon_path("raiseup"),
             "MenuText": QT_TRANSLATE_NOOP("Quetzal_Raiseup", "Raise-up the support"),
             "ToolTip": QT_TRANSLATE_NOOP("Quetzal_Raiseup", "Raise the support to the pipe"),
         }
@@ -344,9 +319,7 @@ class joinPype:
 
     def GetResources(self):
         return {
-            "Pixmap": os.path.join(
-                os.path.dirname(os.path.abspath(__file__)), "iconz", "join.svg"
-            ),
+            "Pixmap": get_icon_path("join"),
             "MenuText": QT_TRANSLATE_NOOP("Quetzal_JoinPype", "Join pypes"),
             "ToolTip": QT_TRANSLATE_NOOP("Quetzal_JoinPype", "Select the part-pype and the port"),
         }
@@ -362,9 +335,7 @@ class insertValve:
 
     def GetResources(self):
         return {
-            "Pixmap": os.path.join(
-                os.path.dirname(os.path.abspath(__file__)), "iconz", "valve.svg"
-            ),
+            "Pixmap": get_icon_path("valve"),
             "MenuText": QT_TRANSLATE_NOOP("Quetzal_InsertValve", "Insert a valve"),
             "ToolTip": QT_TRANSLATE_NOOP("Quetzal_InsertValve", "Insert a valve"),
         }
@@ -381,9 +352,7 @@ class attach2tube:
 
     def GetResources(self):
         return {
-            "Pixmap": os.path.join(
-                os.path.dirname(os.path.abspath(__file__)), "iconz", "attach.svg"
-            ),
+            "Pixmap": get_icon_path("attach"),
             "MenuText": QT_TRANSLATE_NOOP("Quetzal_Attach2tube", "Attach  to tube"),
             "ToolTip": QT_TRANSLATE_NOOP(
                 "Quetzal_Attach2tube", "Attach one pype to the nearest port of selected pipe"
@@ -399,9 +368,7 @@ class point2point:
 
     def GetResources(self):
         return {
-            "Pixmap": os.path.join(
-                os.path.dirname(os.path.abspath(__file__)), "iconz", "point2point.svg"
-            ),
+            "Pixmap": get_icon_path("point2point"),
             "MenuText": QT_TRANSLATE_NOOP("Quetzal_Point2point", "draw a tube point-to-point"),
             "ToolTip": QT_TRANSLATE_NOOP("Quetzal_Point2point", "Click on subsequent points."),
         }
@@ -432,9 +399,7 @@ class insertTank:
 
     def GetResources(self):
         return {
-            "Pixmap": os.path.join(
-                os.path.dirname(os.path.abspath(__file__)), "iconz", "tank.svg"
-            ),
+            "Pixmap": get_icon_path("tank"),
             "MenuText": QT_TRANSLATE_NOOP("Quetzal_InsertTank", "Insert a tank"),
             "ToolTip": QT_TRANSLATE_NOOP("Quetzal_InsertTank", "Create tank and nozzles"),
         }
@@ -448,9 +413,7 @@ class insertRoute:
 
     def GetResources(self):
         return {
-            "Pixmap": os.path.join(
-                os.path.dirname(os.path.abspath(__file__)), "iconz", "route.svg"
-            ),
+            "Pixmap": get_icon_path("route"),
             "MenuText": QT_TRANSLATE_NOOP("Quetzal_InsertRoute", "Insert a pipe route"),
             "ToolTip": QT_TRANSLATE_NOOP(
                 "Quetzal_InsertRoute", "Create a sketch attached to a circular edge"
@@ -469,9 +432,7 @@ class makeHeader:
 
     def GetResources(self):
         return {
-            "Pixmap": os.path.join(
-                os.path.dirname(os.path.abspath(__file__)), "iconz", "header.svg"
-            ),
+            "Pixmap": get_icon_path("header"),
             "MenuText": QT_TRANSLATE_NOOP("Quetzal_MakeHeader", "Connect to header"),
             "ToolTip": QT_TRANSLATE_NOOP(
                 "Quetzal_MakeHeader",
@@ -518,9 +479,7 @@ class pipeQM:
 
     def GetResources(self):
         return {
-            "Pixmap": os.path.join(
-                os.path.dirname(os.path.abspath(__file__)), "iconz", "pipe.svg"
-            ),
+            "Pixmap": get_icon_path("pipe"),
             "MenuText": QT_TRANSLATE_NOOP("pipeQM", "QM for pipes"),
         }
 
@@ -536,9 +495,7 @@ class elbowQM:
 
     def GetResources(self):
         return {
-            "Pixmap": os.path.join(
-                os.path.dirname(os.path.abspath(__file__)), "iconz", "elbow.svg"
-            ),
+            "Pixmap": get_icon_path("elbow"),
             "MenuText": QT_TRANSLATE_NOOP("elbowQM", "QM for elbows"),
         }
 
@@ -554,9 +511,7 @@ class flangeQM:
 
     def GetResources(self):
         return {
-            "Pixmap": os.path.join(
-                os.path.dirname(os.path.abspath(__file__)), "iconz", "flange.svg"
-            ),
+            "Pixmap": get_icon_path("flange"),
             "MenuText": QT_TRANSLATE_NOOP("flangeQM", "QM for flanges"),
         }
 
@@ -572,9 +527,7 @@ class valveQM:
 
     def GetResources(self):
         return {
-            "Pixmap": os.path.join(
-                os.path.dirname(os.path.abspath(__file__)), "iconz", "valve.svg"
-            ),
+            "Pixmap": get_icon_path("valve"),
             "MenuText": QT_TRANSLATE_NOOP("valveQM", "QM for valves"),
         }
 
@@ -590,9 +543,7 @@ class capQM:
 
     def GetResources(self):
         return {
-            "Pixmap": os.path.join(
-                os.path.dirname(os.path.abspath(__file__)), "iconz", "cap.svg"
-            ),
+            "Pixmap": get_icon_path("cap"),
             "MenuText": QT_TRANSLATE_NOOP("capQM", "QM for caps"),
         }
 
