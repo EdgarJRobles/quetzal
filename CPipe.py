@@ -480,11 +480,11 @@ class pipeQM:
     def GetResources(self):
         return {
             "Pixmap": get_icon_path("pipe"),
-            "MenuText": QT_TRANSLATE_NOOP("pipeQM", "QM for pipes"),
+            "MenuText": QT_TRANSLATE_NOOP("Quetzal_PipeQM", "QM for pipes"),
         }
 
 
-addCommand("pipeQM", pipeQM())
+addCommand("Quetzal_PipeQM", pipeQM())
 
 
 class elbowQM:
@@ -496,11 +496,11 @@ class elbowQM:
     def GetResources(self):
         return {
             "Pixmap": get_icon_path("elbow"),
-            "MenuText": QT_TRANSLATE_NOOP("elbowQM", "QM for elbows"),
+            "MenuText": QT_TRANSLATE_NOOP("Quetzal_ElbowQM", "QM for elbows"),
         }
 
 
-addCommand("elbowQM", elbowQM())
+addCommand("Quetzal_ElbowQM", elbowQM())
 
 
 class flangeQM:
@@ -512,11 +512,11 @@ class flangeQM:
     def GetResources(self):
         return {
             "Pixmap": get_icon_path("flange"),
-            "MenuText": QT_TRANSLATE_NOOP("flangeQM", "QM for flanges"),
+            "MenuText": QT_TRANSLATE_NOOP("Quetzal_FlangeQM", "QM for flanges"),
         }
 
 
-addCommand("flangeQM", flangeQM())
+addCommand("Quetzal_FlangeQM", flangeQM())
 
 
 class valveQM:
@@ -528,11 +528,11 @@ class valveQM:
     def GetResources(self):
         return {
             "Pixmap": get_icon_path("valve"),
-            "MenuText": QT_TRANSLATE_NOOP("valveQM", "QM for valves"),
+            "MenuText": QT_TRANSLATE_NOOP("Quetzal_ValveQM", "QM for valves"),
         }
 
 
-addCommand("valveQM", valveQM())
+addCommand("Quetzal_ValveQM", valveQM())
 
 
 class capQM:
@@ -544,8 +544,8 @@ class capQM:
     def GetResources(self):
         return {
             "Pixmap": get_icon_path("cap"),
-            "MenuText": QT_TRANSLATE_NOOP("capQM", "QM for caps"),
+            "MenuText": QT_TRANSLATE_NOOP("Quetzal_CapQM", "QM for caps"),
         }
 
 
-addCommand("capQM", capQM())
+addCommand("Quetzal_CapQM", capQM())

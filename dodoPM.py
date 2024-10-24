@@ -533,11 +533,11 @@ cqm = cQM()
 # main
 mw = FreeCADGui.getMainWindow()
 toolList = [
-    "pipeQM",
-    "elbowQM",
-    "flangeQM",
-    "valveQM",
-    "capQM",
+    "Quetzal_PipeQM",
+    "Quetzal_ElbowQM",
+    "Quetzal_FlangeQM",
+    "Quetzal_ValveQM",
+    "Quetzal_CapQM",
 ]  # ["Quetzal_InsertPipe","Quetzal_InsertElbow","Quetzal_InsertReduct","Quetzal_InsertCap","Quetzal_InsertValve","Quetzal_InsertFlange","Quetzal_InsertUbolt"]
 compositingManager = True
 if QtCore.qVersion() < "5":
