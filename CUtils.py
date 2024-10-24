@@ -192,7 +192,7 @@ class dpCalc:
             "MenuText": QT_TRANSLATE_NOOP("Quetzal_DpCalc", "Pressure loss calculator"),
             "ToolTip": QT_TRANSLATE_NOOP(
                 "Quetzal_DpCalc",
-                'Calculate pressure loss in "pypes" using ChEDL libraries.\n See __doc__ of the module for futher information.',
+                'Calculate pressure loss in "pypes" using ChEDL libraries.\n See __doc__ of the module for further information.',
             ),
         }
 

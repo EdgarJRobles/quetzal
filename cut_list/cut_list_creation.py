@@ -9,8 +9,8 @@ from . import resultSpreadsheet
 
 @dataclass
 class Cut:
-    """ Store the Infomation about the cutted Piece and provide Helper Functions
-    """
+    """Store the Information about the cut Piece and provide Helper Functions"""
+
     label: str
     profil: str
     length: object
@@ -31,8 +31,8 @@ class Cut:
 
 @dataclass
 class Beam:
-    """ Store the Infomation about the Stock Material Beam and provide Helper Functions
-    """
+    """Store the Information about the Stock Material Beam and provide Helper Functions"""
+
     number: int
     length: object
     lengthLeft: object
@@ -42,8 +42,8 @@ class Beam:
         """ Try to fit the cutted piece on the Beam and provide a status if it fits
         """
         if self.length.getValueAs("mm") > 0.1 and self.lengthLeft < cut.totalLength():
-            # Cut is not Possible on this Beam 
-            # Ignore if Beam has no lenght
+            # Cut is not Possible on this Beam
+            # Ignore if Beam has no length
             return False
 
         self.cuts.append(cut)
@@ -72,13 +72,11 @@ def queryStructures(profiles:list,rootObjs = None):
         if obj.TypeId == "App::LinkGroup":		
             resultObjs = resultObjs + queryStructures(profiles,obj.ElementList)
 
-        # TODO: A Link to a ink Group will currently not be queried    
-        
-        # Get the base Profile Used for the Stucture
+        # Get the base Profile Used for the Structure
         base = getattr(obj, "Base", None)
         computedLength = getattr(obj, "ComputedLength", None)
-        
-        # Check if the Object is a valid Strucutre 
+
+        # Check if the Object is a valid Structure
         if base is None or computedLength is None:
             continue
 

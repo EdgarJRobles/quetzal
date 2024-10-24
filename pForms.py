@@ -673,7 +673,7 @@ class insertUboltForm(dodoDialogs.protoPypeForm):
     For position and orientation you can select
       - one or more circular edges,
       - nothing.
-    In case one pipe is selected, its properties are aplied to the U-bolt.
+    In case one pipe is selected, its properties are applied to the U-bolt.
     Available one button to reverse the orientation of the last or selected tubes.
     """
 

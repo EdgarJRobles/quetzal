@@ -1,4 +1,4 @@
-# Cut List Creation Command for Dodo Workbench 
+# Cut List Creation Command for Dodo Workbench
 
 This Module can be used to create a cut list of beams created by the DODO-Workbench.\
 The cut list can use one or more profiles (sections/sketches).\
@@ -16,7 +16,7 @@ The Option "Group Parts by Size" will count all Pieces with the same profile and
 
 | Beam No. 1 | | | |
 |-----------------------------|--|--|--|
-| Used 2855.0 mm | | | |		
+| Used 2855.0 mm | | | |
 | Pos. | Profil | Length | Quantity |
 | 1 | 10X10 | 610,00 mm | 2 |
 | 2 | 10X10 | 600,00 mm | 2 |
@@ -24,9 +24,9 @@ The Option "Group Parts by Size" will count all Pieces with the same profile and
 
 ### Exampl: Without Group Party by Size
 
- | Beam No. 1 | | | |	
+ | Beam No. 1 | | | |
  |-----------------------------|--|--|--|
- | Used 2410.0 mm  | | | |			
+ | Used 2410.0 mm  | | | |
  | Pos.	 | Profil	 | Label	 | Length
  | 1	 | 10X10	 | Structure006	 | 610,00 mm |
  | 1	 | 10X10	 | Structure017	 | 610,00 mm |
@@ -37,7 +37,7 @@ The Option "Group Parts by Size" will count all Pieces with the same profile and
 ## Use Nesting
 The Option "Use Nesting" allows to specify the maximum length of the Stock Material and allows for optimizing of the available material.\
 The cut Width will be added to each piece to account for the saw thickness.\
-The list will be seperated into Sections and shows the Used Length and the Parts that can be cut from the Stock Material.\
+The list will be separated into Sections and shows the Used Length and the Parts that can be cut from the Stock Material.\
 The position number of a piece will be the same on every stock material beam.
 
 ### Example with Nesting & Group Party by Size

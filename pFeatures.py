@@ -328,9 +328,9 @@ class Flange(pypeType):
       f (float): bolts holes diameter
       t (float): flange thickness
       n (int): nr. of bolts
-      trf (float): raised-face thikness - OPTIONAL -
+      trf (float): raised-face thickness - OPTIONAL -
       drf (float): raised-face diameter - OPTIONAL -
-      twn (float): welding-neck thikness - OPTIONAL -
+      twn (float): welding-neck thickness - OPTIONAL -
       dwn (float): welding-neck diameter - OPTIONAL -
       ODp (float): outside diameter of pipe for wn flanges - OPTIONAL -
     """
@@ -947,13 +947,13 @@ class Shell:
             "App::PropertyLength",
             "thk1",
             "Tank",
-            QT_TRANSLATE_NOOP("App::Property", "Thikness of tank's shell"),
+            QT_TRANSLATE_NOOP("App::Property", "Thickness of tank's shell"),
         ).thk1 = thk1
         obj.addProperty(
             "App::PropertyLength",
             "thk2",
             "Tank",
-            QT_TRANSLATE_NOOP("App::Property", "Thikness of tank's top"),
+            QT_TRANSLATE_NOOP("App::Property", "Thickness of tank's top"),
         ).thk2 = thk2
 
     def onChanged(self, fp, prop):

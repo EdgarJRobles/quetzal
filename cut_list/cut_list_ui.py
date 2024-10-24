@@ -14,7 +14,7 @@ class cutListUI:
         # this will create a Qt widget from our ui file
         self.form = FreeCADGui.PySideUic.loadUi(uiPath)
 
-        # Set the Default Values and allow only Positiv Values
+        # Set the Default Values and allow only Positive Values
         maxStockDefault = Units.parseQuantity("6m")
         cutWidthDefault = Units.parseQuantity("5mm")
 
@@ -82,7 +82,7 @@ class cutListUI:
             # Do not try to create a cut list with an empty selection
             # TODO: Add Message Box
             return
-        # Get teh Nesting Information or set the default
+        # Get the Nesting Information or set the default
         if self.form.use_nesting.checkState() == False:
             maxStockLength = Units.parseQuantity("0mm")
             cutWidth = Units.parseQuantity("0mm")

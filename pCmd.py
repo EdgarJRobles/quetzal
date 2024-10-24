@@ -418,9 +418,9 @@ def makeFlange(propList=[], pos=None, Z=None):
         f (float): bolts holes diameter
         t (float): flange thickness
         n (int): nr. of bolts
-        trf (float): raised-face thikness - OPTIONAL -
+        trf (float): raised-face thickness - OPTIONAL -
         drf (float): raised-face diameter - OPTIONAL -
-        twn (float): welding-neck thikness - OPTIONAL -
+        twn (float): welding-neck thickness - OPTIONAL -
         dwn (float): welding-neck diameter - OPTIONAL -
         ODp (float): outside diameter of pipe for wn flanges - OPTIONAL -
       Default is "DN50 (PN16)"
@@ -457,9 +457,9 @@ def doFlanges(
       f (float): bolts holes diameter
       t (float): flange thickness
       n (int): nr. of bolts
-      trf (float): raised-face thikness - OPTIONAL -
+      trf (float): raised-face thickness - OPTIONAL -
       drf (float): raised-face diameter - OPTIONAL -
-      twn (float): welding-neck thikness - OPTIONAL -
+      twn (float): welding-neck thickness - OPTIONAL -
       dwn (float): welding-neck diameter - OPTIONAL -
       ODp (float): outside diameter of pipe for wn flanges - OPTIONAL -
     pypeline = string
