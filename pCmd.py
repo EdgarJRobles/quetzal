@@ -1,11 +1,18 @@
 # (c) 2019 R. T. LGPL: part of dodo tools w.b. for FreeCAD
 
 __title__ = "pypeTools functions"
-import FreeCAD, FreeCADGui, Part, fCmd, pFeatures
+import FreeCAD
+import FreeCADGui
+import Part
+import fCmd
+import pFeatures
 from DraftVecUtils import rounded
+from quetzal_config import get_icon_path
+
+from math import degrees
 
 objToPaint = ["Pipe", "Elbow", "Reduct", "Flange", "Cap"]
-from math import degrees
+
 
 __author__ = "oddtopus"
 __url__ = "github.com/oddtopus/dodo"
@@ -131,6 +138,24 @@ def portsDir(o):
 ################## COMMANDS ########################
 
 
+class ViewProvider:
+    def __init__(self, obj, icon_fn):
+        obj.Proxy = self
+        self._check_attr()
+        self.icon_fn = get_icon_path(icon_fn) or get_icon_path("dodo")
+
+    def _check_attr(self):
+        """Check for missing attributes."""
+
+        if not hasattr(self, "icon_fn"):
+            setattr(self, "icon_fn", get_icon_path("dodo"))
+
+    def getIcon(self):
+        """Returns the path to the SVG icon."""
+        self._check_attr()
+        return self.icon_fn
+
+
 def simpleSurfBend(path=None, profile=None):
     "select the centerline and the O.D. and let it sweep"
     curva = FreeCAD.activeDocument().addObject("Part::Feature", "Simple curve")
@@ -162,7 +187,7 @@ def makePipe(propList=[], pos=None, Z=None):
         pFeatures.Pipe(a, *propList)
     else:
         pFeatures.Pipe(a)
-    a.ViewObject.Proxy = 0
+    ViewProvider(a.ViewObject, "pipe")
     a.Placement.Base = pos
     rot = FreeCAD.Rotation(FreeCAD.Vector(0, 0, 1), Z)
     a.Placement.Rotation = rot.multiply(a.Placement.Rotation)
@@ -250,7 +275,7 @@ def makeElbow(propList=[], pos=None, Z=None):
         pFeatures.Elbow(a, *propList)
     else:
         pFeatures.Elbow(a)
-    a.ViewObject.Proxy = 0
+    ViewProvider(a.ViewObject, "elbow")
     a.Placement.Base = pos
     rot = FreeCAD.Rotation(FreeCAD.Vector(0, 0, 1), Z)
     # rot=FreeCAD.Rotation(FreeCAD.Vector(0,-1,0),Z)
@@ -437,7 +462,7 @@ def makeFlange(propList=[], pos=None, Z=None):
         pFeatures.Flange(a, *propList)
     else:
         pFeatures.Flange(a)
-    a.ViewObject.Proxy = 0
+    ViewProvider(a.ViewObject, "flange")
     a.Placement.Base = pos
     rot = FreeCAD.Rotation(FreeCAD.Vector(0, 0, 1), Z)
     a.Placement.Rotation = rot.multiply(a.Placement.Rotation)
@@ -533,7 +558,7 @@ def makeReduct(propList=[], pos=None, Z=None, conc=True):
     a = FreeCAD.ActiveDocument.addObject("Part::FeaturePython", "Reduction")
     propList.append(conc)
     pFeatures.Reduct(a, *propList)
-    a.ViewObject.Proxy = 0
+    ViewProvider(a.ViewObject, "reduct")
     a.Placement.Base = pos
     rot = FreeCAD.Rotation(FreeCAD.Vector(0, 0, 1), Z)
     a.Placement.Rotation = rot.multiply(a.Placement.Rotation)
@@ -562,7 +587,7 @@ def makeUbolt(propList=[], pos=None, Z=None):
         pFeatures.Ubolt(a, *propList)
     else:
         pFeatures.Ubolt(a)
-    a.ViewObject.Proxy = 0
+    ViewProvider(a.ViewObject, "clamp")
     a.Placement.Base = pos
     rot = FreeCAD.Rotation(FreeCAD.Vector(0, 0, 1), Z)
     a.Placement.Rotation = rot.multiply(a.Placement.Rotation)
@@ -580,7 +605,7 @@ def makeShell(L=1000, W=1500, H=1500, thk1=6, thk2=8):
     """
     a = FreeCAD.ActiveDocument.addObject("Part::FeaturePython", "Tank")
     pFeatures.Shell(a, L, W, H, thk1, thk2)
-    a.ViewObject.Proxy = 0
+    ViewProvider(a.ViewObject, "tank")
     a.Placement.Base = FreeCAD.Vector(0, 0, 0)
     a.ViewObject.ShapeColor = 0.0, 0.0, 1.0
     a.ViewObject.Transparency = 85
@@ -609,7 +634,7 @@ def makeCap(propList=[], pos=None, Z=None):
         pFeatures.Cap(a, *propList)
     else:
         pFeatures.Cap(a)
-    a.ViewObject.Proxy = 0
+    ViewProvider(a.ViewObject, "cap")
     a.Placement.Base = pos
     rot = FreeCAD.Rotation(FreeCAD.Vector(0, 0, 1), Z)
     a.Placement.Rotation = rot.multiply(a.Placement.Rotation)
@@ -1237,7 +1262,7 @@ def makeValve(propList=[], pos=None, Z=None):
         pFeatures.Valve(a, *propList)
     else:
         pFeatures.Valve(a)
-    a.ViewObject.Proxy = 0
+    ViewProvider(a.ViewObject, "valve")
     a.Placement.Base = pos
     rot = FreeCAD.Rotation(FreeCAD.Vector(0, 0, 1), Z)
     a.Placement.Rotation = rot.multiply(a.Placement.Rotation)
