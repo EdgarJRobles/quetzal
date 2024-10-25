@@ -90,7 +90,6 @@ class redrawDialog(QDialog):
         for cb in self.checkBoxes:
             cb.setChecked(False)
 
-
 class insertPipeForm(dodoDialogs.protoPypeForm):
     """
     Dialog to insert tubes.
@@ -220,7 +219,6 @@ class insertPipeForm(dodoDialogs.protoPypeForm):
             if self.lastPipe:
                 self.lastPipe.Height = newL
             FreeCAD.ActiveDocument.recompute()
-
 
 class insertElbowForm(dodoDialogs.protoPypeForm):
     """
@@ -384,7 +382,6 @@ class insertElbowForm(dodoDialogs.protoPypeForm):
                 self.lastElbow.Placement.Rotation.multVec(self.lastElbow.Ports[0]) * -2
             )
 
-
 class insertFlangeForm(dodoDialogs.protoPypeForm):
     """
     Dialog to insert flanges.
@@ -482,7 +479,6 @@ class insertFlangeForm(dodoDialogs.protoPypeForm):
                 obj.n = int(pq(d["n"]))
                 obj.PRating = self.PRating
                 FreeCAD.activeDocument().recompute()
-
 
 class insertReductForm(dodoDialogs.protoPypeForm):
     """
@@ -666,7 +662,6 @@ class insertReductForm(dodoDialogs.protoPypeForm):
         self.sizeList.setCurrentRow(0)
         self.fillOD2()
 
-
 class insertUboltForm(dodoDialogs.protoPypeForm):
     """
     Dialog to insert U-bolts.
@@ -787,7 +782,6 @@ class insertUboltForm(dodoDialogs.protoPypeForm):
             FreeCAD.activeDocument().commitTransaction()
         FreeCAD.activeDocument().recompute()
 
-
 class insertCapForm(dodoDialogs.protoPypeForm):
     """
     Dialog to insert caps.
@@ -851,7 +845,6 @@ class insertCapForm(dodoDialogs.protoPypeForm):
                 obj.PRating = self.PRating
                 FreeCAD.activeDocument().recompute()
 
-
 class insertPypeLineForm(dodoDialogs.protoPypeForm):
     """
     Dialog to insert pypelines.
@@ -901,7 +894,7 @@ class insertPypeLineForm(dodoDialogs.protoPypeForm):
         self.show()
 
     def summary(self, pl=None):
-        if self.combo.currentText() != "<new>":
+        if self.combo.currentText() != translate("insertPypeLineForm","<new>"):
             pl = FreeCAD.ActiveDocument.getObjectsByLabel(self.combo.currentText())[0]
             FreeCAD.Console.PrintMessage(
                 "\n%s: %s - %s\nProfile: %.1fx%.1f\nRGB color: %.3f, %.3f, %.3f\n"
@@ -923,7 +916,7 @@ class insertPypeLineForm(dodoDialogs.protoPypeForm):
 
     def apply(self):
         d = self.pipeDictList[self.sizeList.currentRow()]
-        if self.combo.currentText() != "<new>":
+        if self.combo.currentText() != translate("insertPypeLineForm","<new>"):
             pl = FreeCAD.ActiveDocument.getObjectsByLabel(self.combo.currentText())[0]
             pl.PSize = d["PSize"]
             pl.PRating = self.PRating
@@ -936,7 +929,7 @@ class insertPypeLineForm(dodoDialogs.protoPypeForm):
     def insert(self):
         d = self.pipeDictList[self.sizeList.currentRow()]
         FreeCAD.activeDocument().openTransaction("Insert pype-line")
-        if self.combo.currentText() == "<new>":
+        if self.combo.currentText() == translate("insertPypeLineForm","<new>"):
             plLabel = self.edit1.text()
             if not plLabel:
                 plLabel = "Tubatura"
@@ -969,7 +962,7 @@ class insertPypeLineForm(dodoDialogs.protoPypeForm):
         FreeCAD.ActiveDocument.recompute()
 
     def getBase(self):
-        if self.combo.currentText() != "<new>":
+        if self.combo.currentText() != translate("insertPypeLineForm","<new>"):
             pl = FreeCAD.ActiveDocument.getObjectsByLabel(self.combo.currentText())[0]
             sel = FreeCADGui.Selection.getSelection()
             if sel:
@@ -1005,7 +998,7 @@ class insertPypeLineForm(dodoDialogs.protoPypeForm):
         col = QColorDialog.getColor()
         if col.isValid():
             self.color = tuple([c / 255.0 for c in col.toTuple()[:3]])
-            if self.combo.currentText() != "<new>":
+            if self.combo.currentText() != translate("insertPypeLineForm","<new>"):
                 pl = FreeCAD.ActiveDocument.getObjectsByLabel(self.combo.currentText())[
                     0
                 ]
@@ -1019,7 +1012,7 @@ class insertPypeLineForm(dodoDialogs.protoPypeForm):
         f = None
         f = qfd.getSaveFileName()[0]
         if f:
-            if self.combo.currentText() != "<new>":
+            if self.combo.currentText() != translate("insertPypeLineForm","<new>"):
                 group = FreeCAD.activeDocument().getObjectsByLabel(
                     FreeCAD.__activePypeLine__ + "_pieces"
                 )[0]
@@ -1058,7 +1051,6 @@ class insertPypeLineForm(dodoDialogs.protoPypeForm):
                 w.writerows(rows)
                 plist.close()
                 FreeCAD.Console.PrintMessage("Data saved in %s.\n" % f)
-
 
 class insertBranchForm(dodoDialogs.protoPypeForm):
     """
@@ -1151,7 +1143,6 @@ class insertBranchForm(dodoDialogs.protoPypeForm):
         FreeCAD.ActiveDocument.recompute()
         FreeCAD.ActiveDocument.recompute()
 
-
 class breakForm(QDialog):
     """
     Dialog to break one pipe and create a gap.
@@ -1235,7 +1226,7 @@ class breakForm(QDialog):
         self.show()
 
     def setCurrentPL(self, PLName=None):
-        if self.combo.currentText() not in ["<none>", "<new>"]:
+        if self.combo.currentText() not in [translate("breakForm","<none>"), translate("breakForm","<new>")]:
             FreeCAD.__activePypeLine__ = self.combo.currentText()
         else:
             FreeCAD.__activePypeLine__ = None
@@ -1323,9 +1314,7 @@ class breakForm(QDialog):
         FreeCAD.activeDocument().commitTransaction()
         FreeCAD.activeDocument().recompute()
 
-
 import pObservers as po
-
 
 class joinForm(dodoDialogs.protoTypeDialog):
     def __init__(self):
@@ -1354,7 +1343,6 @@ class joinForm(dodoDialogs.protoTypeDialog):
             a.closeArrow()
         po.pCmd.arrows1 = []
         po.pCmd.arrows2 = []
-
 
 class insertValveForm(dodoDialogs.protoPypeForm):
     """
@@ -1452,10 +1440,8 @@ class insertValveForm(dodoDialogs.protoPypeForm):
                 obj.Kv = float(d["Kv"])
                 FreeCAD.activeDocument().recompute()
 
-
 import DraftTools, Draft, uForms, uCmd
 from PySide.QtGui import *
-
 
 class point2pointPipe(DraftTools.Line):
     """
@@ -1608,7 +1594,6 @@ class point2pointPipe(DraftTools.Line):
                                 self.undolast()
                                 self.finish(True, cont=True)
             FreeCAD.activeDocument().commitTransaction()
-
 
 class insertTankForm(dodoDialogs.protoTypeDialog):
     def __init__(self):

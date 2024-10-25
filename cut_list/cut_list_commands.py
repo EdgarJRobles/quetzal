@@ -17,7 +17,7 @@ class cutListCommand:
         return {
             "MenuText": QT_TRANSLATE_NOOP("Quetzal_CreateCutList", "createCutList"),
             "ToolTip": QT_TRANSLATE_NOOP(
-                "Quetzal_CreateCutList", "Create a new Cut List from Dodo Beams"
+                "Quetzal_CreateCutList", "Create a new Cut List from Quetzal Beams"
             ),
             "Pixmap": Icon,
         }

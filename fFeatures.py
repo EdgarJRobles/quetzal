@@ -574,6 +574,7 @@ class frameBranchForm(dodoDialogs.protoTypeDialog):
                         self.placementfinal = FreeCAD.Placement(FreeCAD.Vector(0,0,0),FreeCAD.Rotation(FreeCAD.Vector(0,0,1),90),element.StartPoint).multiply(self.placementrelative)
                         plane.AttachmentOffset = self.placementfinal
                 j=j+1
+            # TODO::Remove code inside if False condicion ones plane bisec each sketch corner
             if False:
                 vend1=FreeCAD.Vector(sel[0].Geometry[i-1].EndPoint)
                 vstart1=FreeCAD.Vector(sel[0].Geometry[i-1].StartPoint)

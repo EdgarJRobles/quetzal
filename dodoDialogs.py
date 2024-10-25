@@ -5,8 +5,8 @@ from sys import platform
 
 import FreeCAD
 import FreeCADGui
-from PySide.QtCore import *
-from PySide.QtGui import *
+from PySide2.QtCore import *
+from PySide2.QtGui import *
 
 translate = FreeCAD.Qt.translate
 
@@ -93,7 +93,6 @@ class protoTypeDialog(object):
         FreeCADGui.Control.closeDialog()
         if FreeCAD.ActiveDocument:
             FreeCAD.ActiveDocument.recompute()
-
 
 class protoPypeForm(QDialog):
     "prototype dialog for insert pFeatures"
