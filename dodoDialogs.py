@@ -5,8 +5,8 @@ from sys import platform
 
 import FreeCAD
 import FreeCADGui
-from PySide2.QtCore import *
-from PySide2.QtGui import *
+from PySide.QtCore import *
+from PySide.QtGui import *
 
 translate = FreeCAD.Qt.translate
 
@@ -38,7 +38,7 @@ class protoTypeDialog(object):
             % (
                 self.actionS.shortcuts()[0].toString(),
                 self.actionX.shortcuts()[0].toString(),
-            )
+            )+'\r\n'
         )
         try:
             self.view = FreeCADGui.activeDocument().activeView()
@@ -84,7 +84,7 @@ class protoTypeDialog(object):
         self.mw.removeAction(self.actionS)
         FreeCAD.Console.PrintMessage(
             translate("protoTypeDialog", 'Actions "%s" and "%s" removed')
-            % (self.actionX.objectName(), self.actionS.objectName())
+            % (self.actionX.objectName(), self.actionS.objectName())+'\r\n'
         )
         try:
             self.view.removeEventCallback("SoMouseButtonEvent", self.call)

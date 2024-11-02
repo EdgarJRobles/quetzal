@@ -6,7 +6,7 @@ __url__ = "github.com/oddtopus/dodo"
 __license__ = "LGPL 3"
 
 import csv
-from math import degrees
+from math import degrees, frexp
 from os import listdir
 from os.path import abspath, dirname, join
 
@@ -471,7 +471,8 @@ class frameBranchForm(dodoDialogs.protoTypeDialog):
         self.form.comboRatings.currentIndexChanged.connect(self.fillSizes)
         self.form.btnRemove.clicked.connect(self.removeBeams)
         self.form.btnAdd.clicked.connect(self.addBeams)
-        self.form.slicebtn.clicked.connect(self.makeMiter)
+        self.form.btnGenPlanes.clicked.connect(self.generateBisectPlanes)
+        self.form.btnMiter.clicked.connect(self.cutMiters)
         self.form.btnProfile.clicked.connect(self.changeProfile)
         self.form.btnRefresh.clicked.connect(self.refresh)
         self.form.btnTargets.clicked.connect(self.selectAction)
@@ -531,87 +532,164 @@ class frameBranchForm(dodoDialogs.protoTypeDialog):
                 beam.Height = float(self.form.editLength.text())
         FreeCAD.ActiveDocument.recompute()
 
-    def cutcorners(self):
+    def cutMiters(self):
         import ArchCutPlane
+        volumes = list()
+        totalvertexes=0
         sel=FreeCADGui.Selection.getSelection()
-        seldoc=FreeCADGui.ActiveDocument
-        if sel[0].FType=='FrameBranch':
-            pass
-            # for beam in sel[0].Beams:
-               # if seldoc.:
-               #  pass
-                # ArchCutPlane.cutComponentwithPlane(beam,)
+        seldoc=FreeCAD.ActiveDocument
+        miterplanesfaces=self.getMiterPlanesFaces(seldoc)
+        framebeams=self.getBeamsFromStructureNames(sel)
+        for beam in framebeams:
+            for miterplaneface in miterplanesfaces:
+                matchpoints=False
+                sketcher=beam.AttachmentSupport[0][0]
+                edgename=beam.AttachmentSupport[0][1][0]
+                index=int(edgename[4:])-1
+                if self.roundVectors(miterplaneface.CenterOfMass,4) == self.roundVectors(sketcher.Shape.Edges[index].Vertexes[0].Point,4):
+                    matchpoints=True
+                    totalvertexes=totalvertexes+1
+                elif self.roundVectors(miterplaneface.CenterOfMass,4) == self.roundVectors(sketcher.Shape.Edges[index].Vertexes[1].Point,4):
+                    matchpoints=True
+                    totalvertexes=totalvertexes+1
+                if matchpoints:
+                    # FreeCAD.Console.PrintMessage('Plano: '+str()+'\r')
+                    ArchCutPlane.cutComponentwithPlane(beam,miterplaneface, side=0)
+                    FreeCAD.ActiveDocument.recompute()
+                    volumes.append(beam.Shape.Volume)
+                    self.removeCutVolume(beam)
+                    ArchCutPlane.cutComponentwithPlane(beam,miterplaneface, side=1)
+                    FreeCAD.ActiveDocument.recompute()
+                    volumes.append(beam.Shape.Volume)
+                    # volumes.sort()
+                    if volumes[0]< volumes[1]:
+                        FreeCAD.Console.PrintMessage(str(beam.Name)+' volume1: '+str(volumes[0])+'< volume2: '+str(volumes[1])+'\r')
+                        FreeCAD.ActiveDocument.recompute()
+                    elif volumes[0]> volumes[1]:
+                        self.removeCutVolume(beam)
+                        ArchCutPlane.cutComponentwithPlane(beam,miterplaneface, side=0)
+                        FreeCAD.Console.PrintMessage(str(beam.Name)+' volume1: '+str(volumes[0])+'> volume2: '+str(volumes[1])+'\r')
+                        FreeCAD.ActiveDocument.recompute()
+                    volumes.clear()
+        FreeCAD.Console.PrintMessage('totalvertexes: '+str(totalvertexes))
 
-    def makeMiter(self):
+    def removeCutVolume(self,beam):
+        cutvolumeitems= list()
+        cutvolumeid = list()
+        for obj in beam.OutList:
+            if obj.TypeId=='Part::Feature' and obj.Label.startswith('CutVolume'):
+                cutvolumeid.append(obj.ID)
+                cutvolumeitems.append(obj)
+        cutvolumeid.sort(reverse=True)
+        lastobj=cutvolumeid[0]
+        for obj in beam.OutList:
+            if obj.TypeId=='Part::Feature' and obj.Label.startswith('CutVolume') and obj.ID == lastobj:
+                FreeCAD.ActiveDocument.removeObject(obj.Label)
+                FreeCAD.ActiveDocument.recompute()
+
+    def getBeamsFromStructureNames(self,sel):
+        '''
+        Return a list with beam Structures on a frameBranch object type
+        '''
+        framebeams = list()
+        if hasattr(sel[0],"FType"):
+            for beamname in sel[0].Beams:
+                beam=FreeCAD.ActiveDocument.getObject(beamname)
+                framebeams.append(beam)
+        return framebeams
+
+    def getMiterPlanesFaces(self,seldoc):
+        '''
+        Return a list with plane named 'cutplane' from the whole seldoc
+        '''
+        miterplanes = list()
+        for object in seldoc.Objects:
+            if object.Name.startswith('cutplane'):
+                miterplanes.append(object.Shape.Faces[0])
+        return miterplanes
+
+    def roundVectors(self,vxlist, num):
+        l = [v for v in vxlist]
+        return FreeCAD.Vector(round(l[0], num), round(l[1], num), round(l[2], num))
+
+    def generateBisectPlanes(self):
         """Get intersection between lines, generate a plane between lines & do a boolean diferente"""
         sel = FreeCADGui.Selection.getSelection()
+        from DraftGeomUtils import findIntersection
         # FreeCAD.Console.PrintMessage('posicion de boceto:'+ str(sel[0].Placement.Rotation)+'\r\n')
         i=0
-        intersectlines=[]
-        for element in sel[0].Geometry:
-            j=0
-            for subelement in sel[0].Geometry:
-                if (element.EndPoint != subelement.EndPoint) and (element.StartPoint != subelement.StartPoint):
-                    if element.intersectCC(subelement):
-                        # intersectlines.append(element)
-                        # intersectlines.append(subelement)
-                        interpoint=element.intersectCC(subelement)[0]
-                        # intersectpoint=FreeCAD.Vector(interpoint.X,interpoint.Y,interpoint.Z)
-                        FreeCAD.Console.PrintMessage('Segmento '+str(element)+' intersecta con segmento '+str(subelement)+' aqui:'+ str(interpoint)+'\r\n')
-                        resultv1=FreeCAD.Vector(element.EndPoint-element.StartPoint)
-                        resultv2=FreeCAD.Vector(subelement.EndPoint-subelement.StartPoint)
-                        bisectvector=fCmd.bisect(resultv1,resultv2)
-                        plane=FreeCAD.activeDocument().addObject("Part::Plane","myplane")
-                        plane.AttachmentSupport = sel[0].AttachmentSupport
-                        plane.MapMode = 'FlatFace'
-                        self.rotvector = element.StartPoint-FreeCAD.Vector(0,plane.Length/2,-plane.Length/2)
-                        plane.recompute()
-                        # self.CenterOfMass = plane.Shape.CenterOfMass
-                        self.placementrotplan = FreeCAD.Placement(self.rotvector,FreeCAD.Rotation(FreeCAD.Vector(0,1,0),90))
-                        plane.AttachmentOffset = self.placementrotplan
-                        # FreeCAD.Console.PrintMessage('Antes Angulo de arista a vector bisectriz: '+str((FreeCAD.Rotation(bisectvector,plane.Shape.normalAt(0,0)).Angle)*180/pi)+'\r\n')
-                        self.placementrelative = FreeCAD.Placement(FreeCAD.Vector(0,0,0),FreeCAD.Rotation(bisectvector,plane.Shape.normalAt(0,0)),element.StartPoint).multiply(self.placementrotplan)
-                        self.placementfinal = FreeCAD.Placement(FreeCAD.Vector(0,0,0),FreeCAD.Rotation(FreeCAD.Vector(0,0,1),90),element.StartPoint).multiply(self.placementrelative)
-                        plane.AttachmentOffset = self.placementfinal
-                j=j+1
-            # TODO::Remove code inside if False condicion ones plane bisec each sketch corner
-            if False:
-                vend1=FreeCAD.Vector(sel[0].Geometry[i-1].EndPoint)
-                vstart1=FreeCAD.Vector(sel[0].Geometry[i-1].StartPoint)
-                resultv1=vend1-vstart1
-                vend2=FreeCAD.Vector(sel[0].Geometry[i].EndPoint)
-                vstart2=FreeCAD.Vector(sel[0].Geometry[i].StartPoint)
-                resultv2=vend2-vstart2
-                crossvector=resultv1.cross(resultv2)
-                # FreeCAD.Console.PrintMessage(crossvector.Length)
-                bisectvector=fCmd.bisect(resultv1,resultv2)
-                # FreeCAD.Console.PrintMessage(intersectpoint)
-                # FreeCAD.Console.PrintMessage(crossvector)
-                # linseg=Part.LineSegment(intersectpoint,crossvector)
-                # linseg=Part.LineSegment(intersectpoint,bisectvector)
-                # obj=FreeCAD.ActiveDocument.addObject("Part::Feature", "Line")
-                # obj.Shape = linseg.toShape()
-                # obj.Placement = FreeCAD.Placement(FreeCAD.Vector(0,0,0),FreeCAD.Rotation(FreeCAD.Vector(1,0,0),90))
-                plane=FreeCAD.activeDocument().addObject("Part::Plane","myplane")
-                plane.AttachmentSupport = sel[0].AttachmentSupport
-                plane.MapMode = 'FlatFace'
-                self.rotvector = element.StartPoint-FreeCAD.Vector(0,plane.Length/2,-plane.Length/2)
-                plane.recompute()
-                # self.CenterOfMass = plane.Shape.CenterOfMass
-                self.placementrotplan = FreeCAD.Placement(self.rotvector,FreeCAD.Rotation(FreeCAD.Vector(0,1,0),90))
-                plane.AttachmentOffset = self.placementrotplan
-                # FreeCAD.Console.PrintMessage('Antes Angulo de arista a vector bisectriz: '+str((FreeCAD.Rotation(bisectvector,plane.Shape.normalAt(0,0)).Angle)*180/pi)+'\r\n')
-                self.placementrelative = FreeCAD.Placement(FreeCAD.Vector(0,0,0),FreeCAD.Rotation(bisectvector,plane.Shape.normalAt(0,0)),element.StartPoint).multiply(self.placementrotplan)
-                self.placementfinal = FreeCAD.Placement(FreeCAD.Vector(0,0,0),FreeCAD.Rotation(FreeCAD.Vector(0,0,1),90),element.StartPoint).multiply(self.placementrelative)
-                plane.AttachmentOffset = self.placementfinal
-            # if i==0:
-            #     FreeCADGui.ActiveDocument.myplane.PointSize = 10
-            #     FreeCADGui.ActiveDocument.myplane.PointColor = 100,50,20
-            # elif i>=1:
-            #     obj=FreeCADGui.ActiveDocument.getObject('myplane00'+str(i))
-            #     obj.PointSize = 10
-            #     obj.PointColor = 100,50,20
-            i=i+1
+        reachedlines = []
+        interVertex = []
+        if sel[0].FType == 'FrameBranch':
+          for element in sel[0].Base.Geometry:
+              # FreeCAD.Console.PrintMessage('Segmento '+str(element)+'\r\n')
+              for subelement in sel[0].Base.Geometry:
+                  if  element.EndPoint != subelement.EndPoint or element.StartPoint != subelement.StartPoint or (element.EndPoint != subelement.EndPoint and element.StartPoint != subelement.StartPoint):
+                      #WARN:intersectionCLines method forces to detect infinite intersections that is not required
+                      # interVertex=fCmd.intersectionCLines(element.toShape().Edges[0],subelement.toShape().Edges[0])                        
+                      interVertex=findIntersection(element.toShape().Edges[0],subelement.toShape().Edges[0],infinite1=False, infinite2=False)
+                      if interVertex:
+                          if interVertex[0] not in reachedlines:
+                              # FreeCAD.Console.PrintMessage('Punto de interseccion: '+str(interVertex[0])+'\r\n')
+                              roundelementStart=self.roundVectors(element.StartPoint,2)
+                              roundelementEnd=self.roundVectors(element.EndPoint,2)
+                              roundsubelementStart=self.roundVectors(subelement.StartPoint,2)
+                              roundsubelementEnd=self.roundVectors(subelement.EndPoint,2)
+                              roundinterVertex=self.roundVectors(interVertex[0],2)
+                              reachedlines.append(interVertex[0])
+                              # FIXME: intersectCC method does not return line intersection; findIntersection method does it right
+                              # interpoint=element.intersectCC(subelement)[0] 
+
+                              # FreeCAD.Console.PrintMessage('Segmento '+str(element)+' intersecta con segmento '+str(subelement)+' aqui:'+ str(interpoint)+'\r\n')
+                              # FreeCAD.Console.PrintMessage(str(type(interpoint)))
+                              # INFO:Section aided to get bisect vector on each intersection
+                              if roundelementStart== roundinterVertex:
+                                  resultv1 = FreeCAD.Vector(element.EndPoint-element.StartPoint)
+                              elif roundelementEnd == roundinterVertex:
+                                  resultv1 = FreeCAD.Vector(element.StartPoint-element.EndPoint)
+                              if roundsubelementStart == roundinterVertex:
+                                  resultv2 = FreeCAD.Vector(subelement.EndPoint-subelement.StartPoint)
+                              elif roundsubelementEnd == roundinterVertex:
+                                  resultv2 = FreeCAD.Vector(subelement.StartPoint-subelement.EndPoint)
+                              bisectvector=fCmd.bisect(resultv1,resultv2)
+                              plane=FreeCAD.activeDocument().addObject("Part::Plane","cutplane")
+                              import numpy
+                              from math import pi
+                              plane.AttachmentSupport = sel[0].Base.AttachmentSupport
+                              plane.MapMode = 'FlatFace'
+                              self.rotvector =(interVertex[0])-(FreeCAD.Vector(0,plane.Length/2,-plane.Length/2))
+                              # INFO: Section aided to apply random color to each plane
+                              randomcolorarray=numpy.random.choice(range(256),size=3)
+                              plane.ViewObject.ShapeAppearance = FreeCAD.Material(DiffuseColor= tuple(map(int,randomcolorarray)))
+                              plane.recompute()
+                              # self.CenterOfMass = plane.Shape.CenterOfMass
+                              # INFO:Section aided to get the correct plane orientation on each intersection
+                              self.placementrotplan = FreeCAD.Placement(self.rotvector,FreeCAD.Rotation(FreeCAD.Vector(0,1,0),90))
+                              plane.AttachmentOffset = self.placementrotplan
+                              # FreeCAD.Console.PrintMessage('Antes Angulo de arista a vector bisectriz: '+str((FreeCAD.Rotation(bisectvector,plane.Shape.normalAt(0,0)).Angle)*180/pi)+'\r\n')
+                              # crossvector=resultv1.cross(resultv2).normalize()
+                              # FreeCAD.Console.PrintMessage('Vector cruz: '+str(crossvector)+'\r\n')
+                              # FreeCAD.Console.PrintMessage('Vector normal de plano: '+str(self.roundVectors(plane.Shape.normalAt(0,0),2))+'\r\n')
+                              self.placementrelative = FreeCAD.Placement(FreeCAD.Vector(0,0,0),FreeCAD.Rotation(plane.Shape.normalAt(0,0),bisectvector),interVertex[0]).multiply(self.placementrotplan)
+                              # plane.AttachmentOffset = self.placementrelative
+                              # FreeCAD.Console.PrintMessage('Despues Angulo de arista a vector bisectriz: '+str((FreeCAD.Rotation(bisectvector,plane.Shape.normalAt(0,0)).Angle)*180/pi)+'\r\n')
+                              if self.roundVectors(plane.Shape.normalAt(0,0),0) == FreeCAD.Vector(1.0, 0.0, 0.0):
+                                  rotateplane=90
+                              else:
+                                  rotateplane=0
+                              self.placementfinal = FreeCAD.Placement(FreeCAD.Vector(0,0,0),FreeCAD.Rotation(FreeCAD.Vector(0,0,1),rotateplane),interVertex[0]).multiply(self.placementrelative)
+                              plane.AttachmentOffset = self.placementfinal
+                              # FreeCAD.Console.PrintMessage(str(plane.Name))
+                              # sel[0].cutplanes.append(plane.Name)
+              # TODO::Made method definition to change plane dots colors
+              # if i==0:
+              #     FreeCADGui.ActiveDocument.myplane.PointSize = 10
+              #     FreeCADGui.ActiveDocument.myplane.PointColor = 100,50,20
+              # elif i>=1:
+              #     obj=FreeCADGui.ActiveDocument.getObject('myplane00'+str(i))
+              #     obj.PointSize = 10
+              #     obj.PointColor = 100,50,20
+              i=i+1
 
     def accept(self):
         if FreeCAD.ActiveDocument:

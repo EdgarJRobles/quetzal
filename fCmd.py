@@ -427,6 +427,11 @@ def rotjoinTheBeam(beam=None,e1=None,e2=None):
   beam.Placement.move(rounded(dist+rot.multVec(delta)))
 
 def getSolids(allDoc=True):
+  '''
+    Get solid objects inside the active document o just selected solid objects based on alldoc parameter config
+
+    return solid objects into selection class
+  '''
   if allDoc:
     objects=FreeCAD.ActiveDocument.Objects
   else:
@@ -437,6 +442,10 @@ def getSolids(allDoc=True):
       FreeCADGui.Selection.addSelection(o)
       
 def getFaces(allDoc=True):
+  '''
+    Get faces from whole document or treview o viewport selection based on alldoc parameter config
+    return faces into selection class
+  '''
   if allDoc:
     objects=FreeCAD.ActiveDocument.Objects
   else:

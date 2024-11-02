@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>290</width>
-    <height>504</height>
+    <height>550</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -187,9 +187,9 @@
     </widget>
    </item>
    <item row="11" column="0">
-    <widget class="QPushButton" name="slicebtn">
+    <widget class="QPushButton" name="btnGenPlanes">
      <property name="text">
-      <string>Slice Intersections</string>
+      <string>Generate planes</string>
      </property>
     </widget>
    </item>
@@ -235,6 +235,13 @@
     <widget class="QPushButton" name="btnSingle">
      <property name="text">
       <string>Add single</string>
+     </property>
+    </widget>
+   </item>
+   <item row="10" column="0">
+    <widget class="QPushButton" name="btnMiter">
+     <property name="text">
+      <string>Cut Miters</string>
      </property>
     </widget>
    </item>
