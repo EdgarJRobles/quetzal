@@ -90,10 +90,7 @@ def moveToPyLi(obj, plName):
         if obj.PType in objToPaint:
             obj.ViewObject.ShapeColor = pl.ViewObject.ShapeColor
         elif obj.PType == "PypeBranch":
-            for e in [
-                FreeCAD.ActiveDocument.getObject(name)
-                for name in obj.Tubes + obj.Curves
-            ]:
+            for e in [FreeCAD.ActiveDocument.getObject(name) for name in obj.Tubes + obj.Curves]:
                 e.ViewObject.ShapeColor = pl.ViewObject.ShapeColor
 
 
@@ -126,11 +123,7 @@ def portsDir(o):
                     dirs.append(rounded(o.Placement.Rotation.multVec(p).normalize()))
                 else:
                     dirs.append(
-                        rounded(
-                            o.Placement.Rotation.multVec(
-                                FreeCAD.Vector(0, 0, -1)
-                            ).normalize()
-                        )
+                        rounded(o.Placement.Rotation.multVec(FreeCAD.Vector(0, 0, -1)).normalize())
                     )
     return dirs
 
@@ -225,9 +218,7 @@ def doPipes(propList=["DN50", 60.3, 3, 1000], pypeline=None):
                 for face in fCmd.faces():
                     x = (face.ParameterRange[0] + face.ParameterRange[1]) / 2
                     y = (face.ParameterRange[2] + face.ParameterRange[3]) / 2
-                    plist.append(
-                        makePipe(propList, face.valueAt(x, y), face.normalAt(x, y))
-                    )
+                    plist.append(makePipe(propList, face.valueAt(x, y), face.normalAt(x, y)))
                 FreeCAD.activeDocument().commitTransaction()
                 FreeCAD.activeDocument().recompute()
             else:
@@ -308,11 +299,7 @@ def makeElbowBetweenThings(thing1=None, thing2=None, propList=None):
             if fCmd.beams([thing]):
                 directions.append(
                     rounded(
-                        (
-                            fCmd.beamAx(thing).multiply(thing.Height / 2)
-                            + thing.Placement.Base
-                        )
-                        - P
+                        (fCmd.beamAx(thing).multiply(thing.Height / 2) + thing.Placement.Base) - P
                     )
                 )
             elif hasattr(thing, "ShapeType") and thing.ShapeType == "Edge":
@@ -326,9 +313,7 @@ def makeElbowBetweenThings(thing1=None, thing2=None, propList=None):
         propList = ["DN50", 60.3, 3.91, ang, 45.24]
     else:
         propList[3] = ang
-    elb = makeElbow(
-        propList, P, directions[0].negative().cross(directions[1].negative())
-    )
+    elb = makeElbow(propList, P, directions[0].negative().cross(directions[1].negative()))
     # mate the elbow ends with the pipes or edges
     b = fCmd.bisect(directions[0], directions[1])
     elbBisect = rounded(
@@ -389,8 +374,7 @@ def doElbow(propList=["DN50", 60.3, 3, 90, 45.225], pypeline=None):
                 elb.Placement.move(P - Port0)
             elif isElbow(selex[0].Object):  # ..on the edge of an elbow
                 p0, p1 = [
-                    selex[0].Object.Placement.Rotation.multVec(p)
-                    for p in selex[0].Object.Ports
+                    selex[0].Object.Placement.Rotation.multVec(p) for p in selex[0].Object.Ports
                 ]
                 if fCmd.isParallel(p0, N):
                     elb.Placement.Rotation = FreeCAD.Rotation(elb.Ports[0], p0 * -1)
@@ -469,9 +453,7 @@ def makeFlange(propList=[], pos=None, Z=None):
     return a
 
 
-def doFlanges(
-    propList=["DN50", "SO", 160, 60.3, 132, 14, 15, 4, 0, 0, 0, 0, 0], pypeline=None
-):
+def doFlanges(propList=["DN50", "SO", 160, 60.3, 132, 14, 15, 4, 0, 0, 0, 0, 0], pypeline=None):
     """
     propList = [
       DN (string): nominal diameter
@@ -548,7 +530,7 @@ def makeReduct(propList=[], pos=None, Z=None, conc=True):
         H (float): length of reduction
       pos (vector): position of insertion; default = 0,0,0
       Z (vector): orientation: default = 0,0,1
-      conc (bool): True for concentric or Flase for eccentric reduction
+      conc (bool): True for concentric or False for eccentric reduction
     Remember: property PRating must be defined afterwards
     """
     if pos == None:
@@ -673,10 +655,7 @@ def doCaps(propList=["DN50", 60.3, 3], pypeline=None):
                 ]
                 Z = None
                 if len(objs) > 0:  # ...pype objects are selected
-                    Z = (
-                        edge.centerOfCurvatureAt(0)
-                        - objs[0].Shape.Solids[0].CenterOfMass
-                    )
+                    Z = edge.centerOfCurvatureAt(0) - objs[0].Shape.Solids[0].CenterOfMass
                 else:  # ...no pype objects are selected
                     Z = edge.tangentAt(0).cross(edge.normalAt(0))
                 clist.append(makeCap(propList, edge.centerOfCurvatureAt(0), Z))
@@ -752,9 +731,7 @@ def makePypeLine2(
         a.ViewObject.ShapeColor = color
         if len(FreeCADGui.Selection.getSelection()) == 1:
             obj = FreeCADGui.Selection.getSelection()[0]
-            isWire = (
-                hasattr(obj, "Shape") and obj.Shape.Edges
-            )  # type(obj.Shape)==Part.Wire
+            isWire = hasattr(obj, "Shape") and obj.Shape.Edges  # type(obj.Shape)==Part.Wire
             isSketch = hasattr(obj, "TypeId") and obj.TypeId == "Sketcher::SketchObject"
             if isWire or isSketch:
                 a.Base = obj
@@ -769,9 +746,7 @@ def makePypeLine2(
         a = FreeCAD.ActiveDocument.getObjectsByLabel(pl)[0]
         group = FreeCAD.ActiveDocument.getObjectsByLabel(a.Group)[0]
         a.Proxy.update(a, fCmd.edges())
-        FreeCAD.Console.PrintWarning(
-            "Objects added to pypeline's group " + a.Group + "\n"
-        )
+        FreeCAD.Console.PrintWarning("Objects added to pypeline's group " + a.Group + "\n")
     return a
 
 
@@ -826,8 +801,7 @@ def updatePLColor(sel=None, color=None):
                         o.ViewObject.ShapeColor = color
                     elif o.PType == "PypeBranch":
                         for e in [
-                            FreeCAD.ActiveDocument.getObject(name)
-                            for name in o.Tubes + o.Curves
+                            FreeCAD.ActiveDocument.getObject(name) for name in o.Tubes + o.Curves
                         ]:
                             e.ViewObject.ShapeColor = color
     else:
@@ -863,9 +837,7 @@ def alignTheTube():
         com1, com2 = [t.Shape.Solids[0].CenterOfMass for t in [t1, t2]]
         if isElbow(t2):
             pass
-        elif (com1 - d1.centerOfCurvatureAt(0)).dot(
-            com2 - d1.centerOfCurvatureAt(0)
-        ) > 0:
+        elif (com1 - d1.centerOfCurvatureAt(0)).dot(com2 - d1.centerOfCurvatureAt(0)) > 0:
             reverseTheTube(FreeCADGui.Selection.getSelectionEx()[:2][1])
     except:
         pass
@@ -947,9 +919,7 @@ def placeTheElbow(c, v1=None, v2=None, P=None):
         c.BendAngle = ang
         rot1 = FreeCAD.Rotation(rounded(fCmd.beamAx(c, FreeCAD.Vector(0, 0, 1))), ortho)
         c.Placement.Rotation = rot1.multiply(c.Placement.Rotation)
-        rot2 = FreeCAD.Rotation(
-            rounded(fCmd.beamAx(c, FreeCAD.Vector(1, 1, 0))), bisect
-        )
+        rot2 = FreeCAD.Rotation(rounded(fCmd.beamAx(c, FreeCAD.Vector(1, 1, 0))), bisect)
         c.Placement.Rotation = rot2.multiply(c.Placement.Rotation)
         if not P:
             P = c.Placement.Base
@@ -993,9 +963,7 @@ def placeThePype(pypeObject, port=0, target=None, targetPort=0):
     The pype shall be selected to the circular edge nearest to the port concerned.
     """
     pos = Z = FreeCAD.Vector()
-    if (
-        target and hasattr(target, "PType") and hasattr(target, "Ports")
-    ):  # target is given
+    if target and hasattr(target, "PType") and hasattr(target, "Ports"):  # target is given
         pos = portsPos(target)[targetPort]
         Z = portsDir(target)[targetPort]
     else:  # find target
@@ -1055,9 +1023,7 @@ def extendTheTubes2intersection(pipe1=None, pipe2=None, both=True):
         try:
             pipe1, pipe2 = fCmd.beams()[:2]
         except:
-            FreeCAD.Console.PrintError(
-                "Insufficient arguments for extendTheTubes2intersection\n"
-            )
+            FreeCAD.Console.PrintError("Insufficient arguments for extendTheTubes2intersection\n")
     P = fCmd.intersectionCLines(pipe1, pipe2)
     if P != None:
         fCmd.extendTheBeam(pipe1, P)
@@ -1140,9 +1106,7 @@ def laydownTheTube(pipe=None, refFace=None, support=None):
         ):
             dist = rounded(
                 refFace.normalAt(0, 0).multiply(
-                    refFace.normalAt(0, 0).dot(
-                        pipe.Placement.Base - refFace.CenterOfMass
-                    )
+                    refFace.normalAt(0, 0).dot(pipe.Placement.Base - refFace.CenterOfMass)
                     - float(pipe.OD) / 2
                 )
             )
@@ -1151,9 +1115,7 @@ def laydownTheTube(pipe=None, refFace=None, support=None):
             else:
                 pipe.Placement.move(dist.multiply(-1))
         else:
-            FreeCAD.Console.PrintError(
-                "Face is not flat or not parallel to axis of pipe\n"
-            )
+            FreeCAD.Console.PrintError("Face is not flat or not parallel to axis of pipe\n")
     except:
         FreeCAD.Console.PrintError("Wrong selection\n")
 
@@ -1205,7 +1167,7 @@ def getElbowPort(elbow, portId=0):
 def rotateTheElbowPort(curve=None, port=0, ang=45):
     """
     rotateTheElbowPort(curve=None, port=0, ang=45)
-     Rotates one curve aroud one of its circular edges.
+     Rotates one curve around one of its circular edges.
     """
     if curve == None:
         try:
@@ -1389,13 +1351,9 @@ def attachToTube(port=None):
                 if p.PType == "Elbow":
                     p.AttachmentOffset = FreeCAD.Placement(
                         FreeCAD.Vector(0, 0, p.Ports[0].Length),
-                        FreeCAD.Rotation(
-                            p.Ports[1], FreeCAD.Vector(0, 0, 1).negative()
-                        ),
+                        FreeCAD.Rotation(p.Ports[1], FreeCAD.Vector(0, 0, 1).negative()),
                     )
-                FreeCAD.Console.PrintMessage(
-                    "%s attached to %s\n" % (p.Label, tube.Label)
-                )
+                FreeCAD.Console.PrintMessage("%s attached to %s\n" % (p.Label, tube.Label))
         else:
             for p in pypes:
                 p.MapMode = "Deactivated"

@@ -130,9 +130,7 @@ class PieMenu:
         self.menu = QtGui.QMenu(mw)
         self.menuSize = 0
         self.menu.setStyleSheet(styleContainer)
-        self.menu.setWindowFlags(
-            self.menu.windowFlags() | QtCore.Qt.FramelessWindowHint
-        )
+        self.menu.setWindowFlags(self.menu.windowFlags() | QtCore.Qt.FramelessWindowHint)
         self.menu.setAttribute(QtCore.Qt.WA_TranslucentBackground)
         if compositingManager:
             pass
@@ -186,12 +184,8 @@ class PieMenu:
             button.setDefaultAction(commands[commands.index(i)])
             button.setGeometry(0, 0, buttonSize, buttonSize)
             button.setIconSize(QtCore.QSize(icon, icon))
-            button.setProperty(
-                "ButtonX", self.radius * (math.cos(angle * num + angleStart))
-            )
-            button.setProperty(
-                "ButtonY", self.radius * (math.sin(angle * num + angleStart))
-            )
+            button.setProperty("ButtonX", self.radius * (math.cos(angle * num + angleStart)))
+            button.setProperty("ButtonY", self.radius * (math.sin(angle * num + angleStart)))
             self.buttons.append(button)
             num = num + 1
         buttonClose = closeButton()
@@ -210,10 +204,7 @@ class PieMenu:
 
     def showAtMouse(self):
         actionDict = dict(
-            [
-                (a.objectName(), a)
-                for a in FreeCADGui.getMainWindow().findChildren(QtGui.QAction)
-            ]
+            [(a.objectName(), a) for a in FreeCADGui.getMainWindow().findChildren(QtGui.QAction)]
         )
         try:
             actions.pop("")
@@ -245,9 +236,7 @@ class PieMenu:
                     )
                     i.setVisible(True)
                 self.menu.popup(
-                    QtCore.QPoint(
-                        pos.x() - self.menuSize / 2, pos.y() - self.menuSize / 2
-                    )
+                    QtCore.QPoint(pos.x() - self.menuSize / 2, pos.y() - self.menuSize / 2)
                 )
 
 
@@ -259,9 +248,7 @@ class QkMenu(object):
         self.gridLayout = QtGui.QGridLayout(Dialog)
         self.gridLayout.setObjectName("gridLayout")
         self.comboRating = QtGui.QComboBox(Dialog)
-        sizePolicy = QtGui.QSizePolicy(
-            QtGui.QSizePolicy.MinimumExpanding, QtGui.QSizePolicy.Fixed
-        )
+        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.MinimumExpanding, QtGui.QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.comboRating.sizePolicy().hasHeightForWidth())
@@ -273,9 +260,7 @@ class QkMenu(object):
         self.labRating.setObjectName("labRating")
         self.gridLayout.addWidget(self.labRating, 1, 0, 1, 1)
         self.comboPL = QtGui.QComboBox(Dialog)
-        sizePolicy = QtGui.QSizePolicy(
-            QtGui.QSizePolicy.MinimumExpanding, QtGui.QSizePolicy.Fixed
-        )
+        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.MinimumExpanding, QtGui.QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.comboPL.sizePolicy().hasHeightForWidth())
@@ -410,9 +395,7 @@ class pQM(DialogQM):
             L = float(self.QM.lineEdit.text())
         else:
             L = 1000
-        pCmd.doPipes(
-            [d["PSize"], float(d["OD"]), float(d["thk"]), L], FreeCAD.__activePypeLine__
-        )
+        pCmd.doPipes([d["PSize"], float(d["OD"]), float(d["thk"]), L], FreeCAD.__activePypeLine__)
         super(pQM, self).go()
 
 
@@ -517,9 +500,7 @@ class cQM(DialogQM):
     def go(self):
         d = self.dictList[self.QM.listSize.currentRow()]
         proplist = []
-        pCmd.doCaps(
-            [d["PSize"], float(d["OD"]), float(d["thk"])], FreeCAD.__activePypeLine__
-        )
+        pCmd.doCaps([d["PSize"], float(d["OD"]), float(d["thk"])], FreeCAD.__activePypeLine__)
         super(cQM, self).go()
 
 

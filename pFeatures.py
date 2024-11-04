@@ -27,6 +27,7 @@ vZ = FreeCAD.Vector(0, 0, 1)
 
 ################ CLASSES ###########################
 
+
 class pypeType(object):
     def __init__(self, obj):
         obj.Proxy = self
@@ -106,6 +107,7 @@ class pypeType(object):
                             nearest = i
                 return nearest, pos, Z
 
+
 class Pipe(pypeType):
     """Class for object PType="Pipe"
     Pipe(obj,[PSize="DN50",OD=60.3,thk=3, H=100])
@@ -140,7 +142,9 @@ class Pipe(pypeType):
             "ID",
             "Pipe",
             QT_TRANSLATE_NOOP("App::Property", "Inside diameter"),
-        ).ID = obj.OD - 2 * obj.thk
+        ).ID = (
+            obj.OD - 2 * obj.thk
+        )
         obj.addProperty(
             "App::PropertyLength",
             "Height",
@@ -152,7 +156,9 @@ class Pipe(pypeType):
             "Profile",
             "Pipe",
             QT_TRANSLATE_NOOP("App::Property", "Section dim."),
-        ).Profile = str(obj.OD) + "x" + str(obj.thk)
+        ).Profile = (
+            str(obj.OD) + "x" + str(obj.thk)
+        )
 
     def onChanged(self, fp, prop):
         if prop == "ID" and fp.ID < fp.OD:
@@ -194,6 +200,7 @@ class Pipe(pypeType):
         fp.Ports = [FreeCAD.Vector(), FreeCAD.Vector(0, 0, float(fp.Height))]
         super(Pipe, self).execute(fp)  # perform common operations
 
+
 class Elbow(pypeType):
     """Class for object PType="Elbow"
     Elbow(obj,[PSize="DN50",OD=60.3,thk=3,BA=90,BR=45.225])
@@ -229,7 +236,9 @@ class Elbow(pypeType):
             "ID",
             "Elbow",
             QT_TRANSLATE_NOOP("App::Property", "Inside diameter"),
-        ).ID = obj.OD - 2 * obj.thk
+        ).ID = (
+            obj.OD - 2 * obj.thk
+        )
         obj.addProperty(
             "App::PropertyAngle",
             "BendAngle",
@@ -247,7 +256,9 @@ class Elbow(pypeType):
             "Profile",
             "Elbow",
             QT_TRANSLATE_NOOP("App::Property", "Section dim."),
-        ).Profile = str(obj.OD) + "x" + str(obj.thk)
+        ).Profile = (
+            str(obj.OD) + "x" + str(obj.thk)
+        )
         # obj.Ports=[FreeCAD.Vector(1,0,0),FreeCAD.Vector(0,1,0)]
         self.execute(obj)
 
@@ -261,8 +272,8 @@ class Elbow(pypeType):
             try:
                 edges = parent.Base.Shape.Edges
                 i = parent.Curves.index(fp.Name)
-                v1,v2=[e.tangentAt(0) for e in edges[i:i+2]]
-                pCmd.placeTheElbow(fp,v1,v2)
+                v1, v2 = [e.tangentAt(0) for e in edges[i : i + 2]]
+                pCmd.placeTheElbow(fp, v1, v2)
             except Exception as e:
                 #  FreeCAD.Console.PrintWarning(str(e) + "\n")
                 pass
@@ -283,25 +294,17 @@ class Elbow(pypeType):
             ## move the cl so that Placement.Base is the center of elbow ##
             from math import pi, cos, sqrt
 
-            d = fp.BendRadius * sqrt(2) - fp.BendRadius / cos(
-                fp.BendAngle / 180 * pi / 2
-            )
+            d = fp.BendRadius * sqrt(2) - fp.BendRadius / cos(fp.BendAngle / 180 * pi / 2)
             P = FreeCAD.Vector(-d * cos(pi / 4), -d * cos(pi / 4), 0)
             R.translate(P)
             ## calculate Ports position ##
             fp.Ports = [R.valueAt(R.FirstParameter), R.valueAt(R.LastParameter)]
             ## make the shape of the elbow ##
-            c = Part.makeCircle(
-                fp.OD / 2, fp.Ports[0], R.tangentAt(R.FirstParameter) * -1
-            )
+            c = Part.makeCircle(fp.OD / 2, fp.Ports[0], R.tangentAt(R.FirstParameter) * -1)
             b = Part.makeSweepSurface(R, c)
             p1 = Part.Face(Part.Wire(c))
             p2 = Part.Face(
-                Part.Wire(
-                    Part.makeCircle(
-                        fp.OD / 2, fp.Ports[1], R.tangentAt(R.LastParameter)
-                    )
-                )
+                Part.Wire(Part.makeCircle(fp.OD / 2, fp.Ports[1], R.tangentAt(R.LastParameter)))
             )
             try:
                 sol = Part.Solid(Part.Shell([b.Faces[0], p1.Faces[0], p2.Faces[0]]))
@@ -314,7 +317,8 @@ class Elbow(pypeType):
                     fp.Shape = sol
                 super(Elbow, self).execute(fp)  # perform common operations
             except Part.OCCError as occer:
-                 FreeCAD.Console.PrintWarning(str(occer) + "\n")
+                FreeCAD.Console.PrintWarning(str(occer) + "\n")
+
 
 class Flange(pypeType):
     """Class for object PType="Flange"
@@ -449,14 +453,10 @@ class Flange(pypeType):
                     )
                 )
             )
-            hole.rotate(
-                FreeCAD.Vector(0, 0, 0), FreeCAD.Vector(0, 0, 1), 360.0 / fp.n / 2
-            )
+            hole.rotate(FreeCAD.Vector(0, 0, 0), FreeCAD.Vector(0, 0, 1), 360.0 / fp.n / 2)
             for i in list(range(fp.n)):
                 base = base.cut(hole)
-                hole.rotate(
-                    FreeCAD.Vector(0, 0, 0), FreeCAD.Vector(0, 0, 1), 360.0 / fp.n
-                )
+                hole.rotate(FreeCAD.Vector(0, 0, 0), FreeCAD.Vector(0, 0, 1), 360.0 / fp.n)
         flange = base.extrude(FreeCAD.Vector(0, 0, fp.t))
         try:  # Flange2: raised-face and welding-neck
             if fp.trf > 0 and fp.drf > 0:
@@ -465,15 +465,16 @@ class Flange(pypeType):
                 )
                 flange = flange.fuse(rf)
             if fp.dwn > 0 and fp.twn > 0 and fp.ODp > 0:
-                wn = Part.makeCone(
-                    fp.dwn / 2, fp.ODp / 2, fp.twn, vZ * float(fp.t)
-                ).cut(Part.makeCylinder(fp.d / 2, fp.twn, vZ * float(fp.t)))
+                wn = Part.makeCone(fp.dwn / 2, fp.ODp / 2, fp.twn, vZ * float(fp.t)).cut(
+                    Part.makeCylinder(fp.d / 2, fp.twn, vZ * float(fp.t))
+                )
                 flange = flange.fuse(wn)
         except:
             pass
         fp.Shape = flange
         fp.Ports = [FreeCAD.Vector(), FreeCAD.Vector(0, 0, float(fp.t))]
         super(Flange, self).execute(fp)  # perform common operations
+
 
 class Reduct(pypeType):
     """Class for object PType="Reduct"
@@ -490,9 +491,7 @@ class Reduct(pypeType):
     If H is None or 0, the length of the reduction is calculated as 3x(OD-OD2).
     """
 
-    def __init__(
-        self, obj, DN="DN50", OD=60.3, OD2=48.3, thk=3, thk2=None, H=None, conc=True
-    ):
+    def __init__(self, obj, DN="DN50", OD=60.3, OD2=48.3, thk=3, thk2=None, H=None, conc=True):
         # initialize the parent class
         super(Reduct, self).__init__(obj)
         # define common properties
@@ -551,7 +550,9 @@ class Reduct(pypeType):
             "Profile",
             "Reduct",
             QT_TRANSLATE_NOOP("App::Property", "Section dim."),
-        ).Profile = str(obj.OD) + "x" + str(obj.OD2)
+        ).Profile = (
+            str(obj.OD) + "x" + str(obj.OD2)
+        )
         obj.addProperty(
             "App::PropertyBool",
             "conc",
@@ -571,20 +572,14 @@ class Reduct(pypeType):
                 sol = Part.makeCone(fp.OD / 2, fp.OD2 / 2, fp.Height)
                 if fp.thk < fp.OD / 2 and fp.thk2 < fp.OD2 / 2:
                     fp.Shape = sol.cut(
-                        Part.makeCone(
-                            fp.OD / 2 - fp.thk, fp.OD2 / 2 - fp.thk2, fp.Height
-                        )
+                        Part.makeCone(fp.OD / 2 - fp.thk, fp.OD2 / 2 - fp.thk2, fp.Height)
                     )
                 else:
                     fp.Shape = sol
                 fp.Ports = [FreeCAD.Vector(), FreeCAD.Vector(0, 0, float(fp.Height))]
             else:
-                C = Part.makeCircle(
-                    fp.OD / 2, FreeCAD.Vector(0, 0, 0), FreeCAD.Vector(0, 0, 1)
-                )
-                c = Part.makeCircle(
-                    fp.OD2 / 2, FreeCAD.Vector(0, 0, 0), FreeCAD.Vector(0, 0, 1)
-                )
+                C = Part.makeCircle(fp.OD / 2, FreeCAD.Vector(0, 0, 0), FreeCAD.Vector(0, 0, 1))
+                c = Part.makeCircle(fp.OD2 / 2, FreeCAD.Vector(0, 0, 0), FreeCAD.Vector(0, 0, 1))
                 c.translate(FreeCAD.Vector((fp.OD - fp.OD2) / 2, 0, fp.Height))
                 sol = Part.makeLoft([c, C], True)
                 if fp.thk < fp.OD / 2 and fp.thk2 < fp.OD2 / 2:
@@ -607,6 +602,7 @@ class Reduct(pypeType):
                     FreeCAD.Vector((fp.OD - fp.OD2) / 2, 0, float(fp.Height)),
                 ]
         super(Reduct, self).execute(fp)  # perform common operations
+
 
 class Cap(pypeType):
     """Class for object PType="Cap"
@@ -641,13 +637,17 @@ class Cap(pypeType):
             "ID",
             "Cap",
             QT_TRANSLATE_NOOP("App::Property", "Inside diameter"),
-        ).ID = obj.OD - 2 * obj.thk
+        ).ID = (
+            obj.OD - 2 * obj.thk
+        )
         obj.addProperty(
             "App::PropertyString",
             "Profile",
             "Cap",
             QT_TRANSLATE_NOOP("App::Property", "Section dim."),
-        ).Profile = str(obj.OD) + "x" + str(obj.thk)
+        ).Profile = (
+            str(obj.OD) + "x" + str(obj.thk)
+        )
 
     def onChanged(self, fp, prop):
         return None
@@ -669,16 +669,13 @@ class Cap(pypeType):
         common = sfera.common(cilindro)
         fil = common.makeFillet(D / 6.5, common.Edges)
         cut = fil.cut(
-            Part.makeCylinder(
-                D * 1.1, D * 2, FreeCAD.Vector(0, 0, 0), FreeCAD.Vector(0, 0, -1)
-            )
+            Part.makeCylinder(D * 1.1, D * 2, FreeCAD.Vector(0, 0, 0), FreeCAD.Vector(0, 0, -1))
         )
-        cap = cut.makeThickness(
-            [f for f in cut.Faces if type(f.Surface) == Part.Plane], -s, 1.0e-3
-        )
+        cap = cut.makeThickness([f for f in cut.Faces if type(f.Surface) == Part.Plane], -s, 1.0e-3)
         fp.Shape = cap
         fp.Ports = [FreeCAD.Vector()]
         super(Cap, self).execute(fp)  # perform common operations
+
 
 class PypeLine2(pypeType):
     """Class for object PType="PypeLine2"
@@ -700,9 +697,7 @@ class PypeLine2(pypeType):
     with possibility to group them automatically and extract the part-list.
     """
 
-    def __init__(
-        self, obj, DN="DN50", PRating="SCH-STD", OD=60.3, thk=3, BR=None, lab=None
-    ):
+    def __init__(self, obj, DN="DN50", PRating="SCH-STD", OD=60.3, thk=3, BR=None, lab=None):
         # initialize the parent class
         super(PypeLine2, self).__init__(obj)
         # define common properties
@@ -737,10 +732,10 @@ class PypeLine2(pypeType):
             "Group",
             "PypeLine2",
             QT_TRANSLATE_NOOP("App::Property", "The group."),
-        ).Group = obj.Label + "_pieces"
-        group = FreeCAD.activeDocument().addObject(
-            "App::DocumentObjectGroup", obj.Group
+        ).Group = (
+            obj.Label + "_pieces"
         )
+        group = FreeCAD.activeDocument().addObject("App::DocumentObjectGroup", obj.Group)
         group.addObject(obj)
         FreeCAD.Console.PrintWarning("Created group " + obj.Group + "\n")
         obj.addProperty("App::PropertyLink", "Base", "PypeLine2", "the edges")
@@ -750,9 +745,7 @@ class PypeLine2(pypeType):
             fp.InList[0].Label = fp.Label + "_pieces"
             fp.Group = fp.Label + "_pieces"
         if hasattr(fp, "Base") and prop == "Base" and fp.Base:
-            FreeCAD.Console.PrintWarning(
-                fp.Label + " Base has changed to " + fp.Base.Label + "\n"
-            )
+            FreeCAD.Console.PrintWarning(fp.Label + " Base has changed to " + fp.Base.Label + "\n")
         if prop == "OD":
             fp.BendRadius = 0.75 * fp.OD
 
@@ -782,9 +775,7 @@ class PypeLine2(pypeType):
             pCmd.moveToPyLi(p, fp.Label)
             pipes.append(p)
             n = len(pipes) - 1
-            if n and not fCmd.isParallel(
-                fCmd.beamAx(pipes[n]), fCmd.beamAx(pipes[n - 1])
-            ):
+            if n and not fCmd.isParallel(fCmd.beamAx(pipes[n]), fCmd.beamAx(pipes[n - 1])):
                 # ---Create the curve---
                 propList = [fp.PSize, fp.OD, fp.thk, 90, fp.BendRadius]
                 c = pCmd.makeElbowBetweenThings(edges[n], edges[n - 1], propList)
@@ -799,19 +790,16 @@ class PypeLine2(pypeType):
     def execute(self, fp):
         return None
 
+
 class ViewProviderPypeLine:
-  def __getstate__(self):
-    return None
-  def __setstate__(self, data):
-    return None
-  def __init__(self,vobj):
-    vobj.Proxy = self
-  def getIcon(self):
-    from os.path import join, dirname, abspath
-    return join(dirname(abspath(__file__)),"iconz","pypeline.svg")
-  def attach(self, vobj):
-    self.ViewObject = vobj
-    self.Object = vobj.Object
+    def __getstate__(self):
+        return None
+
+    def __setstate__(self, data):
+        return None
+
+    def __init__(self, vobj):
+        vobj.Proxy = self
 
     def getIcon(self):
         from os.path import join, dirname, abspath
@@ -821,6 +809,16 @@ class ViewProviderPypeLine:
     def attach(self, vobj):
         self.ViewObject = vobj
         self.Object = vobj.Object
+
+        def getIcon(self):
+            from os.path import join, dirname, abspath
+
+            return join(dirname(abspath(__file__)), "iconz", "pypeline.svg")
+
+        def attach(self, vobj):
+            self.ViewObject = vobj
+            self.Object = vobj.Object
+
 
 class Ubolt:
     """Class for object PType="Clamp"
@@ -889,9 +887,7 @@ class Ubolt:
 
     def execute(self, fp):
         fp.thread = "M" + str(float(fp.d))
-        c = Part.makeCircle(
-            fp.C / 2, FreeCAD.Vector(0, 0, 0), FreeCAD.Vector(0, 0, 1), 0, 180
-        )
+        c = Part.makeCircle(fp.C / 2, FreeCAD.Vector(0, 0, 0), FreeCAD.Vector(0, 0, 1), 0, 180)
         l1 = Part.makeLine((fp.C / 2, 0, 0), (fp.C / 2, fp.C / 2 - fp.H, 0))
         l2 = Part.makeLine((-fp.C / 2, 0, 0), (-fp.C / 2, fp.C / 2 - fp.H, 0))
         p = Part.Face(
@@ -904,6 +900,7 @@ class Ubolt:
         path = Part.Wire([c, l1, l2])
         fp.Shape = path.makePipe(p)
         fp.Ports = [FreeCAD.Vector(0, 0, 1)]
+
 
 class Shell:
     """
@@ -961,9 +958,7 @@ class Shell:
         base = [vectL, vectW, vectH]
         outline = []
         for i in range(3):
-            f1 = Part.Face(
-                Part.makePolygon([O, base[0], base[0] + base[1], base[1], O])
-            )
+            f1 = Part.Face(Part.makePolygon([O, base[0], base[0] + base[1], base[1], O]))
             outline.append(f1)
             f2 = f1.copy()
             f2.translate(base[2])
@@ -978,6 +973,7 @@ class Shell:
             FreeCAD.Vector(fp.thk1, fp.thk1, fp.H - 2 * fp.thk2),
         )
         fp.Shape = Part.makeCompound([tank, top])
+
 
 class ViewProviderPypeBranch:
     def __init__(self, vobj):
@@ -1025,6 +1021,7 @@ class ViewProviderPypeBranch:
     def onDelete(self, feature, subelements):  # subelements is a tuple of strings
         return True
 
+
 class Valve(pypeType):
     """Class for object PType="Valve"
     Pipe(obj,[PSize="DN50",VType="ball", OD=60.3, H=100])
@@ -1064,15 +1061,14 @@ class Valve(pypeType):
 
     def execute(self, fp):
         c = Part.makeCone(fp.OD / 2, fp.OD / 5, fp.Height / 2)
-        v = c.fuse(
-            c.mirror(FreeCAD.Vector(0, 0, fp.Height / 2), FreeCAD.Vector(0, 0, 1))
-        )
+        v = c.fuse(c.mirror(FreeCAD.Vector(0, 0, fp.Height / 2), FreeCAD.Vector(0, 0, 1)))
         if fp.PRating.find("ball") + 1 or fp.PRating.find("globe") + 1:
             r = min(fp.Height * 0.45, fp.OD / 2)
             v = v.fuse(Part.makeSphere(r, FreeCAD.Vector(0, 0, fp.Height / 2)))
         fp.Shape = v
         fp.Ports = [FreeCAD.Vector(), FreeCAD.Vector(0, 0, float(fp.Height))]
         super(Valve, self).execute(fp)  # perform common operations
+
 
 class PypeBranch2(pypeType):  # use AttachExtensionPython
     """Class for object PType="PypeBranch2"
@@ -1082,9 +1078,7 @@ class PypeBranch2(pypeType):  # use AttachExtensionPython
       type(base)=DWire or SketchObject
     """
 
-    def __init__(
-        self, obj, base, DN="DN50", PRating="SCH-STD", OD=60.3, thk=3, BR=None
-    ):
+    def __init__(self, obj, base, DN="DN50", PRating="SCH-STD", OD=60.3, thk=3, BR=None):
         # initialize the parent class
         super(PypeBranch2, self).__init__(obj)
         # define common properties
@@ -1154,18 +1148,14 @@ class PypeBranch2(pypeType):  # use AttachExtensionPython
                 curve.BendRadius = BR
         if prop == "OD" and hasattr(fp, "Tubes") and hasattr(fp, "Curves"):
             OD = fp.OD
-            for obj in [
-                FreeCAD.ActiveDocument.getObject(name) for name in fp.Tubes + fp.Curves
-            ]:
+            for obj in [FreeCAD.ActiveDocument.getObject(name) for name in fp.Tubes + fp.Curves]:
                 if obj.PType == "Elbow":
                     obj.BendRadius = OD * 0.75
                 obj.OD = OD
             fp.BendRadius = OD * 0.75
         if prop == "thk" and hasattr(fp, "Tubes") and hasattr(fp, "Curves"):
             thk = fp.thk
-            for obj in [
-                FreeCAD.ActiveDocument.getObject(name) for name in fp.Tubes + fp.Curves
-            ]:
+            for obj in [FreeCAD.ActiveDocument.getObject(name) for name in fp.Tubes + fp.Curves]:
                 if hasattr(obj, "thk"):
                     obj.thk = thk
 
@@ -1188,17 +1178,11 @@ class PypeBranch2(pypeType):  # use AttachExtensionPython
                 offset = 0
                 # ---Create the tube---
                 if i > 0:
-                    alfa = (
-                        e.tangentAt(0).getAngle(fp.Base.Shape.Edges[i - 1].tangentAt(0))
-                        / 2
-                    )
+                    alfa = e.tangentAt(0).getAngle(fp.Base.Shape.Edges[i - 1].tangentAt(0)) / 2
                     L -= R * tan(alfa)
                     offset = R * tan(alfa)
                 if i < (len(fp.Base.Shape.Edges) - 1):
-                    alfa = (
-                        e.tangentAt(0).getAngle(fp.Base.Shape.Edges[i + 1].tangentAt(0))
-                        / 2
-                    )
+                    alfa = e.tangentAt(0).getAngle(fp.Base.Shape.Edges[i + 1].tangentAt(0)) / 2
                     L -= R * tan(alfa)
                 eSupport = "Edge" + str(i + 1)
                 t = pCmd.makePipe([fp.PSize, float(fp.OD), float(fp.thk), L])
@@ -1233,16 +1217,12 @@ class PypeBranch2(pypeType):  # use AttachExtensionPython
 
     def purge(self, fp):
         if hasattr(fp, "Tubes"):
-            fp.removeObjects(
-                [FreeCAD.ActiveDocument.getObject(name) for name in fp.Tubes]
-            )
+            fp.removeObjects([FreeCAD.ActiveDocument.getObject(name) for name in fp.Tubes])
             for name in fp.Tubes:
                 FreeCAD.ActiveDocument.removeObject(name)
             fp.Tubes = []
         if hasattr(fp, "Curves"):
-            fp.removeObjects(
-                [FreeCAD.ActiveDocument.getObject(name) for name in fp.Curves]
-            )
+            fp.removeObjects([FreeCAD.ActiveDocument.getObject(name) for name in fp.Curves])
             for name in fp.Curves:
                 FreeCAD.ActiveDocument.removeObject(name)
             fp.Curves = []

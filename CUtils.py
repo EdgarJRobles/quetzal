@@ -101,13 +101,9 @@ class offsetWorkPlane:
         if hasattr(FreeCAD, "DraftWorkingPlane") and hasattr(FreeCADGui, "Snapper"):
             import uCmd
 
-            s = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/Draft").GetInt(
-                "gridSize"
-            )
+            s = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/Draft").GetInt("gridSize")
             sc = [float(x * s) for x in [1, 1, 0.2]]
-            arrow = uCmd.arrow(
-                FreeCAD.DraftWorkingPlane.getPlacement(), scale=sc, offset=s
-            )
+            arrow = uCmd.arrow(FreeCAD.DraftWorkingPlane.getPlacement(), scale=sc, offset=s)
             from PySide.QtGui import QInputDialog as qid
 
             translate = FreeCAD.Qt.translate
@@ -163,7 +159,9 @@ class moveHandle:
             "Pixmap": get_icon_path("moveHandle"),
             "Accel": "M,H",
             "MenuText": QT_TRANSLATE_NOOP("Quetzal_MoveHandle", "Move objects"),
-            "ToolTip": QT_TRANSLATE_NOOP("Quetzal_MoveHandle", "Move quickly objects inside viewport"),
+            "ToolTip": QT_TRANSLATE_NOOP(
+                "Quetzal_MoveHandle", "Move quickly objects inside viewport"
+            ),
         }
 
 

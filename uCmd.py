@@ -36,9 +36,7 @@ def setWP():  # TARGET [working]: deal with App::Parts
     elif curves:
         normal = curves[0].tangentAt(0).cross(curves[0].normalAt(0))
     elif len(straight) > 1:
-        if straight and not fCmd.isParallel(
-            straight[0].tangentAt(0), straight[1].tangentAt(0)
-        ):
+        if straight and not fCmd.isParallel(straight[0].tangentAt(0), straight[1].tangentAt(0)):
             normal = straight[0].tangentAt(0).cross(straight[1].tangentAt(0))
     elif FreeCADGui.Selection.getSelection():
         normal = FreeCAD.DraftWorkingPlane.getRotation().multVec(Z)
@@ -137,9 +135,7 @@ class arrow(object):
         self.moveto(pl)
 
     def closeArrow(self):
-        self.view.removeEventCallbackPivy(
-            coin.SoMouseButtonEvent.getClassTypeId(), self.cb
-        )
+        self.view.removeEventCallbackPivy(coin.SoMouseButtonEvent.getClassTypeId(), self.cb)
         self.sg.removeChild(self.node)
 
     def moveto(self, pl):
@@ -147,9 +143,7 @@ class arrow(object):
 
         rotx90 = FreeCAD.Base.Rotation(FreeCAD.Vector(0, 1, 0), FreeCAD.Vector(0, 0, 1))
         self.Placement = pl
-        self.transform.rotation.setValue(
-            tuple(self.Placement.Rotation.multiply(rotx90).Q)
-        )
+        self.transform.rotation.setValue(tuple(self.Placement.Rotation.multiply(rotx90).Q))
         offsetV = self.Placement.Rotation.multVec(FreeCAD.Vector(0, 0, self.offset))
         self.transform.translation.setValue(tuple(self.Placement.Base + offsetV))
 
@@ -204,14 +198,10 @@ class arrow_move(arrow):
         if not pl:
             pl = FreeCAD.Placement()
         # draw arrow
-        super(arrow_move, self).__init__(
-            pl=pl, scale=[M / 2, M / 2, M / 10], offset=M / 2
-        )
+        super(arrow_move, self).__init__(pl=pl, scale=[M / 2, M / 2, M / 10], offset=M / 2)
 
     def pickAction(self, path=None, event=None, arg=None):
-        FreeCAD.activeDocument().openTransaction(
-            translate("uCmd", "Quick move", "Transaction")
-        )
+        FreeCAD.activeDocument().openTransaction(translate("uCmd", "Quick move", "Transaction"))
         if event.wasCtrlDown():
             k = -1 * float(self.edit.text())
         else:
@@ -264,9 +254,7 @@ class handleDialog(dodoDialogs.protoTypeDialog):
         if self.arrow:
             self.arrow.closeArrow()
         M = 100.0
-        moveSet = [
-            o for o in FreeCADGui.Selection.getSelection() if hasattr(o, "Shape")
-        ]
+        moveSet = [o for o in FreeCADGui.Selection.getSelection() if hasattr(o, "Shape")]
         if moveSet:
             bb = moveSet[0].Shape.BoundBox
             for o in moveSet:
@@ -284,9 +272,7 @@ class handleDialog(dodoDialogs.protoTypeDialog):
             direct = fCmd.edges()[0].tangentAt(0)
         # create the arrow_move object
         if direct:
-            pl.Rotation = FreeCAD.Rotation(FreeCAD.Vector(0, 0, 1), direct).multiply(
-                pl.Rotation
-            )
+            pl.Rotation = FreeCAD.Rotation(FreeCAD.Vector(0, 0, 1), direct).multiply(pl.Rotation)
             self.arrow = arrow_move(
                 self.form.edit1,
                 self.form.edit2,
@@ -365,15 +351,9 @@ class hackedLine(DraftTools.Line):
         self.hackedUI = FreeCADGui.PySideUic.loadUi(dialogPath)
         self.hackedUI.btnRot.clicked.connect(self.rotateWP)
         self.hackedUI.btnOff.clicked.connect(self.offsetWP)
-        self.hackedUI.btnXY.clicked.connect(
-            lambda: self.alignWP(FreeCAD.Vector(0, 0, 1))
-        )
-        self.hackedUI.btnXZ.clicked.connect(
-            lambda: self.alignWP(FreeCAD.Vector(0, 1, 0))
-        )
-        self.hackedUI.btnYZ.clicked.connect(
-            lambda: self.alignWP(FreeCAD.Vector(1, 0, 0))
-        )
+        self.hackedUI.btnXY.clicked.connect(lambda: self.alignWP(FreeCAD.Vector(0, 0, 1)))
+        self.hackedUI.btnXZ.clicked.connect(lambda: self.alignWP(FreeCAD.Vector(0, 1, 0)))
+        self.hackedUI.btnYZ.clicked.connect(lambda: self.alignWP(FreeCAD.Vector(1, 0, 0)))
         self.ui.layout.addWidget(self.hackedUI)
 
     def alignWP(self, norm):
@@ -382,9 +362,7 @@ class hackedLine(DraftTools.Line):
 
     def offsetWP(self):
         if hasattr(FreeCAD, "DraftWorkingPlane") and hasattr(FreeCADGui, "Snapper"):
-            s = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/Draft").GetInt(
-                "gridSize"
-            )
+            s = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/Draft").GetInt("gridSize")
             sc = [float(x * s) for x in [1, 1, 0.2]]
             varrow = arrow(FreeCAD.DraftWorkingPlane.getPlacement(), scale=sc, offset=s)
             offset = QInputDialog.getInt(
@@ -394,9 +372,7 @@ class hackedLine(DraftTools.Line):
             )
             if offset[1]:
                 offsetWP(offset[0])
-            FreeCADGui.ActiveDocument.ActiveView.getSceneGraph().removeChild(
-                varrow.node
-            )
+            FreeCADGui.ActiveDocument.ActiveView.getSceneGraph().removeChild(varrow.node)
 
     def rotateWP(self):
         self.form = uForms.rotWPForm()
@@ -437,9 +413,7 @@ class hackedLine(DraftTools.Line):
                         if self.hackedUI.cb1.isChecked():
                             rot = FreeCAD.DraftWorkingPlane.getPlacement().Rotation
                             normal = rot.multVec(FreeCAD.Vector(0, 0, 1))
-                            FreeCAD.DraftWorkingPlane.alignToPointAndAxis(
-                                self.point, normal
-                            )
+                            FreeCAD.DraftWorkingPlane.alignToPointAndAxis(self.point, normal)
                             FreeCADGui.Snapper.setGrid()
                         if not self.isWire and len(self.node) == 2:
                             self.finish(False, cont=True)

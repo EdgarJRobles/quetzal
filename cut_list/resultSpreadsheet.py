@@ -1,4 +1,4 @@
-# Heavily Inspired Code from 
+# Heavily Inspired Code from
 # https://github.com/furti/FreeCAD-Reporting/blob/master/report.py
 
 import FreeCAD
@@ -8,15 +8,18 @@ import string
 
 COLUMN_NAMES = list(string.ascii_uppercase)
 
+
 def literalText(text):
     return "'%s" % (text)
+
 
 def lineRange(startColumn, endColumn, lineNumber):
     return cellRange(startColumn, lineNumber, endColumn, lineNumber)
 
 
 def cellRange(startColumn, startLine, endColumn, endLine):
-    return '%s%s:%s%s' % (startColumn, startLine, endColumn, endLine)
+    return "%s%s:%s%s" % (startColumn, startLine, endColumn, endLine)
+
 
 def nextColumnName(actualColumnName):
     if actualColumnName is None:
@@ -50,28 +53,29 @@ class ResultSpreadsheet(object):
 
         return COLUMN_NAMES[nextIndex]
 
-
     def clearAll(self):
         self.spreadsheet.clearAll()
 
     def printEmptyLine(self):
         self.lineNumber += 1
 
-    def printHeader(self, header='HAEADER'):
+    def printHeader(self, header="HAEADER"):
         spreadsheet = self.spreadsheet
 
-        if header is None or header == '':
+        if header is None or header == "":
             return
 
-        headerCell = 'A%s' % (self.lineNumber)
+        headerCell = "A%s" % (self.lineNumber)
 
         self.setCellValue(headerCell, header)
-        spreadsheet.setStyle(headerCell, 'bold|underline', 'add')
+        spreadsheet.setStyle(headerCell, "bold|underline", "add")
 
-        spreadsheet.mergeCells(lineRange('A', COLUMN_NAMES[len(self.columnLabels)-1], self.lineNumber))
+        spreadsheet.mergeCells(
+            lineRange("A", COLUMN_NAMES[len(self.columnLabels) - 1], self.lineNumber)
+        )
 
         self.lineNumber += 1
-        self.updateMaxColumn('A')
+        self.updateMaxColumn("A")
 
         self.clearLine(self.lineNumber)
 
@@ -83,11 +87,10 @@ class ResultSpreadsheet(object):
         for columnLabel in self.columnLabels:
             columnName = self.getColumnName(columnLabel)
             cellName = f"{columnName}{self.lineNumber}"
-            
+
             self.setCellValue(cellName, columnLabel)
 
-        spreadsheet.setStyle(
-            lineRange('A', columnName, self.lineNumber), 'bold', 'add')
+        spreadsheet.setStyle(lineRange("A", columnName, self.lineNumber), "bold", "add")
 
         self.lineNumber += 1
         self.updateMaxColumn(columnName)
@@ -97,7 +100,7 @@ class ResultSpreadsheet(object):
     def printRows(self, rows):
         lineNumberBefore = self.lineNumber
 
-        columnName = 'A'
+        columnName = "A"
         for row in rows:
             columnName = None
 
@@ -110,18 +113,17 @@ class ResultSpreadsheet(object):
 
             self.lineNumber += 1
 
-        #if printResultInBold:
+        # if printResultInBold:
         #    self.spreadsheet.setStyle(
         #        cellRange('A', lineNumberBefore, columnName, self.lineNumber), 'bold', 'add')
 
         self.clearLine(self.lineNumber)
 
-
         self.updateMaxColumn(columnName)
 
     def setCellValue(self, cell, value):
         if value is None:
-            convertedValue = ''
+            convertedValue = ""
         elif isinstance(value, FreeCAD.Units.Quantity):
             convertedValue = value.UserString
         else:
@@ -164,7 +166,6 @@ class ResultSpreadsheet(object):
         while column is None or column != self.maxColumn:
             column = nextColumnName(column)
             cellName = f"{column}{lineNumberToDelete}"
-
 
             self.spreadsheet.clear(cellName)
 

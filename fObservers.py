@@ -47,18 +47,13 @@ class frameItObserver(frameObserverPrototype):
         if self.beam == None and hasattr(selex[len(selex) - 1].Object, "Height"):
             self.beam = selex[len(selex) - 1].Object
             FreeCAD.Console.PrintMessage("Beam selected\n")
-        elif (
-            self.edge == None
-            and selex[len(selex) - 1].SubObjects[0].ShapeType == "Edge"
-        ):
+        elif self.edge == None and selex[len(selex) - 1].SubObjects[0].ShapeType == "Edge":
             self.edge = selex[len(selex) - 1].SubObjects[0]
             FreeCAD.Console.PrintMessage("Edge selected\n")
         if self.edge != None and self.beam != None:
             fCmd.placeTheBeam(self.beam, self.edge)
             FreeCAD.Console.PrintMessage("Beam placed.\n")
-            FreeCAD.Console.PrintWarning(
-                "Select another beam and another edge.\n[ESC] to exit.\n"
-            )
+            FreeCAD.Console.PrintWarning("Select another beam and another edge.\n[ESC] to exit.\n")
             self.beam = self.edge = None
             FreeCAD.activeDocument().recompute()
 
@@ -80,17 +75,13 @@ class fillFrameObserver(frameObserverPrototype):
         else:
             subObject = FreeCAD.getDocument(doc).getObject(obj).Shape.getElement(sub)
             if subObject.ShapeType == "Edge" and self.beam != None:
-                fCmd.placeTheBeam(
-                    FreeCAD.activeDocument().copyObject(self.beam, True), subObject
-                )
+                fCmd.placeTheBeam(FreeCAD.activeDocument().copyObject(self.beam, True), subObject)
 
 
 class levelBeamObserver(frameObserverPrototype):
     def __init__(self):
         super(levelBeamObserver, self).__init__(
-            translate(
-                "fObservers", "First select the target plane, then the faces to align"
-            )
+            translate("fObservers", "First select the target plane, then the faces to align")
         )
         self.targetFace = None
 
@@ -128,9 +119,7 @@ class alignFlangeObserver(frameObserverPrototype):
                 FreeCAD.activeDocument().openTransaction(
                     translate("fObservers", "alignFlange", "Transaction")
                 )
-                fCmd.rotTheBeam(
-                    FreeCAD.getDocument(doc).getObject(obj), self.faceBase, subObject
-                )
+                fCmd.rotTheBeam(FreeCAD.getDocument(doc).getObject(obj), self.faceBase, subObject)
                 FreeCAD.activeDocument().commitTransaction()
 
 
@@ -168,11 +157,7 @@ class stretchBeamObserver(frameObserverPrototype):  # OBSOLETE: replaced with di
 
     def addSelection(self, doc, obj, sub, pnt):
         Obj = FreeCAD.getDocument(doc).getObject(obj)
-        if (
-            self.beam == None
-            and Obj.TypeId == "Part::FeaturePython"
-            and hasattr(Obj, "Height")
-        ):
+        if self.beam == None and Obj.TypeId == "Part::FeaturePython" and hasattr(Obj, "Height"):
             self.beam = Obj
             FreeCAD.Console.PrintMessage("Beam type selected.\n")
             from PySide.QtGui import QInputDialog as qid
@@ -194,9 +179,7 @@ class stretchBeamObserver(frameObserverPrototype):  # OBSOLETE: replaced with di
 class extendObserver(frameObserverPrototype):  # OBSOLETE: replaced with dialog
     def __init__(self):
         super(extendObserver, self).__init__(
-            translate(
-                "fObservers", "First Select the target shape, then the beams to extend."
-            )
+            translate("fObservers", "First Select the target shape, then the beams to extend.")
         )
         self.target = None
 
@@ -216,9 +199,7 @@ class extendObserver(frameObserverPrototype):  # OBSOLETE: replaced with dialog
 
 class adjustAngleObserver(frameObserverPrototype):
     def __init__(self):
-        super(adjustAngleObserver, self).__init__(
-            translate("fObservers", "Select 2 edges")
-        )
+        super(adjustAngleObserver, self).__init__(translate("fObservers", "Select 2 edges"))
         self.edges = []
         self.beams = []
 
