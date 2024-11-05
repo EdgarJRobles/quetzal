@@ -48,7 +48,7 @@ class QuetzalWorkbench(Workbench):
             "Quetzal is the fork of Dodo workbench for FreeCAD. "
             "Extending Dodo workbench support and adding translation support. ",
         )
-        self.__class__.Icon = os.path.join(ICONPATH, "dodo.svg")
+        self.__class__.Icon = os.path.join(ICONPATH, "quetzal.svg")
 
     try:
         import DraftSnap

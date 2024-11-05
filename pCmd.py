@@ -135,13 +135,13 @@ class ViewProvider:
     def __init__(self, obj, icon_fn):
         obj.Proxy = self
         self._check_attr()
-        self.icon_fn = get_icon_path(icon_fn) or get_icon_path("dodo")
+        self.icon_fn = get_icon_path(icon_fn or "quetzal")
 
     def _check_attr(self):
         """Check for missing attributes."""
 
         if not hasattr(self, "icon_fn"):
-            setattr(self, "icon_fn", get_icon_path("dodo"))
+            setattr(self, "icon_fn", get_icon_path("quetzal"))
 
     def getIcon(self):
         """Returns the path to the SVG icon."""
