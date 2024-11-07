@@ -1,0 +1,11 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Read the documentation
+    url: https://wiki.freecad.org/Flamingo_Workbench
+    about: Read the FreeGrid workbench documentation on the FreeCAD Wiki
+  - name: General questions about the workbench
+    url: https://forum.freecad.org/viewtopic.php?t=22711
+    about: You can join the discussions on the FreeCAD forum.
+  - name: Dudas y preguntas del banco de trabajo en español/castellano
+    url: https://t.me/FreeCAD_Es/93055
+    about: Sección dedicada al sistema Flamingo/Dodo/Quetzal en el grupo de FreeCAD en español/castellano en Telegram
