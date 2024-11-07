@@ -6,6 +6,7 @@
 [![pre-commit enabled][pre-commit_badge]][pre-commit]
 [![Code style: black][black_badge]][black]
 [![GitHub Tag][tag_bagde]][tag]
+[![Common Changelog][cc_badge]][cc]
 
 Quetzal is the fork of Dodo workbench for [FreeCAD](https://freecad.org).
 Extending Dodo workbench support & adding translation support.
@@ -74,3 +75,5 @@ Discussion in the FreeCAD Forum:
 [black_badge]: <https://img.shields.io/badge/code%20style-black-000000.svg>
 [tag]: <https://github.com/EdgarJRobles/dodo/releases>
 [tag_bagde]: <https://img.shields.io/github/v/tag/EdgarJRobles/dodo>
+[cc_badge]: <https://common-changelog.org/badge.svg>
+[cc]: <./CHANGELOG.md>
