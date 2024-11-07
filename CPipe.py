@@ -429,9 +429,9 @@ class insertAnyz:
 
     def GetResources(self):
         return {
+            "Pixmap": get_icon_path("insertAnyZhape"),
             "MenuText": QT_TRANSLATE_NOOP("Quetzal_InsertAnyz", "Insert any shape"),
             "ToolTip": QT_TRANSLATE_NOOP("Quetzal_InsertAnyz", "Insert a STEP, IGES or BREP"),
-            # TODO: Create an icon
         }
 
 

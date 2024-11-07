@@ -8,7 +8,7 @@
    version="1.1"
    id="svg1"
    inkscape:version="1.4 (e7c3feb100, 2024-10-09)"
-   sodipodi:docname="solids.svg"
+   sodipodi:docname="insertAnyZhape.svg"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:xlink="http://www.w3.org/1999/xlink"
@@ -18,7 +18,7 @@
    xmlns:cc="http://creativecommons.org/ns#"
    xmlns:dc="http://purl.org/dc/elements/1.1/">
   <title
-     id="title1">Quetzal - Select Solids</title>
+     id="title3">Quetzal - Insert any Shape</title>
   <sodipodi:namedview
      id="namedview1"
      pagecolor="#323232"
@@ -30,9 +30,9 @@
      inkscape:deskcolor="#191919"
      inkscape:document-units="px"
      showgrid="true"
-     inkscape:zoom="4"
-     inkscape:cx="-46.625"
-     inkscape:cy="6.625"
+     inkscape:zoom="8"
+     inkscape:cx="16.0625"
+     inkscape:cy="39.6875"
      inkscape:window-width="1290"
      inkscape:window-height="999"
      inkscape:window-x="0"
@@ -182,7 +182,7 @@
           </cc:Agent>
         </dc:publisher>
         <dc:relation>https://wiki.freecad.org/Artwork</dc:relation>
-        <dc:title>Quetzal - Select Solids</dc:title>
+        <dc:title>Quetzal - Insert any Shape</dc:title>
       </cc:Work>
       <cc:License
          rdf:about="http://creativecommons.org/licenses/by-nc-sa/4.0/">
@@ -240,4 +240,32 @@
      inkscape:original="M 4.0214844 16 C 4.0097001 16 4 16.0097 4 16.021484 L 4 59.978516 C 4 59.9903 4.0097001 60 4.0214844 60 L 47.978516 60 C 47.9903 60 48 59.9903 48 59.978516 L 48 16.021484 C 48 16.0097 47.9903 16 47.978516 16 L 4.0214844 16 z "
      d="M 4.0214844,16 C 4.0097001,16 4,16.0097 4,16.021484 V 59.978516 C 4,59.9903 4.0097001,60 4.0214844,60 H 47.978516 C 47.9903,60 48,59.9903 48,59.978516 V 16.021484 C 48,16.0097 47.9903,16 47.978516,16 Z"
      transform="matrix(0.8769594,0,0,0.8769594,3.1990555,4.6755427)" />
+  <g
+     transform="matrix(1.4552405,0,0,1.4552405,-27.433005,-1431.0129)"
+     id="g3"
+     inkscape:label="green cross"
+     style="display:inline">
+    <path
+       d="m 38.664191,1021.1177 -4.530322,10e-5 -5e-6,-9.0606 h -9.060579 l -4e-5,-4.5304 9.048205,-0.012 -3e-6,-9.06057 4.530322,-3e-5 4e-6,9.0606 h 9.060579 l 4.1e-5,4.5304 -9.038377,0.022 z"
+       fill-rule="evenodd"
+       stroke="#a40000"
+       stroke-width="1.38595"
+       fill="#cc0000"
+       id="path1-9"
+       style="fill:#8ae234;stroke:#4e9a06" />
+    <path
+       stroke="#ef2929"
+       stroke-width="0.461984px"
+       d="m 36.37127,1002.3729 -1e-5,1e-4 -3.01e-4,7.3909 -7.390981,3e-4"
+       fill="none"
+       id="path2-1"
+       style="display:inline;stroke:#73d216" />
+    <path
+       stroke="#ef2929"
+       stroke-width="0.461984px"
+       d="m 43.786769,1009.7884 h -7.391334 l 7.309303,3e-4 m -7.309287,7.3093 -3.43e-4,-7.3093"
+       fill="none"
+       id="path3-3"
+       style="display:inline;stroke:#73d216" />
+  </g>
 </svg>
