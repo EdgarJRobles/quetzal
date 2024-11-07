@@ -8,28 +8,11 @@ __license__ = "LGPL 3"
 # import FreeCAD modules
 import FreeCAD
 import FreeCADGui
-import inspect
 
-from quetzal_config import get_icon_path
+from quetzal_config import addCommand, get_icon_path
 
 QT_TRANSLATE_NOOP = FreeCAD.Qt.QT_TRANSLATE_NOOP
 translate = FreeCAD.Qt.translate
-# helper -------------------------------------------------------------------
-# FreeCAD TemplatePyMod module
-# (c) 2007 Juergen Riegel LGPL
-
-
-def addCommand(name, cmdObject):
-    (list, num) = inspect.getsourcelines(cmdObject.Activated)
-    pos = 0
-    # check for indentation
-    while list[1][pos] == " " or list[1][pos] == "\t":
-        pos += 1
-    source = ""
-    for i in range(len(list) - 1):
-        source += list[i + 1][pos:]
-    FreeCADGui.addCommand(name, cmdObject, source)
-    # print(name+":\n"+str(source))
 
 
 def updatesPL(dialogqm):
@@ -448,6 +431,7 @@ class insertAnyz:
         return {
             "MenuText": QT_TRANSLATE_NOOP("Quetzal_InsertAnyz", "Insert any shape"),
             "ToolTip": QT_TRANSLATE_NOOP("Quetzal_InsertAnyz", "Insert a STEP, IGES or BREP"),
+            # TODO: Create an icon
         }
 
 
