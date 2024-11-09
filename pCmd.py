@@ -152,6 +152,7 @@ class ViewProvider:
 def simpleSurfBend(path=None, profile=None):
     "select the centerline and the O.D. and let it sweep"
     curva = FreeCAD.activeDocument().addObject("Part::Feature", "Simple curve")
+    curva.Label = translate("Part::Feature", "Simple Curve")
     if path == None or profile == None:
         curva.Shape = Part.makeSweepSurface(*fCmd.edges()[:2])
     elif path.ShapeType == profile.ShapeType == "Edge":
@@ -176,6 +177,7 @@ def makePipe(propList=[], pos=None, Z=None):
     if Z == None:
         Z = FreeCAD.Vector(0, 0, 1)
     a = FreeCAD.ActiveDocument.addObject("Part::FeaturePython", "Tube")
+    a.Label = translate("Part::Feature", "Tube")
     if len(propList) == 4:
         pFeatures.Pipe(a, *propList)
     else:
@@ -262,6 +264,7 @@ def makeElbow(propList=[], pos=None, Z=None):
     if Z == None:
         Z = FreeCAD.Vector(0, 0, 1)
     a = FreeCAD.ActiveDocument.addObject("Part::FeaturePython", "Elbow")
+    a.Label = translate("Part::Feature", "Elbow")
     if len(propList) == 5:
         pFeatures.Elbow(a, *propList)
     else:
@@ -442,6 +445,7 @@ def makeFlange(propList=[], pos=None, Z=None):
     if Z == None:
         Z = FreeCAD.Vector(0, 0, 1)
     a = FreeCAD.ActiveDocument.addObject("Part::FeaturePython", "Flange")
+    a.Label = translate("Part::Feature", "Flange")
     if len(propList) >= 8:
         pFeatures.Flange(a, *propList)
     else:
@@ -538,6 +542,7 @@ def makeReduct(propList=[], pos=None, Z=None, conc=True):
     if Z == None:
         Z = FreeCAD.Vector(0, 0, 1)
     a = FreeCAD.ActiveDocument.addObject("Part::FeaturePython", "Reduction")
+    a.Label = translate("Part::Feature", "Reduction")
     propList.append(conc)
     pFeatures.Reduct(a, *propList)
     ViewProvider(a.ViewObject, "reduct")
@@ -565,6 +570,7 @@ def makeUbolt(propList=[], pos=None, Z=None):
     if Z == None:
         Z = FreeCAD.Vector(0, 0, 1)
     a = FreeCAD.ActiveDocument.addObject("Part::FeaturePython", "U-Bolt")
+    a.Label = translate("Part::Feature", "U-bolt")
     if len(propList) == 5:
         pFeatures.Ubolt(a, *propList)
     else:
@@ -586,6 +592,7 @@ def makeShell(L=1000, W=1500, H=1500, thk1=6, thk2=8):
       thk (thickness): default=6
     """
     a = FreeCAD.ActiveDocument.addObject("Part::FeaturePython", "Tank")
+    a.Label = translate("Part::Feature", "Tank")
     pFeatures.Shell(a, L, W, H, thk1, thk2)
     ViewProvider(a.ViewObject, "tank")
     a.Placement.Base = FreeCAD.Vector(0, 0, 0)
@@ -612,6 +619,7 @@ def makeCap(propList=[], pos=None, Z=None):
     if Z == None:
         Z = FreeCAD.Vector(0, 0, 1)
     a = FreeCAD.ActiveDocument.addObject("Part::FeaturePython", "Cap")
+    a.Label = translate("Part::Feature", "Cap")
     if len(propList) == 3:
         pFeatures.Cap(a, *propList)
     else:
@@ -1220,6 +1228,7 @@ def makeValve(propList=[], pos=None, Z=None):
     if Z == None:
         Z = FreeCAD.Vector(0, 0, 1)
     a = FreeCAD.ActiveDocument.addObject("Part::FeaturePython", "Valve")
+    a.Label = translate("Part::Feature", "Valve")
     if len(propList):
         pFeatures.Valve(a, *propList)
     else:

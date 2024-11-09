@@ -47,48 +47,48 @@
 # --------------------------------------------------------------------------------------------------
 
 supported_locales=(
-  "en" "af" "ar" "eu" "be" "bg" "ca" "zh-CN" "zh-TW" "hr"
-  "cs" "da" "nl" "fil" "fi" "fr" "gl" "ka" "de" "el"
-  "hu" "id" "it" "ja" "kab" "ko" "lt" "no" "pl" "pt-PT"
-  "pt-BR" "ro" "ru" "sr" "sr-CS" "sk" "sl" "es-ES" "es-AR" "sv-SE"
-  "tr" "uk" "val-ES" "vi"
+	"en" "af" "ar" "eu" "be" "bg" "ca" "zh-CN" "zh-TW" "hr"
+	"cs" "da" "nl" "fil" "fi" "fr" "gl" "ka" "de" "el"
+	"hu" "id" "it" "ja" "kab" "ko" "lt" "no" "pl" "pt-PT"
+	"pt-BR" "ro" "ru" "sr" "sr-CS" "sk" "sl" "es-ES" "es-AR" "sv-SE"
+	"tr" "uk" "val-ES" "vi"
 )
 
 is_locale_supported() {
-  local locale="$1"
-  for supported_locale in "${supported_locales[@]}"; do
-    [ "$supported_locale" == "$locale" ] && return 0
-  done
-  return 1
+	local locale="$1"
+	for supported_locale in "${supported_locales[@]}"; do
+		[ "$supported_locale" == "$locale" ] && return 0
+	done
+	return 1
 }
 
 update_locale() {
-  local locale="$1"
-  local u=${locale:+_} # Conditional underscore
-  FILES="../*.py ../cut_list/*.py ../dialogz/*.ui ../cut_list/resources/*.ui"
+	local locale="$1"
+	local u=${locale:+_} # Conditional underscore
+	FILES="../*.py ../cut_list/*.py ../dialogz/*.ui ../cut_list/resources/*.ui"
 
-  # NOTE: Execute the right command depending on:
-  # - if it's a locale file or the main, agnostic one
-  [ ! -f "${WB}${u}${locale}.ts" ] && action="Creating" || action="Updating"
-  echo -e "\033[1;34m\n\t<<< ${action} '${WB}${u}${locale}.ts' file >>>\n\033[m"
-  if [ "$u" == "" ]; then
-    eval $LUPDATE "$FILES" -ts "${WB}.ts" # locale-agnostic file
-  else
-    eval $LUPDATE "$FILES" -source-language en -target-language "${locale//-/_}" \
-      -ts "${WB}_${locale}.ts"
-  fi
+	# NOTE: Execute the right command depending on:
+	# - if it's a locale file or the main, agnostic one
+	[ ! -f "${WB}${u}${locale}.ts" ] && action="Creating" || action="Updating"
+	echo -e "\033[1;34m\n\t<<< ${action} '${WB}${u}${locale}.ts' file >>>\n\033[m"
+	if [ "$u" == "" ]; then
+		eval $LUPDATE "$FILES" -ts "${WB}.ts" # locale-agnostic file
+	else
+		eval $LUPDATE "$FILES" -source-language en_US -target-language "${locale//-/_}" \
+			-ts "${WB}_${locale}.ts"
+	fi
 }
 
 help() {
-  echo -e "\nDescription:"
-  echo -e "\tCreate, update and release translation files."
-  echo -e "\nUsage:"
-  echo -e "\t./update_translation.sh [-R] [-U] [-r <locale>] [-u <locale>]"
-  echo -e "\nFlags:"
-  echo -e "  -R\n\tRelease all locales"
-  echo -e "  -U\n\tUpdate main translation file (locale agnostic)"
-  echo -e "  -r <locale>\n\tRelease the specified locale"
-  echo -e "  -u <locale>\n\tUpdate strings for the specified locale"
+	echo -e "\nDescription:"
+	echo -e "\tCreate, update and release translation files."
+	echo -e "\nUsage:"
+	echo -e "\t./update_translation.sh [-R] [-U] [-r <locale>] [-u <locale>]"
+	echo -e "\nFlags:"
+	echo -e "  -R\n\tRelease all locales"
+	echo -e "  -U\n\tUpdate main translation file (locale agnostic)"
+	echo -e "  -r <locale>\n\tRelease the specified locale"
+	echo -e "  -u <locale>\n\tUpdate strings for the specified locale"
 }
 
 # Main function ------------------------------------------------------------------------------------
@@ -103,38 +103,38 @@ WB="Quetzal"
 sed -i '3s/-/_/' ${WB}*.ts
 
 if [ $# -eq 1 ]; then
-  if [ "$1" == "-R" ]; then
-    find . -type f -name '*_*.ts' | while IFS= read -r file; do
-      # Release all locales
-      $LRELEASE "$file"
-      echo
-    done
-  elif [ "$1" == "-U" ]; then
-    # Update main file (agnostic)
-    update_locale
-  else
-    help
-  fi
+	if [ "$1" == "-R" ]; then
+		find . -type f -name '*_*.ts' | while IFS= read -r file; do
+			# Release all locales
+			$LRELEASE "$file"
+			echo
+		done
+	elif [ "$1" == "-U" ]; then
+		# Update main file (agnostic)
+		update_locale
+	else
+		help
+	fi
 elif [ $# -eq 2 ]; then
-  LOCALE="$2"
-  if is_locale_supported "$LOCALE"; then
-    if [ "$1" == "-r" ]; then
-      # Release locale (creation of *.qm file from *.ts file)
-      $LRELEASE "${WB}_${LOCALE}.ts"
-    elif [ "$1" == "-u" ]; then
-      # Update main & locale files
-      update_locale
-      update_locale "$LOCALE"
-    fi
-  else
-    echo "Verify your language code. Case sensitive."
-    echo "If it's correct, ask a maintainer to add support for your language on FreeCAD."
-    echo -e "\nSupported locales, '\033[1;34mFreeCADGui.supportedLocales()\033[m': \033[1;33m"
-    for locale in $(printf "%s\n" "${supported_locales[@]}" | sort); do
-      echo -n "$locale "
-    done
-    echo
-  fi
+	LOCALE="$2"
+	if is_locale_supported "$LOCALE"; then
+		if [ "$1" == "-r" ]; then
+			# Release locale (creation of *.qm file from *.ts file)
+			$LRELEASE "${WB}_${LOCALE}.ts"
+		elif [ "$1" == "-u" ]; then
+			# Update main & locale files
+			update_locale
+			update_locale "$LOCALE"
+		fi
+	else
+		echo "Verify your language code. Case sensitive."
+		echo "If it's correct, ask a maintainer to add support for your language on FreeCAD."
+		echo -e "\nSupported locales, '\033[1;34mFreeCADGui.supportedLocales()\033[m': \033[1;33m"
+		for locale in $(printf "%s\n" "${supported_locales[@]}" | sort); do
+			echo -n "$locale "
+		done
+		echo
+	fi
 else
-  help
+	help
 fi

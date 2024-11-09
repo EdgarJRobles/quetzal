@@ -68,7 +68,7 @@ class spinSect:
             "Pixmap": os.path.join(
                 os.path.dirname(os.path.abspath(__file__)), "iconz", "beamRot.svg"
             ),
-            "MenuText": QT_TRANSLATE_NOOP("Quetzal_SpinSect", "Spin beams by 45 deg."),
+            "MenuText": QT_TRANSLATE_NOOP("Quetzal_SpinSect", "Spin beams by 45 degrees"),
             "ToolTip": QT_TRANSLATE_NOOP(
                 "Quetzal_SpinSect", "Rotates the section of the beam by 45 degrees"
             ),
