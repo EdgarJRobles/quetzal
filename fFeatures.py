@@ -66,6 +66,10 @@ def indexEdge(edge, listedges):
 
 
 def findFB(beamName=None, baseName=None):
+    '''
+    Search FrameBranch object inside the Active document
+    if beam name or base object name parameters are given, it will return the frameBranch related to beam or base object (skectch, wire ,etc)
+    '''
     Branches = [
         o.Name
         for o in FreeCAD.ActiveDocument.Objects
@@ -465,8 +469,15 @@ class frameBranchForm(dodoDialogs.protoTypeDialog):
         self.form.editLength.setValidator(QDoubleValidator())
         tablez = listdir(join(dirname(abspath(__file__)), "tablez"))
         files = [name for name in tablez if name.startswith("Section")]
-        RatingsList = [s.lstrip("Section_").rstrip(".csv") for s in files]
-        self.form.comboRatings.addItems(RatingsList)
+        # RatingsList = [s.lstrip("Section_").rstrip(".csv") for s in files]
+        import ArchProfile
+        buffer = list()
+        self.ArchList = ArchProfile.readPresets()
+        for rating in self.ArchList:
+            if rating[1] not in buffer:
+                buffer.append(rating[1])
+        # self.form.comboRatings.addItems(RatingsList)
+        self.form.comboRatings.addItems(buffer)
         self.form.comboRatings.addItems(["<by sketch>"])
         self.form.comboRatings.currentIndexChanged.connect(self.fillSizes)
         self.form.btnRemove.clicked.connect(self.removeBeams)
@@ -487,6 +498,14 @@ class frameBranchForm(dodoDialogs.protoTypeDialog):
         self.actionX.triggered.disconnect(self.accept)  # disconnect from accept()
         self.actionX.triggered.connect(self.trim)  # reconnect to trim()
 
+    def getPropsfromlistSizes(self):
+        '''
+        Check profileslist and return full properties selected on the widget list
+        '''
+        for value in self.ArchList:
+            if self.form.listSizes.currentItem().text() in value[2]:
+                return value
+
     def makeSingle(self):
         FreeCAD.activeDocument().openTransaction("Insert Single Struct")
         if self.SType == "<by sketch>":
@@ -494,8 +513,11 @@ class frameBranchForm(dodoDialogs.protoTypeDialog):
                 self.form.listSizes.currentItem().text()
             )[0]
         else:
-            prop = self.sectDictList[self.form.listSizes.currentRow()]
-            profile = newProfile(prop)
+            prop=self.getPropsfromlistSizes()
+            # prop = self.sectDictList[self.form.listSizes.currentRow()]
+            FreeCAD.Console.PrintMessage(prop)
+            profile = makeProfile(prop)
+            # profile = newProfile(prop)
         if fCmd.faces():
             Z = FreeCAD.Vector(0, 0, 1)
             for f in fCmd.faces():
@@ -618,25 +640,44 @@ class frameBranchForm(dodoDialogs.protoTypeDialog):
         from DraftGeomUtils import findIntersection
         # FreeCAD.Console.PrintMessage('posicion de boceto:'+ str(sel[0].Placement.Rotation)+'\r\n')
         i=0
+        rep=0
         reachedlines = []
         interVertex = []
         if sel[0].FType == 'FrameBranch':
           for element in sel[0].Base.Geometry:
               # FreeCAD.Console.PrintMessage('Segmento '+str(element)+'\r\n')
               for subelement in sel[0].Base.Geometry:
-                  if  element.EndPoint != subelement.EndPoint or element.StartPoint != subelement.StartPoint or (element.EndPoint != subelement.EndPoint and element.StartPoint != subelement.StartPoint):
+                  # Avoid process the geometric element that match StartPoint and EndPoint and also just have process elements with  a common point
+                  if  (element.EndPoint != subelement.EndPoint or
+                       element.StartPoint != subelement.StartPoint or
+                       (element.EndPoint != subelement.EndPoint and
+                        element.StartPoint != subelement.StartPoint) and
+                       (element.EndPoint != subelement.StartPoint and
+                        element.StartPoint != subelement.EndPoint)):
                       #WARN:intersectionCLines method forces to detect infinite intersections that is not required
                       # interVertex=fCmd.intersectionCLines(element.toShape().Edges[0],subelement.toShape().Edges[0])                        
                       interVertex=findIntersection(element.toShape().Edges[0],subelement.toShape().Edges[0],infinite1=False, infinite2=False)
                       if interVertex:
-                          if interVertex[0] not in reachedlines:
+                          roundelementStart=self.roundVectors(element.StartPoint,2)
+                          roundelementEnd=self.roundVectors(element.EndPoint,2)
+                          roundsubelementStart=self.roundVectors(subelement.StartPoint,2)
+                          roundsubelementEnd=self.roundVectors(subelement.EndPoint,2)
+                          roundinterVertex=self.roundVectors(interVertex[0],2)
+                          if [element.Tag,subelement.Tag] not in reachedlines:
+                              content=True
+                              reachedlines.append([element.Tag,subelement.Tag])
+                          else:
+                              content=False
+                          if [subelement.Tag,element.Tag] not in reachedlines:
+                              contentsub=True
+                              reachedlines.append([subelement.Tag,element.Tag])
+                          else:
+                              contentsub=False
+                          if (content) or (contentsub):
                               # FreeCAD.Console.PrintMessage('Punto de interseccion: '+str(interVertex[0])+'\r\n')
-                              roundelementStart=self.roundVectors(element.StartPoint,2)
-                              roundelementEnd=self.roundVectors(element.EndPoint,2)
-                              roundsubelementStart=self.roundVectors(subelement.StartPoint,2)
-                              roundsubelementEnd=self.roundVectors(subelement.EndPoint,2)
-                              roundinterVertex=self.roundVectors(interVertex[0],2)
-                              reachedlines.append(interVertex[0])
+                              # Store edge pair that intersect
+                              FreeCAD.Console.PrintMessage('Reachedlines: {0} and {1}'.format(reachedlines[rep][0],reachedlines[rep][1])+'\r\n')
+                              rep=rep+1
                               # FIXME: intersectCC method does not return line intersection; findIntersection method does it right
                               # interpoint=element.intersectCC(subelement)[0] 
 
@@ -704,8 +745,10 @@ class frameBranchForm(dodoDialogs.protoTypeDialog):
                         self.form.listSizes.currentItem().text()
                     )[0]
                 else:
-                    prop = self.sectDictList[self.form.listSizes.currentRow()]
-                    profile = newProfile(prop)
+                    # prop = self.sectDictList[self.form.listSizes.currentRow()]
+                    prop=self.getPropsfromlistSizes()
+                    profile = makeProfile(prop)
+                    # profile = newProfile(prop)
                 # MAKE FRAMEBRANCH
                 if self.form.editName.text():
                     name = self.form.editName.text()
@@ -775,6 +818,9 @@ class frameBranchForm(dodoDialogs.protoTypeDialog):
             self.form.lab1.setText("<no item selected>")
 
     def fillSizes(self):
+        '''
+        Fill standart beam sizes into a framebeams widget
+        '''
         self.SType = self.form.comboRatings.currentText()
         self.form.listSizes.clear()
         if self.SType == "<by sketch>":
@@ -792,14 +838,21 @@ class frameBranchForm(dodoDialogs.protoTypeDialog):
             ]
             self.form.listSizes.addItems(obj2D)
         else:
-            fileName = "Section_" + self.SType + ".csv"
-            f = open(join(dirname(abspath(__file__)), "tablez", fileName), "r")
-            reader = csv.DictReader(f, delimiter=";")
-            self.sectDictList = [x for x in reader]
-            f.close()
-            for row in self.sectDictList:
-                s = row["SSize"]
-                self.form.listSizes.addItem(s)
+            sizelist = list()
+            for profilesizes in self.ArchList:
+                if profilesizes[1] == self.form.comboRatings.currentText():
+                    # FreeCAD.Console.PrintMessage(profilesizes[2]+'\r\n')
+                    sizelist.append(profilesizes[2])
+            self.form.listSizes.addItems(sizelist)
+            # fileName = "Section_" + self.SType + ".csv"
+            # f = open(join(dirname(abspath(__file__)), "tablez", fileName), "r")
+            # reader = csv.DictReader(f, delimiter=";")
+            # self.sectDictList = [x for x in reader]
+            self.sectDictList = [x for x in self.ArchList]
+            # f.close()
+            # for row in self.sectDictList:
+            #     s = row["SSize"]
+            #     self.form.listSizes.addItem(s)
 
     def addBeams(self):
         # find selected FB
@@ -867,8 +920,10 @@ class frameBranchForm(dodoDialogs.protoTypeDialog):
                     self.form.listSizes.currentItem().text()
                 )[0]
             else:
-                prop = self.sectDictList[self.form.listSizes.currentRow()]
-                profile = newProfile(prop)
+                prop=self.getPropsfromlistSizes()
+                # prop = self.sectDictList[self.form.listSizes.currentRow()]
+                # profile = newProfile(prop)
+                profile = makeProfile(prop)
             name = FB.Profile.Name
             FB.Profile = profile
             FB.Proxy.redraw(FB)
