@@ -452,13 +452,35 @@ class insertFlangeForm(dodoDialogs.protoPypeForm):
             propList.append(float(d["trf"]))
             propList.append(float(d["drf"]))
         except:
-            pass
+            for x in range(0,2,1):
+                propList.append(0)
         try:  # for welding-neck
             propList.append(float(d["twn"]))
             propList.append(float(d["dwn"]))
+        except:
+            for x in range(0,2,1):
+                propList.append(0)
+        try:  # for welding-neck
             propList.append(float(d["ODp"]))
         except:
-            pass
+            propList.append(0)
+        try:  # for welding-neck
+            propList.append(float(d["R"]))
+        except:
+            propList.append(0)
+        try:
+            propList.append(float(d["T1"]))
+        except:
+            propList.append(0)
+        try:
+            propList.append(float(d["B2"]))
+        except:
+            propList.append(0)
+        try:
+            propList.append(float(d["Y"]))
+        except:
+            propList.append(0)
+        # FreeCAD.Console.PrintMessage(str(propList)+'\r\n')
         self.lastFlange = pCmd.doFlanges(propList, FreeCAD.__activePypeLine__)[-1]
 
     def apply(self):

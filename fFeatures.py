@@ -6,7 +6,7 @@ __url__ = "github.com/oddtopus/dodo"
 __license__ = "LGPL 3"
 
 import csv
-from math import degrees, frexp
+from math import degrees, frexp, sqrt, cos, radians, sin, tan
 from os import listdir
 from os.path import abspath, dirname, join
 
@@ -34,6 +34,7 @@ import fCmd
 import pCmd
 from quetzal_config import FREECADVERSION
 from uCmd import label3D
+import ShpstData
 
 translate = FreeCAD.Qt.translate
 QT_TRANSLATE_NOOP = FreeCAD.Qt.QT_TRANSLATE_NOOP
@@ -1272,9 +1273,7 @@ import Draft
 from FreeCAD import Vector
 
 
-def doProfile(
-    typeS="RH", label="Square", dims=[50, 100, 5]
-):  # rearrange args in a better mnemonic way
+def doProfile(typeS="RH", label="Square", dims=[50, 100, 5]):  # rearrange args in a better mnemonic way
     "doProfile(typeS, label, dims)"
     if typeS in ["RH", "R", "H", "U", "L", "T", "Z", "omega", "circle"]:
         profile = [0, "SECTION", label, typeS] + dims  # for py2.6 versions
@@ -1285,13 +1284,15 @@ def doProfile(
         elif profile[3] == "R":
             _ProfileR(obj, profile)
         elif profile[3] == "U":
-            _ProfileU(obj, profile)
+            # _ProfileU(obj, profile)
+            _ProfileChannel(obj,profile)
         elif profile[3] == "T":
             _ProfileT(obj, profile)
         elif profile[3] == "H":
             _ProfileH(obj, profile)
         elif profile[3] == "L":
-            _ProfileL(obj, profile)
+            # _ProfileL(obj, profile)
+            _ProfileAngle(obj,profile)
         elif profile[3] == "Z":
             _ProfileZ(obj, profile)
         elif profile[3] == "omega":
@@ -1343,6 +1344,70 @@ def pointsL(H, W, t1, t2):
     p5 = Vector(W / 2 - t1, t2 - H / 2, 0)
     p6 = Vector(-W / 2, t2 - H / 2, 0)
     return [p1, p2, p3, p4, p5, p6, p1]
+
+
+def pointsLWithRound(A, B, t, r1, r2):
+    x1=r2*(1-1/sqrt(2))
+    x2=r2-x1
+    y1=r1*(1-1/sqrt(2))
+    y2=r1-y1
+    y3=A-(r2+r1+t)
+    x=t-r2
+    p1=Vector(0,0,0)
+    p2=Vector(0,0,A)
+    p3=Vector(x,0,A)
+    p4=Vector(t-x1,0,A-x1)
+    p5=Vector(t,0,A-r2)
+    p6=Vector(t,0,A-(r2+y3))
+    p7=Vector(t+y1,0,t+y1)
+    p8=Vector(t+r1,0,t)
+    p9=Vector(B-r2,0,t)
+    p10=Vector(B-x1,0,t-x1)
+    p11=Vector(B,0,t-r2)
+    p12=Vector(B,0,0)
+    return [p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p1]
+
+
+def pointsChannelWithRound(H, B, t1, t2, r1, r2, Cy, s0):
+    s5=radians(s0)
+    s45=radians(45)
+    y1=r2*cos(s45)
+    y2=r2*cos(s5)
+    y3=r1*cos(s5)
+    x1=r2*(1-cos(s45))
+    x2=r2*sin(s5)
+    x30=r2-x2
+    x3=r1*sin(s5)
+    x4=r1*cos(s45)
+    x5=r1-x4
+    x40=r1+x3
+    x6=B-(x30+x40+t1)
+    y6=x6*tan(s5)
+    x7=Cy-(t1+x40)
+    x8=x6-x7
+    y7=x8*tan(s5)
+    y8=t2-y7
+    y4=y8-y2
+    y10=y4+y2+y6
+    y11=y4+y2+y6+x5
+    y12=y4+y2+y6+x5+x4
+    p1=Vector(0,0,0)
+    p2=Vector(0,0,H)
+    p3=Vector(B,0,H)
+    p4=Vector(B,0,H-y4)
+    p5=Vector(B-x1,0,H-(y4+y1))
+    p6=Vector(B-x30,0,H-(y4+y2))
+    p7=Vector(t1+x40,0,H-y10)
+    p8=Vector(t1+x5,0,H-y11)
+    p9=Vector(t1,0,H-y12)
+    p10=Vector(t1,0,y12)
+    p11=Vector(t1+x5,0,y11)
+    p12=Vector(t1+x40,0,y10)
+    p13=Vector(B-x30,0,y4+y2)
+    p14=Vector(B-x1,0,y4+y1)
+    p15=Vector(B,0,y4)
+    p16=Vector(B,0,0)
+    return [p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p1 ]
 
 
 def pointsOmega(H, W, D, t1, t2, t3):
@@ -1569,6 +1634,143 @@ class _ProfileL(_Profile):
     def execute(self, obj):
         W, H, t1, t2 = obj.W.Value, obj.H.Value, obj.t1.Value, obj.t2.Value
         obj.Shape = drawAndCenter(pointsL(H, W, t1, t2))
+
+
+class _ProfileAngle(_Profile):
+    def __init__(self, obj, profile):
+        self.label=obj.Name
+        self.size=FreeCAD.ActiveDocument.getObject(self.label).size
+        self.standard=FreeCAD.ActiveDocument.getObject(self.label).standard
+        self.Solid=FreeCAD.ActiveDocument.getObject(self.label).Solid
+        self.g0=FreeCAD.ActiveDocument.getObject(self.label).g0*1000
+        if self.standard=='SS_Equal':
+            self.sa=ShpstData.angle_ss_equal[self.size]
+        elif self.standard=='SS_Unequal':
+            self.sa=ShpstData.angle_ss_unequal[self.size]
+        elif self.standard=='SUS_Equal':
+            self.sa=ShpstData.angle_sus_equal[self.size]    
+        obj.addProperty(
+            "App::PropertyString",
+            "FType",
+            "Profile",
+            QT_TRANSLATE_NOOP("App::Property", "Type of section"),
+        ).FType = "L"
+        obj.addProperty(
+            "App::PropertyLength",
+            "A",
+            "Draft",
+            QT_TRANSLATE_NOOP("App::Property", "Width of the beam"),
+        ).A = float(self.sa[0])
+        obj.addProperty(
+            "App::PropertyLength",
+            "B",
+            "Draft",
+            QT_TRANSLATE_NOOP("App::Property", "Height of the beam"),
+        ).B = float(self.sa[1])
+        obj.addProperty(
+            "App::PropertyLength",
+            "t",
+            "Draft",
+            QT_TRANSLATE_NOOP("App::Property", "Thickness of the webs"),
+        ).t = float(self.sa[2])
+        obj.addProperty(
+            "App::PropertyLength",
+            "r1",
+            "Draft",
+            QT_TRANSLATE_NOOP("App::Property", "Radius of cornes r1"),
+        ).r1 = float(self.sa[3])
+        obj.addProperty(
+            "App::PropertyLength",
+            "r2",
+            "Draft",
+            QT_TRANSLATE_NOOP("App::Property", "Radius of cornes r2"),
+        ).r2 = float(self.sa[4])
+        _Profile.__init__(self, obj, profile)
+        return
+
+    def execute(self, obj):
+        A=float(self.sa[0])
+        B=float(self.sa[1])
+        t=float(self.sa[2])
+        r1=float(self.sa[3])
+        r2=float(self.sa[4])
+        cx=float(self.sa[7])*10
+        cy=float(self.sa[8])*10
+        L=FreeCAD.ActiveDocument.getObject(self.label).L
+        L=float(L)
+        obj.A=A
+        obj.B=B
+        obj.Shape=drawAndCenter(pointsLWithRound(A, B, t, r1, r2))
+
+
+class _ProfileChannel(_Profile):
+    def __init__(self, obj, profile):
+        self.label=obj.Name
+        self.size=FreeCAD.ActiveDocument.getObject(self.label).size
+        self.standard=FreeCAD.ActiveDocument.getObject(self.label).standard
+        Solid=FreeCAD.ActiveDocument.getObject(self.label).Solid
+        g0=FreeCAD.ActiveDocument.getObject(self.label).g0*1000
+        if self.standard=='SS':
+            self.sa=ShpstData.channel_ss[self.size]
+            self.s0=5
+            self.t2=float(self.sa[3])
+        elif self.standard=='SUS':
+            self.self.sa=ShpstData.channel_sus[self.size]
+            self.s0=0
+            self.t2=float(self.sa[2])
+        obj.addProperty(
+            "App::PropertyString",
+            "FType",
+            "Profile",
+            QT_TRANSLATE_NOOP("App::Property", "Type of section"),
+        ).FType = "C"
+        obj.addProperty(
+            "App::PropertyLength",
+            "H",
+            "Draft",
+            QT_TRANSLATE_NOOP("App::Property", "Width of the beam"),
+        ).H = float(self.sa[0])
+        obj.addProperty(
+            "App::PropertyLength",
+            "B",
+            "Draft",
+            QT_TRANSLATE_NOOP("App::Property", "Height of the beam"),
+        ).B = float(self.sa[1])
+        obj.addProperty(
+            "App::PropertyLength",
+            "t1",
+            "Draft",
+            QT_TRANSLATE_NOOP("App::Property", "Thickness of the webs"),
+        ).t1 = float(self.sa[2])
+        obj.addProperty(
+            "App::PropertyLength",
+            "r1",
+            "Draft",
+            QT_TRANSLATE_NOOP("App::Property", "Radius of cornes r1"),
+        ).r1 = float(self.sa[3])
+        obj.addProperty(
+            "App::PropertyLength",
+            "r2",
+            "Draft",
+            QT_TRANSLATE_NOOP("App::Property", "Radius of cornes r2"),
+        ).r2 = float(self.sa[4])
+        _Profile.__init__(self, obj, profile)
+        return
+
+    def execute(self,obj):
+        H=float(self.sa[0])
+        B=float(self.sa[1])
+        t1=float(self.sa[2])
+        #t2=float(self.sa[3])
+        r1=float(self.sa[4])
+        r2=float(self.sa[5])
+        Cy=float(self.sa[8])*10
+        L=FreeCAD.ActiveDocument.getObject(self.label).L
+        L=float(L)
+        Solid=FreeCAD.ActiveDocument.getObject(self.label).Solid
+        obj.H=H
+        obj.B=B
+        obj.Shape=drawAndCenter(pointsChannelWithRound(H, B, t1, self.t2, r1, r2, Cy ,self.s0))
 
 
 class _ProfileT(_Profile):

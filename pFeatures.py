@@ -1,4 +1,4 @@
-# (c) 2019 R. T. LGPL: part of dodo tools w.b. for FreeCAD
+# (c) 2019 R. T. LGPL: part ofdodo tools w.b. for FreeCAD
 
 __title__ = "pypeTools objects"
 __author__ = "oddtopus"
@@ -12,6 +12,7 @@ from os.path import abspath, dirname, join
 import FreeCAD
 import FreeCADGui
 import Part
+import Sketcher
 
 import fCmd
 import pCmd
@@ -30,7 +31,6 @@ vZ = FreeCAD.Vector(0, 0, 1)
 
 class pypeType(object):
     def __init__(self, obj):
-        obj.Proxy = self
         obj.addProperty(
             "App::PropertyString",
             "PType",
@@ -122,6 +122,7 @@ class Pipe(pypeType):
         super(Pipe, self).__init__(obj)
         # define common properties
         obj.PType = "Pipe"
+        obj.Proxy = self
         obj.PRating = "SCH-STD"
         obj.PSize = DN
         # define specific properties
@@ -355,10 +356,16 @@ class Flange(pypeType):
         twn=0,
         dwn=0,
         ODp=0,
+        R=0,
+        T1=0,
+        B2=0,
+        Y=0,
     ):
         # initialize the parent class
         super(Flange, self).__init__(obj)
         # define common properties
+        self.Type='Flange'
+        obj.Proxy=self
         obj.PType = "Flange"
         obj.PRating = "DIN-PN16"
         obj.PSize = DN
@@ -435,14 +442,46 @@ class Flange(pypeType):
             "Flange2",
             QT_TRANSLATE_NOOP("App::Property", "Outside diameter of pipe"),
         ).ODp = ODp
+        obj.addProperty(
+            "App::PropertyLength",
+            "R",
+            "Flange",
+            QT_TRANSLATE_NOOP("App::Property", "Flange fillet radius"),
+        ).R = R
+        obj.addProperty(
+            "App::PropertyLength",
+            "T1",
+            "Flange",
+            QT_TRANSLATE_NOOP("App::Property", "Flange neck lenght"),
+        ).T1 = T1
+        obj.addProperty(
+            "App::PropertyLength",
+            "B2",
+            "Flange Socket welding",
+            QT_TRANSLATE_NOOP("App::Property", "Socket diameter"),
+        ).B2 = B2
+        obj.addProperty(
+            "App::PropertyLength",
+            "Y",
+            "Flange Socket welding",
+            QT_TRANSLATE_NOOP("App::Property", "Socket depth"),
+        ).Y = Y
 
     def onChanged(self, fp, prop):
+        # FreeCAD.Console.PrintMessage(prop)
+        if prop=="ODp":
+            if fp.ODp > fp.D:
+                FreeCAD.Console.PrintError("Raised edge diameter must be smaller than flange diameter")
         return None
 
     def execute(self, fp):
+        '''
+
+        '''
         base = Part.Face(Part.Wire(Part.makeCircle(fp.D / 2)))
         if fp.d > 0:
             base = base.cut(Part.Face(Part.Wire(Part.makeCircle(fp.d / 2))))
+        # Operation designed to make flange hole cylinders
         if fp.n > 0:
             hole = Part.Face(
                 Part.Wire(
@@ -457,23 +496,111 @@ class Flange(pypeType):
             for i in list(range(fp.n)):
                 base = base.cut(hole)
                 hole.rotate(FreeCAD.Vector(0, 0, 0), FreeCAD.Vector(0, 0, 1), 360.0 / fp.n)
-        flange = base.extrude(FreeCAD.Vector(0, 0, fp.t))
-        try:  # Flange2: raised-face and welding-neck
-            if fp.trf > 0 and fp.drf > 0:
+        #creates flange thickness
+        flange = base.extrude(FreeCAD.Vector(0, 0, fp.t-fp.trf))
+        FreeCADGui.ActiveDocument.Flange.Deviation = 0.10
+        if fp.FlangeType=='SW' or fp.FlangeType=='WN'or fp.FlangeType=='LJ':
+            #creates flange neck
+            nn=Part.makeCylinder(fp.ODp/2,fp.T1-fp.trf,vO,vZ).cut(
+            Part.makeCylinder(fp.d/2,fp.T1-fp.trf,vO,vZ))
+            flange=flange.fuse(nn)
+            if fp.trf > 0 and fp.drf < fp.D:
                 rf = Part.makeCylinder(fp.drf / 2, fp.trf, vO, vZ * -1).cut(
-                    Part.makeCylinder(fp.d / 2, fp.trf, vO, vZ * -1)
-                )
+                    Part.makeCylinder(fp.d / 2, fp.trf, vO, vZ * -1))
                 flange = flange.fuse(rf)
-            if fp.dwn > 0 and fp.twn > 0 and fp.ODp > 0:
-                wn = Part.makeCone(fp.dwn / 2, fp.ODp / 2, fp.twn, vZ * float(fp.t)).cut(
-                    Part.makeCylinder(fp.d / 2, fp.twn, vZ * float(fp.t))
-                )
-                flange = flange.fuse(wn)
-        except:
-            pass
-        fp.Shape = flange
+
+        if fp.FlangeType=='WN':
+            try:  # Flange2:welding-neck
+                if fp.dwn > 0 and fp.twn > 0 and fp.ODp > 0:
+                    wn = Part.makeCone(fp.dwn / 2, fp.ODp / 2, fp.twn, vZ * float(fp.t-fp.trf)).cut(
+                        Part.makeCylinder(fp.d / 2, fp.twn, vZ * float(fp.t-fp.trf))
+                    )
+                    flange = flange.fuse(wn)
+                    flange = flange.removeSplitter()
+                    flange=flange.makeFillet(fp.R,[flange.Edges[2]])
+                    flange=flange.makeChamfer((fp.ODp-fp.d)/2*0.90,[flange.Edges[6]])
+            except:
+                    pass
+        elif fp.FlangeType=='LJ':
+            edge=[]
+            flange = flange.removeSplitter()
+            if fp.n == 4:
+                edge=flange.Edges[19]
+            if fp.n == 8:
+                edge=flange.Edges[31]
+            if fp.n == 12:
+                edge=flange.Edges[43]
+            if fp.n == 16:
+                edge=flange.Edges[55]
+            if fp.n == 20:
+                edge=flange.Edges[67]
+            flange=flange.makeFillet(fp.R,edge)
+        elif fp.FlangeType=='SW':
+            #creates flange neck
+            if fp.B2 > 0:
+                nn=flange.cut(
+                Part.makeCylinder(fp.B2/2,fp.Y,vZ*float(fp.T1-fp.trf),vZ*-1))
+                flange=nn.removeSplitter()
+        fp.Shape=flange
         fp.Ports = [FreeCAD.Vector(), FreeCAD.Vector(0, 0, float(fp.t))]
         super(Flange, self).execute(fp)  # perform common operations
+
+    #!TODO:this method generate a PartDesign object with sketch nest, pending feature compatibility
+
+    # def execute(self,fp):
+    #     obj=FreeCAD.activeDocument().addObject('PartDesign::Body','Flange')
+    #     sketch=obj.newObject('Sketcher::SketchObject','Sketch')
+    #     sketch.AttachmentSupport=(FreeCAD.activeDocument().getObject('YZ_Plane'),[''])
+    #     sketch.MapMode='FlatFace'
+    #     sketch.addGeometry(Part.LineSegment(FreeCAD.Vector(-26.396620,19.420528,0),FreeCAD.Vector(37.200497,20.283836,0)),False)
+    #     sketch.addConstraint(Sketcher.Constraint('DistanceY',-1,1,0,2,fp.d/2))
+    #     sketch.renameConstraint(0, u'InnerDiameter')
+    #     sketch.addConstraint(Sketcher.Constraint('Symmetric',0,1,0,2,-2))
+    #     sketch.addConstraint(Sketcher.Constraint('DistanceX',0,1,0,2,70))
+    #     sketch.renameConstraint(2, u'OverallThickness')
+    #     sketch.addGeometry(Part.LineSegment(FreeCAD.Vector(37.200497,19.420528,0),FreeCAD.Vector(37.200497,24.312616,0)),False)
+    #     sketch.addConstraint(Sketcher.Constraint('Coincident',0,2,1,1))
+    #     sketch.addConstraint(Sketcher.Constraint('Vertical',1))
+    #     sketch.addGeometry(Part.ArcOfCircle(Part.Circle(FreeCAD.Vector(34.202893,24.312616,0),FreeCAD.Vector(0,0,1),2.997604),0.000000,1.287001),False)
+    #     sketch.addConstraint(Sketcher.Constraint('Tangent',1,2,2,1))
+    #     sketch.addGeometry(Part.LineSegment(FreeCAD.Vector(35.042226,27.190315,0),FreeCAD.Vector(6.698068,35.457398,0)),False)
+    #     sketch.addConstraint(Sketcher.Constraint('Tangent',2,2,3,1))
+    #     sketch.addGeometry(Part.ArcOfCircle(Part.Circle(FreeCAD.Vector(7.314065,37.569377,0),FreeCAD.Vector(0,0,1),2.199979),-3.132797,-1.854592),False)
+    #     sketch.addConstraint(Sketcher.Constraint('Equal',2,4))
+    #     sketch.addConstraint(Sketcher.Constraint('Tangent',3,2,4,2))
+    #     sketch.addGeometry(Part.LineSegment(FreeCAD.Vector(5.114171,37.550027,0),FreeCAD.Vector(4.854102,67.117138,0)),False)
+    #     sketch.addConstraint(Sketcher.Constraint('Tangent',4,1,5,1))
+    #     sketch.addGeometry(Part.ArcOfCircle(Part.Circle(FreeCAD.Vector(1.818155,67.090434,0),FreeCAD.Vector(0,0,1),3.036064),0.008796,1.579592),False)
+    #     sketch.addConstraint(Sketcher.Constraint('Equal',6,4))
+    #     sketch.addConstraint(Sketcher.Constraint('Radius',4,3))
+    #     sketch.addConstraint(Sketcher.Constraint('Tangent',5,2,6,1))
+    #     sketch.addConstraint(Sketcher.Constraint('Vertical',5))
+    #     sketch.addGeometry(Part.LineSegment(FreeCAD.Vector(1.791451,70.126381,0),FreeCAD.Vector(-23.109907,69.907350,0)),False)
+    #     sketch.addConstraint(Sketcher.Constraint('Horizontal',7))
+    #     sketch.addConstraint(Sketcher.Constraint('Tangent',6,2,7,1))
+    #     sketch.addGeometry(Part.LineSegment(FreeCAD.Vector(-23.109907,69.907350,0),FreeCAD.Vector(-22.849606,40.313959,0)),False)
+    #     sketch.addGeometry(Part.LineSegment(FreeCAD.Vector(-22.849606,40.313959,0),FreeCAD.Vector(-27.278782,40.223301,0)),False)
+    #     sketch.addConstraint(Sketcher.Constraint('Coincident',7,2,8,1))
+    #     sketch.addConstraint(Sketcher.Constraint('Vertical',8))
+    #     sketch.addConstraint(Sketcher.Constraint('Coincident',8,2,9,1))
+    #     sketch.addConstraint(Sketcher.Constraint('DistanceY',8,1,8,2,-10))
+    #     sketch.addConstraint(Sketcher.Constraint('Horizontal',9))
+    #     sketch.addGeometry(Part.LineSegment(FreeCAD.Vector(-27.278782,40.313959,0),FreeCAD.Vector(-26.396620,19.420528,0)),False)
+    #     sketch.addConstraint(Sketcher.Constraint('Coincident',9,2,10,1))
+    #     sketch.addConstraint(Sketcher.Constraint('Coincident',10,2,0,1))
+    #     sketch.addConstraint(Sketcher.Constraint('Vertical',10))
+    #     sketch.addConstraint(Sketcher.Constraint('DistanceY',-1,1,7,2,fp.D/2))
+    #     sketch.renameConstraint(24, u'OuterDiameter')
+    #     sketch.addConstraint(Sketcher.Constraint('DistanceX',9,2,5,2,fp.t))
+    #     sketch.renameConstraint(25, u'FlangeThickness')
+    #     sketch.Visibility=False
+    #     sketch.recompute()
+    #     revolution=obj.newObject('PartDesign::Revolution','Revolution')
+    #     revolution.Profile=(sketch, [''])
+    #     revolution.ReferenceAxis = (sketch, ['H_Axis'])
+    #     fp.Placement=fp.Placement
+    #     fp.Shape= obj.Shape
+
 
 
 class Reduct(pypeType):

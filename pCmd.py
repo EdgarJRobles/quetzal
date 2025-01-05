@@ -435,6 +435,10 @@ def makeFlange(propList=[], pos=None, Z=None):
       Default is "DN50 (PN16)"
       pos (vector): position of insertion; default = 0,0,0
       Z (vector): orientation: default = 0,0,1
+      R Flange fillet radius
+      T1 Overall flange thickness
+      Y Socket depth
+
     Remember: property PRating must be defined afterwards
     """
     if pos == None:
@@ -450,10 +454,20 @@ def makeFlange(propList=[], pos=None, Z=None):
     a.Placement.Base = pos
     rot = FreeCAD.Rotation(FreeCAD.Vector(0, 0, 1), Z)
     a.Placement.Rotation = rot.multiply(a.Placement.Rotation)
+    if a.FlangeType=='WN':
+        zpos=-a.T1+a.trf
+    elif a.FlangeType=='SW':
+        zpos=-a.T1+a.Y+a.trf
+    elif a.FlangeType=='LJ':
+        zpos=0
+    else:
+        zpos=0
+    a.Placement=a.Placement.multiply(FreeCAD.Placement(FreeCAD.Vector(0,0,zpos),FreeCAD.Rotation(1,0,0)))
+    FreeCAD.ActiveDocument.recompute()
     return a
 
 
-def doFlanges(propList=["DN50", "SO", 160, 60.3, 132, 14, 15, 4, 0, 0, 0, 0, 0], pypeline=None):
+def doFlanges(propList=["DN50", "SO", 160, 60.3, 132, 14, 15, 4, 0, 0, 0, 0, 0,0,0], pypeline=None):
     """
     propList = [
       DN (string): nominal diameter
@@ -469,6 +483,10 @@ def doFlanges(propList=["DN50", "SO", 160, 60.3, 132, 14, 15, 4, 0, 0, 0, 0, 0],
       twn (float): welding-neck thickness - OPTIONAL -
       dwn (float): welding-neck diameter - OPTIONAL -
       ODp (float): outside diameter of pipe for wn flanges - OPTIONAL -
+      R Flange fillet radius
+      T1 Overall flange thickness
+      Y Socket depth
+
     pypeline = string
     """
     flist = []
