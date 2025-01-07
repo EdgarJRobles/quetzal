@@ -42,7 +42,7 @@ Examples on different OS
 Use the CLI to enter the `Mod` directory and use Git to install Dodo:
 
 ```shell
-git clone https://github.com/EdgarJRobles/dodo Quetzal
+git clone https://github.com/EdgarJRobles/quetzal Quetzal
 ```
 
 If you are updating the code, restarting FreeCAD is advised.
@@ -66,14 +66,14 @@ Discussion in the FreeCAD Forum:
 [ContribsW]: ./CONTRIBUTING.md
 [ContribsW_badge]: <https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat>
 [license]: ./LICENSE
-[license_badge]: <https://img.shields.io/github/license/EdgarJRobles/dodo>
+[license_badge]: <https://img.shields.io/github/license/EdgarJRobles/quetzal>
 [AddonMgr]: <https://github.com/FreeCAD/FreeCAD-addons>
 [AddonMgr_badge]: <https://img.shields.io/badge/FreeCAD%20addon%20manager-available-brightgreen>
 [pre-commit]: <https://github.com/pre-commit/pre-commit>
 [pre-commit_badge]: <https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit>
 [black]: <https://github.com/psf/black>
 [black_badge]: <https://img.shields.io/badge/code%20style-black-000000.svg>
-[tag]: <https://github.com/EdgarJRobles/dodo/releases>
-[tag_bagde]: <https://img.shields.io/github/v/tag/EdgarJRobles/dodo>
+[tag]: <https://github.com/EdgarJRobles/quetzal/releases>
+[tag_bagde]: <https://img.shields.io/github/v/tag/EdgarJRobles/quetzal>
 [cc_badge]: <https://common-changelog.org/badge.svg>
 [cc]: <./CHANGELOG.md>
