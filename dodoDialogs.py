@@ -1,10 +1,14 @@
+import csv
+from os import listdir
+from os.path import abspath, dirname, join
+from sys import platform
+
+import FreeCAD
+import FreeCADGui
 from PySide.QtCore import *
 from PySide.QtGui import *
-from sys import platform
-from os.path import join, dirname, abspath
-from os import listdir
-import FreeCAD, FreeCADGui, csv
-from DraftGui import translate
+
+translate = FreeCAD.Qt.translate
 
 
 class protoTypeDialog(object):
@@ -35,6 +39,7 @@ class protoTypeDialog(object):
                 self.actionS.shortcuts()[0].toString(),
                 self.actionX.shortcuts()[0].toString(),
             )
+            + "\r\n"
         )
         try:
             self.view = FreeCADGui.activeDocument().activeView()
@@ -42,9 +47,7 @@ class protoTypeDialog(object):
                 "SoMouseButtonEvent", self.action
             )  # SoKeyboardEvents replaced by QAction'
         except:
-            FreeCAD.Console.PrintError(
-                translate("protoTypeDialog", "No view available.")
-            )
+            FreeCAD.Console.PrintError(translate("protoTypeDialog", "No view available."))
 
     def action(self, arg):
         'Defines functions executed by the callback self.call when "SoMouseButtonEvent"'
@@ -81,6 +84,7 @@ class protoTypeDialog(object):
         FreeCAD.Console.PrintMessage(
             translate("protoTypeDialog", 'Actions "%s" and "%s" removed')
             % (self.actionX.objectName(), self.actionS.objectName())
+            + "\r\n"
         )
         try:
             self.view.removeEventCallback("SoMouseButtonEvent", self.call)
@@ -132,9 +136,7 @@ class protoPypeForm(QDialog):
         self.firstCol = QWidget()
         self.firstCol.setLayout(QVBoxLayout())
         self.mainHL.addWidget(self.firstCol)
-        self.currentRatingLab = QLabel(
-            translate("protoPypeForm", "Rating: ") + self.PRating
-        )
+        self.currentRatingLab = QLabel(translate("protoPypeForm", "Rating: ") + self.PRating)
         self.firstCol.layout().addWidget(self.currentRatingLab)
         self.sizeList = QListWidget()
         self.firstCol.layout().addWidget(self.sizeList)
@@ -174,9 +176,7 @@ class protoPypeForm(QDialog):
         self.btn1 = QPushButton(translate("protoPypeForm", "Insert"))
         self.secondCol.layout().addWidget(self.btn1)
         self.mainHL.addWidget(self.secondCol)
-        self.resize(
-            max(350, int(self.mw.width() / 4)), max(350, int(self.mw.height() / 2))
-        )
+        self.resize(max(350, int(self.mw.width() / 4)), max(350, int(self.mw.height() / 2)))
         self.mainHL.setContentsMargins(0, 0, 0, 0)
 
     def setCurrentPL(self, PLName=None):
@@ -204,9 +204,7 @@ class protoPypeForm(QDialog):
 
     def changeRating(self, item):
         self.PRating = item.text()
-        self.currentRatingLab.setText(
-            translate("protoPypeForm", "Rating: ") + self.PRating
-        )
+        self.currentRatingLab.setText(translate("protoPypeForm", "Rating: ") + self.PRating)
         self.fillSizes()
 
     def findDN(self, DN):

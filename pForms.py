@@ -2,27 +2,28 @@
 
 __license__ = "LGPL 3"
 
-import FreeCAD, FreeCADGui, Part, csv
-
-pq = FreeCAD.Units.parseQuantity
-import fCmd, pCmd, dodoDialogs
+import csv
+from math import degrees
 from os import listdir
-from os.path import join, dirname, abspath
+from os.path import abspath, dirname, join
+
+import FreeCAD
+import FreeCADGui
+import Part
+from DraftVecUtils import rounded
 from PySide.QtCore import *
 from PySide.QtGui import *
-from math import degrees
-from DraftVecUtils import rounded
-from DraftGui import translate
+
+import dodoDialogs
+import fCmd
+import pCmd
+
+pq = FreeCAD.Units.parseQuantity
+translate = FreeCAD.Qt.translate
 
 mw = FreeCADGui.getMainWindow()
 x = mw.x() + int(mw.width() / 20)  # 100
 y = max(300, int(mw.height() / 3))  # 350
-
-
-def getLanguagePath():
-    import os
-    notnormalized = os.path.join(os.path.dirname(__file__), "translationz")
-    return os.path.normpath(notnormalized)
 
 
 class redrawDialog(QDialog):
@@ -74,9 +75,7 @@ class redrawDialog(QDialog):
                     pl.Proxy.update(pl)
                     i += 1
                 else:
-                    FreeCAD.Console.PrintError(
-                        "%s has no Base: nothing to redraw\n" % cb.text()
-                    )
+                    FreeCAD.Console.PrintError("%s has no Base: nothing to redraw\n" % cb.text())
         FreeCAD.ActiveDocument.recompute()
         FreeCAD.Console.PrintMessage("Redrawn %i pipelines.\n" % i)
         FreeCAD.activeDocument().commitTransaction()
@@ -164,8 +163,7 @@ class insertPipeForm(dodoDialogs.protoPypeForm):
                 if hasattr(o, "PSize") and hasattr(o, "OD") and hasattr(o, "thk"):
                     if (
                         o.PType == "Reduct"
-                        and o.Proxy.nearestPort(objex.SubObjects[0].CenterOfMass)[0]
-                        == 1
+                        and o.Proxy.nearestPort(objex.SubObjects[0].CenterOfMass)[0] == 1
                     ):  # props of a reduction
                         propList = [o.PSize, o.OD2, o.thk2, self.H]
                         break
@@ -347,9 +345,7 @@ class insertElbowForm(dodoDialogs.protoPypeForm):
             FreeCAD.activeDocument().commitTransaction()
             FreeCAD.activeDocument().recompute()
         else:
-            FreeCAD.Console.PrintError(
-                translate("insertElbowForm", "Wrong selection\n")
-            )
+            FreeCAD.Console.PrintError(translate("insertElbowForm", "Wrong selection\n"))
 
     def rotatePort(self):
         if self.lastElbow:
@@ -435,9 +431,7 @@ class insertFlangeForm(dodoDialogs.protoPypeForm):
 
     def insert(self):
         tubes = [t for t in fCmd.beams() if hasattr(t, "PSize")]
-        if len(tubes) > 0 and tubes[0].PSize in [
-            prop["PSize"] for prop in self.pipeDictList
-        ]:
+        if len(tubes) > 0 and tubes[0].PSize in [prop["PSize"] for prop in self.pipeDictList]:
             for prop in self.pipeDictList:
                 if prop["PSize"] == tubes[0].PSize:
                     d = prop
@@ -458,13 +452,35 @@ class insertFlangeForm(dodoDialogs.protoPypeForm):
             propList.append(float(d["trf"]))
             propList.append(float(d["drf"]))
         except:
-            pass
+            for x in range(0,2,1):
+                propList.append(0)
         try:  # for welding-neck
             propList.append(float(d["twn"]))
             propList.append(float(d["dwn"]))
+        except:
+            for x in range(0,2,1):
+                propList.append(0)
+        try:  # for welding-neck
             propList.append(float(d["ODp"]))
         except:
-            pass
+            propList.append(0)
+        try:  # for welding-neck
+            propList.append(float(d["R"]))
+        except:
+            propList.append(0)
+        try:
+            propList.append(float(d["T1"]))
+        except:
+            propList.append(0)
+        try:
+            propList.append(float(d["B2"]))
+        except:
+            propList.append(0)
+        try:
+            propList.append(float(d["Y"]))
+        except:
+            propList.append(0)
+        # FreeCAD.Console.PrintMessage(str(propList)+'\r\n')
         self.lastFlange = pCmd.doFlanges(propList, FreeCAD.__activePypeLine__)[-1]
 
     def apply(self):
@@ -569,9 +585,7 @@ class insertReductForm(dodoDialogs.protoPypeForm):
 
     def fillOD2(self):
         self.OD2list.clear()
-        self.OD2list.addItems(
-            self.pipeDictList[self.sizeList.currentRow()]["OD2"].split(">")
-        )
+        self.OD2list.addItems(self.pipeDictList[self.sizeList.currentRow()]["OD2"].split(">"))
         self.OD2list.setCurrentRow(0)
 
     def reverse(self):
@@ -590,11 +604,7 @@ class insertReductForm(dodoDialogs.protoPypeForm):
         r = self.pipeDictList[self.sizeList.currentRow()]
         pos = Z = H = None
         selex = FreeCADGui.Selection.getSelectionEx()
-        pipes = [
-            p.Object
-            for p in selex
-            if hasattr(p.Object, "PType") and p.Object.PType == "Pipe"
-        ]
+        pipes = [p.Object for p in selex if hasattr(p.Object, "PType") and p.Object.PType == "Pipe"]
         if len(pipes) > 1 and fCmd.isParallel(
             fCmd.beamAx(pipes[0]), fCmd.beamAx(pipes[1])
         ):  # if at least 2 pipes are selected...
@@ -642,9 +652,7 @@ class insertReductForm(dodoDialogs.protoPypeForm):
                 else:
                     pos = edge.valueAt(0)
                     Z = edge.tangentAt(0)
-            elif (
-                selex and selex[0].SubObjects[0].ShapeType == "Vertex"
-            ):  # ...or 1 vertex..
+            elif selex and selex[0].SubObjects[0].ShapeType == "Vertex":  # ...or 1 vertex..
                 pos = selex[0].SubObjects[0].Point
         if not H:  # calculate length if it's not defined
             H = float(3 * (OD1 - OD2))
@@ -672,7 +680,7 @@ class insertUboltForm(dodoDialogs.protoPypeForm):
     For position and orientation you can select
       - one or more circular edges,
       - nothing.
-    In case one pipe is selected, its properties are aplied to the U-bolt.
+    In case one pipe is selected, its properties are applied to the U-bolt.
     Available one button to reverse the orientation of the last or selected tubes.
     """
 
@@ -741,11 +749,7 @@ class insertUboltForm(dodoDialogs.protoPypeForm):
             FreeCAD.activeDocument().openTransaction("Insert clamp on tube")
             for objex in selex:
                 if hasattr(objex.Object, "PType") and objex.Object.PType == "Pipe":
-                    d = [
-                        typ
-                        for typ in self.pipeDictList
-                        if typ["PSize"] == objex.Object.PSize
-                    ]
+                    d = [typ for typ in self.pipeDictList if typ["PSize"] == objex.Object.PSize]
                     if len(d) > 0:
                         d = d[0]
                     else:
@@ -900,7 +904,7 @@ class insertPypeLineForm(dodoDialogs.protoPypeForm):
         self.show()
 
     def summary(self, pl=None):
-        if self.combo.currentText() != "<new>":
+        if self.combo.currentText() != translate("insertPypeLineForm", "<new>"):
             pl = FreeCAD.ActiveDocument.getObjectsByLabel(self.combo.currentText())[0]
             FreeCAD.Console.PrintMessage(
                 "\n%s: %s - %s\nProfile: %.1fx%.1f\nRGB color: %.3f, %.3f, %.3f\n"
@@ -922,7 +926,7 @@ class insertPypeLineForm(dodoDialogs.protoPypeForm):
 
     def apply(self):
         d = self.pipeDictList[self.sizeList.currentRow()]
-        if self.combo.currentText() != "<new>":
+        if self.combo.currentText() != translate("insertPypeLineForm", "<new>"):
             pl = FreeCAD.ActiveDocument.getObjectsByLabel(self.combo.currentText())[0]
             pl.PSize = d["PSize"]
             pl.PRating = self.PRating
@@ -935,7 +939,7 @@ class insertPypeLineForm(dodoDialogs.protoPypeForm):
     def insert(self):
         d = self.pipeDictList[self.sizeList.currentRow()]
         FreeCAD.activeDocument().openTransaction("Insert pype-line")
-        if self.combo.currentText() == "<new>":
+        if self.combo.currentText() == translate("insertPypeLineForm", "<new>"):
             plLabel = self.edit1.text()
             if not plLabel:
                 plLabel = "Tubatura"
@@ -950,11 +954,7 @@ class insertPypeLineForm(dodoDialogs.protoPypeForm):
             self.combo.addItem(a.Label)
         else:
             plname = self.combo.currentText()
-            plcolor = (
-                FreeCAD.activeDocument()
-                .getObjectsByLabel(plname)[0]
-                .ViewObject.ShapeColor
-            )
+            plcolor = FreeCAD.activeDocument().getObjectsByLabel(plname)[0].ViewObject.ShapeColor
             pCmd.makePypeLine2(
                 DN=d["PSize"],
                 PRating=self.PRating,
@@ -968,17 +968,13 @@ class insertPypeLineForm(dodoDialogs.protoPypeForm):
         FreeCAD.ActiveDocument.recompute()
 
     def getBase(self):
-        if self.combo.currentText() != "<new>":
+        if self.combo.currentText() != translate("insertPypeLineForm", "<new>"):
             pl = FreeCAD.ActiveDocument.getObjectsByLabel(self.combo.currentText())[0]
             sel = FreeCADGui.Selection.getSelection()
             if sel:
                 base = sel[0]
-                isWire = (
-                    hasattr(base, "Shape") and base.Shape.Edges
-                )  # type(base.Shape)==Part.Wire
-                isSketch = (
-                    hasattr(base, "TypeId") and base.TypeId == "Sketcher::SketchObject"
-                )
+                isWire = hasattr(base, "Shape") and base.Shape.Edges  # type(base.Shape)==Part.Wire
+                isSketch = hasattr(base, "TypeId") and base.TypeId == "Sketcher::SketchObject"
                 if isWire or isSketch:
                     FreeCAD.activeDocument().openTransaction("Assign Base")
                     pl.Base = base
@@ -987,9 +983,7 @@ class insertPypeLineForm(dodoDialogs.protoPypeForm):
                         pCmd.moveToPyLi(pl.Base, self.combo.currentText())
                     FreeCAD.activeDocument().commitTransaction()
                 else:
-                    FreeCAD.Console.PrintError(
-                        "Not valid Base: select a Wire or a Sketch.\n"
-                    )
+                    FreeCAD.Console.PrintError("Not valid Base: select a Wire or a Sketch.\n")
             else:
                 pl.Base = None
                 FreeCAD.Console.PrintWarning(pl.Label + "-> deleted Base\n")
@@ -1004,10 +998,8 @@ class insertPypeLineForm(dodoDialogs.protoPypeForm):
         col = QColorDialog.getColor()
         if col.isValid():
             self.color = tuple([c / 255.0 for c in col.toTuple()[:3]])
-            if self.combo.currentText() != "<new>":
-                pl = FreeCAD.ActiveDocument.getObjectsByLabel(self.combo.currentText())[
-                    0
-                ]
+            if self.combo.currentText() != translate("insertPypeLineForm", "<new>"):
+                pl = FreeCAD.ActiveDocument.getObjectsByLabel(self.combo.currentText())[0]
                 pl.ViewObject.ShapeColor = self.color
                 pCmd.updatePLColor([pl])
         self.show()
@@ -1018,7 +1010,7 @@ class insertPypeLineForm(dodoDialogs.protoPypeForm):
         f = None
         f = qfd.getSaveFileName()[0]
         if f:
-            if self.combo.currentText() != "<new>":
+            if self.combo.currentText() != translate("insertPypeLineForm", "<new>"):
                 group = FreeCAD.activeDocument().getObjectsByLabel(
                     FreeCAD.__activePypeLine__ + "_pieces"
                 )[0]
@@ -1234,7 +1226,10 @@ class breakForm(QDialog):
         self.show()
 
     def setCurrentPL(self, PLName=None):
-        if self.combo.currentText() not in ["<none>", "<new>"]:
+        if self.combo.currentText() not in [
+            translate("breakForm", "<none>"),
+            translate("breakForm", "<new>"),
+        ]:
             FreeCAD.__activePypeLine__ = self.combo.currentText()
         else:
             FreeCAD.__activePypeLine__ = None
@@ -1281,16 +1276,13 @@ class breakForm(QDialog):
         if self.edit1.text() and self.edit1.text()[-1] == "%":
             self.slider.setValue(int(float(self.edit1.text().rstrip("%").strip())))
         elif self.edit1.text() and float(self.edit1.text().strip()) < self.refL:
-            self.slider.setValue(
-                int(float(self.edit1.text().strip()) / self.refL * 100)
-            )
+            self.slider.setValue(int(float(self.edit1.text().strip()) / self.refL * 100))
 
     def calcGapPercent(self):
         if self.edit2.text() and self.edit2.text()[-1] == "%":
             if self.refL:
                 self.edit2.setText(
-                    "%.2f"
-                    % (float(self.edit2.text().rstrip("%").strip()) / 100 * self.refL)
+                    "%.2f" % (float(self.edit2.text().rstrip("%").strip()) / 100 * self.refL)
                 )
             else:
                 self.edit2.setText("0")
@@ -1303,9 +1295,7 @@ class breakForm(QDialog):
             pipes = [p for p in fCmd.beams() if pCmd.isPipe(p)]
             for p in pipes:
                 p2nd = pCmd.breakTheTubes(
-                    float(p.Height)
-                    * float(self.edit1.text().rstrip("%").strip())
-                    / 100,
+                    float(p.Height) * float(self.edit1.text().rstrip("%").strip()) / 100,
                     pipes=[p],
                     gap=float(self.edit2.text()),
                 )
@@ -1313,9 +1303,7 @@ class breakForm(QDialog):
                     for p in p2nd:
                         pCmd.moveToPyLi(p, self.combo.currentText())
         else:
-            p2nd = pCmd.breakTheTubes(
-                float(self.edit1.text()), gap=float(self.edit2.text())
-            )
+            p2nd = pCmd.breakTheTubes(float(self.edit1.text()), gap=float(self.edit2.text()))
             if p2nd and self.combo.currentText() != "<none>":
                 for p in p2nd:
                     pCmd.moveToPyLi(p, self.combo.currentText())
@@ -1433,9 +1421,7 @@ class insertValveForm(dodoDialogs.protoPypeForm):
             ]
             if pipes:
                 pos = self.sli.value()
-                self.lastValve = pCmd.doValves(
-                    propList, FreeCAD.__activePypeLine__, pos
-                )[-1]
+                self.lastValve = pCmd.doValves(propList, FreeCAD.__activePypeLine__, pos)[-1]
         else:
             self.lastValve = pCmd.doValves(propList, FreeCAD.__activePypeLine__)[-1]
 
@@ -1478,15 +1464,9 @@ class point2pointPipe(DraftTools.Line):
         self.hackedUI = FreeCADGui.PySideUic.loadUi(dialogPath)
         self.hackedUI.btnRot.clicked.connect(self.rotateWP)
         self.hackedUI.btnOff.clicked.connect(self.offsetWP)
-        self.hackedUI.btnXY.clicked.connect(
-            lambda: self.alignWP(FreeCAD.Vector(0, 0, 1))
-        )
-        self.hackedUI.btnXZ.clicked.connect(
-            lambda: self.alignWP(FreeCAD.Vector(0, 1, 0))
-        )
-        self.hackedUI.btnYZ.clicked.connect(
-            lambda: self.alignWP(FreeCAD.Vector(1, 0, 0))
-        )
+        self.hackedUI.btnXY.clicked.connect(lambda: self.alignWP(FreeCAD.Vector(0, 0, 1)))
+        self.hackedUI.btnXZ.clicked.connect(lambda: self.alignWP(FreeCAD.Vector(0, 1, 0)))
+        self.hackedUI.btnYZ.clicked.connect(lambda: self.alignWP(FreeCAD.Vector(1, 0, 0)))
         self.ui.layout.addWidget(self.hackedUI)
         self.start = None
         self.lastPipe = None
@@ -1498,13 +1478,9 @@ class point2pointPipe(DraftTools.Line):
 
     def offsetWP(self):
         if hasattr(FreeCAD, "DraftWorkingPlane") and hasattr(FreeCADGui, "Snapper"):
-            s = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/Draft").GetInt(
-                "gridSize"
-            )
+            s = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/Draft").GetInt("gridSize")
             sc = [float(x * s) for x in [1, 1, 0.2]]
-            varrow = uCmd.arrow(
-                FreeCAD.DraftWorkingPlane.getPlacement(), scale=sc, offset=s
-            )
+            varrow = uCmd.arrow(FreeCAD.DraftWorkingPlane.getPlacement(), scale=sc, offset=s)
             offset = QInputDialog.getInt(
                 None,
                 translate("pForms", "Offset Work Plane"),
@@ -1512,9 +1488,7 @@ class point2pointPipe(DraftTools.Line):
             )
             if offset[1]:
                 uCmd.offsetWP(offset[0])
-            FreeCADGui.ActiveDocument.ActiveView.getSceneGraph().removeChild(
-                varrow.node
-            )
+            FreeCADGui.ActiveDocument.ActiveView.getSceneGraph().removeChild(varrow.node)
 
     def rotateWP(self):
         self.form = uForms.rotWPForm()
@@ -1561,9 +1535,7 @@ class point2pointPipe(DraftTools.Line):
                                 prev = self.lastPipe
                             else:
                                 prev = None
-                            d = self.pform.pipeDictList[
-                                self.pform.sizeList.currentRow()
-                            ]
+                            d = self.pform.pipeDictList[self.pform.sizeList.currentRow()]
                             v = self.point - self.start
                             propList = [
                                 d["PSize"],
@@ -1573,9 +1545,7 @@ class point2pointPipe(DraftTools.Line):
                             ]
                             self.lastPipe = pCmd.makePipe(propList, self.start, v)
                             if self.pform.combo.currentText() != "<none>":
-                                pCmd.moveToPyLi(
-                                    self.lastPipe, self.pform.combo.currentText()
-                                )
+                                pCmd.moveToPyLi(self.lastPipe, self.pform.combo.currentText())
                             self.start = self.point
                             FreeCAD.ActiveDocument.recompute()
                             if prev:
@@ -1596,9 +1566,7 @@ class point2pointPipe(DraftTools.Line):
                         if self.pform.cb1.isChecked():
                             rot = FreeCAD.DraftWorkingPlane.getPlacement().Rotation
                             normal = rot.multVec(FreeCAD.Vector(0, 0, 1))
-                            FreeCAD.DraftWorkingPlane.alignToPointAndAxis(
-                                self.point, normal
-                            )
+                            FreeCAD.DraftWorkingPlane.alignToPointAndAxis(self.point, normal)
                             FreeCADGui.Snapper.setGrid()
                         if not self.isWire and len(self.node) == 2:
                             self.finish(False, cont=True)
@@ -1670,10 +1638,7 @@ class insertTankForm(dodoDialogs.protoTypeDialog):
             f = open(join(dirname(abspath(__file__)), "tablez", fileName), "r")
             reader = csv.DictReader(f, delimiter=";")
             pipes = dict(
-                [
-                    [line["PSize"], [float(line["OD"]), float(line["thk"])]]
-                    for line in reader
-                ]
+                [[line["PSize"], [float(line["OD"]), float(line["thk"])]] for line in reader]
             )
             f.close()
             fileName = "Flange_" + self.form.comboFlange.currentText() + ".csv"
@@ -1702,9 +1667,7 @@ class insertTankForm(dodoDialogs.protoTypeDialog):
             print(translate("insertTankForm", "files not read"))
             return
         listNozzles = [
-            [p[0], p[1] + flanges[p[0]]]
-            for p in pipes.items()
-            if p[0] in flanges.keys()
+            [p[0], p[1] + flanges[p[0]]] for p in pipes.items() if p[0] in flanges.keys()
         ]
         print(translate("insertTankForm", "listNozzles: %s") % str(listNozzles))
         self.nozzles = dict(listNozzles)
@@ -1756,9 +1719,7 @@ class insertRouteForm(dodoDialogs.protoTypeDialog):
             if e.curvatureAt(0):
                 pCmd.makeRoute(self.normal)
             else:
-                s = FreeCAD.ActiveDocument.addObject(
-                    "Sketcher::SketchObject", "pipeRoute"
-                )
+                s = FreeCAD.ActiveDocument.addObject("Sketcher::SketchObject", "pipeRoute")
                 s.MapMode = "NormalToEdge"
                 s.Support = [(self.obj, self.edge)]
                 s.AttachmentOffset = FreeCAD.Placement(
@@ -1775,9 +1736,7 @@ class insertRouteForm(dodoDialogs.protoTypeDialog):
             self.normal = fCmd.edges()[0].tangentAt(0)
         else:
             self.normal = FreeCAD.Vector(0, 0, 1)
-        self.form.lab1.setText(
-            "%.1f,%.1f,%.1f " % (self.normal.x, self.normal.y, self.normal.z)
-        )
+        self.form.lab1.setText("%.1f,%.1f,%.1f " % (self.normal.x, self.normal.y, self.normal.z))
 
     def mouseActionB1(self, CtrlAltShift=[False, False, False]):
         v = FreeCADGui.ActiveDocument.ActiveView

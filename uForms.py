@@ -5,9 +5,11 @@ __author__ = "oddtopus"
 __url__ = "github.com/oddtopus/dodo"
 __license__ = "LGPL 3"
 
-from PySide import QtGui, QtCore
-import FreeCAD, FreeCADGui
-from DraftGui import translate
+import FreeCAD
+import FreeCADGui
+from PySide import QtCore, QtGui
+
+translate = FreeCAD.Qt.translate
 
 # UI Class definitions
 
@@ -39,9 +41,7 @@ class QueryForm(QtGui.QDialog):  # QWidget):
         self.subFLayout3 = QtGui.QFormLayout()
         self.subFLayout3.addRow(translate("uForms", "Rotation axis: "), self.labRotAx)
         # 5th row
-        self.labSubObj = QtGui.QLabel(
-            translate("uForms", "(Sub object property)"), self
-        )
+        self.labSubObj = QtGui.QLabel(translate("uForms", "(Sub object property)"), self)
         # 6th row
         self.labBeam = QtGui.QLabel(translate("uForms", "(Beam property)"), self)
         # 7th row
@@ -77,12 +77,8 @@ class QueryForm(QtGui.QDialog):  # QWidget):
         try:
             obj = self.Selection.getSelection()[0]
             self.labName.setText(obj.Label)
-            self.labBaseVal.setText(
-                str("P = %.1f,%.1f,%.1f" % tuple(obj.Placement.Base))
-            )
-            self.labRotAng.setText(
-                str("%.2f " % (degrees(obj.Placement.Rotation.Angle)))
-            )
+            self.labBaseVal.setText(str("P = %.1f,%.1f,%.1f" % tuple(obj.Placement.Base)))
+            self.labRotAng.setText(str("%.2f " % (degrees(obj.Placement.Rotation.Angle))))
             ax = obj.Placement.Rotation.Axis
             self.labRotAx.setText(
                 str("v = (%(x).2f,%(y).2f,%(z).2f)" % {"x": ax.x, "y": ax.y, "z": ax.z})
@@ -97,23 +93,19 @@ class QueryForm(QtGui.QDialog):  # QWidget):
                 sub = shapes[0]
                 if sub.ShapeType == "Edge":
                     if sub.curvatureAt(0) == 0:
-                        self.labSubObj.setText(
-                            sub.ShapeType + ":\tL = %.1f mm" % sub.Length
-                        )
+                        self.labSubObj.setText(sub.ShapeType + ":\tL = %.1f mm" % sub.Length)
                     else:
                         x, y, z = sub.centerOfCurvatureAt(0)
                         d = 2 / sub.curvatureAt(0)
                         self.labSubObj.setText(
-                            sub.ShapeType
-                            + ":\tD = %.1f mm\n\tC = %.1f,%.1f,%.1f" % (d, x, y, z)
+                            sub.ShapeType + ":\tD = %.1f mm\n\tC = %.1f,%.1f,%.1f" % (d, x, y, z)
                         )
                 elif sub.ShapeType == "Face":
                     self.labSubObj.setText(sub.ShapeType + ":\tA = %.1f mm2" % sub.Area)
                 elif sub.ShapeType == "Vertex":
                     self.labSubObj.setText(
                         sub.ShapeType
-                        + ": pos = (%(x).1f,%(y).1f,%(z).1f)"
-                        % {"x": sub.X, "y": sub.Y, "z": sub.Z}
+                        + ": pos = (%(x).1f,%(y).1f,%(z).1f)" % {"x": sub.X, "y": sub.Y, "z": sub.Z}
                     )
             elif len(shapes) > 1:
                 self.labSubObj.setText(
@@ -189,9 +181,7 @@ class rotWPForm(QDialog):  # QWidget):
         self.grid.addWidget(self.btn1, 2, 0, 1, 3, Qt.AlignCenter)
         self.show()
         self.sg = FreeCADGui.ActiveDocument.ActiveView.getSceneGraph()
-        s = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/Draft").GetInt(
-            "gridSize"
-        )
+        s = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/Draft").GetInt("gridSize")
         sc = [float(x * s) for x in [1, 1, 0.2]]
         from uCmd import arrow
 
@@ -244,9 +234,7 @@ class dpCalcDialog:
         self.form.radioLiquid.released.connect(self.setLiquid)
         self.form.radioGas.released.connect(self.setGas)
         self.form.butExport.clicked.connect(self.export)
-        self.form.comboWhat.currentIndexChanged.connect(
-            lambda: self.form.labResult.setText("---")
-        )
+        self.form.comboWhat.currentIndexChanged.connect(lambda: self.form.labResult.setText("---"))
         f = open(join(dirname(abspath(__file__)), "tablez", "roughness.csv"), "r")
         reader = csv.DictReader(f, delimiter=";")
         self.materials = [m for m in reader]
@@ -269,8 +257,7 @@ class dpCalcDialog:
             [
                 o.Label
                 for o in FreeCAD.ActiveDocument.Objects
-                if hasattr(o, "PType")
-                and (o.PType == "PypeBranch" or o.PType == "PypeLine")
+                if hasattr(o, "PType") and (o.PType == "PypeBranch" or o.PType == "PypeLine")
             ]
         )
         self.checkFluid()
@@ -289,14 +276,9 @@ class dpCalcDialog:
         if self.form.comboWhat.currentText() == "<on selection>":
             elements = FreeCADGui.Selection.getSelection()
         else:
-            o = FreeCAD.ActiveDocument.getObjectsByLabel(
-                self.form.comboWhat.currentText()
-            )[0]
+            o = FreeCAD.ActiveDocument.getObjectsByLabel(self.form.comboWhat.currentText())[0]
             if hasattr(o, "PType") and o.PType == "PypeBranch":
-                elements = [
-                    FreeCAD.ActiveDocument.getObject(name)
-                    for name in o.Tubes + o.Curves
-                ]
+                elements = [FreeCAD.ActiveDocument.getObject(name) for name in o.Tubes + o.Curves]
             elif hasattr(o, "PType") and o.PType == "PypeLine":
                 group = FreeCAD.ActiveDocument.getObjectsByLabel(o.Label + "_pieces")[0]
                 elements = group.OutList
@@ -320,8 +302,7 @@ class dpCalcDialog:
                     Ltot += L
                     loss = v**2 / 2 * self.Rho * f * L / ID
                     self.form.editResults.append(
-                        "%s\t%.1f mm\t%.1f m/s\t%.5f bar"
-                        % (o.Label, ID * 1000, v, loss / 1e5)
+                        "%s\t%.1f mm\t%.1f m/s\t%.5f bar" % (o.Label, ID * 1000, v, loss / 1e5)
                     )
                 elif o.PType == "Elbow":
                     ang = float(o.BendAngle)
@@ -336,8 +317,7 @@ class dpCalcDialog:
                     )  # Rennels
                     loss = self.Rho * K * v**2 / 2
                     self.form.editResults.append(
-                        "%s\t%.1f mm\t%.1f m/s\t%.5f bar"
-                        % (o.Label, ID * 1000, v, loss / 1e5)
+                        "%s\t%.1f mm\t%.1f m/s\t%.5f bar" % (o.Label, ID * 1000, v, loss / 1e5)
                     )
                 elif o.PType == "Reduct":
                     ID1 = float(o.OD - o.thk * 2)
@@ -350,16 +330,12 @@ class dpCalcDialog:
                         K = 0.5 * sqrt(sin(teta / 2)) * (1 - beta**2)
                     loss = self.Rho * K * v**2 / 2
                     self.form.editResults.append(
-                        "%s\t%.1f mm\t%.1f m/s\t%.5f bar"
-                        % (o.Label, ID * 1000, v, loss / 1e5)
+                        "%s\t%.1f mm\t%.1f m/s\t%.5f bar" % (o.Label, ID * 1000, v, loss / 1e5)
                     )
             elif hasattr(o, "Kv") and o.Kv > 0:
                 if self.isLiquid:
                     loss = (Q * 3600 / o.Kv) ** 2 * 100000 * self.Rho / 1000
-                elif (
-                    self.form.comboFluid.currentText() == translate("water")
-                    and not self.isLiquid
-                ):
+                elif self.form.comboFluid.currentText() == translate("water") and not self.isLiquid:
                     pass  # TODO: formula for steam
                 else:
                     pass  # TODO: formula for gases
@@ -370,8 +346,7 @@ class dpCalcDialog:
                     v = 0
                     ID = 0
                 self.form.editResults.append(
-                    "%s\t%.1f mm\t%.1f m/s\t%.5f bar"
-                    % (o.Label, ID * 1000, v, loss / 1e5)
+                    "%s\t%.1f mm\t%.1f m/s\t%.5f bar" % (o.Label, ID * 1000, v, loss / 1e5)
                 )
             Dp += loss
         if Dp > 200:
@@ -405,9 +380,7 @@ class dpCalcDialog:
                 QMessageBox.warning(
                     None,
                     translate("dpCalcDialog", "No data found"),
-                    translate(
-                        "dpCalcDialog", "It seems the fluid has not a liquid state."
-                    ),
+                    translate("dpCalcDialog", "It seems the fluid has not a liquid state."),
                 )
                 self.form.radioGas.setChecked(True)
                 return
@@ -429,9 +402,7 @@ class dpCalcDialog:
                 QMessageBox.warning(
                     None,
                     translate("dpCalcDialog", "No data found"),
-                    translate(
-                        "dpCalcDialog", "It seems the fluid has not a gas state."
-                    ),
+                    translate("dpCalcDialog", "It seems the fluid has not a gas state."),
                 )
                 self.form.radioLiquid.setChecked(True)
                 return

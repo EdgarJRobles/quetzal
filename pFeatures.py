@@ -1,4 +1,4 @@
-# (c) 2019 R. T. LGPL: part of dodo tools w.b. for FreeCAD
+# (c) 2019 R. T. LGPL: part ofdodo tools w.b. for FreeCAD
 
 __title__ = "pypeTools objects"
 __author__ = "oddtopus"
@@ -7,11 +7,19 @@ __license__ = "LGPL 3"
 objs = ["Pipe", "Elbow", "Reduct", "Cap", "Flange", "Ubolt", "Valve"]
 metaObjs = ["PypeLine", "PypeBranch"]
 
-import FreeCAD, FreeCADGui, Part, fCmd, pCmd
-from copy import copy
-from os.path import join, dirname, abspath
-from PySide.QtCore import QT_TRANSLATE_NOOP
-from DraftGui import translate
+from os.path import abspath, dirname, join
+
+import FreeCAD
+import FreeCADGui
+import Part
+import Sketcher
+
+import fCmd
+import pCmd
+from quetzal_config import FREECADVERSION
+
+QT_TRANSLATE_NOOP = FreeCAD.Qt.QT_TRANSLATE_NOOP
+translate = FreeCAD.Qt.translate
 
 vO = FreeCAD.Vector(0, 0, 0)
 vX = FreeCAD.Vector(1, 0, 0)
@@ -23,31 +31,30 @@ vZ = FreeCAD.Vector(0, 0, 1)
 
 class pypeType(object):
     def __init__(self, obj):
-        obj.Proxy = self
         obj.addProperty(
             "App::PropertyString",
             "PType",
             "PBase",
-            QT_TRANSLATE_NOOP("App::PropertyString", "Type of tubeFeature"),
+            QT_TRANSLATE_NOOP("App::Property", "Type of tubeFeature"),
         ).PType
         obj.addProperty(
             "App::PropertyString",
             "PRating",
             "PBase",
-            QT_TRANSLATE_NOOP("App::PropertyString", "Rating of pipeFeature"),
+            QT_TRANSLATE_NOOP("App::Property", "Rating of pipeFeature"),
         ).PRating
         obj.addProperty(
             "App::PropertyString",
             "PSize",
             "PBase",
-            QT_TRANSLATE_NOOP("App::PropertyString", "Nominal diameter"),
+            QT_TRANSLATE_NOOP("App::Property", "Nominal diameter"),
         ).PSize
         obj.addProperty(
             "App::PropertyVectorList",
             "Ports",
             "PBase",
             QT_TRANSLATE_NOOP(
-                "App::PropertyVectorList",
+                "App::Property",
                 "Ports position relative to the origin of Shape",
             ),
         )
@@ -55,9 +62,9 @@ class pypeType(object):
             "App::PropertyFloat",
             "Kv",
             "PBase",
-            QT_TRANSLATE_NOOP("App::PropertyFloat", "Flow factor (m3/h/bar)"),
+            QT_TRANSLATE_NOOP("App::Property", "Flow factor (m3/h/bar)"),
         ).Kv
-        if int(FreeCAD.Version()[1]) > 19:
+        if FREECADVERSION > 0.19:
             obj.addExtension("Part::AttachExtensionPython")
         else:
             obj.addExtension("Part::AttachExtensionPython", obj)  # 20220704
@@ -73,31 +80,32 @@ class pypeType(object):
           or to the selected geometry.
           (<portNr>, <portPos>, <portDir>)
         """
-        obj = FreeCAD.ActiveDocument.getObject(self.Name)
-        if not point and FreeCADGui.ActiveDocument:
-            try:
-                selex = FreeCADGui.Selection.getSelectionEx()
-                target = selex[0].Object
-                so = selex[0].SubObjects[0]
-            except:
-                FreeCAD.Console.PrintError("No geometry selected\n")
-                return None
-            if type(so) == Part.Vertex:
-                point = so.Point
-            else:
-                point = so.CenterOfMass
-        if point:
-            pos = pCmd.portsPos(obj)[0]
-            Z = pCmd.portsDir(obj)[0]
-            i = nearest = 0
-            if len(obj.Ports) > 1:
-                for p in pCmd.portsPos(obj)[1:]:
-                    i += 1
-                    if (p - point).Length < (pos - point).Length:
-                        pos = p
-                        Z = pCmd.portsDir(obj)[i]
-                        nearest = i
-            return nearest, pos, Z
+        if FreeCAD.ActiveDocument:
+            obj = FreeCAD.ActiveDocument.getObject(self.Name)
+            if not point and FreeCADGui.ActiveDocument:
+                try:
+                    selex = FreeCADGui.Selection.getSelectionEx()
+                    target = selex[0].Object
+                    so = selex[0].SubObjects[0]
+                except:
+                    FreeCAD.Console.PrintError("No geometry selected\n")
+                    return None
+                if type(so) == Part.Vertex:
+                    point = so.Point
+                else:
+                    point = so.CenterOfMass
+            if point:
+                pos = pCmd.portsPos(obj)[0]
+                Z = pCmd.portsDir(obj)[0]
+                i = nearest = 0
+                if len(obj.Ports) > 1:
+                    for p in pCmd.portsPos(obj)[1:]:
+                        i += 1
+                        if (p - point).Length < (pos - point).Length:
+                            pos = p
+                            Z = pCmd.portsDir(obj)[i]
+                            nearest = i
+                return nearest, pos, Z
 
 
 class Pipe(pypeType):
@@ -114,6 +122,7 @@ class Pipe(pypeType):
         super(Pipe, self).__init__(obj)
         # define common properties
         obj.PType = "Pipe"
+        obj.Proxy = self
         obj.PRating = "SCH-STD"
         obj.PSize = DN
         # define specific properties
@@ -134,7 +143,9 @@ class Pipe(pypeType):
             "ID",
             "Pipe",
             QT_TRANSLATE_NOOP("App::Property", "Inside diameter"),
-        ).ID = obj.OD - 2 * obj.thk
+        ).ID = (
+            obj.OD - 2 * obj.thk
+        )
         obj.addProperty(
             "App::PropertyLength",
             "Height",
@@ -146,13 +157,37 @@ class Pipe(pypeType):
             "Profile",
             "Pipe",
             QT_TRANSLATE_NOOP("App::Property", "Section dim."),
-        ).Profile = str(obj.OD) + "x" + str(obj.thk)
+        ).Profile = (
+            str(obj.OD) + "x" + str(obj.thk)
+        )
 
     def onChanged(self, fp, prop):
         if prop == "ID" and fp.ID < fp.OD:
             fp.thk = (fp.OD - fp.ID) / 2
 
     def execute(self, fp):
+        from math import tan
+
+        try:
+            parent = fp.getParentGroup()
+            i = parent.Tubes.index(fp.Name)
+            edges = parent.Base.Shape.Edges
+            L = edges[i].Length
+            R = parent.BendRadius
+            if i < len(parent.Curves):
+                v1, v2 = [e.tangentAt(0) for e in edges[i : i + 2]]
+                alfa = float(v1.getAngle(v2)) / 2
+                L -= float(R * tan(alfa))
+            if i:
+                v1, v2 = [e.tangentAt(0) for e in edges[i - 1 : i + 1]]
+                alfa = float(v1.getAngle(v2)) / 2
+                tang = float(R * tan(alfa))
+                L -= tang
+                fp.AttachmentOffset.Base = FreeCAD.Vector(0, 0, tang)
+            fp.Height = L
+        except Exception as e:
+            #  FreeCAD.Console.PrintWarning(str(e) + "\n")
+            pass
         if fp.thk > fp.OD / 2:
             fp.thk = fp.OD / 2
         fp.ID = fp.OD - 2 * fp.thk
@@ -202,7 +237,9 @@ class Elbow(pypeType):
             "ID",
             "Elbow",
             QT_TRANSLATE_NOOP("App::Property", "Inside diameter"),
-        ).ID = obj.OD - 2 * obj.thk
+        ).ID = (
+            obj.OD - 2 * obj.thk
+        )
         obj.addProperty(
             "App::PropertyAngle",
             "BendAngle",
@@ -220,7 +257,9 @@ class Elbow(pypeType):
             "Profile",
             "Elbow",
             QT_TRANSLATE_NOOP("App::Property", "Section dim."),
-        ).Profile = str(obj.OD) + "x" + str(obj.thk)
+        ).Profile = (
+            str(obj.OD) + "x" + str(obj.thk)
+        )
         # obj.Ports=[FreeCAD.Vector(1,0,0),FreeCAD.Vector(0,1,0)]
         self.execute(obj)
 
@@ -229,6 +268,16 @@ class Elbow(pypeType):
             fp.thk = (fp.OD - fp.ID) / 2
 
     def execute(self, fp):
+        parent = fp.getParentGroup()
+        if parent:
+            try:
+                edges = parent.Base.Shape.Edges
+                i = parent.Curves.index(fp.Name)
+                v1, v2 = [e.tangentAt(0) for e in edges[i : i + 2]]
+                pCmd.placeTheElbow(fp, v1, v2)
+            except Exception as e:
+                #  FreeCAD.Console.PrintWarning(str(e) + "\n")
+                pass
         if fp.BendAngle < 180:
             if fp.thk > fp.OD / 2:
                 fp.thk = fp.OD / 2
@@ -246,35 +295,30 @@ class Elbow(pypeType):
             ## move the cl so that Placement.Base is the center of elbow ##
             from math import pi, cos, sqrt
 
-            d = fp.BendRadius * sqrt(2) - fp.BendRadius / cos(
-                fp.BendAngle / 180 * pi / 2
-            )
+            d = fp.BendRadius * sqrt(2) - fp.BendRadius / cos(fp.BendAngle / 180 * pi / 2)
             P = FreeCAD.Vector(-d * cos(pi / 4), -d * cos(pi / 4), 0)
             R.translate(P)
             ## calculate Ports position ##
             fp.Ports = [R.valueAt(R.FirstParameter), R.valueAt(R.LastParameter)]
             ## make the shape of the elbow ##
-            c = Part.makeCircle(
-                fp.OD / 2, fp.Ports[0], R.tangentAt(R.FirstParameter) * -1
-            )
+            c = Part.makeCircle(fp.OD / 2, fp.Ports[0], R.tangentAt(R.FirstParameter) * -1)
             b = Part.makeSweepSurface(R, c)
             p1 = Part.Face(Part.Wire(c))
             p2 = Part.Face(
-                Part.Wire(
-                    Part.makeCircle(
-                        fp.OD / 2, fp.Ports[1], R.tangentAt(R.LastParameter)
-                    )
-                )
+                Part.Wire(Part.makeCircle(fp.OD / 2, fp.Ports[1], R.tangentAt(R.LastParameter)))
             )
-            sol = Part.Solid(Part.Shell([b, p1, p2]))
-            planeFaces = [f for f in sol.Faces if type(f.Surface) == Part.Plane]
-            # elbow=sol.makeThickness(planeFaces,-fp.thk,1.e-3)
-            # fp.Shape = elbow
-            if fp.thk < fp.OD / 2:
-                fp.Shape = sol.makeThickness(planeFaces, -fp.thk, 1.0e-3)
-            else:
-                fp.Shape = sol
-            super(Elbow, self).execute(fp)  # perform common operations
+            try:
+                sol = Part.Solid(Part.Shell([b.Faces[0], p1.Faces[0], p2.Faces[0]]))
+                planeFaces = [f for f in sol.Faces if type(f.Surface) == Part.Plane]
+                # elbow=sol.makeThickness(planeFaces,-fp.thk,1.e-3)
+                # fp.Shape = elbow
+                if fp.thk < fp.OD / 2:
+                    fp.Shape = sol.makeThickness(planeFaces, -fp.thk, 1.0e-3)
+                else:
+                    fp.Shape = sol
+                super(Elbow, self).execute(fp)  # perform common operations
+            except Part.OCCError as occer:
+                FreeCAD.Console.PrintWarning(str(occer) + "\n")
 
 
 class Flange(pypeType):
@@ -289,9 +333,9 @@ class Flange(pypeType):
       f (float): bolts holes diameter
       t (float): flange thickness
       n (int): nr. of bolts
-      trf (float): raised-face thikness - OPTIONAL -
+      trf (float): raised-face thickness - OPTIONAL -
       drf (float): raised-face diameter - OPTIONAL -
-      twn (float): welding-neck thikness - OPTIONAL -
+      twn (float): welding-neck thickness - OPTIONAL -
       dwn (float): welding-neck diameter - OPTIONAL -
       ODp (float): outside diameter of pipe for wn flanges - OPTIONAL -
     """
@@ -312,10 +356,16 @@ class Flange(pypeType):
         twn=0,
         dwn=0,
         ODp=0,
+        R=0,
+        T1=0,
+        B2=0,
+        Y=0,
     ):
         # initialize the parent class
         super(Flange, self).__init__(obj)
         # define common properties
+        self.Type='Flange'
+        obj.Proxy=self
         obj.PType = "Flange"
         obj.PRating = "DIN-PN16"
         obj.PSize = DN
@@ -392,14 +442,46 @@ class Flange(pypeType):
             "Flange2",
             QT_TRANSLATE_NOOP("App::Property", "Outside diameter of pipe"),
         ).ODp = ODp
+        obj.addProperty(
+            "App::PropertyLength",
+            "R",
+            "Flange",
+            QT_TRANSLATE_NOOP("App::Property", "Flange fillet radius"),
+        ).R = R
+        obj.addProperty(
+            "App::PropertyLength",
+            "T1",
+            "Flange",
+            QT_TRANSLATE_NOOP("App::Property", "Flange neck lenght"),
+        ).T1 = T1
+        obj.addProperty(
+            "App::PropertyLength",
+            "B2",
+            "Flange Socket welding",
+            QT_TRANSLATE_NOOP("App::Property", "Socket diameter"),
+        ).B2 = B2
+        obj.addProperty(
+            "App::PropertyLength",
+            "Y",
+            "Flange Socket welding",
+            QT_TRANSLATE_NOOP("App::Property", "Socket depth"),
+        ).Y = Y
 
     def onChanged(self, fp, prop):
+        # FreeCAD.Console.PrintMessage(prop)
+        if prop=="ODp":
+            if fp.ODp > fp.D:
+                FreeCAD.Console.PrintError("Raised edge diameter must be smaller than flange diameter")
         return None
 
     def execute(self, fp):
+        '''
+
+        '''
         base = Part.Face(Part.Wire(Part.makeCircle(fp.D / 2)))
         if fp.d > 0:
             base = base.cut(Part.Face(Part.Wire(Part.makeCircle(fp.d / 2))))
+        # Operation designed to make flange hole cylinders
         if fp.n > 0:
             hole = Part.Face(
                 Part.Wire(
@@ -410,31 +492,115 @@ class Flange(pypeType):
                     )
                 )
             )
-            hole.rotate(
-                FreeCAD.Vector(0, 0, 0), FreeCAD.Vector(0, 0, 1), 360.0 / fp.n / 2
-            )
+            hole.rotate(FreeCAD.Vector(0, 0, 0), FreeCAD.Vector(0, 0, 1), 360.0 / fp.n / 2)
             for i in list(range(fp.n)):
                 base = base.cut(hole)
-                hole.rotate(
-                    FreeCAD.Vector(0, 0, 0), FreeCAD.Vector(0, 0, 1), 360.0 / fp.n
-                )
-        flange = base.extrude(FreeCAD.Vector(0, 0, fp.t))
-        try:  # Flange2: raised-face and welding-neck
-            if fp.trf > 0 and fp.drf > 0:
+                hole.rotate(FreeCAD.Vector(0, 0, 0), FreeCAD.Vector(0, 0, 1), 360.0 / fp.n)
+        #creates flange thickness
+        flange = base.extrude(FreeCAD.Vector(0, 0, fp.t-fp.trf))
+        FreeCADGui.ActiveDocument.Flange.Deviation = 0.10
+        if fp.FlangeType=='SW' or fp.FlangeType=='WN'or fp.FlangeType=='LJ':
+            #creates flange neck
+            nn=Part.makeCylinder(fp.ODp/2,fp.T1-fp.trf,vO,vZ).cut(
+            Part.makeCylinder(fp.d/2,fp.T1-fp.trf,vO,vZ))
+            flange=flange.fuse(nn)
+            if fp.trf > 0 and fp.drf < fp.D:
                 rf = Part.makeCylinder(fp.drf / 2, fp.trf, vO, vZ * -1).cut(
-                    Part.makeCylinder(fp.d / 2, fp.trf, vO, vZ * -1)
-                )
+                    Part.makeCylinder(fp.d / 2, fp.trf, vO, vZ * -1))
                 flange = flange.fuse(rf)
-            if fp.dwn > 0 and fp.twn > 0 and fp.ODp > 0:
-                wn = Part.makeCone(
-                    fp.dwn / 2, fp.ODp / 2, fp.twn, vZ * float(fp.t)
-                ).cut(Part.makeCylinder(fp.d / 2, fp.twn, vZ * float(fp.t)))
-                flange = flange.fuse(wn)
-        except:
-            pass
-        fp.Shape = flange
+
+        if fp.FlangeType=='WN':
+            try:  # Flange2:welding-neck
+                if fp.dwn > 0 and fp.twn > 0 and fp.ODp > 0:
+                    wn = Part.makeCone(fp.dwn / 2, fp.ODp / 2, fp.twn, vZ * float(fp.t-fp.trf)).cut(
+                        Part.makeCylinder(fp.d / 2, fp.twn, vZ * float(fp.t-fp.trf))
+                    )
+                    flange = flange.fuse(wn)
+                    flange = flange.removeSplitter()
+                    flange=flange.makeFillet(fp.R,[flange.Edges[2]])
+                    flange=flange.makeChamfer((fp.ODp-fp.d)/2*0.90,[flange.Edges[6]])
+            except:
+                    pass
+        elif fp.FlangeType=='LJ':
+            edge=[]
+            flange = flange.removeSplitter()
+            if fp.n == 4:
+                edge=flange.Edges[19]
+            if fp.n == 8:
+                edge=flange.Edges[31]
+            if fp.n == 12:
+                edge=flange.Edges[43]
+            if fp.n == 16:
+                edge=flange.Edges[55]
+            if fp.n == 20:
+                edge=flange.Edges[67]
+            flange=flange.makeFillet(fp.R,edge)
+        elif fp.FlangeType=='SW':
+            #creates flange neck
+            if fp.B2 > 0:
+                nn=flange.cut(
+                Part.makeCylinder(fp.B2/2,fp.Y,vZ*float(fp.T1-fp.trf),vZ*-1))
+                flange=nn.removeSplitter()
+        fp.Shape=flange
         fp.Ports = [FreeCAD.Vector(), FreeCAD.Vector(0, 0, float(fp.t))]
         super(Flange, self).execute(fp)  # perform common operations
+
+    #!TODO:this method generate a PartDesign object with sketch nest, pending feature compatibility
+
+    # def execute(self,fp):
+    #     obj=FreeCAD.activeDocument().addObject('PartDesign::Body','Flange')
+    #     sketch=obj.newObject('Sketcher::SketchObject','Sketch')
+    #     sketch.AttachmentSupport=(FreeCAD.activeDocument().getObject('YZ_Plane'),[''])
+    #     sketch.MapMode='FlatFace'
+    #     sketch.addGeometry(Part.LineSegment(FreeCAD.Vector(-26.396620,19.420528,0),FreeCAD.Vector(37.200497,20.283836,0)),False)
+    #     sketch.addConstraint(Sketcher.Constraint('DistanceY',-1,1,0,2,fp.d/2))
+    #     sketch.renameConstraint(0, u'InnerDiameter')
+    #     sketch.addConstraint(Sketcher.Constraint('Symmetric',0,1,0,2,-2))
+    #     sketch.addConstraint(Sketcher.Constraint('DistanceX',0,1,0,2,70))
+    #     sketch.renameConstraint(2, u'OverallThickness')
+    #     sketch.addGeometry(Part.LineSegment(FreeCAD.Vector(37.200497,19.420528,0),FreeCAD.Vector(37.200497,24.312616,0)),False)
+    #     sketch.addConstraint(Sketcher.Constraint('Coincident',0,2,1,1))
+    #     sketch.addConstraint(Sketcher.Constraint('Vertical',1))
+    #     sketch.addGeometry(Part.ArcOfCircle(Part.Circle(FreeCAD.Vector(34.202893,24.312616,0),FreeCAD.Vector(0,0,1),2.997604),0.000000,1.287001),False)
+    #     sketch.addConstraint(Sketcher.Constraint('Tangent',1,2,2,1))
+    #     sketch.addGeometry(Part.LineSegment(FreeCAD.Vector(35.042226,27.190315,0),FreeCAD.Vector(6.698068,35.457398,0)),False)
+    #     sketch.addConstraint(Sketcher.Constraint('Tangent',2,2,3,1))
+    #     sketch.addGeometry(Part.ArcOfCircle(Part.Circle(FreeCAD.Vector(7.314065,37.569377,0),FreeCAD.Vector(0,0,1),2.199979),-3.132797,-1.854592),False)
+    #     sketch.addConstraint(Sketcher.Constraint('Equal',2,4))
+    #     sketch.addConstraint(Sketcher.Constraint('Tangent',3,2,4,2))
+    #     sketch.addGeometry(Part.LineSegment(FreeCAD.Vector(5.114171,37.550027,0),FreeCAD.Vector(4.854102,67.117138,0)),False)
+    #     sketch.addConstraint(Sketcher.Constraint('Tangent',4,1,5,1))
+    #     sketch.addGeometry(Part.ArcOfCircle(Part.Circle(FreeCAD.Vector(1.818155,67.090434,0),FreeCAD.Vector(0,0,1),3.036064),0.008796,1.579592),False)
+    #     sketch.addConstraint(Sketcher.Constraint('Equal',6,4))
+    #     sketch.addConstraint(Sketcher.Constraint('Radius',4,3))
+    #     sketch.addConstraint(Sketcher.Constraint('Tangent',5,2,6,1))
+    #     sketch.addConstraint(Sketcher.Constraint('Vertical',5))
+    #     sketch.addGeometry(Part.LineSegment(FreeCAD.Vector(1.791451,70.126381,0),FreeCAD.Vector(-23.109907,69.907350,0)),False)
+    #     sketch.addConstraint(Sketcher.Constraint('Horizontal',7))
+    #     sketch.addConstraint(Sketcher.Constraint('Tangent',6,2,7,1))
+    #     sketch.addGeometry(Part.LineSegment(FreeCAD.Vector(-23.109907,69.907350,0),FreeCAD.Vector(-22.849606,40.313959,0)),False)
+    #     sketch.addGeometry(Part.LineSegment(FreeCAD.Vector(-22.849606,40.313959,0),FreeCAD.Vector(-27.278782,40.223301,0)),False)
+    #     sketch.addConstraint(Sketcher.Constraint('Coincident',7,2,8,1))
+    #     sketch.addConstraint(Sketcher.Constraint('Vertical',8))
+    #     sketch.addConstraint(Sketcher.Constraint('Coincident',8,2,9,1))
+    #     sketch.addConstraint(Sketcher.Constraint('DistanceY',8,1,8,2,-10))
+    #     sketch.addConstraint(Sketcher.Constraint('Horizontal',9))
+    #     sketch.addGeometry(Part.LineSegment(FreeCAD.Vector(-27.278782,40.313959,0),FreeCAD.Vector(-26.396620,19.420528,0)),False)
+    #     sketch.addConstraint(Sketcher.Constraint('Coincident',9,2,10,1))
+    #     sketch.addConstraint(Sketcher.Constraint('Coincident',10,2,0,1))
+    #     sketch.addConstraint(Sketcher.Constraint('Vertical',10))
+    #     sketch.addConstraint(Sketcher.Constraint('DistanceY',-1,1,7,2,fp.D/2))
+    #     sketch.renameConstraint(24, u'OuterDiameter')
+    #     sketch.addConstraint(Sketcher.Constraint('DistanceX',9,2,5,2,fp.t))
+    #     sketch.renameConstraint(25, u'FlangeThickness')
+    #     sketch.Visibility=False
+    #     sketch.recompute()
+    #     revolution=obj.newObject('PartDesign::Revolution','Revolution')
+    #     revolution.Profile=(sketch, [''])
+    #     revolution.ReferenceAxis = (sketch, ['H_Axis'])
+    #     fp.Placement=fp.Placement
+    #     fp.Shape= obj.Shape
+
 
 
 class Reduct(pypeType):
@@ -452,9 +618,7 @@ class Reduct(pypeType):
     If H is None or 0, the length of the reduction is calculated as 3x(OD-OD2).
     """
 
-    def __init__(
-        self, obj, DN="DN50", OD=60.3, OD2=48.3, thk=3, thk2=None, H=None, conc=True
-    ):
+    def __init__(self, obj, DN="DN50", OD=60.3, OD2=48.3, thk=3, thk2=None, H=None, conc=True):
         # initialize the parent class
         super(Reduct, self).__init__(obj)
         # define common properties
@@ -494,7 +658,7 @@ class Reduct(pypeType):
             "App::PropertyBool",
             "calcH",
             "Reduct",
-            QT_TRANSLATE_NOOP("App::Property", "Make the lenght variable"),
+            QT_TRANSLATE_NOOP("App::Property", "Make the length variable"),
         )
         obj.addProperty(
             "App::PropertyLength",
@@ -513,7 +677,9 @@ class Reduct(pypeType):
             "Profile",
             "Reduct",
             QT_TRANSLATE_NOOP("App::Property", "Section dim."),
-        ).Profile = str(obj.OD) + "x" + str(obj.OD2)
+        ).Profile = (
+            str(obj.OD) + "x" + str(obj.OD2)
+        )
         obj.addProperty(
             "App::PropertyBool",
             "conc",
@@ -533,20 +699,14 @@ class Reduct(pypeType):
                 sol = Part.makeCone(fp.OD / 2, fp.OD2 / 2, fp.Height)
                 if fp.thk < fp.OD / 2 and fp.thk2 < fp.OD2 / 2:
                     fp.Shape = sol.cut(
-                        Part.makeCone(
-                            fp.OD / 2 - fp.thk, fp.OD2 / 2 - fp.thk2, fp.Height
-                        )
+                        Part.makeCone(fp.OD / 2 - fp.thk, fp.OD2 / 2 - fp.thk2, fp.Height)
                     )
                 else:
                     fp.Shape = sol
                 fp.Ports = [FreeCAD.Vector(), FreeCAD.Vector(0, 0, float(fp.Height))]
             else:
-                C = Part.makeCircle(
-                    fp.OD / 2, FreeCAD.Vector(0, 0, 0), FreeCAD.Vector(0, 0, 1)
-                )
-                c = Part.makeCircle(
-                    fp.OD2 / 2, FreeCAD.Vector(0, 0, 0), FreeCAD.Vector(0, 0, 1)
-                )
+                C = Part.makeCircle(fp.OD / 2, FreeCAD.Vector(0, 0, 0), FreeCAD.Vector(0, 0, 1))
+                c = Part.makeCircle(fp.OD2 / 2, FreeCAD.Vector(0, 0, 0), FreeCAD.Vector(0, 0, 1))
                 c.translate(FreeCAD.Vector((fp.OD - fp.OD2) / 2, 0, fp.Height))
                 sol = Part.makeLoft([c, C], True)
                 if fp.thk < fp.OD / 2 and fp.thk2 < fp.OD2 / 2:
@@ -604,13 +764,17 @@ class Cap(pypeType):
             "ID",
             "Cap",
             QT_TRANSLATE_NOOP("App::Property", "Inside diameter"),
-        ).ID = obj.OD - 2 * obj.thk
+        ).ID = (
+            obj.OD - 2 * obj.thk
+        )
         obj.addProperty(
             "App::PropertyString",
             "Profile",
             "Cap",
             QT_TRANSLATE_NOOP("App::Property", "Section dim."),
-        ).Profile = str(obj.OD) + "x" + str(obj.thk)
+        ).Profile = (
+            str(obj.OD) + "x" + str(obj.thk)
+        )
 
     def onChanged(self, fp, prop):
         return None
@@ -632,13 +796,9 @@ class Cap(pypeType):
         common = sfera.common(cilindro)
         fil = common.makeFillet(D / 6.5, common.Edges)
         cut = fil.cut(
-            Part.makeCylinder(
-                D * 1.1, D * 2, FreeCAD.Vector(0, 0, 0), FreeCAD.Vector(0, 0, -1)
-            )
+            Part.makeCylinder(D * 1.1, D * 2, FreeCAD.Vector(0, 0, 0), FreeCAD.Vector(0, 0, -1))
         )
-        cap = cut.makeThickness(
-            [f for f in cut.Faces if type(f.Surface) == Part.Plane], -s, 1.0e-3
-        )
+        cap = cut.makeThickness([f for f in cut.Faces if type(f.Surface) == Part.Plane], -s, 1.0e-3)
         fp.Shape = cap
         fp.Ports = [FreeCAD.Vector()]
         super(Cap, self).execute(fp)  # perform common operations
@@ -664,9 +824,7 @@ class PypeLine2(pypeType):
     with possibility to group them automatically and extract the part-list.
     """
 
-    def __init__(
-        self, obj, DN="DN50", PRating="SCH-STD", OD=60.3, thk=3, BR=None, lab=None
-    ):
+    def __init__(self, obj, DN="DN50", PRating="SCH-STD", OD=60.3, thk=3, BR=None, lab=None):
         # initialize the parent class
         super(PypeLine2, self).__init__(obj)
         # define common properties
@@ -701,10 +859,10 @@ class PypeLine2(pypeType):
             "Group",
             "PypeLine2",
             QT_TRANSLATE_NOOP("App::Property", "The group."),
-        ).Group = obj.Label + "_pieces"
-        group = FreeCAD.activeDocument().addObject(
-            "App::DocumentObjectGroup", obj.Group
+        ).Group = (
+            obj.Label + "_pieces"
         )
+        group = FreeCAD.activeDocument().addObject("App::DocumentObjectGroup", obj.Group)
         group.addObject(obj)
         FreeCAD.Console.PrintWarning("Created group " + obj.Group + "\n")
         obj.addProperty("App::PropertyLink", "Base", "PypeLine2", "the edges")
@@ -714,9 +872,7 @@ class PypeLine2(pypeType):
             fp.InList[0].Label = fp.Label + "_pieces"
             fp.Group = fp.Label + "_pieces"
         if hasattr(fp, "Base") and prop == "Base" and fp.Base:
-            FreeCAD.Console.PrintWarning(
-                fp.Label + " Base has changed to " + fp.Base.Label + "\n"
-            )
+            FreeCAD.Console.PrintWarning(fp.Label + " Base has changed to " + fp.Base.Label + "\n")
         if prop == "OD":
             fp.BendRadius = 0.75 * fp.OD
 
@@ -746,9 +902,7 @@ class PypeLine2(pypeType):
             pCmd.moveToPyLi(p, fp.Label)
             pipes.append(p)
             n = len(pipes) - 1
-            if n and not fCmd.isParallel(
-                fCmd.beamAx(pipes[n]), fCmd.beamAx(pipes[n - 1])
-            ):
+            if n and not fCmd.isParallel(fCmd.beamAx(pipes[n]), fCmd.beamAx(pipes[n - 1])):
                 # ---Create the curve---
                 propList = [fp.PSize, fp.OD, fp.thk, 90, fp.BendRadius]
                 c = pCmd.makeElbowBetweenThings(edges[n], edges[n - 1], propList)
@@ -765,6 +919,12 @@ class PypeLine2(pypeType):
 
 
 class ViewProviderPypeLine:
+    def __getstate__(self):
+        return None
+
+    def __setstate__(self, data):
+        return None
+
     def __init__(self, vobj):
         vobj.Proxy = self
 
@@ -776,6 +936,15 @@ class ViewProviderPypeLine:
     def attach(self, vobj):
         self.ViewObject = vobj
         self.Object = vobj.Object
+
+        def getIcon(self):
+            from os.path import join, dirname, abspath
+
+            return join(dirname(abspath(__file__)), "iconz", "pypeline.svg")
+
+        def attach(self, vobj):
+            self.ViewObject = vobj
+            self.Object = vobj.Object
 
 
 class Ubolt:
@@ -837,9 +1006,7 @@ class Ubolt:
             "App::PropertyVectorList",
             "Ports",
             "PBase",
-            QT_TRANSLATE_NOOP(
-                "App::Property", "Ports position relative to the origin of Shape"
-            ),
+            QT_TRANSLATE_NOOP("App::Property", "Ports position relative to the origin of Shape"),
         )
 
     def onChanged(self, fp, prop):
@@ -847,9 +1014,7 @@ class Ubolt:
 
     def execute(self, fp):
         fp.thread = "M" + str(float(fp.d))
-        c = Part.makeCircle(
-            fp.C / 2, FreeCAD.Vector(0, 0, 0), FreeCAD.Vector(0, 0, 1), 0, 180
-        )
+        c = Part.makeCircle(fp.C / 2, FreeCAD.Vector(0, 0, 0), FreeCAD.Vector(0, 0, 1), 0, 180)
         l1 = Part.makeLine((fp.C / 2, 0, 0), (fp.C / 2, fp.C / 2 - fp.H, 0))
         l2 = Part.makeLine((-fp.C / 2, 0, 0), (-fp.C / 2, fp.C / 2 - fp.H, 0))
         p = Part.Face(
@@ -900,13 +1065,13 @@ class Shell:
             "App::PropertyLength",
             "thk1",
             "Tank",
-            QT_TRANSLATE_NOOP("App::Property", "Thikness of tank's shell"),
+            QT_TRANSLATE_NOOP("App::Property", "Thickness of tank's shell"),
         ).thk1 = thk1
         obj.addProperty(
             "App::PropertyLength",
             "thk2",
             "Tank",
-            QT_TRANSLATE_NOOP("App::Property", "Thikness of tank's top"),
+            QT_TRANSLATE_NOOP("App::Property", "Thickness of tank's top"),
         ).thk2 = thk2
 
     def onChanged(self, fp, prop):
@@ -920,9 +1085,7 @@ class Shell:
         base = [vectL, vectW, vectH]
         outline = []
         for i in range(3):
-            f1 = Part.Face(
-                Part.makePolygon([O, base[0], base[0] + base[1], base[1], O])
-            )
+            f1 = Part.Face(Part.makePolygon([O, base[0], base[0] + base[1], base[1], O]))
             outline.append(f1)
             f2 = f1.copy()
             f2.translate(base[2])
@@ -942,7 +1105,7 @@ class Shell:
 class ViewProviderPypeBranch:
     def __init__(self, vobj):
         vobj.Proxy = self
-        if int(FreeCAD.Version()[1]) > 19:
+        if FREECADVERSION > 0.19:
             vobj.addExtension("Gui::ViewProviderGroupExtensionPython")
         else:
             vobj.addExtension("Gui::ViewProviderGroupExtensionPython", self)  # 20220704
@@ -1025,9 +1188,7 @@ class Valve(pypeType):
 
     def execute(self, fp):
         c = Part.makeCone(fp.OD / 2, fp.OD / 5, fp.Height / 2)
-        v = c.fuse(
-            c.mirror(FreeCAD.Vector(0, 0, fp.Height / 2), FreeCAD.Vector(0, 0, 1))
-        )
+        v = c.fuse(c.mirror(FreeCAD.Vector(0, 0, fp.Height / 2), FreeCAD.Vector(0, 0, 1)))
         if fp.PRating.find("ball") + 1 or fp.PRating.find("globe") + 1:
             r = min(fp.Height * 0.45, fp.OD / 2)
             v = v.fuse(Part.makeSphere(r, FreeCAD.Vector(0, 0, fp.Height / 2)))
@@ -1044,9 +1205,7 @@ class PypeBranch2(pypeType):  # use AttachExtensionPython
       type(base)=DWire or SketchObject
     """
 
-    def __init__(
-        self, obj, base, DN="DN50", PRating="SCH-STD", OD=60.3, thk=3, BR=None
-    ):
+    def __init__(self, obj, base, DN="DN50", PRating="SCH-STD", OD=60.3, thk=3, BR=None):
         # initialize the parent class
         super(PypeBranch2, self).__init__(obj)
         # define common properties
@@ -1054,7 +1213,7 @@ class PypeBranch2(pypeType):  # use AttachExtensionPython
         obj.PSize = DN
         obj.PRating = PRating
         # define specific properties
-        if int(FreeCAD.Version()[1]) > 19:
+        if FREECADVERSION > 0.19:
             obj.addExtension("App::GroupExtensionPython")
         else:
             obj.addExtension("App::GroupExtensionPython", obj)  # 20220704
@@ -1062,13 +1221,13 @@ class PypeBranch2(pypeType):  # use AttachExtensionPython
             "App::PropertyLength",
             "OD",
             "PypeBranch",
-            QT_TRANSLATE_NOOP("App::PropertyLength", "Outside diameter"),
+            QT_TRANSLATE_NOOP("App::Property", "Outside diameter"),
         ).OD = OD
         obj.addProperty(
             "App::PropertyLength",
             "thk",
             "PypeBranch",
-            QT_TRANSLATE_NOOP("App::PropertyLength", "Wall thickness"),
+            QT_TRANSLATE_NOOP("App::Property", "Wall thickness"),
         ).thk = thk
         if not BR:
             BR = 0.75 * OD
@@ -1116,18 +1275,14 @@ class PypeBranch2(pypeType):  # use AttachExtensionPython
                 curve.BendRadius = BR
         if prop == "OD" and hasattr(fp, "Tubes") and hasattr(fp, "Curves"):
             OD = fp.OD
-            for obj in [
-                FreeCAD.ActiveDocument.getObject(name) for name in fp.Tubes + fp.Curves
-            ]:
+            for obj in [FreeCAD.ActiveDocument.getObject(name) for name in fp.Tubes + fp.Curves]:
                 if obj.PType == "Elbow":
                     obj.BendRadius = OD * 0.75
                 obj.OD = OD
             fp.BendRadius = OD * 0.75
         if prop == "thk" and hasattr(fp, "Tubes") and hasattr(fp, "Curves"):
             thk = fp.thk
-            for obj in [
-                FreeCAD.ActiveDocument.getObject(name) for name in fp.Tubes + fp.Curves
-            ]:
+            for obj in [FreeCAD.ActiveDocument.getObject(name) for name in fp.Tubes + fp.Curves]:
                 if hasattr(obj, "thk"):
                     obj.thk = thk
 
@@ -1136,28 +1291,6 @@ class PypeBranch2(pypeType):  # use AttachExtensionPython
             self.purge(fp)
             self.redraw(fp)
             return
-        from math import tan
-
-        for i in range(len(fp.Tubes)):
-            L = fp.Base.Shape.Edges[i].Length
-            R = fp.BendRadius
-            # adjust the curve
-            if i < len(fp.Curves):
-                c = FreeCAD.ActiveDocument.getObject(fp.Curves[i])
-                v1, v2 = [e.tangentAt(0) for e in fp.Base.Shape.Edges[i : i + 2]]
-                pCmd.placeTheElbow(c, v1, v2)
-                alfa = float(v1.getAngle(v2)) / 2
-                L -= float(R * tan(alfa))
-            # adjust the pipes
-            if i:
-                v1, v2 = [e.tangentAt(0) for e in fp.Base.Shape.Edges[i - 1 : i + 1]]
-                alfa = float(v1.getAngle(v2)) / 2
-                tang = float(R * tan(alfa))
-                L -= tang
-                FreeCAD.ActiveDocument.getObject(
-                    fp.Tubes[i]
-                ).AttachmentOffset.Base = FreeCAD.Vector(0, 0, tang)
-            FreeCAD.ActiveDocument.getObject(fp.Tubes[i]).Height = L
 
     def redraw(self, fp):
         from math import tan, degrees
@@ -1172,17 +1305,11 @@ class PypeBranch2(pypeType):  # use AttachExtensionPython
                 offset = 0
                 # ---Create the tube---
                 if i > 0:
-                    alfa = (
-                        e.tangentAt(0).getAngle(fp.Base.Shape.Edges[i - 1].tangentAt(0))
-                        / 2
-                    )
+                    alfa = e.tangentAt(0).getAngle(fp.Base.Shape.Edges[i - 1].tangentAt(0)) / 2
                     L -= R * tan(alfa)
                     offset = R * tan(alfa)
                 if i < (len(fp.Base.Shape.Edges) - 1):
-                    alfa = (
-                        e.tangentAt(0).getAngle(fp.Base.Shape.Edges[i + 1].tangentAt(0))
-                        / 2
-                    )
+                    alfa = e.tangentAt(0).getAngle(fp.Base.Shape.Edges[i + 1].tangentAt(0)) / 2
                     L -= R * tan(alfa)
                 eSupport = "Edge" + str(i + 1)
                 t = pCmd.makePipe([fp.PSize, float(fp.OD), float(fp.thk), L])
@@ -1210,25 +1337,19 @@ class PypeBranch2(pypeType):  # use AttachExtensionPython
                     curves.append(c.Name)
             fp.Tubes = tubes
             fp.Curves = curves
-            fp.addObjects(
-                [
-                    FreeCAD.ActiveDocument.getObject(name)
-                    for name in fp.Tubes + fp.Curves
-                ]
-            )
+            objs = [FreeCAD.ActiveDocument.getObject(name) for name in fp.Tubes + fp.Curves]
+            fp.addObjects(objs)
+            for obj in objs:
+                obj.Proxy.execute(obj)
 
     def purge(self, fp):
         if hasattr(fp, "Tubes"):
-            fp.removeObjects(
-                [FreeCAD.ActiveDocument.getObject(name) for name in fp.Tubes]
-            )
+            fp.removeObjects([FreeCAD.ActiveDocument.getObject(name) for name in fp.Tubes])
             for name in fp.Tubes:
                 FreeCAD.ActiveDocument.removeObject(name)
             fp.Tubes = []
         if hasattr(fp, "Curves"):
-            fp.removeObjects(
-                [FreeCAD.ActiveDocument.getObject(name) for name in fp.Curves]
-            )
+            fp.removeObjects([FreeCAD.ActiveDocument.getObject(name) for name in fp.Curves])
             for name in fp.Curves:
                 FreeCAD.ActiveDocument.removeObject(name)
             fp.Curves = []

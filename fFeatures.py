@@ -5,28 +5,39 @@ __author__ = "oddtopus"
 __url__ = "github.com/oddtopus/dodo"
 __license__ = "LGPL 3"
 
-import FreeCAD, FreeCADGui, Part, csv, fCmd, pCmd, ArchProfile
-from Arch import makeStructure
-from Arch import makeProfile
+import csv
+from math import degrees, frexp, sqrt, cos, radians, sin, tan
+from os import listdir
+from os.path import abspath, dirname, join
+
+import ArchProfile
+import FreeCAD
+import FreeCADGui
+import Part
+from Arch import makeProfile, makeStructure
 from Draft import makeCircle
 from PySide2.QtCore import *
 from PySide2.QtGui import *
-from os import listdir
-from os.path import join, dirname, abspath
-from math import degrees
+from PySide2.QtWidgets import (
+    QCheckBox,
+    QComboBox,
+    QDialog,
+    QHBoxLayout,
+    QLabel,
+    QListWidget,
+    QPushButton,
+    QVBoxLayout,
+    QWidget,
+)
+
+import fCmd
+import pCmd
+from quetzal_config import FREECADVERSION
 from uCmd import label3D
-from PySide2.QtCore import QT_TRANSLATE_NOOP
-from PySide2.QtWidgets import QDialog
-from PySide2.QtWidgets import QWidget
-from PySide2.QtWidgets import QListWidget
-from PySide2.QtWidgets import QCheckBox
-from PySide2.QtWidgets import QLabel
-from PySide2.QtWidgets import QComboBox
-from PySide2.QtWidgets import QHBoxLayout
-from PySide2.QtWidgets import QVBoxLayout
-from PySide2.QtWidgets import QPushButton
-# from DraftGui import translate
-from draftutils.translate import translate
+import ShpstData
+
+translate = FreeCAD.Qt.translate
+QT_TRANSLATE_NOOP = FreeCAD.Qt.QT_TRANSLATE_NOOP
 
 ################ FUNCTIONS ###########################
 
@@ -56,6 +67,10 @@ def indexEdge(edge, listedges):
 
 
 def findFB(beamName=None, baseName=None):
+    '''
+    Search FrameBranch object inside the Active document
+    if beam name or base object name parameters are given, it will return the frameBranch related to beam or base object (skectch, wire ,etc)
+    '''
     Branches = [
         o.Name
         for o in FreeCAD.ActiveDocument.Objects
@@ -455,12 +470,21 @@ class frameBranchForm(dodoDialogs.protoTypeDialog):
         self.form.editLength.setValidator(QDoubleValidator())
         tablez = listdir(join(dirname(abspath(__file__)), "tablez"))
         files = [name for name in tablez if name.startswith("Section")]
-        RatingsList = [s.lstrip("Section_").rstrip(".csv") for s in files]
-        self.form.comboRatings.addItems(RatingsList)
+        # RatingsList = [s.lstrip("Section_").rstrip(".csv") for s in files]
+        import ArchProfile
+        buffer = list()
+        self.ArchList = ArchProfile.readPresets()
+        for rating in self.ArchList:
+            if rating[1] not in buffer:
+                buffer.append(rating[1])
+        # self.form.comboRatings.addItems(RatingsList)
+        self.form.comboRatings.addItems(buffer)
         self.form.comboRatings.addItems(["<by sketch>"])
         self.form.comboRatings.currentIndexChanged.connect(self.fillSizes)
         self.form.btnRemove.clicked.connect(self.removeBeams)
         self.form.btnAdd.clicked.connect(self.addBeams)
+        self.form.btnGenPlanes.clicked.connect(self.generateBisectPlanes)
+        self.form.btnMiter.clicked.connect(self.cutMiters)
         self.form.btnProfile.clicked.connect(self.changeProfile)
         self.form.btnRefresh.clicked.connect(self.refresh)
         self.form.btnTargets.clicked.connect(self.selectAction)
@@ -475,6 +499,14 @@ class frameBranchForm(dodoDialogs.protoTypeDialog):
         self.actionX.triggered.disconnect(self.accept)  # disconnect from accept()
         self.actionX.triggered.connect(self.trim)  # reconnect to trim()
 
+    def getPropsfromlistSizes(self):
+        '''
+        Check profileslist and return full properties selected on the widget list
+        '''
+        for value in self.ArchList:
+            if self.form.listSizes.currentItem().text() in value[2]:
+                return value
+
     def makeSingle(self):
         FreeCAD.activeDocument().openTransaction("Insert Single Struct")
         if self.SType == "<by sketch>":
@@ -482,8 +514,11 @@ class frameBranchForm(dodoDialogs.protoTypeDialog):
                 self.form.listSizes.currentItem().text()
             )[0]
         else:
-            prop = self.sectDictList[self.form.listSizes.currentRow()]
-            profile = newProfile(prop)
+            prop=self.getPropsfromlistSizes()
+            # prop = self.sectDictList[self.form.listSizes.currentRow()]
+            FreeCAD.Console.PrintMessage(prop)
+            profile = makeProfile(prop)
+            # profile = newProfile(prop)
         if fCmd.faces():
             Z = FreeCAD.Vector(0, 0, 1)
             for f in fCmd.faces():
@@ -520,6 +555,184 @@ class frameBranchForm(dodoDialogs.protoTypeDialog):
                 beam.Height = float(self.form.editLength.text())
         FreeCAD.ActiveDocument.recompute()
 
+    def cutMiters(self):
+        import ArchCutPlane
+        volumes = list()
+        totalvertexes=0
+        sel=FreeCADGui.Selection.getSelection()
+        seldoc=FreeCAD.ActiveDocument
+        miterplanesfaces=self.getMiterPlanesFaces(seldoc)
+        framebeams=self.getBeamsFromStructureNames(sel)
+        for beam in framebeams:
+            for miterplaneface in miterplanesfaces:
+                matchpoints=False
+                sketcher=beam.AttachmentSupport[0][0]
+                edgename=beam.AttachmentSupport[0][1][0]
+                index=int(edgename[4:])-1
+                if self.roundVectors(miterplaneface.CenterOfMass,4) == self.roundVectors(sketcher.Shape.Edges[index].Vertexes[0].Point,4):
+                    matchpoints=True
+                    totalvertexes=totalvertexes+1
+                elif self.roundVectors(miterplaneface.CenterOfMass,4) == self.roundVectors(sketcher.Shape.Edges[index].Vertexes[1].Point,4):
+                    matchpoints=True
+                    totalvertexes=totalvertexes+1
+                if matchpoints:
+                    # FreeCAD.Console.PrintMessage('Plano: '+str()+'\r')
+                    ArchCutPlane.cutComponentwithPlane(beam,miterplaneface, side=0)
+                    FreeCAD.ActiveDocument.recompute()
+                    volumes.append(beam.Shape.Volume)
+                    self.removeCutVolume(beam)
+                    ArchCutPlane.cutComponentwithPlane(beam,miterplaneface, side=1)
+                    FreeCAD.ActiveDocument.recompute()
+                    volumes.append(beam.Shape.Volume)
+                    # volumes.sort()
+                    if volumes[0]< volumes[1]:
+                        FreeCAD.Console.PrintMessage(str(beam.Name)+' volume1: '+str(volumes[0])+'< volume2: '+str(volumes[1])+'\r')
+                        FreeCAD.ActiveDocument.recompute()
+                    elif volumes[0]> volumes[1]:
+                        self.removeCutVolume(beam)
+                        ArchCutPlane.cutComponentwithPlane(beam,miterplaneface, side=0)
+                        FreeCAD.Console.PrintMessage(str(beam.Name)+' volume1: '+str(volumes[0])+'> volume2: '+str(volumes[1])+'\r')
+                        FreeCAD.ActiveDocument.recompute()
+                    volumes.clear()
+        FreeCAD.Console.PrintMessage('totalvertexes: '+str(totalvertexes))
+
+    def removeCutVolume(self,beam):
+        cutvolumeitems= list()
+        cutvolumeid = list()
+        for obj in beam.OutList:
+            if obj.TypeId=='Part::Feature' and obj.Label.startswith('CutVolume'):
+                cutvolumeid.append(obj.ID)
+                cutvolumeitems.append(obj)
+        cutvolumeid.sort(reverse=True)
+        lastobj=cutvolumeid[0]
+        for obj in beam.OutList:
+            if obj.TypeId=='Part::Feature' and obj.Label.startswith('CutVolume') and obj.ID == lastobj:
+                FreeCAD.ActiveDocument.removeObject(obj.Label)
+                FreeCAD.ActiveDocument.recompute()
+
+    def getBeamsFromStructureNames(self,sel):
+        '''
+        Return a list with beam Structures on a frameBranch object type
+        '''
+        framebeams = list()
+        if hasattr(sel[0],"FType"):
+            for beamname in sel[0].Beams:
+                beam=FreeCAD.ActiveDocument.getObject(beamname)
+                framebeams.append(beam)
+        return framebeams
+
+    def getMiterPlanesFaces(self,seldoc):
+        '''
+        Return a list with plane named 'cutplane' from the whole seldoc
+        '''
+        miterplanes = list()
+        for object in seldoc.Objects:
+            if object.Name.startswith('cutplane'):
+                miterplanes.append(object.Shape.Faces[0])
+        return miterplanes
+
+    def roundVectors(self,vxlist, num):
+        l = [v for v in vxlist]
+        return FreeCAD.Vector(round(l[0], num), round(l[1], num), round(l[2], num))
+
+    def generateBisectPlanes(self):
+        """Get intersection between lines, generate a plane between lines & do a boolean diferente"""
+        sel = FreeCADGui.Selection.getSelection()
+        from DraftGeomUtils import findIntersection
+        # FreeCAD.Console.PrintMessage('posicion de boceto:'+ str(sel[0].Placement.Rotation)+'\r\n')
+        i=0
+        rep=0
+        reachedlines = []
+        interVertex = []
+        if sel[0].FType == 'FrameBranch':
+          for element in sel[0].Base.Geometry:
+              # FreeCAD.Console.PrintMessage('Segmento '+str(element)+'\r\n')
+              for subelement in sel[0].Base.Geometry:
+                  # Avoid process the geometric element that match StartPoint and EndPoint and also just have process elements with  a common point
+                  if  (element.EndPoint != subelement.EndPoint or
+                       element.StartPoint != subelement.StartPoint or
+                       (element.EndPoint != subelement.EndPoint and
+                        element.StartPoint != subelement.StartPoint) and
+                       (element.EndPoint != subelement.StartPoint and
+                        element.StartPoint != subelement.EndPoint)):
+                      #WARN:intersectionCLines method forces to detect infinite intersections that is not required
+                      # interVertex=fCmd.intersectionCLines(element.toShape().Edges[0],subelement.toShape().Edges[0])                        
+                      interVertex=findIntersection(element.toShape().Edges[0],subelement.toShape().Edges[0],infinite1=False, infinite2=False)
+                      if interVertex:
+                          roundelementStart=self.roundVectors(element.StartPoint,2)
+                          roundelementEnd=self.roundVectors(element.EndPoint,2)
+                          roundsubelementStart=self.roundVectors(subelement.StartPoint,2)
+                          roundsubelementEnd=self.roundVectors(subelement.EndPoint,2)
+                          roundinterVertex=self.roundVectors(interVertex[0],2)
+                          if [element.Tag,subelement.Tag] not in reachedlines:
+                              content=True
+                              reachedlines.append([element.Tag,subelement.Tag])
+                          else:
+                              content=False
+                          if [subelement.Tag,element.Tag] not in reachedlines:
+                              contentsub=True
+                              reachedlines.append([subelement.Tag,element.Tag])
+                          else:
+                              contentsub=False
+                          if (content) or (contentsub):
+                              # FreeCAD.Console.PrintMessage('Punto de interseccion: '+str(interVertex[0])+'\r\n')
+                              # Store edge pair that intersect
+                              FreeCAD.Console.PrintMessage('Reachedlines: {0} and {1}'.format(reachedlines[rep][0],reachedlines[rep][1])+'\r\n')
+                              rep=rep+1
+                              # FIXME: intersectCC method does not return line intersection; findIntersection method does it right
+                              # interpoint=element.intersectCC(subelement)[0] 
+
+                              # FreeCAD.Console.PrintMessage('Segmento '+str(element)+' intersecta con segmento '+str(subelement)+' aqui:'+ str(interpoint)+'\r\n')
+                              # FreeCAD.Console.PrintMessage(str(type(interpoint)))
+                              # INFO:Section aided to get bisect vector on each intersection
+                              if roundelementStart== roundinterVertex:
+                                  resultv1 = FreeCAD.Vector(element.EndPoint-element.StartPoint)
+                              elif roundelementEnd == roundinterVertex:
+                                  resultv1 = FreeCAD.Vector(element.StartPoint-element.EndPoint)
+                              if roundsubelementStart == roundinterVertex:
+                                  resultv2 = FreeCAD.Vector(subelement.EndPoint-subelement.StartPoint)
+                              elif roundsubelementEnd == roundinterVertex:
+                                  resultv2 = FreeCAD.Vector(subelement.StartPoint-subelement.EndPoint)
+                              bisectvector=fCmd.bisect(resultv1,resultv2)
+                              plane=FreeCAD.activeDocument().addObject("Part::Plane","cutplane")
+                              import numpy
+                              from math import pi
+                              plane.AttachmentSupport = sel[0].Base.AttachmentSupport
+                              plane.MapMode = 'FlatFace'
+                              self.rotvector =(interVertex[0])-(FreeCAD.Vector(0,plane.Length/2,-plane.Length/2))
+                              # INFO: Section aided to apply random color to each plane
+                              randomcolorarray=numpy.random.choice(range(256),size=3)
+                              plane.ViewObject.ShapeAppearance = FreeCAD.Material(DiffuseColor= tuple(map(int,randomcolorarray)))
+                              plane.recompute()
+                              # self.CenterOfMass = plane.Shape.CenterOfMass
+                              # INFO:Section aided to get the correct plane orientation on each intersection
+                              self.placementrotplan = FreeCAD.Placement(self.rotvector,FreeCAD.Rotation(FreeCAD.Vector(0,1,0),90))
+                              plane.AttachmentOffset = self.placementrotplan
+                              # FreeCAD.Console.PrintMessage('Antes Angulo de arista a vector bisectriz: '+str((FreeCAD.Rotation(bisectvector,plane.Shape.normalAt(0,0)).Angle)*180/pi)+'\r\n')
+                              # crossvector=resultv1.cross(resultv2).normalize()
+                              # FreeCAD.Console.PrintMessage('Vector cruz: '+str(crossvector)+'\r\n')
+                              # FreeCAD.Console.PrintMessage('Vector normal de plano: '+str(self.roundVectors(plane.Shape.normalAt(0,0),2))+'\r\n')
+                              self.placementrelative = FreeCAD.Placement(FreeCAD.Vector(0,0,0),FreeCAD.Rotation(plane.Shape.normalAt(0,0),bisectvector),interVertex[0]).multiply(self.placementrotplan)
+                              # plane.AttachmentOffset = self.placementrelative
+                              # FreeCAD.Console.PrintMessage('Despues Angulo de arista a vector bisectriz: '+str((FreeCAD.Rotation(bisectvector,plane.Shape.normalAt(0,0)).Angle)*180/pi)+'\r\n')
+                              if self.roundVectors(plane.Shape.normalAt(0,0),0) == FreeCAD.Vector(1.0, 0.0, 0.0):
+                                  rotateplane=90
+                              else:
+                                  rotateplane=0
+                              self.placementfinal = FreeCAD.Placement(FreeCAD.Vector(0,0,0),FreeCAD.Rotation(FreeCAD.Vector(0,0,1),rotateplane),interVertex[0]).multiply(self.placementrelative)
+                              plane.AttachmentOffset = self.placementfinal
+                              # FreeCAD.Console.PrintMessage(str(plane.Name))
+                              # sel[0].cutplanes.append(plane.Name)
+              # TODO::Made method definition to change plane dots colors
+              # if i==0:
+              #     FreeCADGui.ActiveDocument.myplane.PointSize = 10
+              #     FreeCADGui.ActiveDocument.myplane.PointColor = 100,50,20
+              # elif i>=1:
+              #     obj=FreeCADGui.ActiveDocument.getObject('myplane00'+str(i))
+              #     obj.PointSize = 10
+              #     obj.PointColor = 100,50,20
+              i=i+1
+
     def accept(self):
         if FreeCAD.ActiveDocument:
             # GET BASE
@@ -533,8 +746,10 @@ class frameBranchForm(dodoDialogs.protoTypeDialog):
                         self.form.listSizes.currentItem().text()
                     )[0]
                 else:
-                    prop = self.sectDictList[self.form.listSizes.currentRow()]
-                    profile = newProfile(prop)
+                    # prop = self.sectDictList[self.form.listSizes.currentRow()]
+                    prop=self.getPropsfromlistSizes()
+                    profile = makeProfile(prop)
+                    # profile = newProfile(prop)
                 # MAKE FRAMEBRANCH
                 if self.form.editName.text():
                     name = self.form.editName.text()
@@ -604,6 +819,9 @@ class frameBranchForm(dodoDialogs.protoTypeDialog):
             self.form.lab1.setText("<no item selected>")
 
     def fillSizes(self):
+        '''
+        Fill standart beam sizes into a framebeams widget
+        '''
         self.SType = self.form.comboRatings.currentText()
         self.form.listSizes.clear()
         if self.SType == "<by sketch>":
@@ -621,14 +839,21 @@ class frameBranchForm(dodoDialogs.protoTypeDialog):
             ]
             self.form.listSizes.addItems(obj2D)
         else:
-            fileName = "Section_" + self.SType + ".csv"
-            f = open(join(dirname(abspath(__file__)), "tablez", fileName), "r")
-            reader = csv.DictReader(f, delimiter=";")
-            self.sectDictList = [x for x in reader]
-            f.close()
-            for row in self.sectDictList:
-                s = row["SSize"]
-                self.form.listSizes.addItem(s)
+            sizelist = list()
+            for profilesizes in self.ArchList:
+                if profilesizes[1] == self.form.comboRatings.currentText():
+                    # FreeCAD.Console.PrintMessage(profilesizes[2]+'\r\n')
+                    sizelist.append(profilesizes[2])
+            self.form.listSizes.addItems(sizelist)
+            # fileName = "Section_" + self.SType + ".csv"
+            # f = open(join(dirname(abspath(__file__)), "tablez", fileName), "r")
+            # reader = csv.DictReader(f, delimiter=";")
+            # self.sectDictList = [x for x in reader]
+            self.sectDictList = [x for x in self.ArchList]
+            # f.close()
+            # for row in self.sectDictList:
+            #     s = row["SSize"]
+            #     self.form.listSizes.addItem(s)
 
     def addBeams(self):
         # find selected FB
@@ -645,27 +870,21 @@ class frameBranchForm(dodoDialogs.protoTypeDialog):
                     "App::PropertyFloat",
                     "tailOffset",
                     "FrameBranch",
-                    QT_TRANSLATE_NOOP(
-                        "App::PropertyFloat", "The extension of the tail"
-                    ),
+                    QT_TRANSLATE_NOOP("App::Property", "The extension of the tail"),
                 )
                 beam.addProperty(
                     "App::PropertyFloat",
                     "headOffset",
                     "FrameBranch",
-                    QT_TRANSLATE_NOOP(
-                        "App::PropertyFloat", "The extension of the head"
-                    ),
+                    QT_TRANSLATE_NOOP("App::Property", "The extension of the head"),
                 )
                 beam.addProperty(
                     "App::PropertyFloat",
                     "spin",
                     "FrameBranch",
-                    QT_TRANSLATE_NOOP(
-                        "App::PropertyFloat", "The rotation of the section"
-                    ),
+                    QT_TRANSLATE_NOOP("App::Property", "The rotation of the section"),
                 )
-                if int(FreeCAD.Version()[1]) > 19:  # 20220704
+                if FREECADVERSION > 0.19:  # 20220704
                     beam.addExtension("Part::AttachExtensionPython")
                 else:
                     beam.addExtension("Part::AttachExtensionPython", beam)
@@ -702,12 +921,17 @@ class frameBranchForm(dodoDialogs.protoTypeDialog):
                     self.form.listSizes.currentItem().text()
                 )[0]
             else:
-                prop = self.sectDictList[self.form.listSizes.currentRow()]
-                profile = newProfile(prop)
+                prop=self.getPropsfromlistSizes()
+                # prop = self.sectDictList[self.form.listSizes.currentRow()]
+                # profile = newProfile(prop)
+                profile = makeProfile(prop)
             name = FB.Profile.Name
             FB.Profile = profile
             FB.Proxy.redraw(FB)
-            FreeCAD.ActiveDocument.removeObject(name)
+            if self.SType == "<by sketch>":
+                profile.ViewObject.Visibility = False
+            else:
+                FreeCAD.ActiveDocument.removeObject(name)
             FreeCAD.ActiveDocument.recompute()
             FreeCAD.ActiveDocument.recompute()
         else:
@@ -818,13 +1042,13 @@ class FrameLine(object):
             "App::PropertyString",
             "FType",
             "FrameLine",
-            QT_TRANSLATE_NOOP("App::PropertyString", "Type of frameFeature"),
+            QT_TRANSLATE_NOOP("App::Property", "Type of frameFeature"),
         ).FType = "FrameLine"
         obj.addProperty(
             "App::PropertyString",
             "FSize",
             "FrameLine",
-            QT_TRANSLATE_NOOP("App::PropertyString", "Size of frame"),
+            QT_TRANSLATE_NOOP("App::Property", "Size of frame"),
         ).FSize = section
         if lab:
             obj.Label = lab
@@ -843,13 +1067,13 @@ class FrameLine(object):
             "App::PropertyLink",
             "Base",
             "FrameLine",
-            QT_TRANSLATE_NOOP("App::PropertyLink", "the edges"),
+            QT_TRANSLATE_NOOP("App::Property", "the edges"),
         )
         obj.addProperty(
             "App::PropertyLink",
             "Profile",
             "FrameLine",
-            QT_TRANSLATE_NOOP("App::PropertyLink", "the profile"),
+            QT_TRANSLATE_NOOP("App::Property", "the profile"),
         )
 
     def onChanged(self, fp, prop):
@@ -910,25 +1134,25 @@ class FrameBranch(object):
             "App::PropertyString",
             "FType",
             "FrameBranch",
-            QT_TRANSLATE_NOOP("App::PropertyString", "Type of frameFeature"),
+            QT_TRANSLATE_NOOP("App::Property", "Type of frameFeature"),
         ).FType = "FrameBranch"
         obj.addProperty(
             "App::PropertyStringList",
             "Beams",
             "FrameBranch",
-            QT_TRANSLATE_NOOP("App::PropertyStringList", "The beams names"),
+            QT_TRANSLATE_NOOP("App::Property", "The beams names"),
         )
         obj.addProperty(
             "App::PropertyLink",
             "Base",
             "FrameBranch",
-            QT_TRANSLATE_NOOP("App::PropertyLink", "The path."),
+            QT_TRANSLATE_NOOP("App::Property", "The path."),
         ).Base = base
         obj.addProperty(
             "App::PropertyLink",
             "Profile",
             "FrameBranch",
-            QT_TRANSLATE_NOOP("App::PropertyLink", "The profile"),
+            QT_TRANSLATE_NOOP("App::Property", "The profile"),
         ).Profile = profile
         self.redraw(obj)
 
@@ -968,25 +1192,19 @@ class FrameBranch(object):
                     "App::PropertyFloat",
                     "tailOffset",
                     "FrameBranch",
-                    QT_TRANSLATE_NOOP(
-                        "App::PropertyFloat", "The extension of the tail"
-                    ),
+                    QT_TRANSLATE_NOOP("App::Property", "The extension of the tail"),
                 )
                 beam.addProperty(
                     "App::PropertyFloat",
                     "headOffset",
                     "FrameBranch",
-                    QT_TRANSLATE_NOOP(
-                        "App::PropertyFloat", "The extension of the head"
-                    ),
+                    QT_TRANSLATE_NOOP("App::Property", "The extension of the head"),
                 )
                 beam.addProperty(
                     "App::PropertyFloat",
                     "spin",
                     "FrameBranch",
-                    QT_TRANSLATE_NOOP(
-                        "App::PropertyFloat", "The rotation of the section"
-                    ),
+                    QT_TRANSLATE_NOOP("App::Property", "The rotation of the section"),
                 )
                 if int(FreeCAD.Version()[1]) > 19:  # 20220704
                     beam.addExtension("Part::AttachExtensionPython")
@@ -1054,25 +1272,8 @@ class ViewProviderFrameBranch:
 import Draft
 from FreeCAD import Vector
 
-if FreeCAD.GuiUp:
-    # import FreeCADGui
-    # from PySide import QtCore, QtGui
-    from DraftGui import translate
-    from PySide.QtCore import QT_TRANSLATE_NOOP
-else:
-    # \cond
-    def translate(ctxt, txt):
-        return txt
 
-    def QT_TRANSLATE_NOOP(ctxt, txt):
-        return txt
-
-    # \endcond
-
-
-def doProfile(
-    typeS="RH", label="Square", dims=[50, 100, 5]
-):  # rearrange args in a better mnemonic way
+def doProfile(typeS="RH", label="Square", dims=[50, 100, 5]):  # rearrange args in a better mnemonic way
     "doProfile(typeS, label, dims)"
     if typeS in ["RH", "R", "H", "U", "L", "T", "Z", "omega", "circle"]:
         profile = [0, "SECTION", label, typeS] + dims  # for py2.6 versions
@@ -1083,13 +1284,15 @@ def doProfile(
         elif profile[3] == "R":
             _ProfileR(obj, profile)
         elif profile[3] == "U":
-            _ProfileU(obj, profile)
+            # _ProfileU(obj, profile)
+            _ProfileChannel(obj,profile)
         elif profile[3] == "T":
             _ProfileT(obj, profile)
         elif profile[3] == "H":
             _ProfileH(obj, profile)
         elif profile[3] == "L":
-            _ProfileL(obj, profile)
+            # _ProfileL(obj, profile)
+            _ProfileAngle(obj,profile)
         elif profile[3] == "Z":
             _ProfileZ(obj, profile)
         elif profile[3] == "omega":
@@ -1141,6 +1344,70 @@ def pointsL(H, W, t1, t2):
     p5 = Vector(W / 2 - t1, t2 - H / 2, 0)
     p6 = Vector(-W / 2, t2 - H / 2, 0)
     return [p1, p2, p3, p4, p5, p6, p1]
+
+
+def pointsLWithRound(A, B, t, r1, r2):
+    x1=r2*(1-1/sqrt(2))
+    x2=r2-x1
+    y1=r1*(1-1/sqrt(2))
+    y2=r1-y1
+    y3=A-(r2+r1+t)
+    x=t-r2
+    p1=Vector(0,0,0)
+    p2=Vector(0,0,A)
+    p3=Vector(x,0,A)
+    p4=Vector(t-x1,0,A-x1)
+    p5=Vector(t,0,A-r2)
+    p6=Vector(t,0,A-(r2+y3))
+    p7=Vector(t+y1,0,t+y1)
+    p8=Vector(t+r1,0,t)
+    p9=Vector(B-r2,0,t)
+    p10=Vector(B-x1,0,t-x1)
+    p11=Vector(B,0,t-r2)
+    p12=Vector(B,0,0)
+    return [p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p1]
+
+
+def pointsChannelWithRound(H, B, t1, t2, r1, r2, Cy, s0):
+    s5=radians(s0)
+    s45=radians(45)
+    y1=r2*cos(s45)
+    y2=r2*cos(s5)
+    y3=r1*cos(s5)
+    x1=r2*(1-cos(s45))
+    x2=r2*sin(s5)
+    x30=r2-x2
+    x3=r1*sin(s5)
+    x4=r1*cos(s45)
+    x5=r1-x4
+    x40=r1+x3
+    x6=B-(x30+x40+t1)
+    y6=x6*tan(s5)
+    x7=Cy-(t1+x40)
+    x8=x6-x7
+    y7=x8*tan(s5)
+    y8=t2-y7
+    y4=y8-y2
+    y10=y4+y2+y6
+    y11=y4+y2+y6+x5
+    y12=y4+y2+y6+x5+x4
+    p1=Vector(0,0,0)
+    p2=Vector(0,0,H)
+    p3=Vector(B,0,H)
+    p4=Vector(B,0,H-y4)
+    p5=Vector(B-x1,0,H-(y4+y1))
+    p6=Vector(B-x30,0,H-(y4+y2))
+    p7=Vector(t1+x40,0,H-y10)
+    p8=Vector(t1+x5,0,H-y11)
+    p9=Vector(t1,0,H-y12)
+    p10=Vector(t1,0,y12)
+    p11=Vector(t1+x5,0,y11)
+    p12=Vector(t1+x40,0,y10)
+    p13=Vector(B-x30,0,y4+y2)
+    p14=Vector(B-x1,0,y4+y1)
+    p15=Vector(B,0,y4)
+    p16=Vector(B,0,0)
+    return [p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p1 ]
 
 
 def pointsOmega(H, W, D, t1, t2, t3):
@@ -1214,33 +1481,31 @@ class _ProfileRH(_Profile):
             "App::PropertyString",
             "FType",
             "Profile",
-            QT_TRANSLATE_NOOP("App::PropertyString", "Type of section"),
+            QT_TRANSLATE_NOOP("App::Property", "Type of section"),
         ).FType = "RH"
         obj.addProperty(
             "App::PropertyLength",
             "W",
             "Draft",
-            QT_TRANSLATE_NOOP("App::PropertyLength", "Width of the beam"),
+            QT_TRANSLATE_NOOP("App::Property", "Width of the beam"),
         ).W = profile[4]
         obj.addProperty(
             "App::PropertyLength",
             "H",
             "Draft",
-            QT_TRANSLATE_NOOP("App::PropertyLength", "Height of the beam"),
+            QT_TRANSLATE_NOOP("App::Property", "Height of the beam"),
         ).H = profile[5]
         obj.addProperty(
             "App::PropertyLength",
             "t1",
             "Draft",
-            QT_TRANSLATE_NOOP("App::PropertyLength", "Thickness of the vertical sides"),
+            QT_TRANSLATE_NOOP("App::Property", "Thickness of the vertical sides"),
         ).t1 = profile[6]
         obj.addProperty(
             "App::PropertyLength",
             "t2",
             "Draft",
-            QT_TRANSLATE_NOOP(
-                "App::PropertyLength", "Thickness of the horizontal sides"
-            ),
+            QT_TRANSLATE_NOOP("App::Property", "Thickness of the horizontal sides"),
         ).t2 = profile[7]
         _Profile.__init__(self, obj, profile)
 
@@ -1267,19 +1532,19 @@ class _ProfileR(_Profile):
             "App::PropertyString",
             "FType",
             "Profile",
-            QT_TRANSLATE_NOOP("App::PropertyString", "Type of section"),
+            QT_TRANSLATE_NOOP("App::Property", "Type of section"),
         ).FType = "R"
         obj.addProperty(
             "App::PropertyLength",
             "W",
             "Draft",
-            QT_TRANSLATE_NOOP("App::PropertyLength", "Width of the beam"),
+            QT_TRANSLATE_NOOP("App::Property", "Width of the beam"),
         ).W = profile[4]
         obj.addProperty(
             "App::PropertyLength",
             "H",
             "Draft",
-            QT_TRANSLATE_NOOP("App::PropertyLength", "Height of the beam"),
+            QT_TRANSLATE_NOOP("App::Property", "Height of the beam"),
         ).H = profile[5]
         _Profile.__init__(self, obj, profile)
 
@@ -1304,19 +1569,19 @@ class _ProfileCircle(_Profile):
             "App::PropertyString",
             "FType",
             "Profile",
-            QT_TRANSLATE_NOOP("App::PropertyString", "Type of section"),
+            QT_TRANSLATE_NOOP("App::Property", "Type of section"),
         ).FType = "circle"
         obj.addProperty(
             "App::PropertyLength",
             "D",
             "Draft",
-            QT_TRANSLATE_NOOP("App::PropertyLength", "Diameter of the beam"),
+            QT_TRANSLATE_NOOP("App::Property", "Diameter of the beam"),
         ).D = profile[4]
         obj.addProperty(
             "App::PropertyLength",
             "t1",
             "Draft",
-            QT_TRANSLATE_NOOP("App::PropertyLength", "Thickness"),
+            QT_TRANSLATE_NOOP("App::Property", "Thickness"),
         ).t1 = profile[5]
         _Profile.__init__(self, obj, profile)
 
@@ -1338,37 +1603,174 @@ class _ProfileL(_Profile):
             "App::PropertyString",
             "FType",
             "Profile",
-            QT_TRANSLATE_NOOP("App::PropertyString", "Type of section"),
+            QT_TRANSLATE_NOOP("App::Property", "Type of section"),
         ).FType = "L"
         obj.addProperty(
             "App::PropertyLength",
             "W",
             "Draft",
-            QT_TRANSLATE_NOOP("App::PropertyLength", "Width of the beam"),
+            QT_TRANSLATE_NOOP("App::Property", "Width of the beam"),
         ).W = profile[4]
         obj.addProperty(
             "App::PropertyLength",
             "H",
             "Draft",
-            QT_TRANSLATE_NOOP("App::PropertyLength", "Height of the beam"),
+            QT_TRANSLATE_NOOP("App::Property", "Height of the beam"),
         ).H = profile[5]
         obj.addProperty(
             "App::PropertyLength",
             "t1",
             "Draft",
-            QT_TRANSLATE_NOOP("App::PropertyLength", "Thickness of the webs"),
+            QT_TRANSLATE_NOOP("App::Property", "Thickness of the webs"),
         ).t1 = profile[6]
         obj.addProperty(
             "App::PropertyLength",
             "t2",
             "Draft",
-            QT_TRANSLATE_NOOP("App::PropertyLength", "Thickness of the webs"),
+            QT_TRANSLATE_NOOP("App::Property", "Thickness of the webs"),
         ).t2 = profile[7]
         _Profile.__init__(self, obj, profile)
 
     def execute(self, obj):
         W, H, t1, t2 = obj.W.Value, obj.H.Value, obj.t1.Value, obj.t2.Value
         obj.Shape = drawAndCenter(pointsL(H, W, t1, t2))
+
+
+class _ProfileAngle(_Profile):
+    def __init__(self, obj, profile):
+        self.label=obj.Name
+        self.size=FreeCAD.ActiveDocument.getObject(self.label).size
+        self.standard=FreeCAD.ActiveDocument.getObject(self.label).standard
+        self.Solid=FreeCAD.ActiveDocument.getObject(self.label).Solid
+        self.g0=FreeCAD.ActiveDocument.getObject(self.label).g0*1000
+        if self.standard=='SS_Equal':
+            self.sa=ShpstData.angle_ss_equal[self.size]
+        elif self.standard=='SS_Unequal':
+            self.sa=ShpstData.angle_ss_unequal[self.size]
+        elif self.standard=='SUS_Equal':
+            self.sa=ShpstData.angle_sus_equal[self.size]    
+        obj.addProperty(
+            "App::PropertyString",
+            "FType",
+            "Profile",
+            QT_TRANSLATE_NOOP("App::Property", "Type of section"),
+        ).FType = "L"
+        obj.addProperty(
+            "App::PropertyLength",
+            "A",
+            "Draft",
+            QT_TRANSLATE_NOOP("App::Property", "Width of the beam"),
+        ).A = float(self.sa[0])
+        obj.addProperty(
+            "App::PropertyLength",
+            "B",
+            "Draft",
+            QT_TRANSLATE_NOOP("App::Property", "Height of the beam"),
+        ).B = float(self.sa[1])
+        obj.addProperty(
+            "App::PropertyLength",
+            "t",
+            "Draft",
+            QT_TRANSLATE_NOOP("App::Property", "Thickness of the webs"),
+        ).t = float(self.sa[2])
+        obj.addProperty(
+            "App::PropertyLength",
+            "r1",
+            "Draft",
+            QT_TRANSLATE_NOOP("App::Property", "Radius of cornes r1"),
+        ).r1 = float(self.sa[3])
+        obj.addProperty(
+            "App::PropertyLength",
+            "r2",
+            "Draft",
+            QT_TRANSLATE_NOOP("App::Property", "Radius of cornes r2"),
+        ).r2 = float(self.sa[4])
+        _Profile.__init__(self, obj, profile)
+        return
+
+    def execute(self, obj):
+        A=float(self.sa[0])
+        B=float(self.sa[1])
+        t=float(self.sa[2])
+        r1=float(self.sa[3])
+        r2=float(self.sa[4])
+        cx=float(self.sa[7])*10
+        cy=float(self.sa[8])*10
+        L=FreeCAD.ActiveDocument.getObject(self.label).L
+        L=float(L)
+        obj.A=A
+        obj.B=B
+        obj.Shape=drawAndCenter(pointsLWithRound(A, B, t, r1, r2))
+
+
+class _ProfileChannel(_Profile):
+    def __init__(self, obj, profile):
+        self.label=obj.Name
+        self.size=FreeCAD.ActiveDocument.getObject(self.label).size
+        self.standard=FreeCAD.ActiveDocument.getObject(self.label).standard
+        Solid=FreeCAD.ActiveDocument.getObject(self.label).Solid
+        g0=FreeCAD.ActiveDocument.getObject(self.label).g0*1000
+        if self.standard=='SS':
+            self.sa=ShpstData.channel_ss[self.size]
+            self.s0=5
+            self.t2=float(self.sa[3])
+        elif self.standard=='SUS':
+            self.self.sa=ShpstData.channel_sus[self.size]
+            self.s0=0
+            self.t2=float(self.sa[2])
+        obj.addProperty(
+            "App::PropertyString",
+            "FType",
+            "Profile",
+            QT_TRANSLATE_NOOP("App::Property", "Type of section"),
+        ).FType = "C"
+        obj.addProperty(
+            "App::PropertyLength",
+            "H",
+            "Draft",
+            QT_TRANSLATE_NOOP("App::Property", "Width of the beam"),
+        ).H = float(self.sa[0])
+        obj.addProperty(
+            "App::PropertyLength",
+            "B",
+            "Draft",
+            QT_TRANSLATE_NOOP("App::Property", "Height of the beam"),
+        ).B = float(self.sa[1])
+        obj.addProperty(
+            "App::PropertyLength",
+            "t1",
+            "Draft",
+            QT_TRANSLATE_NOOP("App::Property", "Thickness of the webs"),
+        ).t1 = float(self.sa[2])
+        obj.addProperty(
+            "App::PropertyLength",
+            "r1",
+            "Draft",
+            QT_TRANSLATE_NOOP("App::Property", "Radius of cornes r1"),
+        ).r1 = float(self.sa[3])
+        obj.addProperty(
+            "App::PropertyLength",
+            "r2",
+            "Draft",
+            QT_TRANSLATE_NOOP("App::Property", "Radius of cornes r2"),
+        ).r2 = float(self.sa[4])
+        _Profile.__init__(self, obj, profile)
+        return
+
+    def execute(self,obj):
+        H=float(self.sa[0])
+        B=float(self.sa[1])
+        t1=float(self.sa[2])
+        #t2=float(self.sa[3])
+        r1=float(self.sa[4])
+        r2=float(self.sa[5])
+        Cy=float(self.sa[8])*10
+        L=FreeCAD.ActiveDocument.getObject(self.label).L
+        L=float(L)
+        Solid=FreeCAD.ActiveDocument.getObject(self.label).Solid
+        obj.H=H
+        obj.B=B
+        obj.Shape=drawAndCenter(pointsChannelWithRound(H, B, t1, self.t2, r1, r2, Cy ,self.s0))
 
 
 class _ProfileT(_Profile):
@@ -1379,31 +1781,31 @@ class _ProfileT(_Profile):
             "App::PropertyString",
             "FType",
             "Profile",
-            QT_TRANSLATE_NOOP("App::PropertyString", "Type of section"),
+            QT_TRANSLATE_NOOP("App::Property", "Type of section"),
         ).FType = "T"
         obj.addProperty(
             "App::PropertyLength",
             "W",
             "Draft",
-            QT_TRANSLATE_NOOP("App::PropertyLength", "Width of the beam"),
+            QT_TRANSLATE_NOOP("App::Property", "Width of the beam"),
         ).W = profile[4]
         obj.addProperty(
             "App::PropertyLength",
             "H",
             "Draft",
-            QT_TRANSLATE_NOOP("App::PropertyLength", "Height of the beam"),
+            QT_TRANSLATE_NOOP("App::Property", "Height of the beam"),
         ).H = profile[5]
         obj.addProperty(
             "App::PropertyLength",
             "t1",
             "Draft",
-            QT_TRANSLATE_NOOP("App::PropertyLength", "Thickness of the web"),
+            QT_TRANSLATE_NOOP("App::Property", "Thickness of the web"),
         ).t1 = profile[6]
         obj.addProperty(
             "App::PropertyLength",
             "t2",
             "Draft",
-            QT_TRANSLATE_NOOP("App::PropertyLength", "Thickness of the web"),
+            QT_TRANSLATE_NOOP("App::Property", "Thickness of the web"),
         ).t2 = profile[7]
         _Profile.__init__(self, obj, profile)
 
@@ -1420,31 +1822,31 @@ class _ProfileZ(_Profile):
             "App::PropertyString",
             "FType",
             "Profile",
-            QT_TRANSLATE_NOOP("App::PropertyString", "Type of section"),
+            QT_TRANSLATE_NOOP("App::Property", "Type of section"),
         ).FType = "Z"
         obj.addProperty(
             "App::PropertyLength",
             "W",
             "Draft",
-            QT_TRANSLATE_NOOP("App::PropertyLength", "Width of the beam"),
+            QT_TRANSLATE_NOOP("App::Property", "Width of the beam"),
         ).W = profile[5]
         obj.addProperty(
             "App::PropertyLength",
             "H",
             "Draft",
-            QT_TRANSLATE_NOOP("App::PropertyLength", "Height of the beam"),
+            QT_TRANSLATE_NOOP("App::Property", "Height of the beam"),
         ).H = profile[4]
         obj.addProperty(
             "App::PropertyLength",
             "t1",
             "Draft",
-            QT_TRANSLATE_NOOP("App::PropertyLength", "Thickness of the web"),
+            QT_TRANSLATE_NOOP("App::Property", "Thickness of the web"),
         ).t1 = profile[6]
         obj.addProperty(
             "App::PropertyLength",
             "t2",
             "Draft",
-            QT_TRANSLATE_NOOP("App::PropertyLength", "Thickness of the flanges"),
+            QT_TRANSLATE_NOOP("App::Property", "Thickness of the flanges"),
         ).t2 = profile[7]
         _Profile.__init__(self, obj, profile)
 
@@ -1461,43 +1863,43 @@ class _ProfileOmega(_Profile):
             "App::PropertyString",
             "FType",
             "Profile",
-            QT_TRANSLATE_NOOP("App::PropertyString", "Type of section"),
+            QT_TRANSLATE_NOOP("App::Property", "Type of section"),
         ).FType = "omega"
         obj.addProperty(
             "App::PropertyLength",
             "W",
             "Draft",
-            QT_TRANSLATE_NOOP("App::PropertyLength", "Width of the beam"),
+            QT_TRANSLATE_NOOP("App::Property", "Width of the beam"),
         ).W = profile[4]
         obj.addProperty(
             "App::PropertyLength",
             "H",
             "Draft",
-            QT_TRANSLATE_NOOP("App::PropertyLength", "Height of the beam"),
+            QT_TRANSLATE_NOOP("App::Property", "Height of the beam"),
         ).H = profile[5]
         obj.addProperty(
             "App::PropertyLength",
             "D",
             "Draft",
-            QT_TRANSLATE_NOOP("App::PropertyLength", "Width of the flanges"),
+            QT_TRANSLATE_NOOP("App::Property", "Width of the flanges"),
         ).D = profile[6]
         obj.addProperty(
             "App::PropertyLength",
             "t1",
             "Draft",
-            QT_TRANSLATE_NOOP("App::PropertyLength", "Thickness 1"),
+            QT_TRANSLATE_NOOP("App::Property", "Thickness 1"),
         ).t1 = profile[7]
         obj.addProperty(
             "App::PropertyLength",
             "t2",
             "Draft",
-            QT_TRANSLATE_NOOP("App::PropertyLength", "Thickness 2"),
+            QT_TRANSLATE_NOOP("App::Property", "Thickness 2"),
         ).t2 = profile[8]
         obj.addProperty(
             "App::PropertyLength",
             "t3",
             "Draft",
-            QT_TRANSLATE_NOOP("App::PropertyLength", "Thickness 3"),
+            QT_TRANSLATE_NOOP("App::Property", "Thickness 3"),
         ).t3 = profile[9]
         _Profile.__init__(self, obj, profile)
 
@@ -1521,43 +1923,43 @@ class _ProfileH(_Profile):
             "App::PropertyString",
             "FType",
             "Profile",
-            QT_TRANSLATE_NOOP("App::PropertyString", "Type of section"),
+            QT_TRANSLATE_NOOP("App::Property", "Type of section"),
         ).FType = "H"
         obj.addProperty(
             "App::PropertyLength",
             "W",
             "Draft",
-            QT_TRANSLATE_NOOP("App::PropertyLength", "Width of the bottom flange"),
+            QT_TRANSLATE_NOOP("App::Property", "Width of the bottom flange"),
         ).W = profile[4]
         obj.addProperty(
             "App::PropertyLength",
             "H",
             "Draft",
-            QT_TRANSLATE_NOOP("App::PropertyLength", "Height of the beam"),
+            QT_TRANSLATE_NOOP("App::Property", "Height of the beam"),
         ).H = profile[5]
         obj.addProperty(
             "App::PropertyLength",
             "D",
             "Draft",
-            QT_TRANSLATE_NOOP("App::PropertyLength", "Width of the top flange"),
+            QT_TRANSLATE_NOOP("App::Property", "Width of the top flange"),
         ).D = profile[6]
         obj.addProperty(
             "App::PropertyLength",
             "t1",
             "Draft",
-            QT_TRANSLATE_NOOP("App::PropertyLength", "Thickness 1"),
+            QT_TRANSLATE_NOOP("App::Property", "Thickness 1"),
         ).t1 = profile[7]
         obj.addProperty(
             "App::PropertyLength",
             "t2",
             "Draft",
-            QT_TRANSLATE_NOOP("App::PropertyLength", "Thickness 2"),
+            QT_TRANSLATE_NOOP("App::Property", "Thickness 2"),
         ).t2 = profile[8]
         obj.addProperty(
             "App::PropertyLength",
             "t3",
             "Draft",
-            QT_TRANSLATE_NOOP("App::PropertyLength", "Thickness 3"),
+            QT_TRANSLATE_NOOP("App::Property", "Thickness 3"),
         ).t3 = profile[9]
         _Profile.__init__(self, obj, profile)
 
@@ -1581,43 +1983,43 @@ class _ProfileU(_Profile):
             "App::PropertyString",
             "FType",
             "Profile",
-            QT_TRANSLATE_NOOP("App::PropertyString", "Type of section"),
+            QT_TRANSLATE_NOOP("App::Property", "Type of section"),
         ).FType = "U"
         obj.addProperty(
             "App::PropertyLength",
             "W",
             "Draft",
-            QT_TRANSLATE_NOOP("App::PropertyLength", "Width of the bottom flange"),
+            QT_TRANSLATE_NOOP("App::Property", "Width of the bottom flange"),
         ).W = profile[4]
         obj.addProperty(
             "App::PropertyLength",
             "H",
             "Draft",
-            QT_TRANSLATE_NOOP("App::PropertyLength", "Height of the beam"),
+            QT_TRANSLATE_NOOP("App::Property", "Height of the beam"),
         ).H = profile[5]
         obj.addProperty(
             "App::PropertyLength",
             "D",
             "Draft",
-            QT_TRANSLATE_NOOP("App::PropertyLength", "Width of the top flange"),
+            QT_TRANSLATE_NOOP("App::Property", "Width of the top flange"),
         ).D = profile[6]
         obj.addProperty(
             "App::PropertyLength",
             "t1",
             "Draft",
-            QT_TRANSLATE_NOOP("App::PropertyLength", "Thickness 1"),
+            QT_TRANSLATE_NOOP("App::Property", "Thickness 1"),
         ).t1 = profile[7]
         obj.addProperty(
             "App::PropertyLength",
             "t2",
             "Draft",
-            QT_TRANSLATE_NOOP("App::PropertyLength", "Thickness 2"),
+            QT_TRANSLATE_NOOP("App::Property", "Thickness 2"),
         ).t2 = profile[8]
         obj.addProperty(
             "App::PropertyLength",
             "t3",
             "Draft",
-            QT_TRANSLATE_NOOP("App::PropertyLength", "Thickness 3"),
+            QT_TRANSLATE_NOOP("App::Property", "Thickness 3"),
         ).t3 = profile[9]
         _Profile.__init__(self, obj, profile)
 

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>Dialog</class>
- <widget class="QDialog" name="Dialog">
+ <class>DialogSection</class>
+ <widget class="QDialog" name="DialogSection">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -135,7 +135,7 @@
       <item row="0" column="0">
        <widget class="QLabel" name="labT1">
         <property name="text">
-         <string>t1</string>
+         <string notr="true">t1</string>
         </property>
         <property name="alignment">
          <set>Qt::AlignCenter</set>
@@ -155,7 +155,7 @@
       <item row="1" column="0">
        <widget class="QLabel" name="labT2">
         <property name="text">
-         <string>t2</string>
+         <string notr="true">t2</string>
         </property>
         <property name="alignment">
          <set>Qt::AlignCenter</set>
@@ -175,7 +175,7 @@
       <item row="2" column="0">
        <widget class="QLabel" name="labT3">
         <property name="text">
-         <string>t3</string>
+         <string notr="true">t3</string>
         </property>
         <property name="alignment">
          <set>Qt::AlignCenter</set>
@@ -771,8 +771,6 @@ profile</string>
   <tabstop>tbZ</tabstop>
   <tabstop>tbOmega</tabstop>
  </tabstops>
- <resources>
-  <include location="../../../../Documenti/programmazione/QtDialogs/profileEditor/imgages.qrc"/>
- </resources>
+ <resources/>
  <connections/>
 </ui>

@@ -3,24 +3,13 @@
 __license__ = "LGPL 3"
 
 # import FreeCAD modules
-import FreeCAD, FreeCADGui, inspect, os
-from PySide.QtCore import QT_TRANSLATE_NOOP
 
-# helper -------------------------------------------------------------------
-# FreeCAD TemplatePyMod module
-# (c) 2007 Juergen Riegel LGPL
+import FreeCAD
+import FreeCADGui
 
+from quetzal_config import addCommand, get_icon_path
 
-def addCommand(name, cmdObject):
-    (list, num) = inspect.getsourcelines(cmdObject.Activated)
-    pos = 0
-    # check for indentation
-    while list[1][pos] == " " or list[1][pos] == "\t":
-        pos += 1
-    source = ""
-    for i in range(len(list) - 1):
-        source += list[i + 1][pos:]
-    FreeCADGui.addCommand(name, cmdObject, source)
+QT_TRANSLATE_NOOP = FreeCAD.Qt.QT_TRANSLATE_NOOP
 
 
 # ---------------------------------------------------------------------------
@@ -36,12 +25,10 @@ class queryModel:
 
     def GetResources(self):
         return {
-            "Pixmap": os.path.join(
-                os.path.dirname(os.path.abspath(__file__)), "iconz", "query.svg"
-            ),
+            "Pixmap": get_icon_path("query"),
             "Accel": "Q,M",
-            "MenuText": QT_TRANSLATE_NOOP("queryModel", "query the model"),
-            "ToolTip": QT_TRANSLATE_NOOP("queryModel", "Click objects to print infos"),
+            "MenuText": QT_TRANSLATE_NOOP("Quetzal_QueryModel", "query the model"),
+            "ToolTip": QT_TRANSLATE_NOOP("Quetzal_QueryModel", "Click objects to print infos"),
         }
 
 
@@ -66,13 +53,11 @@ class moveWorkPlane:
 
     def GetResources(self):
         return {
-            "Pixmap": os.path.join(
-                os.path.dirname(os.path.abspath(__file__)), "iconz", "grid.svg"
-            ),
+            "Pixmap": get_icon_path("grid"),
             "Accel": "A,W",
-            "MenuText": QT_TRANSLATE_NOOP("moveWorkPlane", "align Workplane"),
+            "MenuText": QT_TRANSLATE_NOOP("Quetzal_MoveWorkPlane", "align Workplane"),
             "ToolTip": QT_TRANSLATE_NOOP(
-                "moveWorkPlane",
+                "Quetzal_MoveWorkPlane",
                 "Moves and rotates the drafting workplane with points, edges and faces",
             ),
         }
@@ -86,13 +71,11 @@ class rotateWorkPlane:
 
     def GetResources(self):
         return {
-            "Pixmap": os.path.join(
-                os.path.dirname(os.path.abspath(__file__)), "iconz", "rotWP.svg"
-            ),
+            "Pixmap": get_icon_path("rotWP"),
             "Accel": "R,W",
-            "MenuText": QT_TRANSLATE_NOOP("rotateWorkPlane", "rotate Workplane"),
+            "MenuText": QT_TRANSLATE_NOOP("Quetzal_RotateWorkPlane", "rotate Workplane"),
             "ToolTip": QT_TRANSLATE_NOOP(
-                "rotateWorkPlane", "Spin the Draft working plane about one of its axes"
+                "Quetzal_RotateWorkPlane", "Spin the Draft working plane about one of its axes"
             ),
         }
 
@@ -102,20 +85,17 @@ class offsetWorkPlane:
         if hasattr(FreeCAD, "DraftWorkingPlane") and hasattr(FreeCADGui, "Snapper"):
             import uCmd
 
-            s = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/Draft").GetInt(
-                "gridSize"
-            )
+            s = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/Draft").GetInt("gridSize")
             sc = [float(x * s) for x in [1, 1, 0.2]]
-            arrow = uCmd.arrow(
-                FreeCAD.DraftWorkingPlane.getPlacement(), scale=sc, offset=s
-            )
+            arrow = uCmd.arrow(FreeCAD.DraftWorkingPlane.getPlacement(), scale=sc, offset=s)
             from PySide.QtGui import QInputDialog as qid
-            from DraftGui import translate
+
+            translate = FreeCAD.Qt.translate
 
             offset = qid.getInt(
                 None,
-                translate("offsetWorkPlane", "Offset Work Plane"),
-                translate("offsetWorkPlane", "Offset: "),
+                translate("Quetzal_OffsetWorkPlane", "Offset Work Plane"),
+                translate("Quetzal_OffsetWorkPlane", "Offset: "),
             )
             if offset[1] > 0:
                 uCmd.offsetWP(offset[0])
@@ -124,13 +104,11 @@ class offsetWorkPlane:
 
     def GetResources(self):
         return {
-            "Pixmap": os.path.join(
-                os.path.dirname(os.path.abspath(__file__)), "iconz", "offsetWP.svg"
-            ),
+            "Pixmap": get_icon_path("offsetWP"),
             "Accel": "O,W",
-            "MenuText": QT_TRANSLATE_NOOP("offsetWorkPlane", "offset Workplane"),
+            "MenuText": QT_TRANSLATE_NOOP("Quetzal_OffsetWorkPlane", "offset Workplane"),
             "ToolTip": QT_TRANSLATE_NOOP(
-                "offsetWorkPlane", "Shifts the WP alongg its normal."
+                "Quetzal_OffsetWorkPlane", "Shifts the WP along its normal."
             ),
         }
 
@@ -143,13 +121,11 @@ class hackedL:
 
     def GetResources(self):
         return {
-            "Pixmap": os.path.join(
-                os.path.dirname(os.path.abspath(__file__)), "iconz", "hackedL.svg"
-            ),
+            "Pixmap": get_icon_path("hackedL"),
             "Accel": "H,L",
-            "MenuText": QT_TRANSLATE_NOOP("hackedL", "draw a DWire"),
+            "MenuText": QT_TRANSLATE_NOOP("Quetzal_HackedL", "draw a DWire"),
             "ToolTip": QT_TRANSLATE_NOOP(
-                "hackedL",
+                "Quetzal_HackedL",
                 "WP is re-positioned at each point. Possible to spin and offset it.",
             ),
         }
@@ -164,13 +140,11 @@ class moveHandle:
 
     def GetResources(self):
         return {
-            "Pixmap": os.path.join(
-                os.path.dirname(os.path.abspath(__file__)), "iconz", "moveHandle.svg"
-            ),
+            "Pixmap": get_icon_path("moveHandle"),
             "Accel": "M,H",
-            "MenuText": QT_TRANSLATE_NOOP("moveHandle", "Move objects"),
+            "MenuText": QT_TRANSLATE_NOOP("Quetzal_MoveHandle", "Move objects"),
             "ToolTip": QT_TRANSLATE_NOOP(
-                "moveHandle", "Move quickly objects inside viewport"
+                "Quetzal_MoveHandle", "Move quickly objects inside viewport"
             ),
         }
 
@@ -183,13 +157,11 @@ class dpCalc:
 
     def GetResources(self):
         return {
-            "Pixmap": os.path.join(
-                os.path.dirname(os.path.abspath(__file__)), "iconz", "delta.svg"
-            ),
-            "MenuText": QT_TRANSLATE_NOOP("dpCalc", "Pressure loss calculator"),
+            "Pixmap": get_icon_path("delta"),
+            "MenuText": QT_TRANSLATE_NOOP("Quetzal_DpCalc", "Pressure loss calculator"),
             "ToolTip": QT_TRANSLATE_NOOP(
-                "dpCalc",
-                'Calculate pressure loss in "pypes" using ChEDL libraries.\n See __doc__ of the module for futher information.',
+                "Quetzal_DpCalc",
+                'Calculate pressure loss in "pypes" using ChEDL libraries.\n See __doc__ of the module for further information.',
             ),
         }
 
@@ -206,12 +178,10 @@ class selectSolids:
 
     def GetResources(self):
         return {
-            "Pixmap": os.path.join(
-                os.path.dirname(os.path.abspath(__file__)), "iconz", "solids.svg"
-            ),
-            "MenuText": QT_TRANSLATE_NOOP("selectSolids", "Select solids"),
+            "Pixmap": get_icon_path("solids"),
+            "MenuText": QT_TRANSLATE_NOOP("Quetzal_SelectSolids", "Select solids"),
             "ToolTip": QT_TRANSLATE_NOOP(
-                "selectSolids",
+                "Quetzal_SelectSolids",
                 "Grab all solids or those partially selected\n to export in .step format",
             ),
         }
@@ -220,11 +190,11 @@ class selectSolids:
 # ---------------------------------------------------------------------------
 # Adds the commands to the FreeCAD command manager
 # ---------------------------------------------------------------------------
-addCommand("queryModel", queryModel())
-addCommand("moveWorkPlane", moveWorkPlane())
-addCommand("rotateWorkPlane", rotateWorkPlane())
-addCommand("offsetWorkPlane", offsetWorkPlane())
-addCommand("hackedL", hackedL())
-addCommand("moveHandle", moveHandle())
-addCommand("dpCalc", dpCalc())
-addCommand("selectSolids", selectSolids())
+addCommand("Quetzal_QueryModel", queryModel())
+addCommand("Quetzal_MoveWorkPlane", moveWorkPlane())
+addCommand("Quetzal_RotateWorkPlane", rotateWorkPlane())
+addCommand("Quetzal_OffsetWorkPlane", offsetWorkPlane())
+addCommand("Quetzal_HackedL", hackedL())
+addCommand("Quetzal_MoveHandle", moveHandle())
+addCommand("Quetzal_DpCalc", dpCalc())
+addCommand("Quetzal_SelectSolids", selectSolids())

@@ -1,209 +1,186 @@
-#****************************************************************************
-#*                                                                          *
-#*   Dodo Workbench:                                                        *
-#*       substitute of flamingo for Py3 / Qt5                               *
-#*   Copyright (c) 2019 Riccardo Treu LGPL                                  *
-#*                                                                          *
-#*   This program is free software; you can redistribute it and/or modify   *
-#*   it under the terms of the GNU Lesser General Public License (LGPL)     *
-#*   as published by the Free Software Foundation; either version 2 of      *
-#*   the License, or (at your option) any later version.                    *
-#*   for detail see the LICENCE text file.                                  *
-#*                                                                          *
-#*   This program is distributed in the hope that it will be useful,        *
-#*   but WITHOUT ANY WARRANTY; without even the implied warranty of         *
-#*   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the          *
-#*   GNU Library General Public License for more details.                   *
-#*                                                                          *
-#*   You should have received a copy of the GNU Library General Public      *
-#*   License along with this program; if not, write to the Free Software    *
-#*   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307   *
-#*   USA                                                                    *
-#*                                                                          *
-#****************************************************************************
+# ****************************************************************************
+# *                                                                          *
+# *   Dodo Workbench:                                                        *
+# *       substitute of flamingo for Py3 / Qt5                               *
+# *   Copyright (c) 2019 Riccardo Treu LGPL                                  *
+# *                                                                          *
+# *   This program is free software; you can redistribute it and/or modify   *
+# *   it under the terms of the GNU Lesser General Public License (LGPL)     *
+# *   as published by the Free Software Foundation; either version 2 of      *
+# *   the License, or (at your option) any later version.                    *
+# *   for detail see the LICENCE text file.                                  *
+# *                                                                          *
+# *   This program is distributed in the hope that it will be useful,        *
+# *   but WITHOUT ANY WARRANTY; without even the implied warranty of         *
+# *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the          *
+# *   GNU Library General Public License for more details.                   *
+# *                                                                          *
+# *   You should have received a copy of the GNU Library General Public      *
+# *   License along with this program; if not, write to the Free Software    *
+# *   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307   *
+# *   USA                                                                    *
+# *                                                                          *
+# ****************************************************************************
 
-class dodo ( Workbench ):
-  try:
-      import DraftSnap
-  except Exception:
-      import draftguitools.gui_snapper as DraftSnap
-      print('flag') # patch
-  if not hasattr(FreeCADGui, "Snapper"):
-      FreeCADGui.Snapper = DraftSnap.Snapper()
-      print('flag2') # patch
+import os
+import sys
 
-  import sys, FreeCAD
-  v=sys.version_info[0]
-  if v<3: FreeCAD.Console.PrintWarning('Dodo is written for Py3 and Qt5\n You may experience mis-behaviuors\n')
-  Icon = '''
-/* XPM */
-static char * dodo1_xpm[] = {
-"98 98 2 1",
-" 	c None",
-".	c #000000",
-"                                                                                                  ",
-"                                                                                                  ",
-"                                                                                                  ",
-"                                                                                                  ",
-"                                                                                                  ",
-"                                                                                                  ",
-"                                                                                                  ",
-"                                                                  ....                            ",
-"                                                               ........                           ",
-"                                                             ...........                          ",
-"                                                           .............                          ",
-"                                                          ...............                         ",
-"                                                         .................                        ",
-"                                                        .....................                     ",
-"                                                       .........................                  ",
-"                                                       .............................              ",
-"                                                      ................................            ",
-"                                                      ................................            ",
-"                                                      .................................           ",
-"                                                      ..................................          ",
-"                                                      ..................................          ",
-"                                                      ..................................          ",
-"                                                      ..................................          ",
-"                                                      ..................................          ",
-"                                                       .................................          ",
-"                                                       ..........         ..............          ",
-"                 ......                                 .........           ........              ",
-"            ............                                ..........           ......               ",
-"          ................                              ..........                                ",
-"         .................                               ..........                               ",
-"         .................          .......               ..........                              ",
-"        ..................     .................          ...........                             ",
-"        ..................   .....................         ...........                            ",
-"        ...........................................        ............                           ",
-"        .............................................       .............                         ",
-"        ..............................................       .............                        ",
-"       ................................................      ..............                       ",
-"       .................................................     ...............                      ",
-"      .................................................... .................                      ",
-"      .......................................................................                     ",
-"       ......................................................................                     ",
-"          ....................................................................                    ",
-"              ................................................................                    ",
-"               ...............................................................                    ",
-"               ................................................................                   ",
-"               ................................................................                   ",
-"              ................................................................                    ",
-"              ................................................................                    ",
-"             .................................................................                    ",
-"            ..................................................................                    ",
-"            .................................................................                     ",
-"           ..................................................................                     ",
-"           ..................................................................                     ",
-"          ..................................................................                      ",
-"         ...................................................................                      ",
-"         ...................................................................                      ",
-"         ...................................................................                      ",
-"           ................................................................                       ",
-"            ...............................................................                       ",
-"            ..............................................................                        ",
-"             .............................................................                        ",
-"              ............................................................                        ",
-"               ..........................................................                         ",
-"                .........................................................                         ",
-"                 .......................................................                          ",
-"                 ......................................................                           ",
-"                   ...................................................                            ",
-"                    ..................................................                            ",
-"                     ...............................................                              ",
-"                      .............................................                               ",
-"                        ..........................................                                ",
-"                         ........................................                                 ",
-"                           ....................................                                   ",
-"                            ................................                                      ",
-"                             ............................                                         ",
-"                             .........................                                            ",
-"                              ....................                                                ",
-"                              ....   ............                                                 ",
-"                              ...            ...      ..                                          ",
-"                              ...            ...    ....                                          ",
-"                              ...            ................                                     ",
-"                              ...       .... .................                                    ",
-"                              ...        ..................                                       ",
-"                              ...      ..   ........                                              ",
-"                              ...    ....      .....                                              ",
-"                        ....  ..........         .......                                          ",
-"                          ...................        ....                                         ",
-"                           ..................           .                                         ",
-"                               .... .......                                                       ",
-"                                ......                                                            ",
-"                                 ......                                                           ",
-"                                    .....                                                         ",
-"                                       ..                                                         ",
-"                                                                                                  ",
-"                                                                                                  ",
-"                                                                                                  ",
-"                                                                                                  ",
-"                                                                                                  "};
-'''
-  MenuText = "Dodo WB"
-  ToolTip = "Dodo workbench \n(substitute of flamingo for Py3/Qt5)"
-  def Initialize(self):
-    import pForms
-    import CUtils
-    import CFrame
-    import CPipe
-    self.pypeList=["insertPipe","insertElbow","insertReduct","insertCap","insertValve","insertFlange","insertUbolt","insertPypeLine","insertBranch","insertTank","insertRoute","breakPipe","mateEdges","flat","extend2intersection","extend1intersection","makeHeader","laydown","raiseup","attach2tube","point2point","insertAnyz"]#,"joinPype"]
-    from PySide.QtCore import QT_TRANSLATE_NOOP
-    from DraftGui import translate
-    from dodoPM import toolList
-    FreeCADGui.addLanguagePath(pForms.getLanguagePath())
-    FreeCADGui.updateLocale()
+import FreeCAD
+import FreeCADGui
+from FreeCADGui import Workbench
 
-    self.utilsList=["selectSolids","queryModel","moveWorkPlane","offsetWorkPlane","rotateWorkPlane","hackedL","moveHandle","dpCalc"]
-    self.appendToolbar(translate("dodo","Utils"),self.utilsList)
-    Log ('Loading Utils: done\n')
 
-    self.frameList=["frameIt","FrameBranchManager","insertSection","spinSect","reverseBeam","shiftBeam","pivotBeam","levelBeam","alignEdge","rotJoin","alignFlange","stretchBeam","extend","adjustFrameAngle","insertPath"]
-    self.appendToolbar(translate("dodo","frametools"),self.frameList)
-    Log ('Loading Frame tools: done\n')
+Log = FreeCAD.Console.PrintLog
+Msg = FreeCAD.Console.PrintMessage
 
-    self.pypeList=["insertPipe","insertElbow","insertReduct","insertCap","insertValve","insertFlange","insertUbolt","insertPypeLine","insertBranch","insertTank","insertRoute","breakPipe","mateEdges","flat","extend2intersection","extend1intersection","laydown","raiseup","attach2tube","point2point","insertAnyz"]#,"joinPype"]
 
-    self.qm=toolList # ["pipeQM","elbowQM","reductQM"]
-    self.appendToolbar(translate("dodo","pypetools"),self.pypeList)
-    Log ('Loading Pipe tools: done\n')
-    self.appendMenu(translate("dodo","Frame tools"),self.frameList)
-    self.appendMenu(translate("dodo","Pype tools"),self.pypeList)
-    self.appendMenu(translate("dodo","Utils"),self.utilsList)
-    self.appendMenu(translate("dodo","QkMenus"),self.qm)
+class QuetzalWorkbench(Workbench):
+    def __init__(self):
+        from quetzal_config import TRANSLATIONSPATH, ICONPATH
 
-  def ContextMenu(self, recipient):
-    self.appendContextMenu('Frames', self.frameList)
-    self.appendContextMenu('Pypes', self.pypeList)
-    self.appendContextMenu('Utils', self.utilsList)
+        # Add translations path
+        FreeCADGui.addLanguagePath(TRANSLATIONSPATH)
+        FreeCADGui.updateLocale()
 
-  def Activated(self):
-    # if hasattr(FreeCADGui,"draftToolBar"):	#patch
-      # FreeCADGui.draftToolBar.Activated()		#patch
-    # if hasattr(FreeCADGui,"Snapper"):			#patch
-      # FreeCADGui.Snapper.show()				#patchm
-    FreeCAD.__activePypeLine__=None
-    FreeCAD.__activeFrameLine__=None
-    Msg("Created variables in FreeCAD module:\n")
-    Msg("__activePypeLine__\n")
-    Msg("__activeFrameLine__\n")
+        self.__class__.MenuText = FreeCAD.Qt.translate("Workbench", "Quetzal")
+        self.__class__.ToolTip = FreeCAD.Qt.translate(
+            "Workbench",
+            "Quetzal is the fork of Dodo workbench for FreeCAD. "
+            "Extending Dodo workbench support and adding translation support. ",
+        )
+        self.__class__.Icon = os.path.join(ICONPATH, "dodo.svg")
+
     try:
-      import dodoPM
-      Msg("__dodoPMact__ \n")
-      FreeCAD.Console.PrintMessage(FreeCAD.__dodoPMact__.objectName()+' \'s shortcut = '+FreeCAD.__dodoPMact__.shortcuts()[0].toString()+'\n\t****\n')
-    except:
-      FreeCAD.Console.PrintError('dodoPM not loaded \n')
+        import DraftSnap
+    except Exception:
+        import draftguitools.gui_snapper as DraftSnap
 
-  def Deactivated(self):
-    del FreeCAD.__activePypeLine__
-    Msg("__activePypeLine__ variable deleted\n")
-    del FreeCAD.__activeFrameLine__
-    Msg("__activeFrameLine__ variable deleted\n")
-    # mw=FreeCADGui.getMainWindow()
-    # mw.removeAction(FreeCAD.__dodoPMact__)
-    # Msg("dodoPM shortcut removed\n")
-    # del FreeCAD.__dodoPMact__
-    # Msg("__dodoPMact__ variable deleted\n")
-    # Msg("dodo deactivated()\n")
+    if not hasattr(FreeCADGui, "Snapper"):
+        FreeCADGui.Snapper = DraftSnap.Snapper()
 
-Gui.addWorkbench(dodo)
+    v = sys.version_info[0]
+    if v < 3:
+        FreeCAD.Console.PrintWarning(
+            "Quetzal is written for Py3 and Qt5\n You may experience mis-behaviuors\n"
+        )
+
+    def Initialize(self):
+        """
+        This function is called at the first activation of the workbench,
+        here is the place to import all the commands.
+        """
+        QT_TRANSLATE_NOOP = FreeCAD.Qt.QT_TRANSLATE_NOOP
+        import CUtils
+
+        self.utilsList = [
+            "Quetzal_SelectSolids",
+            "Quetzal_QueryModel",
+            "Quetzal_MoveWorkPlane",
+            "Quetzal_OffsetWorkPlane",
+            "Quetzal_RotateWorkPlane",
+            "Quetzal_HackedL",
+            "Quetzal_MoveHandle",
+            "Quetzal_DpCalc",
+        ]
+        self.appendToolbar("Utils", self.utilsList)
+        Log("Loading Utils: done\n")
+        import CFrame
+        from cut_list.cut_list_commands import cutListCommand
+
+        self.frameList = [
+            "Quetzal_FrameIt",
+            "Quetzal_FrameBranchManager",
+            "Quetzal_InsertSection",
+            "Quetzal_SpinSect",
+            "Quetzal_ReverseBeam",
+            "Quetzal_ShiftBeam",
+            "Quetzal_PivotBeam",
+            "Quetzal_LevelBeam",
+            "Quetzal_AlignEdge",
+            "Quetzal_RotJoin",
+            "Quetzal_AlignFlange",
+            "Quetzal_StretchBeam",
+            "Quetzal_Extend",
+            "Quetzal_AdjustFrameAngle",
+            "Quetzal_InsertPath",
+            "Quetzal_CreateCutList",
+        ]
+        self.appendToolbar("frameTools", self.frameList)
+        Log("Loading Frame tools: done\n")
+        import CPipe
+
+        self.pypeList = [
+            "Quetzal_InsertPipe",
+            "Quetzal_InsertElbow",
+            "Quetzal_InsertReduct",
+            "Quetzal_InsertCap",
+            "Quetzal_InsertValve",
+            "Quetzal_InsertFlange",
+            "Quetzal_InsertUbolt",
+            "Quetzal_InsertPypeLine",
+            "Quetzal_InsertBranch",
+            "Quetzal_InsertTank",
+            "Quetzal_InsertRoute",
+            "Quetzal_BreakPipe",
+            "Quetzal_MateEdges",
+            "Quetzal_Flat",
+            "Quetzal_Extend2intersection",
+            "Quetzal_Extend1intersection",
+            "Quetzal_MakeHeader",
+            "Quetzal_Laydown",
+            "Quetzal_Raiseup",
+            "Quetzal_Attach2tube",
+            "Quetzal_Point2point",
+            "Quetzal_InsertAnyz",
+        ]  # ,"joinPype"]
+        from dodoPM import toolList
+
+        self.qm = toolList  # ["pipeQM","elbowQM","reductQM"]
+        self.appendToolbar(QT_TRANSLATE_NOOP("Workbench", "pypetools"), self.pypeList)
+        Log("Loading Pipe tools: done\n")
+        self.appendMenu(QT_TRANSLATE_NOOP("Workbench", "Frame tools"), self.frameList)
+        self.appendMenu(QT_TRANSLATE_NOOP("Workbench", "Pype tools"), self.pypeList)
+        self.appendMenu(QT_TRANSLATE_NOOP("Workbench", "Utils"), self.utilsList)
+        self.appendMenu(QT_TRANSLATE_NOOP("Workbench", "QM Menus"), self.qm)
+
+    def ContextMenu(self, recipient):
+        QT_TRANSLATE_NOOP = FreeCAD.Qt.QT_TRANSLATE_NOOP
+        self.appendContextMenu(QT_TRANSLATE_NOOP("Workbench", "Frames"), self.frameList)
+        self.appendContextMenu(QT_TRANSLATE_NOOP("Workbench", "Pypes"), self.pypeList)
+        self.appendContextMenu(QT_TRANSLATE_NOOP("Workbench", "Utils"), self.utilsList)
+
+    def Activated(self):
+        # if hasattr(FreeCADGui,"draftToolBar"):	#patch
+        # FreeCADGui.draftToolBar.Activated()		#patch
+        # if hasattr(FreeCADGui,"Snapper"):			#patch
+        # FreeCADGui.Snapper.show()				#patchm
+        FreeCAD.__activePypeLine__ = None
+        FreeCAD.__activeFrameLine__ = None
+        Msg("Created variables in FreeCAD module:\n")
+        Msg("__activePypeLine__\n")
+        Msg("__activeFrameLine__\n")
+        try:
+            Msg("__dodoPMact__ \n")
+            FreeCAD.Console.PrintMessage(
+                FreeCAD.__dodoPMact__.objectName()
+                + " 's shortcut = "
+                + FreeCAD.__dodoPMact__.shortcuts()[0].toString()
+                + "\n\t****\n"
+            )
+        except:
+            FreeCAD.Console.PrintError("dodoPM not loaded \n")
+
+    def Deactivated(self):
+        del FreeCAD.__activePypeLine__
+        Msg("__activePypeLine__ variable deleted\n")
+        del FreeCAD.__activeFrameLine__
+        Msg("__activeFrameLine__ variable deleted\n")
+        # mw=FreeCADGui.getMainWindow()
+        # mw.removeAction(FreeCAD.__dodoPMact__)
+        # Msg("dodoPM shortcut removed\n")
+        # del FreeCAD.__dodoPMact__
+        # Msg("__dodoPMact__ variable deleted\n")
+        # Msg("dodo deactivated()\n")
+
+
+FreeCADGui.addWorkbench(QuetzalWorkbench)
