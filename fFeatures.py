@@ -754,7 +754,7 @@ class frameBranchForm(dodoDialogs.protoTypeDialog):
                 if self.form.editName.text():
                     name = self.form.editName.text()
                 else:
-                    name = translate("makeframenbranch","Travatura") 
+                    name = translate("makeframenbranch","Structure") # Travatura is Structure?
                 a = FreeCAD.ActiveDocument.addObject("Part::FeaturePython", name)
                 FrameBranch(a, bases[0], profile)
                 ViewProviderFrameBranch(a.ViewObject)
@@ -1677,13 +1677,13 @@ class _ProfileAngle(_Profile):
             "App::PropertyLength",
             "r1",
             "Draft",
-            QT_TRANSLATE_NOOP("App::Property", "Radius of cornes r1"),
+            QT_TRANSLATE_NOOP("App::Property", "Radius of corner r1"),
         ).r1 = float(self.sa[3])
         obj.addProperty(
             "App::PropertyLength",
             "r2",
             "Draft",
-            QT_TRANSLATE_NOOP("App::Property", "Radius of cornes r2"),
+            QT_TRANSLATE_NOOP("App::Property", "Radius of corner r2"),
         ).r2 = float(self.sa[4])
         _Profile.__init__(self, obj, profile)
         return
@@ -1746,13 +1746,13 @@ class _ProfileChannel(_Profile):
             "App::PropertyLength",
             "r1",
             "Draft",
-            QT_TRANSLATE_NOOP("App::Property", "Radius of cornes r1"),
+            QT_TRANSLATE_NOOP("App::Property", "Radius of corner r1"),
         ).r1 = float(self.sa[3])
         obj.addProperty(
             "App::PropertyLength",
             "r2",
             "Draft",
-            QT_TRANSLATE_NOOP("App::Property", "Radius of cornes r2"),
+            QT_TRANSLATE_NOOP("App::Property", "Radius of corner r2"),
         ).r2 = float(self.sa[4])
         _Profile.__init__(self, obj, profile)
         return
