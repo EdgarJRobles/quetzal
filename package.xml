@@ -3,23 +3,25 @@
 
   <name>Quetzal</name>
 
-  <description>A set of commands and objects that help to speed-up the drawing of frames and pipelines. Py3/Qt5 port of flamingo.</description>
+  <description>A set of commands and objects that help to speed-up the drawing of frames and pipelines. Dodo successor.</description>
 
-  <version>1.0.1</version>
+  <version>1.1.0</version>
 
-  <date>2024-10-20</date>
+  <date>2025-01-15</date>
 
   <maintainer>Edgar J Robles</maintainer>
 
   <license file="LICENSE">LGPL-3.0-or-later</license>
 
-  <url branch="feat/translation++" type="repository">https://github.com/EdgarJRobles/dodo</url>
+  <pythonmin>3.7.0</pythonmin>
 
-  <url type="bugtracker">https://github.com/EdgarJRobles/dodo/issues</url>
+  <url branch="feat/translation++" type="repository">https://github.com/EdgarJRobles/quetzal</url>
 
-  <url type="readme">https://github.com/EdgarJRobles/dodo/blob/master/README.md</url>
+  <url type="bugtracker">https://github.com/EdgarJRobles/quetzal/issues</url>
 
-  <url type="documentation">https://wiki.freecad.org/Dodo_Workbench</url>
+  <url type="readme">https://github.com/EdgarJRobles/quetzal/blob/master/README.md</url>
+
+  <url type="documentation">https://wiki.freecad.org/Quetzal_Workbench</url>
 
   <url type="discussion">https://forum.freecad.org/viewtopic.php?t=22711</url>
 
@@ -29,6 +31,13 @@
 
   <content>
     <workbench>
+      <depend optional="False" type="automatic">Arch</depend>
+      <depend optional="False" type="automatic">Draft</depend>
+      <tag>beams</tag>
+      <tag>frames</tag>
+      <tag>pipe</tag>
+      <tag>pipelines</tag>
+      <icon>iconz/quetzal.svg</icon>
       <classname>QuetzalWorkbench</classname>
       <subdirectory>./</subdirectory>
     </workbench>
