@@ -19,6 +19,8 @@ pCmd.port2 = None
 pCmd.arrows1 = list()
 pCmd.arrows2 = list()
 
+translate = FreeCAD.Qt.translate
+
 
 class arrow_insert(arrow):
     def __init__(self, name, pype, portNr, scale=100):
@@ -51,7 +53,9 @@ class arrow_insert(arrow):
                         )
                         # move o2
                         if type(pCmd.port1) == int and type(pCmd.port2) == int:
-                            FreeCAD.activeDocument().openTransaction("Join")
+                            FreeCAD.activeDocument().openTransaction(
+                                translate("Transaction", "Join")
+                            )
                             pCmd.join(pCmd.o1, pCmd.port1, pCmd.o2, pCmd.port2)
                             FreeCAD.activeDocument().commitTransaction()
                         else:

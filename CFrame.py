@@ -59,7 +59,7 @@ class spinSect:
         import FreeCADGui
         import pCmd
 
-        FreeCAD.activeDocument().openTransaction("Spin")
+        FreeCAD.activeDocument().openTransaction(translate("Transaction", "Spin"))
         for beam in FreeCADGui.Selection.getSelection():
             pCmd.rotateTheTubeAx(beam)
         FreeCAD.activeDocument().recompute()
@@ -90,7 +90,7 @@ class reverseBeam:
         import FreeCADGui
         import pCmd
 
-        FreeCAD.activeDocument().openTransaction("Reverse")
+        FreeCAD.activeDocument().openTransaction(translate("Transaction", "Reverse"))
         for objEx in FreeCADGui.Selection.getSelectionEx():
             pCmd.reverseTheTube(objEx)
         FreeCAD.activeDocument().recompute()
@@ -208,7 +208,7 @@ class levelBeam:
         faces = fCmd.faces(selex)
         beams = [sx.Object for sx in selex]
         if len(faces) == len(beams) > 1:
-            FreeCAD.activeDocument().openTransaction("LevelTheBeams")
+            FreeCAD.activeDocument().openTransaction(translate("Transaction", "Level The Beams"))
             beams.pop(0)
             fBase = faces.pop(0)
             for i in range(len(beams)):
@@ -258,7 +258,7 @@ class alignEdge:
             beams = FreeCADGui.Selection.getSelection()[1:]
             if len(edges) == len(beams):
                 pairs = [(beams[i], edges[i]) for i in range(len(beams))]
-                FreeCAD.activeDocument().openTransaction("AlignEdge")
+                FreeCAD.activeDocument().openTransaction(translate("Transaction", "Align Edge"))
                 for p in pairs:
                     fCmd.joinTheBeamsEdges(p[0], e1, p[1])
                 FreeCAD.activeDocument().commitTransaction()
@@ -400,7 +400,9 @@ class rotJoin:
         import fCmd
 
         if len(fCmd.beams()) > 1:
-            FreeCAD.activeDocument().openTransaction("rotJoin")
+            FreeCAD.activeDocument().openTransaction(
+                translate("Transaction", "Rotate to Join on Edge")
+            )
             fCmd.rotjoinTheBeam()
             FreeCAD.activeDocument().recompute()
             FreeCAD.activeDocument().commitTransaction()
@@ -429,7 +431,7 @@ class insertPath:
     def Activated(self):
         import pCmd
 
-        FreeCAD.activeDocument().openTransaction("make Path")
+        FreeCAD.activeDocument().openTransaction(translate("Transaction", "Make Path"))
         pCmd.makeW()
         FreeCAD.activeDocument().recompute()
         FreeCAD.activeDocument().commitTransaction()

@@ -65,7 +65,7 @@ class redrawDialog(QDialog):
         self.show()
 
     def redraw(self):
-        FreeCAD.activeDocument().openTransaction("Redraw pype-lines")
+        FreeCAD.activeDocument().openTransaction(translate("Transaction", "Redraw pipe-lines"))
         i = 0
         for cb in self.checkBoxes:
             if cb.isChecked():
@@ -657,7 +657,7 @@ class insertReductForm(dodoDialogs.protoPypeForm):
         if not H:  # calculate length if it's not defined
             H = float(3 * (OD1 - OD2))
         propList = [DN, OD1, OD2, thk1, thk2, H]
-        FreeCAD.activeDocument().openTransaction("Insert reduction")
+        FreeCAD.activeDocument().openTransaction(translate("Transaction", "Insert reduction"))
         if self.cb1.isChecked():
             self.lastReduct = pCmd.makeReduct(propList, pos, Z, False)
         else:
@@ -739,14 +739,18 @@ class insertUboltForm(dodoDialogs.protoPypeForm):
                 float(pq(d["H"])),
                 float(pq(d["d"])),
             ]
-            FreeCAD.activeDocument().openTransaction("Insert clamp in (0,0,0)")
+            FreeCAD.activeDocument().openTransaction(
+                translate("Transaction", "Insert clamp in (0,0,0)")
+            )
             ub = pCmd.makeUbolt(propList)
             if self.combo.currentText() != "<none>":
                 pCmd.moveToPyLi(ub, self.combo.currentText())
             FreeCAD.activeDocument().commitTransaction()
             FreeCAD.activeDocument().recompute()
         else:
-            FreeCAD.activeDocument().openTransaction("Insert clamp on tube")
+            FreeCAD.activeDocument().openTransaction(
+                translate("Transaction", "Insert clamp on tube")
+            )
             for objex in selex:
                 if hasattr(objex.Object, "PType") and objex.Object.PType == "Pipe":
                     d = [typ for typ in self.pipeDictList if typ["PSize"] == objex.Object.PSize]
@@ -938,7 +942,7 @@ class insertPypeLineForm(dodoDialogs.protoPypeForm):
 
     def insert(self):
         d = self.pipeDictList[self.sizeList.currentRow()]
-        FreeCAD.activeDocument().openTransaction("Insert pype-line")
+        FreeCAD.activeDocument().openTransaction(translate("Transaction", "Insert pipe line"))
         if self.combo.currentText() == translate("insertPypeLineForm", "<new>"):
             plLabel = self.edit1.text()
             if not plLabel:
@@ -976,7 +980,9 @@ class insertPypeLineForm(dodoDialogs.protoPypeForm):
                 isWire = hasattr(base, "Shape") and base.Shape.Edges  # type(base.Shape)==Part.Wire
                 isSketch = hasattr(base, "TypeId") and base.TypeId == "Sketcher::SketchObject"
                 if isWire or isSketch:
-                    FreeCAD.activeDocument().openTransaction("Assign Base")
+                    FreeCAD.activeDocument().openTransaction(
+                        translate("Transaction", "Assign Base")
+                    )
                     pl.Base = base
                     if isWire:
                         pCmd.drawAsCenterLine(pl.Base)
@@ -1119,7 +1125,7 @@ class insertBranchForm(dodoDialogs.protoPypeForm):
     # FreeCAD.Console.PrintError('Select a PypeLine to apply first\n')
     def insert(self):
         d = self.pipeDictList[self.sizeList.currentRow()]
-        FreeCAD.activeDocument().openTransaction("Insert pype-branch")
+        FreeCAD.activeDocument().openTransaction(translate("Transaction", "Insert pipe branch"))
         plLabel = self.edit1.text()
         if not plLabel:
             plLabel = "Traccia"
@@ -1290,7 +1296,7 @@ class breakForm(QDialog):
 
     def breakPipe(self):
         p2nd = None
-        FreeCAD.activeDocument().openTransaction("Break pipes")
+        FreeCAD.activeDocument().openTransaction(translate("Transaction", "Break pipes"))
         if self.edit1.text()[-1] == "%":
             pipes = [p for p in fCmd.beams() if pCmd.isPipe(p)]
             for p in pipes:
@@ -1511,7 +1517,7 @@ class point2pointPipe(DraftTools.Line):
             # mouse movement detection
             self.point, ctrlPoint, info = DraftTools.getPoint(self, arg)
         elif arg["Type"] == "SoMouseButtonEvent":
-            FreeCAD.activeDocument().openTransaction("point-to-point")
+            FreeCAD.activeDocument().openTransaction(translate("Transaction", "Point to Point"))
             # mouse button detection
             if (arg["State"] == "DOWN") and (arg["Button"] == "BUTTON1"):
                 if arg["Position"] == self.pos:
@@ -1633,8 +1639,7 @@ class insertTankForm(dodoDialogs.protoTypeDialog):
     def addNozzle(self):
         DN = self.form.listSizes.currentItem().text()
         args = self.nozzles[DN]
-        # FreeCAD.Console.PrintMessage(args)
-        FreeCAD.ActiveDocument.openTransaction("Add nozzles")
+        FreeCAD.activeDocument().openTransaction(translate("Transaction", "Add nozzles"))
         pCmd.makeNozzle(DN, float(self.form.editLength.text()), *args)
         FreeCAD.ActiveDocument.commitTransaction()
 
@@ -1722,7 +1727,7 @@ class insertRouteForm(dodoDialogs.protoTypeDialog):
         self.form.lab1.setText("global " + ax)
 
     def accept(self, ang=None):
-        FreeCAD.ActiveDocument.openTransaction("Make pipe route")
+        FreeCAD.activeDocument().openTransaction(translate("Transaction", "Make pipe route"))
         if fCmd.edges():
             e = fCmd.edges()[0]
             if e.curvatureAt(0):

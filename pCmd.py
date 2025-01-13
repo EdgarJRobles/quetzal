@@ -196,7 +196,7 @@ def doPipes(propList=["DN50", 60.3, 3, 1000], pypeline=None):
       H (float): length of pipe ]
     pypeline = string
     """
-    FreeCAD.activeDocument().openTransaction("Insert pipe")
+    FreeCAD.activeDocument().openTransaction(translate("Transaction", "Insert pipe"))
     plist = list()
     if len(fCmd.edges()) == 0:  # ..no edges selected
         vs = [
@@ -346,7 +346,7 @@ def doElbow(propList=["DN50", 60.3, 3, 90, 45.225], pypeline=None):
     pypeline = string
     """
     elist = []
-    FreeCAD.activeDocument().openTransaction("Insert elbow")
+    FreeCAD.activeDocument().openTransaction(translate("Transaction", "Insert elbow"))
     selex = FreeCADGui.Selection.getSelectionEx()
     if len(selex) == 0:  # no selection -> insert one elbow at origin
         elist.append(makeElbow(propList))
@@ -495,7 +495,7 @@ def doFlanges(
     """
     flist = []
     tubes = [t for t in fCmd.beams() if hasattr(t, "PSize")]
-    FreeCAD.activeDocument().openTransaction("Insert flange")
+    FreeCAD.activeDocument().openTransaction(translate("Transaction", "Insert flange"))
     if len(fCmd.edges()) == 0:
         vs = [
             v
@@ -654,7 +654,7 @@ def doCaps(propList=["DN50", 60.3, 3], pypeline=None):
     pypeline = string
     """
     clist = []
-    FreeCAD.activeDocument().openTransaction("Insert cap")
+    FreeCAD.activeDocument().openTransaction(translate("Transaction", "Insert cap"))
     if len(fCmd.edges()) == 0:
         vs = [
             v
@@ -1269,7 +1269,7 @@ def doValves(propList=["DN50", "ball", 72, 50, 40, 150], pypeline=None, pos=0):
     color = 0.05, 0.3, 0.75
     vlist = []
     # d=self.pipeDictList[self.sizeList.currentRow()]
-    FreeCAD.activeDocument().openTransaction("Insert valve")
+    FreeCAD.activeDocument().openTransaction(translate("Transaction", "Insert valve"))
     # propList=[d['PSize'],d['VType'],float(pq(d['OD'])),float(pq(d['ID'])),float(pq(d['H'])),float(pq(d['Kv']))]
     if 0 < pos < 100:  # ..place the valve in the middle of pipe(s)
         pipes = [p for p in FreeCADGui.Selection.getSelection() if isPipe(p)]
@@ -1476,7 +1476,7 @@ def flatten(p1=None, p2=None, c=None):
         com2 = p2.Shape.Solids[0].CenterOfMass
         v1 = P - com1
         v2 = com2 - P
-        FreeCAD.ActiveDocument.openTransaction("Place one curve")
+        FreeCAD.activeDocument().openTransaction(translate("Transaction", "Place one curve"))
         placeoTherElbow(curves[0], v1, v2, P)
         FreeCAD.ActiveDocument.recompute()  # recompute for the elbow
         port1, port2 = portsPos(curves[0])

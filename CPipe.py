@@ -221,7 +221,7 @@ class mateEdges:
     def Activated(self):
         import pCmd
 
-        FreeCAD.activeDocument().openTransaction("Mate")
+        FreeCAD.activeDocument().openTransaction(translate("Transaction", "Mate"))
         pCmd.alignTheTube()
         FreeCAD.activeDocument().commitTransaction()
         FreeCAD.activeDocument().recompute()
@@ -257,7 +257,9 @@ class extend2intersection:
     def Activated(self):
         import pCmd
 
-        FreeCAD.activeDocument().openTransaction("Xtend2int")
+        FreeCAD.activeDocument().openTransaction(
+            translate("Transaction", "Extend pipes to intersection")
+        )
         pCmd.extendTheTubes2intersection()
         FreeCAD.activeDocument().recompute()
         FreeCAD.activeDocument().commitTransaction()
@@ -278,7 +280,9 @@ class extend1intersection:
     def Activated(self):
         import pCmd
 
-        FreeCAD.activeDocument().openTransaction("Xtend1int")
+        FreeCAD.activeDocument().openTransaction(
+            translate("Transaction", "Extend pipe to intersection")
+        )
         pCmd.extendTheTubes2intersection(both=False)
         FreeCAD.activeDocument().recompute()
         FreeCAD.activeDocument().commitTransaction()
@@ -302,7 +306,7 @@ class laydown:
         from Part import Plane
 
         refFace = [f for f in fCmd.faces() if type(f.Surface) == Plane][0]
-        FreeCAD.activeDocument().openTransaction("Lay-down the pipe")
+        FreeCAD.activeDocument().openTransaction(translate("Transaction", "Lay-down the pipe"))
         for b in fCmd.beams():
             if pCmd.isPipe(b):
                 pCmd.laydownTheTube(b, refFace)
@@ -331,7 +335,7 @@ class raiseup:
             if len(sxFaces) > 0:
                 refFace = sxFaces[0]
                 support = sx.Object
-        FreeCAD.activeDocument().openTransaction("Raise-up the support")
+        FreeCAD.activeDocument().openTransaction(translate("Transaction", "Raise-up the support"))
         for b in fCmd.beams():
             if pCmd.isPipe(b):
                 pCmd.laydownTheTube(b, refFace, support)
@@ -391,7 +395,7 @@ class attach2tube:
     def Activated(self):
         import pCmd
 
-        FreeCAD.activeDocument().openTransaction("Attach to tube")
+        FreeCAD.activeDocument().openTransaction(translate("Transaction", "Attach to tube"))
         pCmd.attachToTube()
         FreeCAD.activeDocument().recompute()
         FreeCAD.activeDocument().commitTransaction()
@@ -474,7 +478,7 @@ class makeHeader:
     def Activated(self):
         import pCmd
 
-        FreeCAD.activeDocument().openTransaction("Connect to header")
+        FreeCAD.activeDocument().openTransaction(translate("Transaction", "Connect to header"))
         pCmd.header()
         FreeCAD.activeDocument().recompute()
         FreeCAD.activeDocument().commitTransaction()

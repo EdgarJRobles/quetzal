@@ -456,9 +456,7 @@ class frameBranchForm(dodoDialogs.protoTypeDialog):
 
     def __init__(self):
         super(frameBranchForm, self).__init__("fbranch.ui")
-        self.sectDictList = (
-            []
-        )  # list (sizes) of properties (dictionaries) of the current type of section
+        self.sectDictList = []  # list (sizes) of properties (dictionaries) of the current type of section
         self.form.editAngle.setValidator(QDoubleValidator())
         self.form.editAngle.editingFinished.connect(self.changeAngle)
         self.form.editHead.setValidator(QDoubleValidator())
@@ -507,7 +505,9 @@ class frameBranchForm(dodoDialogs.protoTypeDialog):
                 return value
 
     def makeSingle(self):
-        FreeCAD.activeDocument().openTransaction("Insert Single Struct")
+        FreeCAD.activeDocument().openTransaction(
+            translate("Transaction", "Insert Single Structure")
+        )
         if self.SType == "<by sketch>":
             profile = FreeCAD.ActiveDocument.getObjectsByLabel(
                 self.form.listSizes.currentItem().text()
@@ -799,7 +799,9 @@ class frameBranchForm(dodoDialogs.protoTypeDialog):
             # GET BASE
             bases = [b for b in FreeCADGui.Selection.getSelection() if hasattr(b, "Shape")]
             if bases and self.form.listSizes.selectedItems():
-                FreeCAD.activeDocument().openTransaction("Insert FrameBranch")
+                FreeCAD.activeDocument().openTransaction(
+                    translate("Transaction", "Insert Frame Branch")
+                )
                 if self.SType == "<by sketch>":
                     profile = FreeCAD.ActiveDocument.getObjectsByLabel(
                         self.form.listSizes.currentItem().text()
@@ -1042,7 +1044,7 @@ class frameBranchForm(dodoDialogs.protoTypeDialog):
         self.changeAngle()
 
     def trim(self):
-        FreeCAD.ActiveDocument.openTransaction("Trim FB")
+        FreeCAD.activeDocument().openTransaction(translate("Transaction", "Trim Frame Branch"))
         for target in self.targets:
             for b in fCmd.beams():
                 if hasattr(b, "tailOffset") and hasattr(b, "headOffset"):
@@ -1116,9 +1118,7 @@ class FrameLine(object):
             "Group",
             "FrameLine",
             QT_TRANSLATE_NOOP("App::PropertyString", "The group."),
-        ).Group = (
-            obj.Label + "_pieces"
-        )
+        ).Group = obj.Label + "_pieces"
         group = FreeCAD.activeDocument().addObject("App::DocumentObjectGroup", obj.Group)
         group.addObject(obj)
         FreeCAD.Console.PrintWarning("Created group " + obj.Group + "\n")
@@ -1165,7 +1165,7 @@ class FrameLine(object):
                 return
         group = FreeCAD.activeDocument().getObjectsByLabel(fp.Group)[0]
         if fp.Profile:
-            FreeCAD.activeDocument().openTransaction("Update frameLine")
+            FreeCAD.activeDocument().openTransaction(translate("Transaction", "Update Frame Line"))
             for e in edges:
                 if copyProfile:
                     p = FreeCAD.activeDocument().copyObject(fp.Profile, True)
