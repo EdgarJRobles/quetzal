@@ -499,7 +499,7 @@ class Flange(pypeType):
         #creates flange thickness
         flange = base.extrude(FreeCAD.Vector(0, 0, fp.t-fp.trf))
         FreeCADGui.ActiveDocument.Flange.Deviation = 0.10
-        if fp.FlangeType=='SW' or fp.FlangeType=='WN'or fp.FlangeType=='LJ':
+        if fp.FlangeType=='SW' or fp.FlangeType=='WN'or fp.FlangeType=='LJ' or fp.FlangeType=='SO':
             #creates flange neck
             nn=Part.makeCylinder(fp.ODp/2,fp.T1-fp.trf,vO,vZ).cut(
             Part.makeCylinder(fp.d/2,fp.T1-fp.trf,vO,vZ))
@@ -602,7 +602,6 @@ class Flange(pypeType):
     #     fp.Shape= obj.Shape
 
 
-
 class Reduct(pypeType):
     """Class for object PType="Reduct"
     Reduct(obj,[PSize="DN50",OD=60.3, OD2= 48.3, thk=3, thk2=None, H=None, conc=True])
@@ -622,6 +621,7 @@ class Reduct(pypeType):
         # initialize the parent class
         super(Reduct, self).__init__(obj)
         # define common properties
+        obj.Proxy = self
         obj.PType = "Reduct"
         obj.PRating = "SCH-STD"
         obj.PSize = DN
@@ -744,6 +744,7 @@ class Cap(pypeType):
         super(Cap, self).__init__(obj)
         # define common properties
         obj.PType = "Cap"
+        obj.Proxy = self
         obj.PRating = "SCH-STD"
         obj.PSize = DN
         # define specific properties
@@ -828,6 +829,7 @@ class PypeLine2(pypeType):
         # initialize the parent class
         super(PypeLine2, self).__init__(obj)
         # define common properties
+        obj.Proxy = self
         obj.PType = "PypeLine"
         obj.PSize = DN
         obj.PRating = PRating
@@ -875,6 +877,7 @@ class PypeLine2(pypeType):
             FreeCAD.Console.PrintWarning(fp.Label + " Base has changed to " + fp.Base.Label + "\n")
         if prop == "OD":
             fp.BendRadius = 0.75 * fp.OD
+        fp.Proxy.update(fp)
 
     def purge(self, fp):
         group = FreeCAD.activeDocument().getObjectsByLabel(fp.Group)[0]
@@ -885,7 +888,6 @@ class PypeLine2(pypeType):
     def update(self, fp, edges=None):
         from DraftVecUtils import rounded
         from math import degrees
-
         if not edges and hasattr(fp.Base, "Shape"):
             edges = fp.Base.Shape.Edges
             if not edges:
@@ -1162,6 +1164,7 @@ class Valve(pypeType):
         # initialize the parent class
         super(Valve, self).__init__(obj)
         # define common properties
+        obj.Proxy = self
         obj.PType = "Valve"
         obj.PRating = VType
         obj.PSize = DN
@@ -1209,6 +1212,7 @@ class PypeBranch2(pypeType):  # use AttachExtensionPython
         # initialize the parent class
         super(PypeBranch2, self).__init__(obj)
         # define common properties
+        obj.Proxy = self
         obj.PType = "PypeBranch"
         obj.PSize = DN
         obj.PRating = PRating
@@ -1315,7 +1319,7 @@ class PypeBranch2(pypeType):  # use AttachExtensionPython
                 t = pCmd.makePipe([fp.PSize, float(fp.OD), float(fp.thk), L])
                 t.PRating = fp.PRating
                 t.PSize = fp.PSize
-                t.Support = [(fp.Base, eSupport)]
+                t.AttachmentSupport = [(fp.Base, eSupport)]
                 t.MapMode = "NormalToEdge"
                 t.MapReversed = True
                 t.AttachmentOffset = FreeCAD.Placement(
@@ -1331,13 +1335,14 @@ class PypeBranch2(pypeType):  # use AttachExtensionPython
                     c.PSize = fp.PSize
                     O = "Vertex" + str(i + 1)
                     c.MapReversed = False
-                    c.Support = [(fp.Base, O)]
+                    c.AttachmentSupport = [(fp.Base, O)]
                     c.MapMode = "Translate"
                     pCmd.placeTheElbow(c, e0.tangentAt(0), e.tangentAt(0))
                     curves.append(c.Name)
             fp.Tubes = tubes
             fp.Curves = curves
             objs = [FreeCAD.ActiveDocument.getObject(name) for name in fp.Tubes + fp.Curves]
+            # FreeCAD.Console.PrintMessage(objs)
             fp.addObjects(objs)
             for obj in objs:
                 obj.Proxy.execute(obj)

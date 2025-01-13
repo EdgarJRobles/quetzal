@@ -842,7 +842,7 @@ class insertCapForm(dodoDialogs.protoPypeForm):
             propList = [objs[0].PSize, objs[0].OD, objs[0].thk]
         else:
             propList = [d["PSize"], float(pq(d["OD"])), float(pq(d["thk"]))]
-        self.lastCap = pCmd.doCaps(propList, FreeCAD.__activePypeLine__)[-1]
+        self.lastCap = pCmd.doCaps(propList, FreeCAD.__activePypeLine__)
 
     def apply(self):
         for obj in FreeCADGui.Selection.getSelection():
@@ -1593,8 +1593,11 @@ class insertTankForm(dodoDialogs.protoTypeDialog):
             if s.startswith("Flange") and s.endswith(".csv")
         ]
         self.form.comboPipe.addItems(self.pipeRatings)
+        self.form.comboPipe.setToolTip('List available pipe thickness standarts')
         self.form.comboFlange.addItems(self.flangeRatings)
+        self.form.comboFlange.setToolTip('List available flange standarts')
         self.form.btn1.clicked.connect(self.addNozzle)
+        self.form.btn1.setToolTip('In order to make it Work, must select a circular edge direct from viewer then press this button')
         self.form.editLength.setValidator(QDoubleValidator())
         self.form.editX.setValidator(QDoubleValidator())
         self.form.editY.setValidator(QDoubleValidator())
@@ -1625,16 +1628,17 @@ class insertTankForm(dodoDialogs.protoTypeDialog):
     def addNozzle(self):
         DN = self.form.listSizes.currentItem().text()
         args = self.nozzles[DN]
+        # FreeCAD.Console.PrintMessage(args)
         FreeCAD.ActiveDocument.openTransaction("Add nozzles")
         pCmd.makeNozzle(DN, float(self.form.editLength.text()), *args)
         FreeCAD.ActiveDocument.commitTransaction()
 
     def combine(self):
-        print(translate("insertTankForm", "doing combine"))
+        # print(translate("insertTankForm", "doing combine"))
         self.form.listSizes.clear()
         try:
             fileName = "Pipe_" + self.form.comboPipe.currentText() + ".csv"
-            print(fileName)
+            # print(fileName)
             f = open(join(dirname(abspath(__file__)), "tablez", fileName), "r")
             reader = csv.DictReader(f, delimiter=";")
             pipes = dict(
@@ -1642,34 +1646,21 @@ class insertTankForm(dodoDialogs.protoTypeDialog):
             )
             f.close()
             fileName = "Flange_" + self.form.comboFlange.currentText() + ".csv"
-            print(fileName)
+            # print(fileName)
             f = open(join(dirname(abspath(__file__)), "tablez", fileName), "r")
             reader = csv.DictReader(f, delimiter=";")
             flanges = dict(
-                [
-                    [
-                        line["PSize"],
-                        [
-                            float(line["D"]),
-                            float(line["d"]),
-                            float(line["df"]),
-                            float(line["f"]),
-                            float(line["t"]),
-                            int(line["n"]),
-                        ],
-                    ]
-                    for line in reader
-                ]
+                [[line["PSize"],[float(line["D"]),float(line["d"]),float(line["df"]),float(line["f"]),float(line["t"]),int(line["n"]),],]for line in reader]
             )
             f.close()
-            print(translate("insertTankForm", "files read"))
+            # print(translate("insertTankForm", "files read"))
         except:
-            print(translate("insertTankForm", "files not read"))
+            # print(translate("insertTankForm", "files not read"))
             return
         listNozzles = [
             [p[0], p[1] + flanges[p[0]]] for p in pipes.items() if p[0] in flanges.keys()
         ]
-        print(translate("insertTankForm", "listNozzles: %s") % str(listNozzles))
+        # print(translate("insertTankForm", "listNozzles: %s") % str(listNozzles))
         self.nozzles = dict(listNozzles)
         self.form.listSizes.addItems(list(self.nozzles.keys()))
         # self.form.listSizes.sortItems()
@@ -1721,7 +1712,7 @@ class insertRouteForm(dodoDialogs.protoTypeDialog):
             else:
                 s = FreeCAD.ActiveDocument.addObject("Sketcher::SketchObject", "pipeRoute")
                 s.MapMode = "NormalToEdge"
-                s.Support = [(self.obj, self.edge)]
+                s.AttachmentSupport = [(self.obj, self.edge)]
                 s.AttachmentOffset = FreeCAD.Placement(
                     FreeCAD.Vector(0, 0, -1 * float(self.form.edit1.text())),
                     FreeCAD.Rotation(FreeCAD.Vector(0, 0, 1), 0),

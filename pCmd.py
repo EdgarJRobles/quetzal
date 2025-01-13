@@ -1405,18 +1405,14 @@ def makeNozzle(DN="DN50", H=200, OD=60.3, thk=3, D=160, d=62, df=132, f=14, t=15
                 Z=e.tangentAt(0).cross(e.normalAt(0)),
             )
             FreeCAD.ActiveDocument.recompute()
-            flange = makeFlange(
-                [DN, "S.O.", D, d, df, f, t, n],
-                pos=portsPos(pipe)[1],
-                Z=portsDir(pipe)[1],
-            )
+            flange = makeFlange([DN, "S.O.", D, d, df, f, t, n],pos=portsPos(pipe)[1],Z=portsDir(pipe)[1])
             pipe.MapReversed = False
-            pipe.Support = [(s, fCmd.edgeName(s, e)[1])]
+            pipe.AttachmentSupport = [(s, fCmd.edgeName(s, e)[1])]
             pipe.MapMode = "Concentric"
             FreeCADGui.Selection.clearSelection()
             FreeCADGui.Selection.addSelection(pipe)
             FreeCADGui.Selection.addSelection(flange)
-            flange.Support = [(pipe, "Edge1")]
+            flange.AttachmentSupport = [(pipe, "Edge1")]
             flange.MapReversed = True
             flange.MapMode = "Concentric"
             FreeCAD.ActiveDocument.recompute()
@@ -1428,7 +1424,7 @@ def makeRoute(n=Z):
         s = FreeCAD.ActiveDocument.addObject("Sketcher::SketchObject", "pipeRoute")
         s.MapMode = "SectionOfRevolution"
         sup = fCmd.edgeName()
-        s.Support = [sup]
+        s.AttachmentSupport = [sup]
         if fCmd.isPartOfPart(
             sup[0]
         ):  # TARGET [working]: takes care if support belongs to App::Part
