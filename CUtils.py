@@ -19,7 +19,6 @@ QT_TRANSLATE_NOOP = FreeCAD.Qt.QT_TRANSLATE_NOOP
 
 class queryModel:
     def Activated(self):
-        import FreeCADGui
         import uForms
 
         form = uForms.QueryForm(FreeCADGui.Selection)

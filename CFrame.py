@@ -30,7 +30,6 @@ class frameIt:
     """
 
     def Activated(self):
-        import FreeCADGui
         import fObservers
 
         s = fObservers.frameItObserver()
@@ -55,8 +54,6 @@ class spinSect:
     """
 
     def Activated(self):
-        import FreeCAD
-        import FreeCADGui
         import pCmd
 
         FreeCAD.activeDocument().openTransaction(translate("Transaction", "Spin"))
@@ -86,8 +83,6 @@ class reverseBeam:
     """
 
     def Activated(self):
-        import FreeCAD
-        import FreeCADGui
         import pCmd
 
         FreeCAD.activeDocument().openTransaction(translate("Transaction", "Reverse"))
@@ -199,12 +194,10 @@ class levelBeam:
     """
 
     def Activated(self):
-        import FreeCAD
-        import FreeCADGui
         import fCmd
         import fObservers
 
-        selex = Gui.Selection.getSelectionEx()
+        selex = FreeCADGui.Selection.getSelectionEx()
         faces = fCmd.faces(selex)
         beams = [sx.Object for sx in selex]
         if len(faces) == len(beams) > 1:
@@ -247,8 +240,6 @@ class alignEdge:
     """
 
     def Activated(self):
-        import FreeCAD
-        import FreeCADGui
         import fCmd
         import fObservers
 
@@ -371,7 +362,6 @@ class adjustFrameAngle:
     """
 
     def Activated(self):
-        import FreeCADGui
         import fObservers
 
         FreeCADGui.Selection.clearSelection()
