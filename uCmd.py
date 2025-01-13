@@ -67,7 +67,8 @@ def setWP():  # TARGET [working]: deal with App::Parts
 
 
 def rotWP(ax=None, ang=45):
-    import FreeCAD, FreeCADGui
+    import FreeCAD
+    import FreeCADGui
 
     if not ax:
         ax = FreeCAD.Vector(0, 0, 1)
@@ -81,7 +82,8 @@ def rotWP(ax=None, ang=45):
 
 
 def offsetWP(delta):
-    import FreeCAD, FreeCADGui
+    import FreeCAD
+    import FreeCADGui
 
     if hasattr(FreeCAD, "DraftWorkingPlane") and hasattr(FreeCADGui, "Snapper"):
         rot = FreeCAD.DraftWorkingPlane.getPlacement().Rotation
@@ -303,7 +305,8 @@ class label3D(object):
     """
 
     def __init__(self, pl=None, sizeFont=30, color=(1.0, 0.6, 0.0), text="TEXT"):
-        import FreeCAD, FreeCADGui
+        import FreeCAD
+        import FreeCADGui
 
         self.node = coin.SoSeparator()
         self.color = coin.SoBaseColor()
@@ -327,14 +330,14 @@ class label3D(object):
         self.sg.removeChild(self.node)
 
     def moveto(self, pl):
-        import FreeCAD
-
         self.Placement = pl
         self.transform.translation.setValue(tuple(self.Placement.Base))
         self.transform.rotation.setValue(tuple(self.Placement.Rotation.Q))
 
 
-import DraftTools, Draft, uForms
+import DraftTools
+import Draft
+import uForms
 from PySide.QtGui import *
 
 

@@ -5,7 +5,8 @@ __author__ = "oddtopus"
 __url__ = "github.com/oddtopus/dodo"
 __license__ = "LGPL 3"
 
-import FreeCAD, FreeCADGui
+import FreeCAD
+import FreeCADGui
 import DraftGeomUtils as dgu
 from DraftVecUtils import rounded
 

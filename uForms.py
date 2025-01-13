@@ -71,7 +71,6 @@ class QueryForm(QtGui.QDialog):  # QWidget):
         self.show()
 
     def onPushButton1(self):
-        from math import pi, degrees
         import fCmd
 
         try:
@@ -141,7 +140,6 @@ class QueryForm(QtGui.QDialog):  # QWidget):
 
 from PySide.QtCore import *
 from PySide.QtGui import *
-from os import listdir
 from os.path import join, dirname, abspath
 
 
@@ -216,7 +214,7 @@ class rotWPForm(QDialog):  # QWidget):
 import csv
 from PySide.QtCore import *
 from PySide.QtGui import *
-from math import pi, log, radians, sin, sqrt, atan, degrees
+from math import pi, log, radians, sin, sqrt, atan
 
 
 class dpCalcDialog:

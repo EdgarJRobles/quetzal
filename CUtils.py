@@ -19,7 +19,8 @@ QT_TRANSLATE_NOOP = FreeCAD.Qt.QT_TRANSLATE_NOOP
 
 class queryModel:
     def Activated(self):
-        import FreeCAD, FreeCADGui, uForms
+        import FreeCADGui
+        import uForms
 
         form = uForms.QueryForm(FreeCADGui.Selection)
 
@@ -65,7 +66,7 @@ class moveWorkPlane:
 
 class rotateWorkPlane:
     def Activated(self):
-        import FreeCAD, FreeCADGui, uForms
+        import uForms
 
         form = uForms.rotWPForm()
 

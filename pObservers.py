@@ -6,7 +6,9 @@ __url__ = "github.com/oddtopus/dodo"
 __license__ = "LGPL 3"
 
 # import FreeCAD modules
-import FreeCAD, FreeCADGui, pCmd
+import FreeCAD
+import FreeCADGui
+import pCmd
 from fObservers import frameObserverPrototype
 from uCmd import arrow
 

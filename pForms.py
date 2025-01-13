@@ -338,8 +338,8 @@ class insertElbowForm(dodoDialogs.protoPypeForm):
         if len(fCmd.beams()) == 1:
             pipe = fCmd.beams()[0]
             comPipeEdges = [e.CenterOfMass for e in pipe.Shape.Edges]
-            eds = [e for e in fCmd.edges() if not e.CenterOfMass in comPipeEdges]
-            FreeCAD.activeDocument().openTransaction("Trim pipes")
+            eds = [e for e in fCmd.edges() if e.CenterOfMass not in comPipeEdges]
+            FreeCAD.activeDocument().openTransaction(translate("Transaction", "Trim pipes"))
             for edge in eds:
                 fCmd.extendTheBeam(fCmd.beams()[0], edge)
             FreeCAD.activeDocument().commitTransaction()
@@ -452,13 +452,13 @@ class insertFlangeForm(dodoDialogs.protoPypeForm):
             propList.append(float(d["trf"]))
             propList.append(float(d["drf"]))
         except:
-            for x in range(0,2,1):
+            for x in range(0, 2, 1):
                 propList.append(0)
         try:  # for welding-neck
             propList.append(float(d["twn"]))
             propList.append(float(d["dwn"]))
         except:
-            for x in range(0,2,1):
+            for x in range(0, 2, 1):
                 propList.append(0)
         try:  # for welding-neck
             propList.append(float(d["ODp"]))
@@ -1438,7 +1438,10 @@ class insertValveForm(dodoDialogs.protoPypeForm):
                 FreeCAD.activeDocument().recompute()
 
 
-import DraftTools, Draft, uForms, uCmd
+import DraftTools
+import Draft
+import uForms
+import uCmd
 from PySide.QtGui import *
 
 
@@ -1593,11 +1596,13 @@ class insertTankForm(dodoDialogs.protoTypeDialog):
             if s.startswith("Flange") and s.endswith(".csv")
         ]
         self.form.comboPipe.addItems(self.pipeRatings)
-        self.form.comboPipe.setToolTip('List available pipe thickness standarts')
+        self.form.comboPipe.setToolTip("List available pipe thickness standards")
         self.form.comboFlange.addItems(self.flangeRatings)
-        self.form.comboFlange.setToolTip('List available flange standarts')
+        self.form.comboFlange.setToolTip("List available flange standards")
         self.form.btn1.clicked.connect(self.addNozzle)
-        self.form.btn1.setToolTip('In order to make it Work, must select a circular edge direct from viewer then press this button')
+        self.form.btn1.setToolTip(
+            "In order to make it work, must select a circular edge direct from viewer then press this button"
+        )
         self.form.editLength.setValidator(QDoubleValidator())
         self.form.editX.setValidator(QDoubleValidator())
         self.form.editY.setValidator(QDoubleValidator())
@@ -1650,7 +1655,20 @@ class insertTankForm(dodoDialogs.protoTypeDialog):
             f = open(join(dirname(abspath(__file__)), "tablez", fileName), "r")
             reader = csv.DictReader(f, delimiter=";")
             flanges = dict(
-                [[line["PSize"],[float(line["D"]),float(line["d"]),float(line["df"]),float(line["f"]),float(line["t"]),int(line["n"]),],]for line in reader]
+                [
+                    [
+                        line["PSize"],
+                        [
+                            float(line["D"]),
+                            float(line["d"]),
+                            float(line["df"]),
+                            float(line["f"]),
+                            float(line["t"]),
+                            int(line["n"]),
+                        ],
+                    ]
+                    for line in reader
+                ]
             )
             f.close()
             # print(translate("insertTankForm", "files read"))

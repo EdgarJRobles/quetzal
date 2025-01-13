@@ -30,7 +30,8 @@ class frameIt:
     """
 
     def Activated(self):
-        import FreeCAD, FreeCADGui, fObservers, fCmd
+        import FreeCADGui
+        import fObservers
 
         s = fObservers.frameItObserver()
         FreeCADGui.Selection.addObserver(s)
@@ -54,8 +55,9 @@ class spinSect:
     """
 
     def Activated(self):
-        import FreeCAD, FreeCADGui, fCmd, pCmd
-        from math import pi
+        import FreeCAD
+        import FreeCADGui
+        import pCmd
 
         FreeCAD.activeDocument().openTransaction("Spin")
         for beam in FreeCADGui.Selection.getSelection():
@@ -84,7 +86,9 @@ class reverseBeam:
     """
 
     def Activated(self):
-        import FreeCAD, FreeCADGui, pCmd
+        import FreeCAD
+        import FreeCADGui
+        import pCmd
 
         FreeCAD.activeDocument().openTransaction("Reverse")
         for objEx in FreeCADGui.Selection.getSelectionEx():
@@ -195,7 +199,10 @@ class levelBeam:
     """
 
     def Activated(self):
-        import FreeCAD, FreeCADGui, fCmd, fObservers
+        import FreeCAD
+        import FreeCADGui
+        import fCmd
+        import fObservers
 
         selex = Gui.Selection.getSelectionEx()
         faces = fCmd.faces(selex)
@@ -240,7 +247,10 @@ class alignEdge:
     """
 
     def Activated(self):
-        import FreeCAD, FreeCADGui, fCmd, fObservers
+        import FreeCAD
+        import FreeCADGui
+        import fCmd
+        import fObservers
 
         edges = fCmd.edges()
         if len(edges) >= 2 and len(FreeCADGui.Selection.getSelection()) >= 2:
@@ -361,7 +371,8 @@ class adjustFrameAngle:
     """
 
     def Activated(self):
-        import FreeCADGui, fObservers
+        import FreeCADGui
+        import fObservers
 
         FreeCADGui.Selection.clearSelection()
         s = fObservers.adjustAngleObserver()
@@ -385,7 +396,8 @@ class rotJoin:
     """
 
     def Activated(self):
-        import FreeCAD, fCmd
+        import FreeCAD
+        import fCmd
 
         if len(fCmd.beams()) > 1:
             FreeCAD.activeDocument().openTransaction("rotJoin")

@@ -297,7 +297,8 @@ class extend1intersection:
 
 class laydown:
     def Activated(self):
-        import pCmd, fCmd
+        import pCmd
+        import fCmd
         from Part import Plane
 
         refFace = [f for f in fCmd.faces() if type(f.Surface) == Plane][0]
@@ -320,7 +321,8 @@ class laydown:
 
 class raiseup:
     def Activated(self):
-        import pCmd, fCmd
+        import pCmd
+        import fCmd
         from Part import Plane
 
         selex = FreeCADGui.Selection.getSelectionEx()
@@ -349,7 +351,8 @@ class joinPype:
     """ """
 
     def Activated(self):
-        import FreeCAD, FreeCADGui, pForms  # pObservers
+        import FreeCADGui
+        import pForms  # pObservers
 
         # s=pObservers.joinObserver()
         FreeCADGui.Control.showDialog(pForms.joinForm())  # .Selection.addObserver(s)
@@ -437,7 +440,8 @@ class insertAnyz:
 
 class insertTank:
     def Activated(self):
-        import FreeCADGui, pForms
+        import FreeCADGui
+        import pForms
 
         FreeCADGui.Control.showDialog(pForms.insertTankForm())
 
@@ -451,7 +455,8 @@ class insertTank:
 
 class insertRoute:
     def Activated(self):
-        import FreeCADGui, pForms
+        import FreeCADGui
+        import pForms
 
         FreeCADGui.Control.showDialog(pForms.insertRouteForm())
 
