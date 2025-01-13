@@ -1,202 +1,168 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
 
-<svg version="1.2" baseProfile="tiny" width="11.29mm" height="11.29mm" viewBox="0 0 1129 1129" preserveAspectRatio="xMidYMid" fill-rule="evenodd" clip-path="url(#presentation_clip_path)" stroke-width="28.222" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg" xmlns:ooo="http://xml.openoffice.org/svg/export" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve">
- <defs class="ClipPathGroup">
-  <clipPath id="presentation_clip_path" clipPathUnits="userSpaceOnUse">
-   <rect x="0" y="0" width="1129" height="1129"/>
-  </clipPath>
- </defs>
- <defs class="TextShapeIndex">
-  <g ooo:slide="id1" ooo:id-list="id3 id4 id5 id6 id7 id8 id9 id10 id11 id12 id13 id14 id15 id16 id17 id18 id19 id20 id21 id22 id23 id24 id25 id26 id27 id28 id29 id30 id31 id32"/>
- </defs>
- <defs class="EmbeddedBulletChars">
-  <g id="bullet-char-template(57356)" transform="scale(0.00048828125,-0.00048828125)">
-   <path d="M 580,1141 L 1163,571 580,0 -4,571 580,1141 Z"/>
-  </g>
-  <g id="bullet-char-template(57354)" transform="scale(0.00048828125,-0.00048828125)">
-   <path d="M 8,1128 L 1137,1128 1137,0 8,0 8,1128 Z"/>
-  </g>
-  <g id="bullet-char-template(10146)" transform="scale(0.00048828125,-0.00048828125)">
-   <path d="M 174,0 L 602,739 174,1481 1456,739 174,0 Z M 1358,739 L 309,1346 659,739 1358,739 Z"/>
-  </g>
-  <g id="bullet-char-template(10132)" transform="scale(0.00048828125,-0.00048828125)">
-   <path d="M 2015,739 L 1276,0 717,0 1260,543 174,543 174,936 1260,936 717,1481 1274,1481 2015,739 Z"/>
-  </g>
-  <g id="bullet-char-template(10007)" transform="scale(0.00048828125,-0.00048828125)">
-   <path d="M 0,-2 C -7,14 -16,27 -25,37 L 356,567 C 262,823 215,952 215,954 215,979 228,992 255,992 264,992 276,990 289,987 310,991 331,999 354,1012 L 381,999 492,748 772,1049 836,1024 860,1049 C 881,1039 901,1025 922,1006 886,937 835,863 770,784 769,783 710,716 594,584 L 774,223 C 774,196 753,168 711,139 L 727,119 C 717,90 699,76 672,76 641,76 570,178 457,381 L 164,-76 C 142,-110 111,-127 72,-127 30,-127 9,-110 8,-76 1,-67 -2,-52 -2,-32 -2,-23 -1,-13 0,-2 Z"/>
-  </g>
-  <g id="bullet-char-template(10004)" transform="scale(0.00048828125,-0.00048828125)">
-   <path d="M 285,-33 C 182,-33 111,30 74,156 52,228 41,333 41,471 41,549 55,616 82,672 116,743 169,778 240,778 293,778 328,747 346,684 L 369,508 C 377,444 397,411 428,410 L 1163,1116 C 1174,1127 1196,1133 1229,1133 1271,1133 1292,1118 1292,1087 L 1292,965 C 1292,929 1282,901 1262,881 L 442,47 C 390,-6 338,-33 285,-33 Z"/>
-  </g>
-  <g id="bullet-char-template(9679)" transform="scale(0.00048828125,-0.00048828125)">
-   <path d="M 813,0 C 632,0 489,54 383,161 276,268 223,411 223,592 223,773 276,916 383,1023 489,1130 632,1184 813,1184 992,1184 1136,1130 1245,1023 1353,916 1407,772 1407,592 1407,412 1353,268 1245,161 1136,54 992,0 813,0 Z"/>
-  </g>
-  <g id="bullet-char-template(8226)" transform="scale(0.00048828125,-0.00048828125)">
-   <path d="M 346,457 C 273,457 209,483 155,535 101,586 74,649 74,723 74,796 101,859 155,911 209,963 273,989 346,989 419,989 480,963 531,910 582,859 608,796 608,723 608,648 583,586 532,535 482,483 420,457 346,457 Z"/>
-  </g>
-  <g id="bullet-char-template(8211)" transform="scale(0.00048828125,-0.00048828125)">
-   <path d="M -4,459 L 1135,459 1135,606 -4,606 -4,459 Z"/>
-  </g>
- </defs>
- <defs class="TextEmbeddedBitmaps"/>
- <g>
-  <g id="id2" class="Master_Slide">
-   <g id="bg-id2" class="Background"/>
-   <g id="bo-id2" class="BackgroundObjects"/>
-  </g>
- </g>
- <g class="SlideGroup">
-  <g>
-   <g id="id1" class="Slide" clip-path="url(#presentation_clip_path)">
-    <g class="Page">
-     <g class="com.sun.star.drawing.LineShape">
-      <g id="id3">
-       <path fill="none" stroke="rgb(255,66,14)" stroke-width="50" stroke-linejoin="round" d="M 441,535 L 212,193"/>
-      </g>
-     </g>
-     <g class="com.sun.star.drawing.LineShape">
-      <g id="id4">
-       <path fill="none" stroke="rgb(255,66,14)" stroke-width="50" stroke-linejoin="round" d="M 189,181 L 685,181"/>
-      </g>
-     </g>
-     <g class="com.sun.star.drawing.LineShape">
-      <g id="id5">
-       <path fill="none" stroke="rgb(255,66,14)" stroke-width="50" stroke-linejoin="round" d="M 435,523 L 435,1024"/>
-      </g>
-     </g>
-     <g class="com.sun.star.drawing.PolyPolygonShape">
-      <g id="id6">
-       <path fill="rgb(0,0,0)" stroke="none" d="M 1,-1 L 1,0 1,0 0,0 1,-1 Z"/>
-      </g>
-     </g>
-     <g class="com.sun.star.drawing.PolyPolygonShape">
-      <g id="id7">
-       <path fill="rgb(0,0,0)" stroke="none" d="M 0,-1 L 1,-1 1,0 0,0 0,-1 Z"/>
-      </g>
-     </g>
-     <g class="com.sun.star.drawing.PolyPolygonShape">
-      <g id="id8">
-       <path fill="rgb(0,0,0)" stroke="none" d="M 0,0 L 0,0 0,-1 1,0 0,0 Z M 1,0 L 0,-1 0,0 1,0 Z"/>
-      </g>
-     </g>
-     <g class="com.sun.star.drawing.PolyPolygonShape">
-      <g id="id9">
-       <path fill="rgb(0,0,0)" stroke="none" d="M 2,0 L 1,0 1,0 1,0 0,0 0,0 1,0 1,-1 1,-1 2,0 Z"/>
-      </g>
-     </g>
-     <g class="com.sun.star.drawing.PolyPolygonShape">
-      <g id="id10">
-       <path fill="rgb(0,0,0)" stroke="none" d="M 0,0 L 0,-1 0,-1 0,-1 0,-1 0,-1 0,-1 0,-1 0,-1 0,-1 0,-1 0,-1 0,-1 0,-1 0,-1 0,-1 0,-1 0,-1 0,-1 0,-1 0,0 Z"/>
-      </g>
-     </g>
-     <g class="com.sun.star.drawing.PolyPolygonShape">
-      <g id="id11">
-       <path fill="rgb(0,0,0)" stroke="none" d="M 0,0 L 0,0 0,0 0,-1 0,-1 0,-1 0,0 0,0 1,-1 1,-1 1,-1 1,-1 1,-1 0,0 Z"/>
-      </g>
-     </g>
-     <g class="com.sun.star.drawing.ClosedBezierShape">
-      <g id="id12">
-       <path fill="rgb(0,0,0)" stroke="none" d="M 1,0 C 0,0 0,0 0,0 L 0,0 C 0,-1 0,-1 0,-1 L 1,-1 1,-1 1,0 Z"/>
-      </g>
-     </g>
-     <g class="com.sun.star.drawing.PolyPolygonShape">
-      <g id="id13">
-       <path fill="rgb(0,0,0)" stroke="none" d="M 0,0 L 0,0 Z"/>
-      </g>
-     </g>
-     <g class="com.sun.star.drawing.PolyPolygonShape">
-      <g id="id14">
-       <path fill="rgb(0,0,0)" stroke="none" d="M 0,0 L 1,0 1,0 0,0 Z"/>
-      </g>
-     </g>
-     <g class="com.sun.star.drawing.PolyPolygonShape">
-      <g id="id15">
-       <path fill="rgb(0,0,0)" stroke="none" d="M 2,-1 L 2,1 0,1 2,-1 Z"/>
-      </g>
-     </g>
-     <g class="com.sun.star.drawing.PolyPolygonShape">
-      <g id="id16">
-       <path fill="rgb(0,0,0)" stroke="none" d="M 0,-1 L 2,-1 2,1 0,1 0,-1 Z"/>
-      </g>
-     </g>
-     <g class="com.sun.star.drawing.PolyPolygonShape">
-      <g id="id17">
-       <path fill="rgb(0,0,0)" stroke="none" d="M 0,1 L 0,-1 2,1 0,1 Z M 2,1 L 0,-1 0,1 2,1 Z"/>
-      </g>
-     </g>
-     <g class="com.sun.star.drawing.PolyPolygonShape">
-      <g id="id18">
-       <path fill="rgb(0,0,0)" stroke="none" d="M 3,1 L 2,1 0,1 2,1 2,-1 3,1 Z"/>
-      </g>
-     </g>
-     <g class="com.sun.star.drawing.PolyPolygonShape">
-      <g id="id19"/>
-     </g>
-     <g class="com.sun.star.drawing.PolyPolygonShape">
-      <g id="id20">
-       <path fill="rgb(0,0,0)" stroke="none" d="M 0,1 L 0,-1 0,1 2,-1 0,1 Z"/>
-      </g>
-     </g>
-     <g class="com.sun.star.drawing.ClosedBezierShape">
-      <g id="id21">
-       <path fill="rgb(0,0,0)" stroke="none" d="M 2,1 C 0,1 0,1 0,1 0,-1 0,-1 0,-1 L 2,-1 2,1 Z"/>
-      </g>
-     </g>
-     <g class="com.sun.star.drawing.PolyPolygonShape">
-      <g id="id22">
-       <path fill="rgb(0,0,0)" stroke="none" d="M 0,0 L 0,0 Z"/>
-      </g>
-     </g>
-     <g class="com.sun.star.drawing.PolyPolygonShape">
-      <g id="id23"/>
-     </g>
-     <g class="com.sun.star.drawing.PolyPolygonShape">
-      <g id="id24">
-       <path fill="rgb(0,0,0)" stroke="none" d="M 3,-1 L 3,2 0,2 3,-1 Z"/>
-      </g>
-     </g>
-     <g class="com.sun.star.drawing.PolyPolygonShape">
-      <g id="id25">
-       <path fill="rgb(0,0,0)" stroke="none" d="M 0,-1 L 3,-1 3,2 0,2 0,-1 Z"/>
-      </g>
-     </g>
-     <g class="com.sun.star.drawing.PolyPolygonShape">
-      <g id="id26">
-       <path fill="rgb(0,0,0)" stroke="none" d="M 0,2 L 0,-1 3,2 0,2 Z M 3,2 L 0,-1 0,2 3,2 Z"/>
-      </g>
-     </g>
-     <g class="com.sun.star.drawing.PolyPolygonShape">
-      <g id="id27">
-       <path fill="rgb(0,0,0)" stroke="none" d="M 4,2 L 3,2 0,2 3,2 3,-1 4,2 Z"/>
-      </g>
-     </g>
-     <g class="com.sun.star.drawing.PolyPolygonShape">
-      <g id="id28">
-       <path fill="rgb(0,0,0)" stroke="none" d="M 0,2 L 0,-1 0,2 3,-1 0,2 Z"/>
-      </g>
-     </g>
-     <g class="com.sun.star.drawing.ClosedBezierShape">
-      <g id="id29">
-       <path fill="rgb(0,0,0)" stroke="none" d="M 3,2 C 0,2 0,2 0,2 0,-1 0,-1 0,-1 L 3,-1 3,2 Z"/>
-      </g>
-     </g>
-     <g class="com.sun.star.drawing.PolyPolygonShape">
-      <g id="id30">
-       <path fill="rgb(0,0,0)" stroke="none" d="M 0,0 L 0,0 Z"/>
-      </g>
-     </g>
-     <g class="com.sun.star.drawing.LineShape">
-      <g id="id31">
-       <path fill="none" stroke="rgb(255,66,14)" stroke-width="50" stroke-linejoin="round" d="M 971,643 L 667,172"/>
-      </g>
-     </g>
-     <g class="com.sun.star.drawing.LineShape">
-      <g id="id32">
-       <path fill="none" stroke="rgb(255,66,14)" stroke-width="50" stroke-linejoin="round" d="M 570,658 L 993,652"/>
-      </g>
-     </g>
-    </g>
-   </g>
-  </g>
- </g>
+<svg
+   width="64"
+   height="64"
+   viewBox="0 0 64 64"
+   version="1.1"
+   id="svg1"
+   inkscape:version="1.4 (e7c3feb100, 2024-10-09)"
+   sodipodi:docname="path.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:dc="http://purl.org/dc/elements/1.1/">
+  <title
+     id="title14">Quetzal - Make Path</title>
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#323232"
+     bordercolor="#ffffff"
+     borderopacity="1"
+     inkscape:showpageshadow="0"
+     inkscape:pageopacity="0"
+     inkscape:pagecheckerboard="1"
+     inkscape:deskcolor="#191919"
+     inkscape:document-units="px"
+     showgrid="true"
+     inkscape:zoom="3.9999998"
+     inkscape:cx="-5.3750002"
+     inkscape:cy="47.875002"
+     inkscape:window-width="1894"
+     inkscape:window-height="999"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg1"
+     showguides="true"
+     inkscape:lockguides="false"
+     guidecolor="#ffff00"
+     guideopacity="0.6"
+     guidehicolor="#ff00ff"
+     guidehiopacity="0.50196078">
+    <inkscape:grid
+       id="grid1"
+       units="px"
+       originx="0"
+       originy="0"
+       spacingx="2"
+       spacingy="2"
+       empcolor="#0099e5"
+       empopacity="0.30196078"
+       color="#0099e5"
+       opacity="0.14901961"
+       empspacing="4"
+       enabled="true"
+       visible="true" />
+    <sodipodi:guide
+       position="-2,62"
+       orientation="0,1"
+       id="guide5"
+       inkscape:locked="false"
+       inkscape:label="top margin"
+       inkscape:color="rgb(255,255,0)" />
+    <sodipodi:guide
+       position="64,2"
+       orientation="0,1"
+       id="guide6"
+       inkscape:locked="false"
+       inkscape:label="bottom margin"
+       inkscape:color="rgb(255,255,0)" />
+    <sodipodi:guide
+       position="2,-2"
+       orientation="-1,0"
+       id="guide7"
+       inkscape:locked="false"
+       inkscape:label="right margin"
+       inkscape:color="rgb(255,255,0)" />
+    <sodipodi:guide
+       position="62,64"
+       orientation="-1,0"
+       id="guide8"
+       inkscape:locked="false"
+       inkscape:label="left margin"
+       inkscape:color="rgb(255,255,0)" />
+    <sodipodi:guide
+       position="64,64"
+       orientation="0.70710678,-0.70710678"
+       id="guide1"
+       inkscape:locked="false"
+       inkscape:label=""
+       inkscape:color="rgb(255,255,0)" />
+    <sodipodi:guide
+       position="0,64"
+       orientation="0.70710678,0.70710678"
+       id="guide2"
+       inkscape:label=""
+       inkscape:locked="false"
+       inkscape:color="rgb(255,255,0)" />
+  </sodipodi:namedview>
+  <defs
+     id="defs1" />
+  <metadata
+     id="metadata1">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <cc:license
+           rdf:resource="http://creativecommons.org/licenses/by-nc-sa/4.0/" />
+        <dc:creator>
+          <cc:Agent>
+            <dc:title>hasecilu</dc:title>
+          </cc:Agent>
+        </dc:creator>
+        <dc:subject>
+          <rdf:Bag>
+            <rdf:li>FreeCAD</rdf:li>
+            <rdf:li>command</rdf:li>
+          </rdf:Bag>
+        </dc:subject>
+        <dc:description>Template file to create icons for FreeCAD commands.</dc:description>
+        <dc:date>2025</dc:date>
+        <dc:rights>
+          <cc:Agent>
+            <dc:title>FreeCAD LGPL2+</dc:title>
+          </cc:Agent>
+        </dc:rights>
+        <dc:identifier>FreeCAD/src/</dc:identifier>
+        <dc:publisher>
+          <cc:Agent>
+            <dc:title>FreeCAD</dc:title>
+          </cc:Agent>
+        </dc:publisher>
+        <dc:relation>https://wiki.freecad.org/Artwork</dc:relation>
+        <dc:title>Quetzal - Make Path</dc:title>
+      </cc:Work>
+      <cc:License
+         rdf:about="http://creativecommons.org/licenses/by-nc-sa/4.0/">
+        <cc:permits
+           rdf:resource="http://creativecommons.org/ns#Reproduction" />
+        <cc:permits
+           rdf:resource="http://creativecommons.org/ns#Distribution" />
+        <cc:requires
+           rdf:resource="http://creativecommons.org/ns#Notice" />
+        <cc:requires
+           rdf:resource="http://creativecommons.org/ns#Attribution" />
+        <cc:prohibits
+           rdf:resource="http://creativecommons.org/ns#CommercialUse" />
+        <cc:permits
+           rdf:resource="http://creativecommons.org/ns#DerivativeWorks" />
+        <cc:requires
+           rdf:resource="http://creativecommons.org/ns#ShareAlike" />
+      </cc:License>
+    </rdf:RDF>
+  </metadata>
+  <path
+     id="rect10"
+     style="fill:#ef2929;fill-opacity:1;stroke:#a40000;stroke-width:2.16667;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1"
+     inkscape:label="path"
+     sodipodi:type="inkscape:offset"
+     inkscape:radius="1.8333333"
+     inkscape:original="M 5 3 C 3.892 3 3 3.892 3 5 C 3 5.666008 3.326456 6.2501725 3.8242188 6.6132812 C 3.8796647 6.6865046 3.9331439 6.7612689 4 6.828125 L 18 20.830078 L 18 60 L 22 60 L 22 36 L 22 24.830078 L 22 19.169922 L 9.828125 7 L 40.171875 7 L 52.007812 18.835938 C 52.003437 18.890173 52 18.9446 52 19 L 52 40 L 36 40 C 34.892 40 34 40.892 34 42 C 34 43.108 34.892 44 36 44 L 54 44 C 55.108 44 56 43.108 56 42 C 56 41.82679 55.974614 41.66007 55.933594 41.5 C 55.974617 41.33993 56 41.17321 56 41 L 56 36 L 56 22.830078 L 56 17.169922 L 42.828125 4 C 42.761269 3.9331439 42.686505 3.8796648 42.613281 3.8242188 C 42.250172 3.3264558 41.666008 3 41 3 L 5 3 z "
+     d="M 5,1.1660156 C 2.908045,1.1660156 1.1660156,2.908045 1.1660156,5 c 0,1.2651025 0.6323591,2.4038313 1.578125,3.09375 L 2.3632813,7.7207031 C 2.3986593,7.7674244 2.4986938,7.9205688 2.703125,8.125 L 16.166016,21.589844 V 60 A 1.8335166,1.8335166 0 0 0 18,61.833984 h 4 A 1.8335166,1.8335166 0 0 0 23.833984,60 V 36 24.830078 19.169922 A 1.8335166,1.8335166 0 0 0 23.296875,17.873047 L 14.255859,8.8339844 h 25.15625 L 50.166016,19.587891 V 38.166016 H 36 c -2.091955,0 -3.833984,1.742029 -3.833984,3.833984 0,2.091955 1.742029,3.833984 3.833984,3.833984 h 18 c 2.091955,0 3.833984,-1.742029 3.833984,-3.833984 0,-0.184503 -0.04252,-0.333659 -0.06641,-0.5 0.02389,-0.166348 0.06641,-0.315508 0.06641,-0.5 V 36 22.830078 17.169922 A 1.8335166,1.8335166 0 0 0 57.296875,15.873047 L 44.125,2.703125 C 43.92057,2.4986943 43.767429,2.3986627 43.720703,2.3632813 L 44.09375,2.7441406 C 43.403832,1.7983754 42.265102,1.1660156 41,1.1660156 Z"
+     transform="matrix(0.92307692,0,0,0.92307692,4.7692308,2.923077)" />
 </svg>
