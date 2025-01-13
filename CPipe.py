@@ -305,7 +305,7 @@ class laydown:
         import fCmd
         from Part import Plane
 
-        refFace = [f for f in fCmd.faces() if type(f.Surface) == Plane][0]
+        refFace = [f for f in fCmd.faces() if isinstance(f.Surface, Plane)][0]
         FreeCAD.activeDocument().openTransaction(translate("Transaction", "Lay-down the pipe"))
         for b in fCmd.beams():
             if pCmd.isPipe(b):
@@ -331,7 +331,7 @@ class raiseup:
 
         selex = FreeCADGui.Selection.getSelectionEx()
         for sx in selex:
-            sxFaces = [f for f in fCmd.faces([sx]) if type(f.Surface) == Plane]
+            sxFaces = [f for f in fCmd.faces([sx]) if isinstance(f.Surface, Plane)]
             if len(sxFaces) > 0:
                 refFace = sxFaces[0]
                 support = sx.Object

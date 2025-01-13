@@ -52,7 +52,7 @@ class arrow_insert(arrow):
                             % (pCmd.o2.PType, pCmd.o2.Label, pCmd.port2, pCmd.o1.Label)
                         )
                         # move o2
-                        if type(pCmd.port1) == int and type(pCmd.port2) == int:
+                        if isinstance(pCmd.port1, int) and isinstance(pCmd.port2, int):
                             FreeCAD.activeDocument().openTransaction(
                                 translate("Transaction", "Join")
                             )
