@@ -525,38 +525,41 @@ class profEdit(dodoDialogs.protoTypeDialog):
         # TODO: translation
 
     def setProfile(self, typeS):
+        # NOTE: the self.label is used on the `addObject()` method as therefore is assigned
+        # tot the internal name of the object, to translate the label is needed to
+        # assign the translated string to `obj.Label`.
         if typeS == "square":
             self.form.labImg.setPixmap(pixSquare)
             self.type = "R"
-            self.label = translate("profEdit", "Square", "Profile name in the Tree View")
+            self.label = "Square"
         elif typeS == "T":
             self.form.labImg.setPixmap(pixT)
             self.type = "T"
-            self.label = translate("profEdit", "T-profile", "Profile name in the Tree View")
+            self.label = "T-profile"
         elif typeS == "U":
             self.form.labImg.setPixmap(pixU)
             self.type = "U"
-            self.label = translate("profEdit", "U-profile", "Profile name in the Tree View")
+            self.label = "U-profile"
         elif typeS == "H":
             self.form.labImg.setPixmap(pixH)
             self.type = "H"
-            self.label = translate("profEdit", "H-profile", "Profile name in the Tree View")
+            self.label = "H-profile"
         elif typeS == "L":
             self.form.labImg.setPixmap(pixL)
             self.type = "L"
-            self.label = translate("profEdit", "L-profile", "Profile name in the Tree View")
+            self.label = "L-profile"
         elif typeS == "Z":
             self.form.labImg.setPixmap(pixZ)
             self.type = "Z"
-            self.label = translate("profEdit", "Z-profile", "Profile name in the Tree View")
+            self.label = "Z-profile"
         elif typeS == "omega":
             self.form.labImg.setPixmap(pixOmega)
             self.type = "omega"
-            self.label = translate("profEdit", "Omega-profile", "Profile name in the Tree View")
+            self.label = "Omega-profile"
         elif typeS == "circle":
             self.form.labImg.setPixmap(pixCircle)
             self.type = "circle"
-            self.label = translate("profEdit", "Circle-profile", "Profile name in the Tree View")
+            self.label = "Circle-profile"
 
     def accept(self):
         D, H, B, t1, t2, t3 = (

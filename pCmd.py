@@ -184,6 +184,7 @@ def makePipe(propList=[], pos=None, Z=None):
     a.Placement.Base = pos
     rot = FreeCAD.Rotation(FreeCAD.Vector(0, 0, 1), Z)
     a.Placement.Rotation = rot.multiply(a.Placement.Rotation)
+    a.Label = translate("Objects", "Tube")
     return a
 
 
@@ -271,6 +272,7 @@ def makeElbow(propList=[], pos=None, Z=None):
     rot = FreeCAD.Rotation(FreeCAD.Vector(0, 0, 1), Z)
     # rot=FreeCAD.Rotation(FreeCAD.Vector(0,-1,0),Z)
     a.Placement.Rotation = rot.multiply(a.Placement.Rotation)
+    a.Label = translate("Objects", "Elbow")
     return a
 
 
@@ -466,6 +468,7 @@ def makeFlange(propList=[], pos=None, Z=None):
         FreeCAD.Placement(FreeCAD.Vector(0, 0, zpos), FreeCAD.Rotation(1, 0, 0))
     )
     FreeCAD.ActiveDocument.recompute()
+    a.Label = translate("Objects", "Flange")
     return a
 
 
@@ -566,6 +569,7 @@ def makeReduct(propList=[], pos=None, Z=None, conc=True):
     a.Placement.Base = pos
     rot = FreeCAD.Rotation(FreeCAD.Vector(0, 0, 1), Z)
     a.Placement.Rotation = rot.multiply(a.Placement.Rotation)
+    a.Label = translate("Objects", "Reduct")
     return a
 
 
@@ -595,6 +599,7 @@ def makeUbolt(propList=[], pos=None, Z=None):
     a.Placement.Base = pos
     rot = FreeCAD.Rotation(FreeCAD.Vector(0, 0, 1), Z)
     a.Placement.Rotation = rot.multiply(a.Placement.Rotation)
+    a.Label = translate("Objects", "U-Bolt")
     return a
 
 
@@ -614,6 +619,7 @@ def makeShell(L=1000, W=1500, H=1500, thk1=6, thk2=8):
     a.ViewObject.ShapeColor = 0.0, 0.0, 1.0
     a.ViewObject.Transparency = 85
     FreeCAD.ActiveDocument.recompute()
+    a.Label = translate("Objects", "Tank")
     return a
 
 
@@ -642,6 +648,7 @@ def makeCap(propList=[], pos=None, Z=None):
     a.Placement.Base = pos
     rot = FreeCAD.Rotation(FreeCAD.Vector(0, 0, 1), Z)
     a.Placement.Rotation = rot.multiply(a.Placement.Rotation)
+    a.Label = translate("Objects", "Cap")
     return a
 
 
@@ -1250,6 +1257,7 @@ def makeValve(propList=[], pos=None, Z=None):
     a.Placement.Base = pos
     rot = FreeCAD.Rotation(FreeCAD.Vector(0, 0, 1), Z)
     a.Placement.Rotation = rot.multiply(a.Placement.Rotation)
+    a.Label = translate("Objects", "Valve")
     return a
 
 
@@ -1428,6 +1436,7 @@ def makeRoute(n=Z):
     curvedEdges = [e for e in fCmd.edges() if e.curvatureAt(0) != 0]
     if curvedEdges:
         s = FreeCAD.ActiveDocument.addObject("Sketcher::SketchObject", "pipeRoute")
+        s.Label = translate("Objects", "Pipe route")
         s.MapMode = "SectionOfRevolution"
         sup = fCmd.edgeName()
         s.AttachmentSupport = [sup]

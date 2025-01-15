@@ -1330,8 +1330,7 @@ def doProfile(
     "doProfile(typeS, label, dims)"
     if typeS in ["RH", "R", "H", "U", "L", "T", "Z", "omega", "circle"]:
         profile = [0, "SECTION", label, typeS] + dims  # for py2.6 versions
-        obj = FreeCAD.ActiveDocument.addObject("Part::Part2DObjectPython", profile[2])
-        obj.Label = translate("Arch", profile[2])
+        obj = FreeCAD.ActiveDocument.addObject("Part::Part2DObjectPython", profile[2])  # FIXME:
         if profile[3] == "RH":
             _ProfileRH(obj, profile)
         elif profile[3] == "R":
@@ -1530,6 +1529,7 @@ class _ProfileRH(_Profile):
     """A parametric Rectangular hollow beam profile. Profile data: [width, height, thickness]"""
 
     def __init__(self, obj, profile):
+        obj.Label = translate("Objects", "Rectangular hollow", "Profile name in the Tree View")
         obj.addProperty(
             "App::PropertyString",
             "FType",
@@ -1581,6 +1581,7 @@ class _ProfileR(_Profile):
     """A parametric Rectangular solid beam profile. Profile data: [width, height]"""
 
     def __init__(self, obj, profile):
+        obj.Label = translate("Objects", "Rectangular solid", "Profile name in the Tree View")
         obj.addProperty(
             "App::PropertyString",
             "FType",
@@ -1618,6 +1619,7 @@ class _ProfileCircle(_Profile):
       t1: thickness (optional; "0" for solid section)"""
 
     def __init__(self, obj, profile):
+        obj.Label = translate("Objects", "Circle-profile", "Profile name in the Tree View")
         obj.addProperty(
             "App::PropertyString",
             "FType",
@@ -1692,6 +1694,7 @@ class _ProfileL(_Profile):
 class _ProfileAngle(_Profile):
     def __init__(self, obj, profile):
         self.label = obj.Name
+        # FIXME: <class 'AttributeError'>: 'FeaturePython' object has no attribute 'size'
         self.size = FreeCAD.ActiveDocument.getObject(self.label).size
         self.standard = FreeCAD.ActiveDocument.getObject(self.label).standard
         self.Solid = FreeCAD.ActiveDocument.getObject(self.label).Solid
@@ -1702,6 +1705,7 @@ class _ProfileAngle(_Profile):
             self.sa = ShpstData.angle_ss_unequal[self.size]
         elif self.standard == "SUS_Equal":
             self.sa = ShpstData.angle_sus_equal[self.size]
+        obj.Label = translate("Objects", "L-profile", "Profile name in the Tree View")
         obj.addProperty(
             "App::PropertyString",
             "FType",
@@ -1759,6 +1763,7 @@ class _ProfileAngle(_Profile):
 class _ProfileChannel(_Profile):
     def __init__(self, obj, profile):
         self.label = obj.Name
+        # FIXME: <class 'AttributeError'>: 'FeaturePython' object has no attribute 'size'
         self.size = FreeCAD.ActiveDocument.getObject(self.label).size
         self.standard = FreeCAD.ActiveDocument.getObject(self.label).standard
         Solid = FreeCAD.ActiveDocument.getObject(self.label).Solid
@@ -1771,6 +1776,7 @@ class _ProfileChannel(_Profile):
             self.self.sa = ShpstData.channel_sus[self.size]
             self.s0 = 0
             self.t2 = float(self.sa[2])
+        obj.Label = translate("Objects", "U-profile", "Profile name in the Tree View")
         obj.addProperty(
             "App::PropertyString",
             "FType",
@@ -1830,6 +1836,7 @@ class _ProfileT(_Profile):
     """A parametric T beam profile. Profile data: [width, height, web thickness]"""
 
     def __init__(self, obj, profile):
+        obj.Label = translate("Objects", "T-profile", "Profile name in the Tree View")
         obj.addProperty(
             "App::PropertyString",
             "FType",
@@ -1871,6 +1878,7 @@ class _ProfileZ(_Profile):
     """A parametric Z beam profile. Profile data: [width, height, web thickness, flange thickness]"""
 
     def __init__(self, obj, profile):
+        obj.Label = translate("Objects", "Z-profile", "Profile name in the Tree View")
         obj.addProperty(
             "App::PropertyString",
             "FType",
@@ -1912,6 +1920,7 @@ class _ProfileOmega(_Profile):
     """A parametric omega beam profile. Profile data: [W, H, D, t1,t2,t3]"""
 
     def __init__(self, obj, profile):
+        obj.Label = translate("Objects", "Omega-profile", "Profile name in the Tree View")
         obj.addProperty(
             "App::PropertyString",
             "FType",
@@ -1972,6 +1981,7 @@ class _ProfileH(_Profile):
     """A parametric omega beam profile. Profile data: [W, H, D, t1,t2,t3]"""
 
     def __init__(self, obj, profile):
+        obj.Label = translate("Objects", "H-profile", "Profile name in the Tree View")
         obj.addProperty(
             "App::PropertyString",
             "FType",
