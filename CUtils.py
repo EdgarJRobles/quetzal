@@ -27,7 +27,7 @@ class queryModel:
         return {
             "Pixmap": get_icon_path("query"),
             "Accel": "Q,M",
-            "MenuText": QT_TRANSLATE_NOOP("Quetzal_QueryModel", "query the model"),
+            "MenuText": QT_TRANSLATE_NOOP("Quetzal_QueryModel", "Query the model"),
             "ToolTip": QT_TRANSLATE_NOOP("Quetzal_QueryModel", "Click objects to print infos"),
         }
 
@@ -55,7 +55,7 @@ class moveWorkPlane:
         return {
             "Pixmap": get_icon_path("grid"),
             "Accel": "A,W",
-            "MenuText": QT_TRANSLATE_NOOP("Quetzal_MoveWorkPlane", "align Workplane"),
+            "MenuText": QT_TRANSLATE_NOOP("Quetzal_MoveWorkPlane", "Align workplane"),
             "ToolTip": QT_TRANSLATE_NOOP(
                 "Quetzal_MoveWorkPlane",
                 "Moves and rotates the drafting workplane with points, edges and faces",
@@ -73,7 +73,7 @@ class rotateWorkPlane:
         return {
             "Pixmap": get_icon_path("rotWP"),
             "Accel": "R,W",
-            "MenuText": QT_TRANSLATE_NOOP("Quetzal_RotateWorkPlane", "rotate Workplane"),
+            "MenuText": QT_TRANSLATE_NOOP("Quetzal_RotateWorkPlane", "Rotate workplane"),
             "ToolTip": QT_TRANSLATE_NOOP(
                 "Quetzal_RotateWorkPlane", "Spin the Draft working plane about one of its axes"
             ),
@@ -106,7 +106,7 @@ class offsetWorkPlane:
         return {
             "Pixmap": get_icon_path("offsetWP"),
             "Accel": "O,W",
-            "MenuText": QT_TRANSLATE_NOOP("Quetzal_OffsetWorkPlane", "offset Workplane"),
+            "MenuText": QT_TRANSLATE_NOOP("Quetzal_OffsetWorkPlane", "Offset workplane"),
             "ToolTip": QT_TRANSLATE_NOOP(
                 "Quetzal_OffsetWorkPlane", "Shifts the WP along its normal."
             ),
@@ -123,7 +123,7 @@ class hackedL:
         return {
             "Pixmap": get_icon_path("hackedL"),
             "Accel": "H,L",
-            "MenuText": QT_TRANSLATE_NOOP("Quetzal_HackedL", "draw a DWire"),
+            "MenuText": QT_TRANSLATE_NOOP("Quetzal_HackedL", "Draw a Draft wire"),
             "ToolTip": QT_TRANSLATE_NOOP(
                 "Quetzal_HackedL",
                 "WP is re-positioned at each point. Possible to spin and offset it.",

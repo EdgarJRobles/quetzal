@@ -138,7 +138,7 @@ class alignFlange:
             "Pixmap": os.path.join(
                 os.path.dirname(os.path.abspath(__file__)), "iconz", "flangeAlign.svg"
             ),
-            "MenuText": QT_TRANSLATE_NOOP("Quetzal_AlignFlange", "alignFlange"),
+            "MenuText": QT_TRANSLATE_NOOP("Quetzal_AlignFlange", "Align flange"),
             "ToolTip": QT_TRANSLATE_NOOP(
                 "Quetzal_AlignFlange",
                 "Rotates the section of the beam to make the faces parallel to another face",
@@ -176,7 +176,7 @@ class shiftBeam:
             "Pixmap": os.path.join(
                 os.path.dirname(os.path.abspath(__file__)), "iconz", "beamShift.svg"
             ),
-            "MenuText": QT_TRANSLATE_NOOP("Quetzal_ShiftBeam", "shiftTheBeam"),
+            "MenuText": QT_TRANSLATE_NOOP("Quetzal_ShiftBeam", "Shift the beam"),
             "ToolTip": QT_TRANSLATE_NOOP(
                 "Quetzal_ShiftBeam", "Translate objects by vectors defined on existing geometry"
             ),
@@ -290,7 +290,7 @@ class pivotBeam:
             "Pixmap": os.path.join(
                 os.path.dirname(os.path.abspath(__file__)), "iconz", "around.svg"
             ),
-            "MenuText": QT_TRANSLATE_NOOP("Quetzal_PivotBeam", "pivotTheBeam"),
+            "MenuText": QT_TRANSLATE_NOOP("Quetzal_PivotBeam", "Pivot the beam"),
             "ToolTip": QT_TRANSLATE_NOOP(
                 "Quetzal_PivotBeam", "Rotates the beam around an axis (edge or center-of-curvature)"
             ),
@@ -321,7 +321,7 @@ class stretchBeam:
             "Pixmap": os.path.join(
                 os.path.dirname(os.path.abspath(__file__)), "iconz", "beamStretch.svg"
             ),
-            "MenuText": QT_TRANSLATE_NOOP("Quetzal_StretchBeam", "stretchTheBeam"),
+            "MenuText": QT_TRANSLATE_NOOP("Quetzal_StretchBeam", "Stretch the beam"),
             "ToolTip": QT_TRANSLATE_NOOP(
                 "Quetzal_StretchBeam",
                 "Changes the length of the beam, either according a preselected edge or a direct input",
@@ -348,7 +348,7 @@ class extend:
             "Pixmap": os.path.join(
                 os.path.dirname(os.path.abspath(__file__)), "iconz", "extend.svg"
             ),
-            "MenuText": QT_TRANSLATE_NOOP("Quetzal_Extend", "extendTheBeam"),
+            "MenuText": QT_TRANSLATE_NOOP("Quetzal_Extend", "Extend the beam"),
             "ToolTip": QT_TRANSLATE_NOOP(
                 "Quetzal_Extend",
                 "Extend the beam either to a face, a vertex or the c.o.m. of the selected object",
@@ -373,7 +373,7 @@ class adjustFrameAngle:
             "Pixmap": os.path.join(
                 os.path.dirname(os.path.abspath(__file__)), "iconz", "adjustAngle.svg"
             ),
-            "MenuText": QT_TRANSLATE_NOOP("Quetzal_AdjustFrameAngle", "adjustFrameAngle"),
+            "MenuText": QT_TRANSLATE_NOOP("Quetzal_AdjustFrameAngle", "Adjust frame angle"),
             "ToolTip": QT_TRANSLATE_NOOP(
                 "Quetzal_AdjustFrameAngle", "Adjust the angle of frame by two edges"
             ),
@@ -404,7 +404,7 @@ class rotJoin:
             "Pixmap": os.path.join(
                 os.path.dirname(os.path.abspath(__file__)), "iconz", "rotjoin.svg"
             ),
-            "MenuText": QT_TRANSLATE_NOOP("Quetzal_RotJoin", "rotJoinEdge"),
+            "MenuText": QT_TRANSLATE_NOOP("Quetzal_RotJoin", "Rotate join to edge"),
             "ToolTip": QT_TRANSLATE_NOOP(
                 "Quetzal_RotJoin", "Rotates and align the beam according another edge"
             ),
@@ -429,7 +429,7 @@ class insertPath:
     def GetResources(self):
         return {
             "Pixmap": os.path.join(os.path.dirname(os.path.abspath(__file__)), "iconz", "path.svg"),
-            "MenuText": QT_TRANSLATE_NOOP("Quetzal_InsertPath", "insert Path"),
+            "MenuText": QT_TRANSLATE_NOOP("Quetzal_InsertPath", "Insert path"),
             "ToolTip": QT_TRANSLATE_NOOP(
                 "Quetzal_InsertPath", "Creates one path along selected edges"
             ),

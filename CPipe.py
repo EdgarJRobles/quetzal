@@ -268,7 +268,7 @@ class extend2intersection:
         return {
             "Pixmap": get_icon_path("intersect"),
             "MenuText": QT_TRANSLATE_NOOP(
-                "Quetzal_Extend2intersection", "Extends pipes to intersection"
+                "Quetzal_Extend2intersection", "Extend pipes to intersection"
             ),
             "ToolTip": QT_TRANSLATE_NOOP(
                 "Quetzal_Extend2intersection", "Extends pipes to intersection"
@@ -291,7 +291,7 @@ class extend1intersection:
         return {
             "Pixmap": get_icon_path("intersect1"),
             "MenuText": QT_TRANSLATE_NOOP(
-                "Quetzal_Extend1intersection", "Extends pipe to intersection"
+                "Quetzal_Extend1intersection", "Extend pipe to intersection"
             ),
             "ToolTip": QT_TRANSLATE_NOOP(
                 "Quetzal_Extend1intersection", "Extends pipe to intersection"
@@ -364,7 +364,7 @@ class joinPype:
     def GetResources(self):
         return {
             "Pixmap": get_icon_path("join"),
-            "MenuText": QT_TRANSLATE_NOOP("Quetzal_JoinPype", "Join pypes"),
+            "MenuText": QT_TRANSLATE_NOOP("Quetzal_JoinPype", "Join pipes"),
             "ToolTip": QT_TRANSLATE_NOOP("Quetzal_JoinPype", "Select the part-pype and the port"),
         }
 
@@ -403,7 +403,7 @@ class attach2tube:
     def GetResources(self):
         return {
             "Pixmap": get_icon_path("attach"),
-            "MenuText": QT_TRANSLATE_NOOP("Quetzal_Attach2tube", "Attach  to tube"),
+            "MenuText": QT_TRANSLATE_NOOP("Quetzal_Attach2tube", "Attach to tube"),
             "ToolTip": QT_TRANSLATE_NOOP(
                 "Quetzal_Attach2tube", "Attach one pype to the nearest port of selected pipe"
             ),
@@ -419,8 +419,10 @@ class point2point:
     def GetResources(self):
         return {
             "Pixmap": get_icon_path("point2point"),
-            "MenuText": QT_TRANSLATE_NOOP("Quetzal_Point2point", "draw a tube point-to-point"),
-            "ToolTip": QT_TRANSLATE_NOOP("Quetzal_Point2point", "Click on subsequent points."),
+            "MenuText": QT_TRANSLATE_NOOP("Quetzal_Point2point", "Draw a tube point by point"),
+            "ToolTip": QT_TRANSLATE_NOOP(
+                "Quetzal_Point2point", "A new body is created on each click on subsequent points"
+            ),
         }
 
 
@@ -538,6 +540,9 @@ class pipeQM:
 
 
 addCommand("Quetzal_PipeQM", pipeQM())
+
+
+# Quick Menu section
 
 
 class elbowQM:
