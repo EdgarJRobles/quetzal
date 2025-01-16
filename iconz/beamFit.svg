@@ -569,7 +569,7 @@
        d="m 6.3580999,12.202549 v 3.788968 H 11.420563 V 28.169169 H 6.3580999 v 3.788972 H 20.468252 V 28.169169 H 15.405793 V 15.991517 h 5.062459 v -3.788968 z" />
     <path
        id="rect9016-5"
-       style="fill:#729fcf;fill-opacity:1;fill-rule:evenodd;stroke:#204a87;stroke-width:1.38726;stroke-linecap:square;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       style="fill:#ef2929;fill-opacity:1;fill-rule:evenodd;stroke:#a40000;stroke-width:1.38726;stroke-linecap:square;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
        d="M 29.779963,23.595337 10.883465,44.450523 27.881648,51.698792 46.395113,31.382496 Z m 0.504374,3.826172 11.609972,4.931629 -14.793092,15.634586 -11.609972,-4.931628 z"
        sodipodi:nodetypes="cccccccccc" />
     <path
