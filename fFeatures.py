@@ -32,7 +32,7 @@ from PySide.QtWidgets import (
 
 import fCmd
 import pCmd
-from quetzal_config import FREECADVERSION
+from quetzal_config import FREECADVERSION, get_icon_path
 from uCmd import label3D
 import ShpstData
 
@@ -1286,7 +1286,7 @@ class ViewProviderFrameBranch:
         vobj.Proxy = self
 
     def getIcon(self):
-        return join(dirname(abspath(__file__)), "iconz", "framebranch.svg")
+        return get_icon_path("Quetzal_FrameBranchManager")
 
     def attach(self, vobj):
         self.ViewObject = vobj

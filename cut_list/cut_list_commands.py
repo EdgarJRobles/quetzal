@@ -13,13 +13,12 @@ class cutListCommand:
     commandName = "createCutList"
 
     def GetResources(self):
-        Icon = os.path.join(RESOURCE_PATH, "cut_list_icon.svg")
         return {
             "MenuText": QT_TRANSLATE_NOOP("Quetzal_CreateCutList", "createCutList"),
             "ToolTip": QT_TRANSLATE_NOOP(
                 "Quetzal_CreateCutList", "Create a new Cut List from Quetzal Beams"
             ),
-            "Pixmap": Icon,
+            "Pixmap": "Quetzal_CreateCutList",
         }
 
     def Activated(self):

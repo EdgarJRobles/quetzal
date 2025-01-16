@@ -15,7 +15,7 @@ import Part
 
 import fCmd
 import pCmd
-from quetzal_config import FREECADVERSION
+from quetzal_config import FREECADVERSION, get_icon_path
 
 QT_TRANSLATE_NOOP = FreeCAD.Qt.QT_TRANSLATE_NOOP
 translate = FreeCAD.Qt.translate
@@ -923,7 +923,7 @@ class ViewProviderPypeLine:
         vobj.Proxy = self
 
     def getIcon(self):
-        return join(dirname(abspath(__file__)), "iconz", "pypeline.svg")
+        return get_icon_path("Quetzal_InsertPypeLine")
 
     def attach(self, vobj):
         self.ViewObject = vobj
@@ -932,7 +932,7 @@ class ViewProviderPypeLine:
         def getIcon(self):
             from os.path import join, dirname, abspath
 
-            return join(dirname(abspath(__file__)), "iconz", "pypeline.svg")
+            return get_icon_path("Quetzal_InsertPypeLine")
 
         def attach(self, vobj):
             self.ViewObject = vobj
@@ -1104,7 +1104,7 @@ class ViewProviderPypeBranch:
         # vobj.ExtensionProxy=self #20220703
 
     def getIcon(self):
-        return join(dirname(abspath(__file__)), "iconz", "branch.svg")
+        return get_icon_path("Quetzal_InsertBranch")
 
     def attach(self, vobj):
         self.ViewObject = vobj

@@ -49,6 +49,7 @@ class QuetzalWorkbench(Workbench):
             "Extending Dodo workbench support and adding translation support. ",
         )
         self.__class__.Icon = os.path.join(ICONPATH, "quetzal.svg")
+        FreeCADGui.addIconPath(ICONPATH)
 
     try:
         import DraftSnap
@@ -78,9 +79,9 @@ class QuetzalWorkbench(Workbench):
             "Quetzal_MoveWorkPlane",
             "Quetzal_OffsetWorkPlane",
             "Quetzal_RotateWorkPlane",
-            "Quetzal_HackedL",
+            "Quetzal_HackedLine",
             "Quetzal_MoveHandle",
-            "Quetzal_DpCalc",
+            "Quetzal_PressureLossCalculator",
         ]
         self.appendToolbar("Utils", self.utilsList)
         Log("Loading Utils: done\n")
@@ -91,16 +92,16 @@ class QuetzalWorkbench(Workbench):
             "Quetzal_FrameIt",
             "Quetzal_FrameBranchManager",
             "Quetzal_InsertSection",
-            "Quetzal_SpinSect",
+            "Quetzal_SpinSection",
             "Quetzal_ReverseBeam",
             "Quetzal_ShiftBeam",
             "Quetzal_PivotBeam",
             "Quetzal_LevelBeam",
             "Quetzal_AlignEdge",
-            "Quetzal_RotJoin",
+            "Quetzal_RotateJoin",
             "Quetzal_AlignFlange",
             "Quetzal_StretchBeam",
-            "Quetzal_Extend",
+            "Quetzal_ExtendBeam",
             "Quetzal_AdjustFrameAngle",
             "Quetzal_InsertPath",
             "Quetzal_CreateCutList",
@@ -116,7 +117,7 @@ class QuetzalWorkbench(Workbench):
             "Quetzal_InsertCap",
             "Quetzal_InsertValve",
             "Quetzal_InsertFlange",
-            "Quetzal_InsertUbolt",
+            "Quetzal_InsertUBolt",
             "Quetzal_InsertPypeLine",
             "Quetzal_InsertBranch",
             "Quetzal_InsertTank",
@@ -124,14 +125,14 @@ class QuetzalWorkbench(Workbench):
             "Quetzal_BreakPipe",
             "Quetzal_MateEdges",
             "Quetzal_Flat",
-            "Quetzal_Extend2intersection",
-            "Quetzal_Extend1intersection",
+            "Quetzal_ExtendIntersection2",
+            "Quetzal_ExtendIntersection1",
             "Quetzal_MakeHeader",
             "Quetzal_Laydown",
             "Quetzal_Raiseup",
-            "Quetzal_Attach2tube",
-            "Quetzal_Point2point",
-            "Quetzal_InsertAnyz",
+            "Quetzal_Attach2Tube",
+            "Quetzal_Point2Point",
+            "Quetzal_InsertAnyShape",
         ]  # ,"joinPype"]
         from dodoPM import toolList
 

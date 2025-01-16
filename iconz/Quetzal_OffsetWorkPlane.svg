@@ -8,7 +8,7 @@
    version="1.1"
    id="svg1"
    inkscape:version="1.4 (e7c3feb100, 2024-10-09)"
-   sodipodi:docname="offsetWP.svg"
+   sodipodi:docname="Quetzal_OffsetWorkPlane.svg"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:xlink="http://www.w3.org/1999/xlink"
@@ -31,14 +31,14 @@
      inkscape:document-units="px"
      showgrid="true"
      inkscape:zoom="7.9999995"
-     inkscape:cx="26.187502"
-     inkscape:cy="20.437501"
-     inkscape:window-width="1290"
+     inkscape:cx="26.312502"
+     inkscape:cy="20.312501"
+     inkscape:window-width="1894"
      inkscape:window-height="999"
      inkscape:window-x="0"
      inkscape:window-y="0"
      inkscape:window-maximized="1"
-     inkscape:current-layer="g3"
+     inkscape:current-layer="svg1"
      showguides="true"
      inkscape:lockguides="false"
      guidecolor="#ffff00"
@@ -106,11 +106,11 @@
        id="linearGradient1"
        inkscape:collect="always">
       <stop
-         style="stop-color:#8ae234;stop-opacity:1;"
+         style="stop-color:#fce94f;stop-opacity:1;"
          offset="0"
          id="stop1" />
       <stop
-         style="stop-color:#73d216;stop-opacity:1;"
+         style="stop-color:#edd400;stop-opacity:1;"
          offset="1"
          id="stop2" />
     </linearGradient>
@@ -118,10 +118,10 @@
        inkscape:collect="always"
        xlink:href="#linearGradient1"
        id="linearGradient2"
-       x1="15.444169"
-       y1="10.795732"
-       x2="34.346848"
-       y2="29.698408"
+       x1="11.529297"
+       y1="20.24707"
+       x2="38.261719"
+       y2="20.24707"
        gradientUnits="userSpaceOnUse" />
   </defs>
   <metadata
@@ -219,7 +219,7 @@
      stroke="#3465a4"
      d="M 37.988206,36.28326 20,22 15.199097,28.290205 5.7910319,4.8246539 30.197307,8.5224799 25.418481,14.932223 43.28904,29.265387 Z"
      id="path292"
-     style="display:inline;fill:#8ae234;fill-opacity:1;stroke:#4e9a06;stroke-width:3.47544;stroke-opacity:1"
+     style="display:inline;fill:#fce94f;fill-opacity:1;stroke:#c4a000;stroke-width:3.47544;stroke-opacity:1"
      inkscape:label="cursor" />
   <path
      id="path1"

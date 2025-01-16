@@ -8,7 +8,7 @@
    version="1.1"
    id="svg1"
    inkscape:version="1.4 (e7c3feb100, 2024-10-09)"
-   sodipodi:docname="cap.svg"
+   sodipodi:docname="Quetzal_InsertCap.svg"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:xlink="http://www.w3.org/1999/xlink"
@@ -30,9 +30,9 @@
      inkscape:deskcolor="#191919"
      inkscape:document-units="px"
      showgrid="true"
-     inkscape:zoom="7.9999999"
-     inkscape:cx="12.625"
-     inkscape:cy="27.125"
+     inkscape:zoom="11.313708"
+     inkscape:cx="23.909049"
+     inkscape:cy="28.505243"
      inkscape:window-width="1894"
      inkscape:window-height="999"
      inkscape:window-x="0"
@@ -181,7 +181,7 @@
      d="m 20,11.070313 v 41.859374 h 8.089844 C 29.598678,52.112833 41.859375,45.120817 41.859375,32 c 0,-13.120817 -12.260697,-20.112833 -13.769531,-20.929687 z"
      transform="matrix(1.0511385,0,0,1.0511385,-0.75748011,-1.6364315)" />
   <path
-     style="display:inline;fill:none;fill-opacity:1;stroke:#000000;stroke-width:2;stroke-dasharray:8, 2, 2, 2;stroke-dashoffset:0;stroke-opacity:1"
+     style="display:inline;fill:#c4a000;fill-opacity:1;stroke:#000000;stroke-width:2;stroke-dasharray:8, 2, 2, 2;stroke-dashoffset:0;stroke-opacity:1"
      d="M 2,32 H 62"
      id="path11"
      inkscape:label="horizontal" />
