@@ -8,12 +8,21 @@
 > `lupdate` and `lrelease` from Qt6 version. Using the versions from
 > Qt5 is not advised because they're buggy.
 
+| language | translated strings | completion |
+|:----|:----:|:-----:|
+|de|22|4%|
+|el|305|60%|
+|es-AR|496|100%|
+|es-ES|496|100%|
+|pl|265|52%|
+|sv-SE|69|13%|
+
 ## Updating translations template file
 
 To update the template file from source files you should use this command:
 
 ```shell
-./update_translation.sh -U
+./update_translation.sh -u
 ```
 
 Once done you can commit the changes and upload the new file to CrowdIn platform
@@ -73,6 +82,16 @@ Alternatively you can visit the **FreeCAD-addons** project on CrowdIn platform
 at <https://crowdin.com/project/freecad-addons> webpage and find your language,
 once done, look for the **Quetzal** project.
 
+## Finding potential typos
+
+You can use the `aspell` command along with `awk` to potentially find some typos on the translation.
+Also you need to install the language package, `aspell-es` for Spanish.
+
+```sh
+awk 'BEGIN { RS="</translation>" } /<translation>/ { sub(/.*<translation>/, ""); print }' \
+  Quetzal_es-ES.ts | aspell --lang=es list | sort | uniq
+```
+
 ## Compiling translations
 
 To convert all `.ts` files to `.qm` files (merge) you can use this command:
@@ -95,7 +114,7 @@ This will update the `.qm` file for your language (Spanish (Spain) in this case)
 Now you can contribute your translated `.ts` file to **Quetzal** repository,
 also include the `.qm` file.
 
-<https://github.com/EdgarJRobles/dodo>
+<https://github.com/EdgarJRobles/quetzal>
 
 ## More information
 
