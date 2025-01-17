@@ -1,8 +1,29 @@
 # Changelog
 
+## [1.1.0] - 2025-01-17
+
+### Added
+
+- Add ASME flange weld neck, lap join, socket slot
+- Add German, Greek, Polish and Swedish translations
+
+### Changed
+
+- Update WB icon with an actual quetzal
+- Replace original profiles to use BIM profiles
+- Update icons to be easier to identify
+- Update Spanish translations
+- Rename icons and add them to FreeCAD resources path
+
+### Fixed
+
+- Fix object bases & added extra flange & pipe standards
+- Mark `openTransaction()` strings for translation
+- Don't translate objects' internal name, only translate `obj.Label`
+
 ## [1.0.0] - 2024-10-20
 
-🌱 Initial release of Quetzal WB based on the work of **oddtopus** on [Dodo WB][dodo].
+🌱 Initial release of Quetzal WB based on the work of **oddtopus** on [Dodo WB].
 
 ### Added
 
@@ -28,5 +49,6 @@
 - Fix PypeLineForm pipe generation
 - Fix typos
 
-[dodo]: https://github.com/oddtopus/dodo
+[Dodo WB]: https://github.com/oddtopus/dodo
 [1.0.0]: https://github.com/EdgarJRobles/dodo/releases/tag/V1.0.0RC2
+[1.1.0]: https://github.com/EdgarJRobles/dodo/releases/tag/1.1.0
