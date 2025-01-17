@@ -71,7 +71,7 @@ class QuetzalWorkbench(Workbench):
         here is the place to import all the commands.
         """
         QT_TRANSLATE_NOOP = FreeCAD.Qt.QT_TRANSLATE_NOOP
-        import CUtils
+        import CUtils  # noqa: F401
 
         self.utilsList = [
             "Quetzal_SelectSolids",
@@ -83,10 +83,11 @@ class QuetzalWorkbench(Workbench):
             "Quetzal_MoveHandle",
             "Quetzal_PressureLossCalculator",
         ]
-        self.appendToolbar("Utils", self.utilsList)
+        self.appendToolbar(QT_TRANSLATE_NOOP("Workbench", "Utils"), self.utilsList)
         Log("Loading Utils: done\n")
-        import CFrame
-        from cut_list.cut_list_commands import cutListCommand
+
+        import CFrame  # noqa: F401
+        from cut_list.cut_list_commands import cutListCommand  # noqa: F401
 
         self.frameList = [
             "Quetzal_FrameIt",
@@ -106,9 +107,10 @@ class QuetzalWorkbench(Workbench):
             "Quetzal_InsertPath",
             "Quetzal_CreateCutList",
         ]
-        self.appendToolbar("frameTools", self.frameList)
+        self.appendToolbar(QT_TRANSLATE_NOOP("Workbench", "Frame tools"), self.frameList)
         Log("Loading Frame tools: done\n")
-        import CPipe
+
+        import CPipe  # noqa: F401
 
         self.pypeList = [
             "Quetzal_InsertPipe",
@@ -133,28 +135,29 @@ class QuetzalWorkbench(Workbench):
             "Quetzal_Attach2Tube",
             "Quetzal_Point2Point",
             "Quetzal_InsertAnyShape",
-        ]  # ,"joinPype"]
+        ]
         from dodoPM import toolList
 
         self.qm = toolList  # ["pipeQM","elbowQM","reductQM"]
-        self.appendToolbar(QT_TRANSLATE_NOOP("Workbench", "pypetools"), self.pypeList)
+        self.appendToolbar(QT_TRANSLATE_NOOP("Workbench", "Pipe tools"), self.pypeList)
         Log("Loading Pipe tools: done\n")
+
         self.appendMenu(QT_TRANSLATE_NOOP("Workbench", "Frame tools"), self.frameList)
-        self.appendMenu(QT_TRANSLATE_NOOP("Workbench", "Pype tools"), self.pypeList)
+        self.appendMenu(QT_TRANSLATE_NOOP("Workbench", "Pipe tools"), self.pypeList)
         self.appendMenu(QT_TRANSLATE_NOOP("Workbench", "Utils"), self.utilsList)
         self.appendMenu(QT_TRANSLATE_NOOP("Workbench", "QM Menus"), self.qm)
 
     def ContextMenu(self, recipient):
         QT_TRANSLATE_NOOP = FreeCAD.Qt.QT_TRANSLATE_NOOP
         self.appendContextMenu(QT_TRANSLATE_NOOP("Workbench", "Frames"), self.frameList)
-        self.appendContextMenu(QT_TRANSLATE_NOOP("Workbench", "Pypes"), self.pypeList)
+        self.appendContextMenu(QT_TRANSLATE_NOOP("Workbench", "Pipes"), self.pypeList)
         self.appendContextMenu(QT_TRANSLATE_NOOP("Workbench", "Utils"), self.utilsList)
 
     def Activated(self):
-        # if hasattr(FreeCADGui,"draftToolBar"):	#patch
-        # FreeCADGui.draftToolBar.Activated()		#patch
-        # if hasattr(FreeCADGui,"Snapper"):			#patch
-        # FreeCADGui.Snapper.show()				#patchm
+        # if hasattr(FreeCADGui, "draftToolBar"):  # patch
+        #     FreeCADGui.draftToolBar.Activated()  # patch
+        # if hasattr(FreeCADGui, "Snapper"):  # patch
+        #     FreeCADGui.Snapper.show()  # patchm
         FreeCAD.__activePypeLine__ = None
         FreeCAD.__activeFrameLine__ = None
         Msg("Created variables in FreeCAD module:\n")
@@ -162,14 +165,12 @@ class QuetzalWorkbench(Workbench):
         Msg("__activeFrameLine__\n")
         try:
             Msg("__dodoPMact__ \n")
-            FreeCAD.Console.PrintMessage(
-                FreeCAD.__dodoPMact__.objectName()
-                + " 's shortcut = "
-                + FreeCAD.__dodoPMact__.shortcuts()[0].toString()
-                + "\n\t****\n"
+            Msg(
+                f"{FreeCAD.__dodoPMact__.objectName()} 's shortcut = "
+                f"{FreeCAD.__dodoPMact__.shortcuts()[0].toString()}\n\t****\n"
             )
-        except:
-            FreeCAD.Console.PrintError("dodoPM not loaded \n")
+        except Exception as e:
+            FreeCAD.Console.PrintError(f"dodoPM not loaded:\n{e}\n")
 
     def Deactivated(self):
         del FreeCAD.__activePypeLine__
