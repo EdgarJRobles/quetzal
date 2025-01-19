@@ -15,7 +15,7 @@
 
   <pythonmin>3.7.0</pythonmin>
 
-  <url branch="feat/translation++" type="repository">https://github.com/EdgarJRobles/quetzal</url>
+  <url branch="master" type="repository">https://github.com/EdgarJRobles/quetzal</url>
 
   <url type="bugtracker">https://github.com/EdgarJRobles/quetzal/issues</url>
 
