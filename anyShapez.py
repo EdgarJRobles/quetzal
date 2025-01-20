@@ -1,4 +1,6 @@
-import FreeCAD, FreeCADGui, Part
+import FreeCAD
+import FreeCADGui
+import Part
 import fCmd
 from os.path import *
 from os import listdir

@@ -48,7 +48,8 @@ class QuetzalWorkbench(Workbench):
             "Quetzal is the fork of Dodo workbench for FreeCAD. "
             "Extending Dodo workbench support and adding translation support. ",
         )
-        self.__class__.Icon = os.path.join(ICONPATH, "dodo.svg")
+        self.__class__.Icon = os.path.join(ICONPATH, "quetzal.svg")
+        FreeCADGui.addIconPath(ICONPATH)
 
     try:
         import DraftSnap
@@ -70,7 +71,7 @@ class QuetzalWorkbench(Workbench):
         here is the place to import all the commands.
         """
         QT_TRANSLATE_NOOP = FreeCAD.Qt.QT_TRANSLATE_NOOP
-        import CUtils
+        import CUtils  # noqa: F401
 
         self.utilsList = [
             "Quetzal_SelectSolids",
@@ -78,36 +79,38 @@ class QuetzalWorkbench(Workbench):
             "Quetzal_MoveWorkPlane",
             "Quetzal_OffsetWorkPlane",
             "Quetzal_RotateWorkPlane",
-            "Quetzal_HackedL",
+            "Quetzal_HackedLine",
             "Quetzal_MoveHandle",
-            "Quetzal_DpCalc",
+            "Quetzal_PressureLossCalculator",
         ]
-        self.appendToolbar("Utils", self.utilsList)
+        self.appendToolbar(QT_TRANSLATE_NOOP("Workbench", "Utils"), self.utilsList)
         Log("Loading Utils: done\n")
-        import CFrame
-        from cut_list.cut_list_commands import cutListCommand
+
+        import CFrame  # noqa: F401
+        from cut_list.cut_list_commands import cutListCommand  # noqa: F401
 
         self.frameList = [
             "Quetzal_FrameIt",
             "Quetzal_FrameBranchManager",
             "Quetzal_InsertSection",
-            "Quetzal_SpinSect",
+            "Quetzal_SpinSection",
             "Quetzal_ReverseBeam",
             "Quetzal_ShiftBeam",
             "Quetzal_PivotBeam",
             "Quetzal_LevelBeam",
             "Quetzal_AlignEdge",
-            "Quetzal_RotJoin",
+            "Quetzal_RotateJoin",
             "Quetzal_AlignFlange",
             "Quetzal_StretchBeam",
-            "Quetzal_Extend",
+            "Quetzal_ExtendBeam",
             "Quetzal_AdjustFrameAngle",
             "Quetzal_InsertPath",
             "Quetzal_CreateCutList",
         ]
-        self.appendToolbar("frameTools", self.frameList)
+        self.appendToolbar(QT_TRANSLATE_NOOP("Workbench", "Frame tools"), self.frameList)
         Log("Loading Frame tools: done\n")
-        import CPipe
+
+        import CPipe  # noqa: F401
 
         self.pypeList = [
             "Quetzal_InsertPipe",
@@ -116,7 +119,7 @@ class QuetzalWorkbench(Workbench):
             "Quetzal_InsertCap",
             "Quetzal_InsertValve",
             "Quetzal_InsertFlange",
-            "Quetzal_InsertUbolt",
+            "Quetzal_InsertUBolt",
             "Quetzal_InsertPypeLine",
             "Quetzal_InsertBranch",
             "Quetzal_InsertTank",
@@ -124,36 +127,37 @@ class QuetzalWorkbench(Workbench):
             "Quetzal_BreakPipe",
             "Quetzal_MateEdges",
             "Quetzal_Flat",
-            "Quetzal_Extend2intersection",
-            "Quetzal_Extend1intersection",
+            "Quetzal_ExtendIntersection2",
+            "Quetzal_ExtendIntersection1",
             "Quetzal_MakeHeader",
             "Quetzal_Laydown",
             "Quetzal_Raiseup",
-            "Quetzal_Attach2tube",
-            "Quetzal_Point2point",
-            "Quetzal_InsertAnyz",
-        ]  # ,"joinPype"]
+            "Quetzal_Attach2Tube",
+            "Quetzal_Point2Point",
+            "Quetzal_InsertAnyShape",
+        ]
         from dodoPM import toolList
 
         self.qm = toolList  # ["pipeQM","elbowQM","reductQM"]
-        self.appendToolbar(QT_TRANSLATE_NOOP("Workbench", "pypetools"), self.pypeList)
+        self.appendToolbar(QT_TRANSLATE_NOOP("Workbench", "Pipe tools"), self.pypeList)
         Log("Loading Pipe tools: done\n")
+
         self.appendMenu(QT_TRANSLATE_NOOP("Workbench", "Frame tools"), self.frameList)
-        self.appendMenu(QT_TRANSLATE_NOOP("Workbench", "Pype tools"), self.pypeList)
+        self.appendMenu(QT_TRANSLATE_NOOP("Workbench", "Pipe tools"), self.pypeList)
         self.appendMenu(QT_TRANSLATE_NOOP("Workbench", "Utils"), self.utilsList)
         self.appendMenu(QT_TRANSLATE_NOOP("Workbench", "QM Menus"), self.qm)
 
     def ContextMenu(self, recipient):
         QT_TRANSLATE_NOOP = FreeCAD.Qt.QT_TRANSLATE_NOOP
         self.appendContextMenu(QT_TRANSLATE_NOOP("Workbench", "Frames"), self.frameList)
-        self.appendContextMenu(QT_TRANSLATE_NOOP("Workbench", "Pypes"), self.pypeList)
+        self.appendContextMenu(QT_TRANSLATE_NOOP("Workbench", "Pipes"), self.pypeList)
         self.appendContextMenu(QT_TRANSLATE_NOOP("Workbench", "Utils"), self.utilsList)
 
     def Activated(self):
-        # if hasattr(FreeCADGui,"draftToolBar"):	#patch
-        # FreeCADGui.draftToolBar.Activated()		#patch
-        # if hasattr(FreeCADGui,"Snapper"):			#patch
-        # FreeCADGui.Snapper.show()				#patchm
+        # if hasattr(FreeCADGui, "draftToolBar"):  # patch
+        #     FreeCADGui.draftToolBar.Activated()  # patch
+        # if hasattr(FreeCADGui, "Snapper"):  # patch
+        #     FreeCADGui.Snapper.show()  # patchm
         FreeCAD.__activePypeLine__ = None
         FreeCAD.__activeFrameLine__ = None
         Msg("Created variables in FreeCAD module:\n")
@@ -161,14 +165,12 @@ class QuetzalWorkbench(Workbench):
         Msg("__activeFrameLine__\n")
         try:
             Msg("__dodoPMact__ \n")
-            FreeCAD.Console.PrintMessage(
-                FreeCAD.__dodoPMact__.objectName()
-                + " 's shortcut = "
-                + FreeCAD.__dodoPMact__.shortcuts()[0].toString()
-                + "\n\t****\n"
+            Msg(
+                f"{FreeCAD.__dodoPMact__.objectName()} 's shortcut = "
+                f"{FreeCAD.__dodoPMact__.shortcuts()[0].toString()}\n\t****\n"
             )
-        except:
-            FreeCAD.Console.PrintError("dodoPM not loaded \n")
+        except Exception as e:
+            FreeCAD.Console.PrintError(f"dodoPM not loaded:\n{e}\n")
 
     def Deactivated(self):
         del FreeCAD.__activePypeLine__

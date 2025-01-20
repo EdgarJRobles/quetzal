@@ -6,7 +6,9 @@ __url__ = "github.com/oddtopus/dodo"
 __license__ = "LGPL 3"
 
 # import FreeCAD modules
-import FreeCAD, FreeCADGui, pCmd
+import FreeCAD
+import FreeCADGui
+import pCmd
 from fObservers import frameObserverPrototype
 from uCmd import arrow
 
@@ -16,6 +18,8 @@ pCmd.o2 = None
 pCmd.port2 = None
 pCmd.arrows1 = list()
 pCmd.arrows2 = list()
+
+translate = FreeCAD.Qt.translate
 
 
 class arrow_insert(arrow):
@@ -48,8 +52,10 @@ class arrow_insert(arrow):
                             % (pCmd.o2.PType, pCmd.o2.Label, pCmd.port2, pCmd.o1.Label)
                         )
                         # move o2
-                        if type(pCmd.port1) == int and type(pCmd.port2) == int:
-                            FreeCAD.activeDocument().openTransaction("Join")
+                        if isinstance(pCmd.port1, int) and isinstance(pCmd.port2, int):
+                            FreeCAD.activeDocument().openTransaction(
+                                translate("Transaction", "Join")
+                            )
                             pCmd.join(pCmd.o1, pCmd.port1, pCmd.o2, pCmd.port2)
                             FreeCAD.activeDocument().commitTransaction()
                         else:

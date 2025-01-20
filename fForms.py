@@ -28,7 +28,7 @@ class fillForm(dodoDialogs.protoTypeDialog):
 
     def accept(self):
         if self.beam != None and len(fCmd.edges()) > 0:
-            FreeCAD.activeDocument().openTransaction("Fill frame")
+            FreeCAD.activeDocument().openTransaction(translate("Transaction", "Fill frame"))
             if self.form.radio1.isChecked():
                 fCmd.placeTheBeam(self.beam, fCmd.edges()[0])
             else:
@@ -69,7 +69,7 @@ class extendForm(dodoDialogs.protoTypeDialog):
 
     def accept(self):  # extend
         if self.target != None and len(fCmd.beams()) > 0:
-            FreeCAD.activeDocument().openTransaction("Extend beam")
+            FreeCAD.activeDocument().openTransaction(translate("Transaction", "Extend beam"))
             for beam in fCmd.beams():
                 fCmd.extendTheBeam(beam, self.target)
             FreeCAD.activeDocument().recompute()
@@ -134,7 +134,7 @@ class stretchForm(dodoDialogs.protoTypeDialog):
         self.L = fCmd.getDistance()
         if self.form.edit1.text():
             length = float(self.form.edit1.text())
-            FreeCAD.activeDocument().openTransaction("Stretch beam")
+            FreeCAD.activeDocument().openTransaction(translate("Transaction", "Stretch beam"))
             for beam in fCmd.beams():
                 delta = float(beam.Height) - length
                 fCmd.stretchTheBeam(beam, length)
@@ -287,7 +287,7 @@ class translateForm(dodoDialogs.protoTypeDialog):
             float(self.form.edit2.text()) * self.form.cbY.isChecked(),
             float(self.form.edit3.text()) * self.form.cbZ.isChecked(),
         ).scale(scale, scale, scale)
-        FreeCAD.activeDocument().openTransaction("Translate")
+        FreeCAD.activeDocument().openTransaction(translate("Transaction", "Translate"))
         for o in set(FreeCADGui.Selection.getSelection()):
             if self.form.cbCopy.isChecked():
                 for i in range(self.form.spinBox.value()):
@@ -357,7 +357,7 @@ class alignForm(dodoDialogs.protoTypeDialog):
         faces = fCmd.faces()
         objs = FreeCADGui.Selection.getSelection()  # beams=fCmd.beams()
         if len(faces) == len(objs) > 0 and self.faceRef:
-            FreeCAD.activeDocument().openTransaction("AlignFlange")
+            FreeCAD.activeDocument().openTransaction(translate("Transaction", "Align Flange"))
             if self.form.cbInvert.isChecked():
                 for i in range(len(objs)):
                     fCmd.rotTheBeam(objs[i], self.faceRef, faces[i], True)
@@ -400,7 +400,9 @@ class rotateAroundForm(dodoDialogs.protoTypeDialog):
         self.deleteArrow()
         objects = FreeCADGui.Selection.getSelection()
         if objects and self.Axis:
-            FreeCAD.ActiveDocument.openTransaction("rotateTheBeamAround")
+            FreeCAD.activeDocument().openTransaction(
+                translate("Transaction", "Rotate The Beam Around")
+            )
             for o in objects:
                 if self.form.copyCB.isChecked():
                     FreeCAD.activeDocument().copyObject(o, True)
@@ -523,38 +525,41 @@ class profEdit(dodoDialogs.protoTypeDialog):
         # TODO: translation
 
     def setProfile(self, typeS):
+        # NOTE: the self.label is used on the `addObject()` method as therefore is assigned
+        # tot the internal name of the object, to translate the label is needed to
+        # assign the translated string to `obj.Label`.
         if typeS == "square":
             self.form.labImg.setPixmap(pixSquare)
             self.type = "R"
-            self.label = translate("profEdit", "Square", "Profile name in the Tree View")
+            self.label = "Square"
         elif typeS == "T":
             self.form.labImg.setPixmap(pixT)
             self.type = "T"
-            self.label = translate("profEdit", "T-profile", "Profile name in the Tree View")
+            self.label = "T-profile"
         elif typeS == "U":
             self.form.labImg.setPixmap(pixU)
             self.type = "U"
-            self.label = translate("profEdit", "U-profile", "Profile name in the Tree View")
+            self.label = "U-profile"
         elif typeS == "H":
             self.form.labImg.setPixmap(pixH)
             self.type = "H"
-            self.label = translate("profEdit", "H-profile", "Profile name in the Tree View")
+            self.label = "H-profile"
         elif typeS == "L":
             self.form.labImg.setPixmap(pixL)
             self.type = "L"
-            self.label = translate("profEdit", "L-profile", "Profile name in the Tree View")
+            self.label = "L-profile"
         elif typeS == "Z":
             self.form.labImg.setPixmap(pixZ)
             self.type = "Z"
-            self.label = translate("profEdit", "Z-profile", "Profile name in the Tree View")
+            self.label = "Z-profile"
         elif typeS == "omega":
             self.form.labImg.setPixmap(pixOmega)
             self.type = "omega"
-            self.label = translate("profEdit", "Omega-profile", "Profile name in the Tree View")
+            self.label = "Omega-profile"
         elif typeS == "circle":
             self.form.labImg.setPixmap(pixCircle)
             self.type = "circle"
-            self.label = translate("profEdit", "Circle-profile", "Profile name in the Tree View")
+            self.label = "Circle-profile"
 
     def accept(self):
         D, H, B, t1, t2, t3 = (
@@ -570,9 +575,7 @@ class profEdit(dodoDialogs.protoTypeDialog):
         else:
             label = self.form.lineEdit.text()
         if FreeCAD.ActiveDocument:
-            FreeCAD.activeDocument().openTransaction(
-                translate("profEdit", "Insert profile", "Transaction, used on undo/redo lists")
-            )
+            FreeCAD.activeDocument().openTransaction(translate("Transaction", "Insert profile"))
             if self.type == "R":
                 if not self.form.cbFull.isChecked() and t2 < H / 2 and t1 < B / 2:
                     sect = fFeatures.doProfile("RH", label, [B, H, t1, t2])
@@ -614,9 +617,7 @@ class profEdit(dodoDialogs.protoTypeDialog):
         if sel:
             obj = sel[0]
             if hasattr(obj, "Shape") and obj.Shape.ShapeType in ("Face", "Shell"):
-                FreeCAD.ActiveDocument.openTransaction(
-                    translate("profEdit", "Modify profile", "Transaction, used on undo/redo lists")
-                )
+                FreeCAD.activeDocument().openTransaction(translate("Transaction", "Modify profile"))
                 if self.form.lineEdit.text():
                     obj.Label = self.form.lineEdit.text()
                 if hasattr(obj, "H"):
@@ -704,9 +705,7 @@ class profEdit(dodoDialogs.protoTypeDialog):
         if sect:
             sect.Placement.move(sect.Shape.CenterOfMass.negative())
             FreeCAD.ActiveDocument.recompute()
-            FreeCAD.ActiveDocument.openTransaction(
-                translate("profEdit", "Shift profile", "Transaction, used on undo/redo lists")
-            )
+            FreeCAD.activeDocument().openTransaction(translate("profEdit", "Shift profile"))
             B = sect.Shape.BoundBox
             O = sect.Shape.CenterOfMass
             N = FreeCAD.Vector(0, O.y - B.YMin, 0)

@@ -1,7 +1,6 @@
 import FreeCAD
-import FreeCADGui
 
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass
 from typing import List
 
 from . import resultSpreadsheet
@@ -99,9 +98,7 @@ def nestCuts(profiles: list, beamLength, cutwidth):
     sortedStructures = sorted(allStructures, key=lambda x: x.ComputedLength, reverse=True)
 
     allCuts = []
-    beams = (
-        []
-    )  # List of Lists to reference what is together in one beam [beamLength,[Cut1,Cut2...]]
+    beams = []  # List of Lists to reference what is together in one beam [beamLength,[Cut1,Cut2...]]
     beam = Beam(1, beamLength, beamLength, [])
     beams.append(beam)
 
@@ -154,9 +151,9 @@ def createSpreadSheetReport(beams, name="Result_Nest_Profile"):
         # Print the Used Length if a maximum Stock Value is given
         beamLength = round(beam.length, 2)
         if beamLength.getValueAs("mm") <= 0.1:
-            result.printHeader(f"Used {round(beam.lengthUsed(),2)}")
+            result.printHeader(f"Used {round(beam.lengthUsed(), 2)}")
         else:
-            result.printHeader(f"Used {round(beam.lengthUsed(),2)} of {beamLength}")
+            result.printHeader(f"Used {round(beam.lengthUsed(), 2)} of {beamLength}")
 
         result.printColumnLabels()
         result.printRows(beam.getCutsAsDict())
@@ -181,9 +178,9 @@ def createSpreadSheetReportGrouped(beams, name="Result_Nest_Profile"):
         # Print the Used Length if a maximum Stock Value is given
         beamLength = round(beam.length, 2)
         if beamLength.getValueAs("mm") <= 0.1:
-            result.printHeader(f"Used {round(beam.lengthUsed(),2)}")
+            result.printHeader(f"Used {round(beam.lengthUsed(), 2)}")
         else:
-            result.printHeader(f"Used {round(beam.lengthUsed(),2)} of {beamLength}")
+            result.printHeader(f"Used {round(beam.lengthUsed(), 2)} of {beamLength}")
 
         result.printColumnLabels()
 

@@ -1,0 +1,246 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="64"
+   height="64"
+   viewBox="0 0 64 64"
+   version="1.1"
+   id="svg1"
+   inkscape:version="1.4 (e7c3feb100, 2024-10-09)"
+   sodipodi:docname="mate.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:xlink="http://www.w3.org/1999/xlink"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:dc="http://purl.org/dc/elements/1.1/">
+  <title
+     id="title1">Quetzal - Mate Edges</title>
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#323232"
+     bordercolor="#ffffff"
+     borderopacity="1"
+     inkscape:showpageshadow="0"
+     inkscape:pageopacity="0"
+     inkscape:pagecheckerboard="1"
+     inkscape:deskcolor="#191919"
+     inkscape:document-units="px"
+     showgrid="true"
+     inkscape:zoom="11.313708"
+     inkscape:cx="49.85103"
+     inkscape:cy="35.045981"
+     inkscape:window-width="1894"
+     inkscape:window-height="999"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg1"
+     showguides="true"
+     inkscape:lockguides="false"
+     guidecolor="#ffff00"
+     guideopacity="0.6"
+     guidehicolor="#ff00ff"
+     guidehiopacity="0.50196078">
+    <inkscape:grid
+       id="grid1"
+       units="px"
+       originx="0"
+       originy="0"
+       spacingx="2"
+       spacingy="2"
+       empcolor="#0099e5"
+       empopacity="0.30196078"
+       color="#0099e5"
+       opacity="0.14901961"
+       empspacing="4"
+       enabled="true"
+       visible="true" />
+    <sodipodi:guide
+       position="-2,62"
+       orientation="0,1"
+       id="guide5"
+       inkscape:locked="false"
+       inkscape:label="top margin"
+       inkscape:color="rgb(255,255,0)" />
+    <sodipodi:guide
+       position="64,2"
+       orientation="0,1"
+       id="guide6"
+       inkscape:locked="false"
+       inkscape:label="bottom margin"
+       inkscape:color="rgb(255,255,0)" />
+    <sodipodi:guide
+       position="2,-2"
+       orientation="-1,0"
+       id="guide7"
+       inkscape:locked="false"
+       inkscape:label="right margin"
+       inkscape:color="rgb(255,255,0)" />
+    <sodipodi:guide
+       position="62,64"
+       orientation="-1,0"
+       id="guide8"
+       inkscape:locked="false"
+       inkscape:label="left margin"
+       inkscape:color="rgb(255,255,0)" />
+    <sodipodi:guide
+       position="64,64"
+       orientation="0.70710678,-0.70710678"
+       id="guide1"
+       inkscape:locked="false"
+       inkscape:label=""
+       inkscape:color="rgb(255,255,0)" />
+    <sodipodi:guide
+       position="0,64"
+       orientation="0.70710678,0.70710678"
+       id="guide2"
+       inkscape:label=""
+       inkscape:locked="false"
+       inkscape:color="rgb(255,255,0)" />
+  </sodipodi:namedview>
+  <defs
+     id="defs1">
+    <linearGradient
+       id="linearGradient3"
+       inkscape:collect="always"
+       inkscape:label="Sky Blue gradient">
+      <stop
+         style="stop-color:#729fcf;stop-opacity:1;"
+         offset="0"
+         id="stop3" />
+      <stop
+         style="stop-color:#3465a4;stop-opacity:1;"
+         offset="1"
+         id="stop4" />
+    </linearGradient>
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient3"
+       id="linearGradient28"
+       x1="723.80042"
+       y1="417.30334"
+       x2="998.19373"
+       y2="691.69666"
+       gradientUnits="userSpaceOnUse" />
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient3"
+       id="linearGradient32"
+       x1="142.68431"
+       y1="407.18735"
+       x2="485.30963"
+       y2="749.81268"
+       gradientUnits="userSpaceOnUse" />
+  </defs>
+  <metadata
+     id="metadata1">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <cc:license
+           rdf:resource="http://creativecommons.org/licenses/by-nc-sa/4.0/" />
+        <dc:creator>
+          <cc:Agent>
+            <dc:title>hasecilu</dc:title>
+          </cc:Agent>
+        </dc:creator>
+        <dc:subject>
+          <rdf:Bag>
+            <rdf:li>FreeCAD</rdf:li>
+            <rdf:li>command</rdf:li>
+          </rdf:Bag>
+        </dc:subject>
+        <dc:description>Template file to create icons for FreeCAD commands.</dc:description>
+        <dc:date>2025</dc:date>
+        <dc:rights>
+          <cc:Agent>
+            <dc:title>FreeCAD LGPL2+</dc:title>
+          </cc:Agent>
+        </dc:rights>
+        <dc:identifier>FreeCAD/src/</dc:identifier>
+        <dc:publisher>
+          <cc:Agent>
+            <dc:title>FreeCAD</dc:title>
+          </cc:Agent>
+        </dc:publisher>
+        <dc:relation>https://wiki.freecad.org/Artwork</dc:relation>
+        <dc:title>Quetzal - Mate Edges</dc:title>
+      </cc:Work>
+      <cc:License
+         rdf:about="http://creativecommons.org/licenses/by-nc-sa/4.0/">
+        <cc:permits
+           rdf:resource="http://creativecommons.org/ns#Reproduction" />
+        <cc:permits
+           rdf:resource="http://creativecommons.org/ns#Distribution" />
+        <cc:requires
+           rdf:resource="http://creativecommons.org/ns#Notice" />
+        <cc:requires
+           rdf:resource="http://creativecommons.org/ns#Attribution" />
+        <cc:prohibits
+           rdf:resource="http://creativecommons.org/ns#CommercialUse" />
+        <cc:permits
+           rdf:resource="http://creativecommons.org/ns#DerivativeWorks" />
+        <cc:requires
+           rdf:resource="http://creativecommons.org/ns#ShareAlike" />
+      </cc:License>
+    </rdf:RDF>
+  </metadata>
+  <g
+     id="id5"
+     style="stroke-width:35.4586;stroke-dasharray:none;display:inline"
+     transform="matrix(0.05623196,0,0,0.05623196,-1.0361036,-0.08058954)"
+     inkscape:label="right">
+    <path
+       fill="#729fcf"
+       stroke="none"
+       d="m 619,560 c 4,194 50,356 103,355 l 291,-6 c 53,-1 94,-164 90,-359 -4,-194 -51,-357 -104,-356 l -291,6 c -53,1 -93,165 -89,360 z m 7,356 z m 470,-723 z"
+       id="path20"
+       style="display:inline;stroke:#204a87;stroke-width:35.4586;stroke-dasharray:none" />
+    <path
+       id="path10"
+       style="display:inline;fill:url(#linearGradient28);stroke:none;stroke-width:35.4586;stroke-dasharray:none"
+       sodipodi:type="inkscape:offset"
+       inkscape:radius="-48.240097"
+       inkscape:original="M 999 194 L 708 200 C 655 201 615 365 619 560 C 623 754 669 916 722 915 L 1013 909 C 1066 908 1107 745 1103 550 C 1099 356 1052 193 999 194 z "
+       d="m 992.23242,242.39062 -275.60156,5.68165 c -0.8848,1.09932 -2.23751,2.90583 -4.0957,6.00195 -7.09429,11.8205 -16.23043,34.90022 -23.56836,64.70703 -14.67588,59.61362 -23.66303,146.30214 -21.73633,240.22852 1.92741,93.46479 14.29652,179.43746 31.24805,238.25585 8.47588,29.40962 18.47388,52.0567 25.99804,63.55665 1.92874,2.94788 3.35726,4.71712 4.28321,5.7871 l 275.78513,-5.68554 c 0.8899,-1.07235 2.2366,-2.81973 4.2246,-6.08789 7.1463,-11.74814 16.3744,-34.67374 23.8164,-64.32813 14.8838,-59.30795 24.1083,-145.66954 22.1836,-239.51367 v -0.004 c -1.9257,-93.38367 -14.5275,-179.56454 -31.7148,-238.63867 -8.5938,-29.53748 -18.7054,-52.32703 -26.34181,-63.96679 -2.10093,-3.20234 -3.53421,-4.93309 -4.48047,-5.99415 z" />
+    <path
+       fill="#a5c3e2"
+       stroke="none"
+       d="m 619,560 c 4,194 50,356 103,355 53,-1 94,-164 90,-359 -4,-195 -51,-357 -104,-356 -53,1 -93,165 -89,360 z m 7,356 z m 470,-723 z"
+       id="path24"
+       style="display:inline;stroke-width:35.4586;stroke-dasharray:none;fill:#ef2929;stroke:#a40000" />
+  </g>
+  <g
+     id="id4"
+     style="stroke-width:35.4586;stroke-dasharray:none;display:inline"
+     transform="matrix(0.05623196,0,0,0.05623196,-1.0361036,-0.08058954)"
+     inkscape:label="left">
+    <path
+       fill="#729fcf"
+       stroke="none"
+       d="m 72,584 c 4,194 50,356 103,355 l 291,-6 C 519,932 560,769 556,574 552,380 505,217 452,218 l -291,6 c -53,1 -93,165 -89,360 z m 7,356 z M 549,217 Z"
+       id="path12"
+       style="display:inline;stroke-width:35.4586;stroke-dasharray:none;stroke:#204a87" />
+    <path
+       id="path28"
+       style="stroke-width:35.4586;stroke-dasharray:none;display:inline;fill:url(#linearGradient32);stroke:none"
+       sodipodi:type="inkscape:offset"
+       inkscape:radius="-46.248173"
+       inkscape:original="M 452 218 L 161 224 C 108 225 68 389 72 584 C 76 778 122 940 175 939 L 466 933 C 519 932 560 769 556 574 C 552 380 505 217 452 218 z "
+       d="m 446.11328,264.37891 -277.45703,5.7207 c -0.81401,0.95605 -2.26295,2.67187 -4.83008,6.94922 -7.26137,12.09889 -16.42511,35.32752 -23.79297,65.25586 -14.73571,59.85668 -23.72464,146.67215 -21.79492,240.74609 1.93042,93.61071 14.30555,179.70945 31.32617,238.76758 8.51043,29.52948 18.54422,52.32414 26.2461,64.0957 2.69262,4.11541 4.1919,5.77203 5.05078,6.70703 L 458.5,886.89648 c 0.80588,-0.92589 2.30559,-2.64086 4.97266,-7.02539 7.31509,-12.02564 16.57213,-35.10185 24.04492,-64.8789 14.94536,-59.55327 24.17193,-146.04404 22.24414,-240.03907 v -0.004 c -1.92882,-93.53294 -14.53602,-179.84068 -31.79297,-239.1543 -8.6286,-29.65722 -18.77844,-52.59442 -26.5918,-64.5039 -2.82785,-4.31034 -4.40223,-5.99321 -5.26367,-6.91211 z" />
+    <path
+       fill="#a5c3e2"
+       stroke="none"
+       d="m 72,584 c 4,194 50,356 103,355 53,-1 94,-164 90,-359 C 261,385 214,223 161,224 108,225 68,389 72,584 Z m 7,356 z M 549,217 Z"
+       id="path16"
+       style="display:inline;stroke-width:35.4586;stroke-dasharray:none;fill:none;stroke:#204a87" />
+  </g>
+  <path
+     id="path9"
+     style="fill:#ef2929;stroke-width:0.056232"
+     d="m 24.946339,11.180736 v 2.183594 c 0.213355,0.170911 0.465647,0.441625 0.742188,0.861328 0.581224,0.882121 1.17828,2.282708 1.691406,4.042969 1.026252,3.52052 1.740625,8.476537 1.851562,13.884766 0.110915,5.407093 -0.408844,10.375523 -1.298828,13.921875 -0.444993,1.773175 -0.989865,3.190201 -1.537109,4.089843 -0.547244,0.899642 -1.009341,1.153736 -1.246094,1.158203 -0.05478,10e-4 -0.12463,-0.01283 -0.203125,-0.04297 v 2.019533 c 0.08008,0.0061 0.157745,0.01913 0.240234,0.01758 1.253394,-0.02365 2.195893,-0.937808 2.91211,-2.115234 0.716217,-1.177425 1.291772,-2.746619 1.767578,-4.642578 0.951612,-3.791922 1.473388,-8.88913 1.359375,-14.447268 -0.11399,-5.557003 -0.833183,-10.638872 -1.929687,-14.40039 -0.548252,-1.880759 -1.183804,-3.431212 -1.94336,-4.583985 -0.636852,-0.966547 -1.427996,-1.735801 -2.40625,-1.947266 z" />
+</svg>

@@ -135,13 +135,13 @@ class ViewProvider:
     def __init__(self, obj, icon_fn):
         obj.Proxy = self
         self._check_attr()
-        self.icon_fn = get_icon_path(icon_fn) or get_icon_path("dodo")
+        self.icon_fn = get_icon_path(icon_fn or "quetzal")
 
     def _check_attr(self):
         """Check for missing attributes."""
 
         if not hasattr(self, "icon_fn"):
-            setattr(self, "icon_fn", get_icon_path("dodo"))
+            setattr(self, "icon_fn", get_icon_path("quetzal"))
 
     def getIcon(self):
         """Returns the path to the SVG icon."""
@@ -180,10 +180,11 @@ def makePipe(propList=[], pos=None, Z=None):
         pFeatures.Pipe(a, *propList)
     else:
         pFeatures.Pipe(a)
-    ViewProvider(a.ViewObject, "pipe")
+    ViewProvider(a.ViewObject, "Quetzal_InsertPipe")
     a.Placement.Base = pos
     rot = FreeCAD.Rotation(FreeCAD.Vector(0, 0, 1), Z)
     a.Placement.Rotation = rot.multiply(a.Placement.Rotation)
+    a.Label = translate("Objects", "Tube")
     return a
 
 
@@ -196,7 +197,7 @@ def doPipes(propList=["DN50", 60.3, 3, 1000], pypeline=None):
       H (float): length of pipe ]
     pypeline = string
     """
-    FreeCAD.activeDocument().openTransaction("Insert pipe")
+    FreeCAD.activeDocument().openTransaction(translate("Transaction", "Insert pipe"))
     plist = list()
     if len(fCmd.edges()) == 0:  # ..no edges selected
         vs = [
@@ -266,11 +267,12 @@ def makeElbow(propList=[], pos=None, Z=None):
         pFeatures.Elbow(a, *propList)
     else:
         pFeatures.Elbow(a)
-    ViewProvider(a.ViewObject, "elbow")
+    ViewProvider(a.ViewObject, "Quetzal_InsertElbow")
     a.Placement.Base = pos
     rot = FreeCAD.Rotation(FreeCAD.Vector(0, 0, 1), Z)
     # rot=FreeCAD.Rotation(FreeCAD.Vector(0,-1,0),Z)
     a.Placement.Rotation = rot.multiply(a.Placement.Rotation)
+    a.Label = translate("Objects", "Elbow")
     return a
 
 
@@ -346,7 +348,7 @@ def doElbow(propList=["DN50", 60.3, 3, 90, 45.225], pypeline=None):
     pypeline = string
     """
     elist = []
-    FreeCAD.activeDocument().openTransaction("Insert elbow")
+    FreeCAD.activeDocument().openTransaction(translate("Transaction", "Insert elbow"))
     selex = FreeCADGui.Selection.getSelectionEx()
     if len(selex) == 0:  # no selection -> insert one elbow at origin
         elist.append(makeElbow(propList))
@@ -450,24 +452,29 @@ def makeFlange(propList=[], pos=None, Z=None):
         pFeatures.Flange(a, *propList)
     else:
         pFeatures.Flange(a)
-    ViewProvider(a.ViewObject, "flange")
+    ViewProvider(a.ViewObject, "Quetzal_InsertFlange")
     a.Placement.Base = pos
     rot = FreeCAD.Rotation(FreeCAD.Vector(0, 0, 1), Z)
     a.Placement.Rotation = rot.multiply(a.Placement.Rotation)
-    if a.FlangeType=='WN':
-        zpos=-a.T1+a.trf
-    elif a.FlangeType=='SW':
-        zpos=-a.T1+a.Y+a.trf
-    elif a.FlangeType=='LJ':
-        zpos=0
+    if a.FlangeType == "WN":
+        zpos = -a.T1 + a.trf
+    elif a.FlangeType == "SW":
+        zpos = -a.T1 + a.Y + a.trf
+    elif a.FlangeType == "LJ":
+        zpos = 0
     else:
-        zpos=0
-    a.Placement=a.Placement.multiply(FreeCAD.Placement(FreeCAD.Vector(0,0,zpos),FreeCAD.Rotation(1,0,0)))
+        zpos = 0
+    a.Placement = a.Placement.multiply(
+        FreeCAD.Placement(FreeCAD.Vector(0, 0, zpos), FreeCAD.Rotation(1, 0, 0))
+    )
     FreeCAD.ActiveDocument.recompute()
+    a.Label = translate("Objects", "Flange")
     return a
 
 
-def doFlanges(propList=["DN50", "SO", 160, 60.3, 132, 14, 15, 4, 0, 0, 0, 0, 0,0,0], pypeline=None):
+def doFlanges(
+    propList=["DN50", "SO", 160, 60.3, 132, 14, 15, 4, 0, 0, 0, 0, 0, 0, 0], pypeline=None
+):
     """
     propList = [
       DN (string): nominal diameter
@@ -491,7 +498,7 @@ def doFlanges(propList=["DN50", "SO", 160, 60.3, 132, 14, 15, 4, 0, 0, 0, 0, 0,0
     """
     flist = []
     tubes = [t for t in fCmd.beams() if hasattr(t, "PSize")]
-    FreeCAD.activeDocument().openTransaction("Insert flange")
+    FreeCAD.activeDocument().openTransaction(translate("Transaction", "Insert flange"))
     if len(fCmd.edges()) == 0:
         vs = [
             v
@@ -558,10 +565,11 @@ def makeReduct(propList=[], pos=None, Z=None, conc=True):
     a = FreeCAD.ActiveDocument.addObject("Part::FeaturePython", "Reduction")
     propList.append(conc)
     pFeatures.Reduct(a, *propList)
-    ViewProvider(a.ViewObject, "reduct")
+    ViewProvider(a.ViewObject, "Quetzal_InsertReduct")
     a.Placement.Base = pos
     rot = FreeCAD.Rotation(FreeCAD.Vector(0, 0, 1), Z)
     a.Placement.Rotation = rot.multiply(a.Placement.Rotation)
+    a.Label = translate("Objects", "Reduct")
     return a
 
 
@@ -587,10 +595,11 @@ def makeUbolt(propList=[], pos=None, Z=None):
         pFeatures.Ubolt(a, *propList)
     else:
         pFeatures.Ubolt(a)
-    ViewProvider(a.ViewObject, "clamp")
+    ViewProvider(a.ViewObject, "Quetzal_InsertUBolt")
     a.Placement.Base = pos
     rot = FreeCAD.Rotation(FreeCAD.Vector(0, 0, 1), Z)
     a.Placement.Rotation = rot.multiply(a.Placement.Rotation)
+    a.Label = translate("Objects", "U-Bolt")
     return a
 
 
@@ -605,11 +614,12 @@ def makeShell(L=1000, W=1500, H=1500, thk1=6, thk2=8):
     """
     a = FreeCAD.ActiveDocument.addObject("Part::FeaturePython", "Tank")
     pFeatures.Shell(a, L, W, H, thk1, thk2)
-    ViewProvider(a.ViewObject, "tank")
+    ViewProvider(a.ViewObject, "Quetzal_InsertTank")
     a.Placement.Base = FreeCAD.Vector(0, 0, 0)
     a.ViewObject.ShapeColor = 0.0, 0.0, 1.0
     a.ViewObject.Transparency = 85
     FreeCAD.ActiveDocument.recompute()
+    a.Label = translate("Objects", "Tank")
     return a
 
 
@@ -634,10 +644,11 @@ def makeCap(propList=[], pos=None, Z=None):
         pFeatures.Cap(a, *propList)
     else:
         pFeatures.Cap(a)
-    ViewProvider(a.ViewObject, "cap")
+    ViewProvider(a.ViewObject, "Quetzal_InsertCap")
     a.Placement.Base = pos
     rot = FreeCAD.Rotation(FreeCAD.Vector(0, 0, 1), Z)
     a.Placement.Rotation = rot.multiply(a.Placement.Rotation)
+    a.Label = translate("Objects", "Cap")
     return a
 
 
@@ -650,7 +661,7 @@ def doCaps(propList=["DN50", 60.3, 3], pypeline=None):
     pypeline = string
     """
     clist = []
-    FreeCAD.activeDocument().openTransaction("Insert cap")
+    FreeCAD.activeDocument().openTransaction(translate("Transaction", "Insert cap"))
     if len(fCmd.edges()) == 0:
         vs = [
             v
@@ -1242,10 +1253,11 @@ def makeValve(propList=[], pos=None, Z=None):
         pFeatures.Valve(a, *propList)
     else:
         pFeatures.Valve(a)
-    ViewProvider(a.ViewObject, "valve")
+    ViewProvider(a.ViewObject, "Quetzal_InsertValve")
     a.Placement.Base = pos
     rot = FreeCAD.Rotation(FreeCAD.Vector(0, 0, 1), Z)
     a.Placement.Rotation = rot.multiply(a.Placement.Rotation)
+    a.Label = translate("Objects", "Valve")
     return a
 
 
@@ -1265,7 +1277,7 @@ def doValves(propList=["DN50", "ball", 72, 50, 40, 150], pypeline=None, pos=0):
     color = 0.05, 0.3, 0.75
     vlist = []
     # d=self.pipeDictList[self.sizeList.currentRow()]
-    FreeCAD.activeDocument().openTransaction("Insert valve")
+    FreeCAD.activeDocument().openTransaction(translate("Transaction", "Insert valve"))
     # propList=[d['PSize'],d['VType'],float(pq(d['OD'])),float(pq(d['ID'])),float(pq(d['H'])),float(pq(d['Kv']))]
     if 0 < pos < 100:  # ..place the valve in the middle of pipe(s)
         pipes = [p for p in FreeCADGui.Selection.getSelection() if isPipe(p)]
@@ -1405,7 +1417,9 @@ def makeNozzle(DN="DN50", H=200, OD=60.3, thk=3, D=160, d=62, df=132, f=14, t=15
                 Z=e.tangentAt(0).cross(e.normalAt(0)),
             )
             FreeCAD.ActiveDocument.recompute()
-            flange = makeFlange([DN, "S.O.", D, d, df, f, t, n],pos=portsPos(pipe)[1],Z=portsDir(pipe)[1])
+            flange = makeFlange(
+                [DN, "S.O.", D, d, df, f, t, n], pos=portsPos(pipe)[1], Z=portsDir(pipe)[1]
+            )
             pipe.MapReversed = False
             pipe.AttachmentSupport = [(s, fCmd.edgeName(s, e)[1])]
             pipe.MapMode = "Concentric"
@@ -1422,6 +1436,7 @@ def makeRoute(n=Z):
     curvedEdges = [e for e in fCmd.edges() if e.curvatureAt(0) != 0]
     if curvedEdges:
         s = FreeCAD.ActiveDocument.addObject("Sketcher::SketchObject", "pipeRoute")
+        s.Label = translate("Objects", "Pipe route")
         s.MapMode = "SectionOfRevolution"
         sup = fCmd.edgeName()
         s.AttachmentSupport = [sup]
@@ -1470,7 +1485,7 @@ def flatten(p1=None, p2=None, c=None):
         com2 = p2.Shape.Solids[0].CenterOfMass
         v1 = P - com1
         v2 = com2 - P
-        FreeCAD.ActiveDocument.openTransaction("Place one curve")
+        FreeCAD.activeDocument().openTransaction(translate("Transaction", "Place one curve"))
         placeoTherElbow(curves[0], v1, v2, P)
         FreeCAD.ActiveDocument.recompute()  # recompute for the elbow
         port1, port2 = portsPos(curves[0])

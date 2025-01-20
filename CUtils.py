@@ -7,7 +7,7 @@ __license__ = "LGPL 3"
 import FreeCAD
 import FreeCADGui
 
-from quetzal_config import addCommand, get_icon_path
+from quetzal_config import addCommand
 
 QT_TRANSLATE_NOOP = FreeCAD.Qt.QT_TRANSLATE_NOOP
 
@@ -19,15 +19,15 @@ QT_TRANSLATE_NOOP = FreeCAD.Qt.QT_TRANSLATE_NOOP
 
 class queryModel:
     def Activated(self):
-        import FreeCAD, FreeCADGui, uForms
+        import uForms
 
         form = uForms.QueryForm(FreeCADGui.Selection)
 
     def GetResources(self):
         return {
-            "Pixmap": get_icon_path("query"),
+            "Pixmap": "Quetzal_QueryModel",
             "Accel": "Q,M",
-            "MenuText": QT_TRANSLATE_NOOP("Quetzal_QueryModel", "query the model"),
+            "MenuText": QT_TRANSLATE_NOOP("Quetzal_QueryModel", "Query the model"),
             "ToolTip": QT_TRANSLATE_NOOP("Quetzal_QueryModel", "Click objects to print infos"),
         }
 
@@ -53,9 +53,9 @@ class moveWorkPlane:
 
     def GetResources(self):
         return {
-            "Pixmap": get_icon_path("grid"),
+            "Pixmap": "Quetzal_MoveWorkPlane",
             "Accel": "A,W",
-            "MenuText": QT_TRANSLATE_NOOP("Quetzal_MoveWorkPlane", "align Workplane"),
+            "MenuText": QT_TRANSLATE_NOOP("Quetzal_MoveWorkPlane", "Align workplane"),
             "ToolTip": QT_TRANSLATE_NOOP(
                 "Quetzal_MoveWorkPlane",
                 "Moves and rotates the drafting workplane with points, edges and faces",
@@ -65,15 +65,15 @@ class moveWorkPlane:
 
 class rotateWorkPlane:
     def Activated(self):
-        import FreeCAD, FreeCADGui, uForms
+        import uForms
 
         form = uForms.rotWPForm()
 
     def GetResources(self):
         return {
-            "Pixmap": get_icon_path("rotWP"),
             "Accel": "R,W",
-            "MenuText": QT_TRANSLATE_NOOP("Quetzal_RotateWorkPlane", "rotate Workplane"),
+            "Pixmap": "Quetzal_RotateWorkPlane",
+            "MenuText": QT_TRANSLATE_NOOP("Quetzal_RotateWorkPlane", "Rotate workplane"),
             "ToolTip": QT_TRANSLATE_NOOP(
                 "Quetzal_RotateWorkPlane", "Spin the Draft working plane about one of its axes"
             ),
@@ -104,9 +104,9 @@ class offsetWorkPlane:
 
     def GetResources(self):
         return {
-            "Pixmap": get_icon_path("offsetWP"),
+            "Pixmap": "Quetzal_OffsetWorkPlane",
             "Accel": "O,W",
-            "MenuText": QT_TRANSLATE_NOOP("Quetzal_OffsetWorkPlane", "offset Workplane"),
+            "MenuText": QT_TRANSLATE_NOOP("Quetzal_OffsetWorkPlane", "Offset workplane"),
             "ToolTip": QT_TRANSLATE_NOOP(
                 "Quetzal_OffsetWorkPlane", "Shifts the WP along its normal."
             ),
@@ -121,11 +121,11 @@ class hackedL:
 
     def GetResources(self):
         return {
-            "Pixmap": get_icon_path("hackedL"),
+            "Pixmap": "Quetzal_HackedLine",
             "Accel": "H,L",
-            "MenuText": QT_TRANSLATE_NOOP("Quetzal_HackedL", "draw a DWire"),
+            "MenuText": QT_TRANSLATE_NOOP("Quetzal_HackedLine", "Draw a Draft wire"),
             "ToolTip": QT_TRANSLATE_NOOP(
-                "Quetzal_HackedL",
+                "Quetzal_HackedLine",
                 "WP is re-positioned at each point. Possible to spin and offset it.",
             ),
         }
@@ -140,7 +140,7 @@ class moveHandle:
 
     def GetResources(self):
         return {
-            "Pixmap": get_icon_path("moveHandle"),
+            "Pixmap": "Quetzal_MoveHandle",
             "Accel": "M,H",
             "MenuText": QT_TRANSLATE_NOOP("Quetzal_MoveHandle", "Move objects"),
             "ToolTip": QT_TRANSLATE_NOOP(
@@ -157,11 +157,14 @@ class dpCalc:
 
     def GetResources(self):
         return {
-            "Pixmap": get_icon_path("delta"),
-            "MenuText": QT_TRANSLATE_NOOP("Quetzal_DpCalc", "Pressure loss calculator"),
+            "Pixmap": "Quetzal_PressureLossCalculator",
+            "MenuText": QT_TRANSLATE_NOOP(
+                "Quetzal_PressureLossCalculator", "Pressure loss calculator"
+            ),
             "ToolTip": QT_TRANSLATE_NOOP(
-                "Quetzal_DpCalc",
-                'Calculate pressure loss in "pypes" using ChEDL libraries.\n See __doc__ of the module for further information.',
+                "Quetzal_PressureLossCalculator",
+                "Calculate pressure loss in 'pypes' using ChEDL libraries.\n"
+                "See __doc__ of the module for further information.",
             ),
         }
 
@@ -178,7 +181,7 @@ class selectSolids:
 
     def GetResources(self):
         return {
-            "Pixmap": get_icon_path("solids"),
+            "Pixmap": "Quetzal_SelectSolids",
             "MenuText": QT_TRANSLATE_NOOP("Quetzal_SelectSolids", "Select solids"),
             "ToolTip": QT_TRANSLATE_NOOP(
                 "Quetzal_SelectSolids",
@@ -194,7 +197,7 @@ addCommand("Quetzal_QueryModel", queryModel())
 addCommand("Quetzal_MoveWorkPlane", moveWorkPlane())
 addCommand("Quetzal_RotateWorkPlane", rotateWorkPlane())
 addCommand("Quetzal_OffsetWorkPlane", offsetWorkPlane())
-addCommand("Quetzal_HackedL", hackedL())
+addCommand("Quetzal_HackedLine", hackedL())
 addCommand("Quetzal_MoveHandle", moveHandle())
-addCommand("Quetzal_DpCalc", dpCalc())
+addCommand("Quetzal_PressureLossCalculator", dpCalc())
 addCommand("Quetzal_SelectSolids", selectSolids())

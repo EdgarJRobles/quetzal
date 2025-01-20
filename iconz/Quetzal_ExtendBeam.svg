@@ -1,0 +1,214 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="64"
+   height="64"
+   viewBox="0 0 64 64"
+   version="1.1"
+   id="svg1"
+   inkscape:version="1.4 (e7c3feb100, 2024-10-09)"
+   sodipodi:docname="extend.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:dc="http://purl.org/dc/elements/1.1/">
+  <title
+     id="title8">Quetzal - Extend Beam</title>
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#323232"
+     bordercolor="#ffffff"
+     borderopacity="1"
+     inkscape:showpageshadow="0"
+     inkscape:pageopacity="0"
+     inkscape:pagecheckerboard="1"
+     inkscape:deskcolor="#191919"
+     inkscape:document-units="px"
+     showgrid="true"
+     inkscape:zoom="11.313708"
+     inkscape:cx="28.416855"
+     inkscape:cy="30.538175"
+     inkscape:window-width="1894"
+     inkscape:window-height="999"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg1"
+     showguides="true"
+     inkscape:lockguides="false"
+     guidecolor="#ffff00"
+     guideopacity="0.6"
+     guidehicolor="#ff00ff"
+     guidehiopacity="0.50196078">
+    <inkscape:grid
+       id="grid1"
+       units="px"
+       originx="0"
+       originy="0"
+       spacingx="2"
+       spacingy="2"
+       empcolor="#0099e5"
+       empopacity="0.30196078"
+       color="#0099e5"
+       opacity="0.14901961"
+       empspacing="4"
+       enabled="true"
+       visible="true" />
+    <sodipodi:guide
+       position="-2,62"
+       orientation="0,1"
+       id="guide5"
+       inkscape:locked="false"
+       inkscape:label="top margin"
+       inkscape:color="rgb(255,255,0)" />
+    <sodipodi:guide
+       position="64,2"
+       orientation="0,1"
+       id="guide6"
+       inkscape:locked="false"
+       inkscape:label="bottom margin"
+       inkscape:color="rgb(255,255,0)" />
+    <sodipodi:guide
+       position="2,-2"
+       orientation="-1,0"
+       id="guide7"
+       inkscape:locked="false"
+       inkscape:label="right margin"
+       inkscape:color="rgb(255,255,0)" />
+    <sodipodi:guide
+       position="62,64"
+       orientation="-1,0"
+       id="guide8"
+       inkscape:locked="false"
+       inkscape:label="left margin"
+       inkscape:color="rgb(255,255,0)" />
+    <sodipodi:guide
+       position="64,64"
+       orientation="0.70710678,-0.70710678"
+       id="guide1"
+       inkscape:locked="false"
+       inkscape:label=""
+       inkscape:color="rgb(255,255,0)" />
+    <sodipodi:guide
+       position="0,64"
+       orientation="0.70710678,0.70710678"
+       id="guide2"
+       inkscape:label=""
+       inkscape:locked="false"
+       inkscape:color="rgb(255,255,0)" />
+  </sodipodi:namedview>
+  <defs
+     id="defs1">
+    <clipPath
+       id="presentation_clip_path"
+       clipPathUnits="userSpaceOnUse">
+      <rect
+         x="0"
+         y="0"
+         width="1129"
+         height="1129"
+         id="rect2" />
+    </clipPath>
+  </defs>
+  <metadata
+     id="metadata1">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <cc:license
+           rdf:resource="http://creativecommons.org/licenses/by-nc-sa/4.0/" />
+        <dc:creator>
+          <cc:Agent>
+            <dc:title>hasecilu</dc:title>
+          </cc:Agent>
+        </dc:creator>
+        <dc:subject>
+          <rdf:Bag>
+            <rdf:li>FreeCAD</rdf:li>
+            <rdf:li>command</rdf:li>
+          </rdf:Bag>
+        </dc:subject>
+        <dc:description>Template file to create icons for FreeCAD commands.</dc:description>
+        <dc:date>2025</dc:date>
+        <dc:rights>
+          <cc:Agent>
+            <dc:title>FreeCAD LGPL2+</dc:title>
+          </cc:Agent>
+        </dc:rights>
+        <dc:identifier>FreeCAD/src/</dc:identifier>
+        <dc:publisher>
+          <cc:Agent>
+            <dc:title>FreeCAD</dc:title>
+          </cc:Agent>
+        </dc:publisher>
+        <dc:relation>https://wiki.freecad.org/Artwork</dc:relation>
+        <dc:title>Quetzal - Extend Beam</dc:title>
+      </cc:Work>
+      <cc:License
+         rdf:about="http://creativecommons.org/licenses/by-nc-sa/4.0/">
+        <cc:permits
+           rdf:resource="http://creativecommons.org/ns#Reproduction" />
+        <cc:permits
+           rdf:resource="http://creativecommons.org/ns#Distribution" />
+        <cc:requires
+           rdf:resource="http://creativecommons.org/ns#Notice" />
+        <cc:requires
+           rdf:resource="http://creativecommons.org/ns#Attribution" />
+        <cc:prohibits
+           rdf:resource="http://creativecommons.org/ns#CommercialUse" />
+        <cc:permits
+           rdf:resource="http://creativecommons.org/ns#DerivativeWorks" />
+        <cc:requires
+           rdf:resource="http://creativecommons.org/ns#ShareAlike" />
+      </cc:License>
+    </rdf:RDF>
+  </metadata>
+  <path
+     style="color:#000000;display:inline;fill:#729fcf;stroke:#204a87;stroke-width:2;stroke-linejoin:round;stroke-dasharray:none"
+     d="M 15.879323,60.978775 H 8.9792141 V 16.362689 H 22.680858 v 44.616086 z"
+     id="path194"
+     inkscape:label="vertical" />
+  <path
+     style="stroke-width:39.7768;stroke-dasharray:none;fill:#729fcf;stroke:#204a87;color:#000000;display:inline;stroke-linejoin:round"
+     d="M 647,757 424,573 591,369 1038,736 871,940 Z"
+     id="path200"
+     transform="matrix(0.05023868,0,0,0.05032244,6.5385672,8.2912011)"
+     inkscape:label="sloped" />
+  <path
+     style="stroke-width:38.47414614;stroke-dasharray:76.94829556, 38.47414787;fill:#fce94f;fill-opacity:1;stroke:#c4a000;stroke-miterlimit:4;stroke-dashoffset:0;stroke-opacity:1"
+     d="M 11.256571,317.0173 276.88158,0.07661682"
+     id="path9537"
+     transform="matrix(0.05198296,0,0,0.05198296,3.27365,3.9960175)"
+     inkscape:label="axis1" />
+  <path
+     style="stroke-width:38.47414614;stroke-dasharray:76.94829556, 38.47414787;fill:#fce94f;fill-opacity:1;stroke:#c4a000;stroke-miterlimit:4;stroke-dashoffset:0;stroke-opacity:1"
+     d="M 60.022118,93.363352 1089.3707,992.16115"
+     id="path5027"
+     transform="matrix(0.05198296,0,0,0.05198296,3.27365,3.9960175)"
+     inkscape:label="axis2" />
+  <path
+     fill="none"
+     stroke="rgb(0,153,0)"
+     stroke-width="20"
+     stroke-linejoin="round"
+     d="m 481,380 -210,-176 32,-42 -135,26 1,142 33,-43 211,176 z"
+     id="path226"
+     style="stroke-width:38.47414614;stroke-dasharray:none;fill:#8ae234;fill-opacity:1;stroke:#4e9a06"
+     transform="matrix(0.05198296,0,0,0.05198296,4.6954876,6.6978021)"
+     inkscape:label="arrow" />
+  <path
+     style="stroke-width:38.47414614;stroke-dasharray:none;fill:#009900;fill-opacity:1;stroke:#ff3333;stroke-miterlimit:4;stroke-dashoffset:0;stroke-opacity:1"
+     d="M 418.86335,598.37138 587.67309,390.21427"
+     id="path9812"
+     transform="matrix(0.05198296,0,0,0.05198296,3.27365,3.9960175)"
+     inkscape:label="red" />
+  <path
+     id="path273"
+     style="fill:#ff3333;stroke-width:2;stroke-linejoin:round;stroke-dasharray:none"
+     d="m 15.1521,10.65907 c -0.659858,0 -1.307757,0.23261 -1.765625,0.683594 -0.177967,0.175291 -0.32336,0.379928 -0.433594,0.601562 l -4.9472661,0.07617 0.00977,2.933594 5.2968761,-0.08203 c 0.0094,0.01093 0.01776,0.02241 0.02734,0.0332 0.439589,0.494833 1.115323,0.792969 1.8125,0.792969 0.77231,0 1.478561,-0.346104 1.96875,-0.884766 l 5.408203,-0.08203 -0.0098,-2.933594 -5.041016,0.07813 C 17.351296,11.657847 17.191186,11.461041 17.001709,11.297742 16.499322,10.864763 15.838005,10.65907 15.1521,10.65907 Z"
+     inkscape:label="red2" />
+</svg>

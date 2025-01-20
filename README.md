@@ -1,16 +1,16 @@
 # Quetzal Workbench
 
-[![Contributions welcome][ContribsW_badge]][ContribsW]
-[![license][license_badge]][license]
+[![Contributions welcome][ContribsW_badge]][CONTRIBUTING]
+[![license][license_badge]][LICENSE]
 [![FreeCAD Addon Manager][AddonMgr_badge]][AddonMgr]
 [![pre-commit enabled][pre-commit_badge]][pre-commit]
 [![Code style: black][black_badge]][black]
 [![GitHub Tag][tag_bagde]][tag]
-[![Common Changelog][cc_badge]][cc]
+[![Common Changelog][cc_badge]][CHANGELOG]
 
 Quetzal is the fork of Dodo workbench for [FreeCAD](https://freecad.org).
 Extending Dodo workbench support & adding translation support.
-![screenshot1](https://github.com/user-attachments/assets/70e96920-34db-40d9-a8d6-102e690a13ee)
+![screenshot1](https://github.com/user-attachments/assets/70e96920-34db-40d9-a8d6-102e690a13ee "Metal frame created with Quetzal")
 
 ## Installation
 
@@ -18,7 +18,7 @@ Extending Dodo workbench support & adding translation support.
 
 The recommended way to install Quetzal is via FreeCAD's
 [Addon Manager](https://wiki.freecad.org/Std_AddonMgr) under
-`Tools > Addon Manager` dropdown menu.
+`Tools > Addon Manager` drop-down menu.
 
 Search for **Quetzal** in the workbench category.
 
@@ -39,7 +39,7 @@ Examples on different OS
 - macOS: `/Users/user/Library/Preferences/FreeCAD/Mod/`
 - Windows: `C:\Users\user\AppData\Roaming\FreeCAD\Mod\`
 
-Use the CLI to enter the `Mod` directory and use Git to install Dodo:
+Use the CLI to enter the `Mod` directory and use Git to install Quetzal:
 
 ```shell
 git clone https://github.com/EdgarJRobles/quetzal Quetzal
@@ -55,6 +55,14 @@ Check the documentation on the FreeCAD Wiki article:
 Discussion in the FreeCAD Forum:
 <https://forum.freecad.org/viewtopic.php?t=22711>
 
+## Changelog
+
+Read our [CHANGELOG] file to know about the latest changes.
+
+## Contributing
+
+Read our [CONTRIBUTING] file to know about ways how to help on the workbench.
+
 ## Links
 
 - [FreeCAD Site main page](https://www.freecad.org/)
@@ -63,9 +71,9 @@ Discussion in the FreeCAD Forum:
 
 - [FreeCAD Repository](https://github.com/FreeCAD/FreeCAD)
 
-[ContribsW]: ./CONTRIBUTING.md
+[CONTRIBUTING]: ./CONTRIBUTING.md
 [ContribsW_badge]: <https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat>
-[license]: ./LICENSE
+[LICENSE]: ./LICENSE
 [license_badge]: <https://img.shields.io/github/license/EdgarJRobles/quetzal>
 [AddonMgr]: <https://github.com/FreeCAD/FreeCAD-addons>
 [AddonMgr_badge]: <https://img.shields.io/badge/FreeCAD%20addon%20manager-available-brightgreen>
@@ -76,4 +84,4 @@ Discussion in the FreeCAD Forum:
 [tag]: <https://github.com/EdgarJRobles/quetzal/releases>
 [tag_bagde]: <https://img.shields.io/github/v/tag/EdgarJRobles/quetzal>
 [cc_badge]: <https://common-changelog.org/badge.svg>
-[cc]: <./CHANGELOG.md>
+[CHANGELOG]: ./CHANGELOG.md

@@ -1,4 +1,5 @@
-import FreeCAD, FreeCADGui, Part
+import FreeCAD
+import FreeCADGui
 import os
 
 from FreeCAD import Units

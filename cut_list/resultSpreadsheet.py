@@ -2,7 +2,6 @@
 # https://github.com/furti/FreeCAD-Reporting/blob/master/report.py
 
 import FreeCAD
-import FreeCADGui
 import string
 
 
@@ -34,9 +33,7 @@ def nextColumnName(actualColumnName):
 
 
 class ResultSpreadsheet(object):
-
     def __init__(self, spreadsheet, columnLabels):
-
         self.spreadsheet = spreadsheet
         self.lineNumber = 1
         self.maxColumn = None
@@ -160,7 +157,6 @@ class ResultSpreadsheet(object):
                     self.clearColumn(COLUMN_NAMES[columnIndexToDelete], line)
 
     def clearLine(self, lineNumberToDelete):
-
         column = None
 
         while column is None or column != self.maxColumn:
@@ -170,7 +166,6 @@ class ResultSpreadsheet(object):
             self.spreadsheet.clear(cellName)
 
     def clearColumn(self, columnToDelete, maxLineNumber):
-
         for lineNumber in range(1, maxLineNumber):
             cellName = f"{columnToDelete}{lineNumber + 1}"
 

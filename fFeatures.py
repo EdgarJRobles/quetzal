@@ -6,7 +6,7 @@ __url__ = "github.com/oddtopus/dodo"
 __license__ = "LGPL 3"
 
 import csv
-from math import degrees, frexp, sqrt, cos, radians, sin, tan
+from math import degrees, sqrt, cos, radians, sin, tan
 from os import listdir
 from os.path import abspath, dirname, join
 
@@ -16,9 +16,9 @@ import FreeCADGui
 import Part
 from Arch import makeProfile, makeStructure
 from Draft import makeCircle
-from PySide2.QtCore import *
-from PySide2.QtGui import *
-from PySide2.QtWidgets import (
+from PySide.QtCore import *
+from PySide.QtGui import *
+from PySide.QtWidgets import (
     QCheckBox,
     QComboBox,
     QDialog,
@@ -32,7 +32,7 @@ from PySide2.QtWidgets import (
 
 import fCmd
 import pCmd
-from quetzal_config import FREECADVERSION
+from quetzal_config import FREECADVERSION, get_icon_path
 from uCmd import label3D
 import ShpstData
 
@@ -49,10 +49,32 @@ def newProfile(prop):
     if prop["stype"] == "C":
         profile = makeCircle(float(prop["H"]))
     else:
-        if int(FreeCAD.Version()[0]) >=1:
-            profile=makeProfile([0,"SECTION",prop["SSize"] + "-000",prop["stype"],float(prop["W"]),float(prop["H"]),float(prop["ta"]),float(prop["tf"]),])
+        if int(FreeCAD.Version()[0]) >= 1:
+            profile = makeProfile(
+                [
+                    0,
+                    "SECTION",
+                    prop["SSize"] + "-000",
+                    prop["stype"],
+                    float(prop["W"]),
+                    float(prop["H"]),
+                    float(prop["ta"]),
+                    float(prop["tf"]),
+                ]
+            )
         else:
-            profile=ArchProfile.makeProfile([0,"SECTION",prop["SSize"] + "-000",prop["stype"],float(prop["W"]),float(prop["H"]),float(prop["ta"]),float(prop["tf"]),])
+            profile = ArchProfile.makeProfile(
+                [
+                    0,
+                    "SECTION",
+                    prop["SSize"] + "-000",
+                    prop["stype"],
+                    float(prop["W"]),
+                    float(prop["H"]),
+                    float(prop["ta"]),
+                    float(prop["tf"]),
+                ]
+            )
     return profile
 
 
@@ -67,10 +89,10 @@ def indexEdge(edge, listedges):
 
 
 def findFB(beamName=None, baseName=None):
-    '''
+    """
     Search FrameBranch object inside the Active document
     if beam name or base object name parameters are given, it will return the frameBranch related to beam or base object (skectch, wire ,etc)
-    '''
+    """
     Branches = [
         o.Name
         for o in FreeCAD.ActiveDocument.Objects
@@ -204,16 +226,10 @@ class frameLineForm(QDialog):
     def setCurrentFL(self, FLName=None):
         if self.combo.currentText() not in ["<none>", "<new>"]:
             FreeCAD.__activeFrameLine__ = self.combo.currentText()
-            self.current = FreeCAD.ActiveDocument.getObjectsByLabel(
-                self.combo.currentText()
-            )[0]
-            FreeCAD.Console.PrintMessage(
-                "current FrameLine = " + self.current.Label + "\n"
-            )
+            self.current = FreeCAD.ActiveDocument.getObjectsByLabel(self.combo.currentText())[0]
+            FreeCAD.Console.PrintMessage("current FrameLine = " + self.current.Label + "\n")
             if self.current.Profile:
-                FreeCAD.Console.PrintMessage(
-                    "Profile: %s\n" % self.current.Profile.Label
-                )
+                FreeCAD.Console.PrintMessage("Profile: %s\n" % self.current.Profile.Label)
             else:
                 FreeCAD.Console.PrintMessage("Profile not defined\n")
             if self.current.Base:
@@ -227,9 +243,7 @@ class frameLineForm(QDialog):
 
     def updateSections(self):
         self.sectList.clear()
-        result = FreeCAD.ActiveDocument.findObjects(
-            "App::DocumentObjectGroup", "Profiles_set"
-        )
+        result = FreeCAD.ActiveDocument.findObjects("App::DocumentObjectGroup", "Profiles_set")
         if result:
             self.sectList.addItems(
                 [
@@ -238,10 +252,7 @@ class frameLineForm(QDialog):
                     if hasattr(o, "Shape")
                     and (
                         (type(o.Shape) == Part.Wire and o.Shape.isClosed())
-                        or (
-                            type(o.Shape) == Part.Face
-                            and type(o.Shape.Surface) == Part.Plane
-                        )
+                        or (type(o.Shape) == Part.Face and type(o.Shape.Surface) == Part.Plane)
                     )
                 ]
             )
@@ -255,9 +266,7 @@ class frameLineForm(QDialog):
     def setCurrent(self, flname):
         if flname != "<new>":
             self.current = FreeCAD.ActiveDocument.getObjectsByLabel(flname)[0]
-            FreeCAD.Console.PrintMessage(
-                "current FrameLine = " + self.current.Label + "\n"
-            )
+            FreeCAD.Console.PrintMessage("current FrameLine = " + self.current.Label + "\n")
         else:
             self.current = None
             FreeCAD.Console.PrintMessage("current FrameLine = None\n")
@@ -315,18 +324,13 @@ class frameLineForm(QDialog):
                 ]:
                     self.current.Base = base
                     FreeCAD.Console.PrintWarning(
-                        self.current.Label
-                        + " base set to "
-                        + base.TypeId.split("::")[1]
-                        + ".\n"
+                        self.current.Label + " base set to " + base.TypeId.split("::")[1] + ".\n"
                     )
                 else:
                     FreeCAD.Console.PrintError("Not a Wire nor Sketch\n")
             else:
                 self.current.Base = None
-                FreeCAD.Console.PrintWarning(
-                    self.current.Label + " base set to None.\n"
-                )
+                FreeCAD.Console.PrintWarning(self.current.Label + " base set to None.\n")
 
     def getProfile(self):
         if self.current:
@@ -337,9 +341,7 @@ class frameLineForm(QDialog):
                     self.sectList.selectedItems()[0].text()
                 )[0]
                 if prof.Shape.ShapeType == "Wire" and self.cb2.isChecked():
-                    prof.Placement.move(
-                        FreeCAD.Vector(0, 0, 0) - prof.Shape.CenterOfMass
-                    )
+                    prof.Placement.move(FreeCAD.Vector(0, 0, 0) - prof.Shape.CenterOfMass)
                 prof.Placement.Rotation = FreeCAD.Base.Rotation()
                 self.current.Profile = prof
 
@@ -383,9 +385,7 @@ class insertSectForm(QWidget):
         self.fileList = listdir(join(dirname(abspath(__file__)), "tablez"))
         self.fillSizes()
         self.PRatingsList = [
-            s.lstrip("Section_").rstrip(".csv")
-            for s in self.fileList
-            if s.startswith("Section")
+            s.lstrip("Section_").rstrip(".csv") for s in self.fileList if s.startswith("Section")
         ]
         self.secondCol = QWidget()
         self.secondCol.setLayout(QVBoxLayout())
@@ -422,15 +422,11 @@ class insertSectForm(QWidget):
         self.fillSizes()
 
     def insert(self):  # insert the section
-        result = FreeCAD.ActiveDocument.findObjects(
-            "App::DocumentObjectGroup", "Profiles_set"
-        )
+        result = FreeCAD.ActiveDocument.findObjects("App::DocumentObjectGroup", "Profiles_set")
         if result:
             group = result[0]
         else:
-            group = FreeCAD.activeDocument().addObject(
-                "App::DocumentObjectGroup", "Profiles_set"
-            )
+            group = FreeCAD.activeDocument().addObject("App::DocumentObjectGroup", "Profiles_set")
         if self.sizeList.selectedItems():
             prop = self.sectDictList[self.sizeList.currentRow()]
             if prop["stype"] == "C":
@@ -472,6 +468,7 @@ class frameBranchForm(dodoDialogs.protoTypeDialog):
         files = [name for name in tablez if name.startswith("Section")]
         # RatingsList = [s.lstrip("Section_").rstrip(".csv") for s in files]
         import ArchProfile
+
         buffer = list()
         self.ArchList = ArchProfile.readPresets()
         for rating in self.ArchList:
@@ -500,21 +497,23 @@ class frameBranchForm(dodoDialogs.protoTypeDialog):
         self.actionX.triggered.connect(self.trim)  # reconnect to trim()
 
     def getPropsfromlistSizes(self):
-        '''
+        """
         Check profileslist and return full properties selected on the widget list
-        '''
+        """
         for value in self.ArchList:
             if self.form.listSizes.currentItem().text() in value[2]:
                 return value
 
     def makeSingle(self):
-        FreeCAD.activeDocument().openTransaction("Insert Single Struct")
+        FreeCAD.activeDocument().openTransaction(
+            translate("Transaction", "Insert Single Structure")
+        )
         if self.SType == "<by sketch>":
             profile = FreeCAD.ActiveDocument.getObjectsByLabel(
                 self.form.listSizes.currentItem().text()
             )[0]
         else:
-            prop=self.getPropsfromlistSizes()
+            prop = self.getPropsfromlistSizes()
             # prop = self.sectDictList[self.form.listSizes.currentRow()]
             FreeCAD.Console.PrintMessage(prop)
             profile = makeProfile(prop)
@@ -557,81 +556,104 @@ class frameBranchForm(dodoDialogs.protoTypeDialog):
 
     def cutMiters(self):
         import ArchCutPlane
+
         volumes = list()
-        totalvertexes=0
-        sel=FreeCADGui.Selection.getSelection()
-        seldoc=FreeCAD.ActiveDocument
-        miterplanesfaces=self.getMiterPlanesFaces(seldoc)
-        framebeams=self.getBeamsFromStructureNames(sel)
+        totalvertexes = 0
+        sel = FreeCADGui.Selection.getSelection()
+        seldoc = FreeCAD.ActiveDocument
+        miterplanesfaces = self.getMiterPlanesFaces(seldoc)
+        framebeams = self.getBeamsFromStructureNames(sel)
         for beam in framebeams:
             for miterplaneface in miterplanesfaces:
-                matchpoints=False
-                sketcher=beam.AttachmentSupport[0][0]
-                edgename=beam.AttachmentSupport[0][1][0]
-                index=int(edgename[4:])-1
-                if self.roundVectors(miterplaneface.CenterOfMass,4) == self.roundVectors(sketcher.Shape.Edges[index].Vertexes[0].Point,4):
-                    matchpoints=True
-                    totalvertexes=totalvertexes+1
-                elif self.roundVectors(miterplaneface.CenterOfMass,4) == self.roundVectors(sketcher.Shape.Edges[index].Vertexes[1].Point,4):
-                    matchpoints=True
-                    totalvertexes=totalvertexes+1
+                matchpoints = False
+                sketcher = beam.AttachmentSupport[0][0]
+                edgename = beam.AttachmentSupport[0][1][0]
+                index = int(edgename[4:]) - 1
+                if self.roundVectors(miterplaneface.CenterOfMass, 4) == self.roundVectors(
+                    sketcher.Shape.Edges[index].Vertexes[0].Point, 4
+                ):
+                    matchpoints = True
+                    totalvertexes = totalvertexes + 1
+                elif self.roundVectors(miterplaneface.CenterOfMass, 4) == self.roundVectors(
+                    sketcher.Shape.Edges[index].Vertexes[1].Point, 4
+                ):
+                    matchpoints = True
+                    totalvertexes = totalvertexes + 1
                 if matchpoints:
                     # FreeCAD.Console.PrintMessage('Plano: '+str()+'\r')
-                    ArchCutPlane.cutComponentwithPlane(beam,miterplaneface, side=0)
+                    ArchCutPlane.cutComponentwithPlane(beam, miterplaneface, side=0)
                     FreeCAD.ActiveDocument.recompute()
                     volumes.append(beam.Shape.Volume)
                     self.removeCutVolume(beam)
-                    ArchCutPlane.cutComponentwithPlane(beam,miterplaneface, side=1)
+                    ArchCutPlane.cutComponentwithPlane(beam, miterplaneface, side=1)
                     FreeCAD.ActiveDocument.recompute()
                     volumes.append(beam.Shape.Volume)
                     # volumes.sort()
-                    if volumes[0]< volumes[1]:
-                        FreeCAD.Console.PrintMessage(str(beam.Name)+' volume1: '+str(volumes[0])+'< volume2: '+str(volumes[1])+'\r')
+                    if volumes[0] < volumes[1]:
+                        FreeCAD.Console.PrintMessage(
+                            str(beam.Name)
+                            + " volume1: "
+                            + str(volumes[0])
+                            + "< volume2: "
+                            + str(volumes[1])
+                            + "\r"
+                        )
                         FreeCAD.ActiveDocument.recompute()
-                    elif volumes[0]> volumes[1]:
+                    elif volumes[0] > volumes[1]:
                         self.removeCutVolume(beam)
-                        ArchCutPlane.cutComponentwithPlane(beam,miterplaneface, side=0)
-                        FreeCAD.Console.PrintMessage(str(beam.Name)+' volume1: '+str(volumes[0])+'> volume2: '+str(volumes[1])+'\r')
+                        ArchCutPlane.cutComponentwithPlane(beam, miterplaneface, side=0)
+                        FreeCAD.Console.PrintMessage(
+                            str(beam.Name)
+                            + " volume1: "
+                            + str(volumes[0])
+                            + "> volume2: "
+                            + str(volumes[1])
+                            + "\r"
+                        )
                         FreeCAD.ActiveDocument.recompute()
                     volumes.clear()
-        FreeCAD.Console.PrintMessage('totalvertexes: '+str(totalvertexes))
+        FreeCAD.Console.PrintMessage("totalvertexes: " + str(totalvertexes))
 
-    def removeCutVolume(self,beam):
-        cutvolumeitems= list()
+    def removeCutVolume(self, beam):
+        cutvolumeitems = list()
         cutvolumeid = list()
         for obj in beam.OutList:
-            if obj.TypeId=='Part::Feature' and obj.Label.startswith('CutVolume'):
+            if obj.TypeId == "Part::Feature" and obj.Label.startswith("CutVolume"):
                 cutvolumeid.append(obj.ID)
                 cutvolumeitems.append(obj)
         cutvolumeid.sort(reverse=True)
-        lastobj=cutvolumeid[0]
+        lastobj = cutvolumeid[0]
         for obj in beam.OutList:
-            if obj.TypeId=='Part::Feature' and obj.Label.startswith('CutVolume') and obj.ID == lastobj:
+            if (
+                obj.TypeId == "Part::Feature"
+                and obj.Label.startswith("CutVolume")
+                and obj.ID == lastobj
+            ):
                 FreeCAD.ActiveDocument.removeObject(obj.Label)
                 FreeCAD.ActiveDocument.recompute()
 
-    def getBeamsFromStructureNames(self,sel):
-        '''
+    def getBeamsFromStructureNames(self, sel):
+        """
         Return a list with beam Structures on a frameBranch object type
-        '''
+        """
         framebeams = list()
-        if hasattr(sel[0],"FType"):
+        if hasattr(sel[0], "FType"):
             for beamname in sel[0].Beams:
-                beam=FreeCAD.ActiveDocument.getObject(beamname)
+                beam = FreeCAD.ActiveDocument.getObject(beamname)
                 framebeams.append(beam)
         return framebeams
 
-    def getMiterPlanesFaces(self,seldoc):
-        '''
+    def getMiterPlanesFaces(self, seldoc):
+        """
         Return a list with plane named 'cutplane' from the whole seldoc
-        '''
+        """
         miterplanes = list()
         for object in seldoc.Objects:
-            if object.Name.startswith('cutplane'):
+            if object.Name.startswith("cutplane"):
                 miterplanes.append(object.Shape.Faces[0])
         return miterplanes
 
-    def roundVectors(self,vxlist, num):
+    def roundVectors(self, vxlist, num):
         l = [v for v in vxlist]
         return FreeCAD.Vector(round(l[0], num), round(l[1], num), round(l[2], num))
 
@@ -639,122 +661,161 @@ class frameBranchForm(dodoDialogs.protoTypeDialog):
         """Get intersection between lines, generate a plane between lines & do a boolean diferente"""
         sel = FreeCADGui.Selection.getSelection()
         from DraftGeomUtils import findIntersection
+
         # FreeCAD.Console.PrintMessage('posicion de boceto:'+ str(sel[0].Placement.Rotation)+'\r\n')
-        i=0
-        rep=0
+        i = 0
+        rep = 0
         reachedlines = []
         interVertex = []
-        if sel[0].FType == 'FrameBranch':
-          for element in sel[0].Base.Geometry:
-              # FreeCAD.Console.PrintMessage('Segmento '+str(element)+'\r\n')
-              for subelement in sel[0].Base.Geometry:
-                  # Avoid process the geometric element that match StartPoint and EndPoint and also just have process elements with  a common point
-                  if  (element.EndPoint != subelement.EndPoint or
-                       element.StartPoint != subelement.StartPoint or
-                       (element.EndPoint != subelement.EndPoint and
-                        element.StartPoint != subelement.StartPoint) and
-                       (element.EndPoint != subelement.StartPoint and
-                        element.StartPoint != subelement.EndPoint)):
-                      #WARN:intersectionCLines method forces to detect infinite intersections that is not required
-                      # interVertex=fCmd.intersectionCLines(element.toShape().Edges[0],subelement.toShape().Edges[0])                        
-                      interVertex=findIntersection(element.toShape().Edges[0],subelement.toShape().Edges[0],infinite1=False, infinite2=False)
-                      if interVertex:
-                          roundelementStart=self.roundVectors(element.StartPoint,2)
-                          roundelementEnd=self.roundVectors(element.EndPoint,2)
-                          roundsubelementStart=self.roundVectors(subelement.StartPoint,2)
-                          roundsubelementEnd=self.roundVectors(subelement.EndPoint,2)
-                          roundinterVertex=self.roundVectors(interVertex[0],2)
-                          if [element.Tag,subelement.Tag] not in reachedlines:
-                              content=True
-                              reachedlines.append([element.Tag,subelement.Tag])
-                          else:
-                              content=False
-                          if [subelement.Tag,element.Tag] not in reachedlines:
-                              contentsub=True
-                              reachedlines.append([subelement.Tag,element.Tag])
-                          else:
-                              contentsub=False
-                          if (content) or (contentsub):
-                              # FreeCAD.Console.PrintMessage('Punto de interseccion: '+str(interVertex[0])+'\r\n')
-                              # Store edge pair that intersect
-                              FreeCAD.Console.PrintMessage('Reachedlines: {0} and {1}'.format(reachedlines[rep][0],reachedlines[rep][1])+'\r\n')
-                              rep=rep+1
-                              # FIXME: intersectCC method does not return line intersection; findIntersection method does it right
-                              # interpoint=element.intersectCC(subelement)[0] 
+        if sel[0].FType == "FrameBranch":
+            for element in sel[0].Base.Geometry:
+                # FreeCAD.Console.PrintMessage('Segmento '+str(element)+'\r\n')
+                for subelement in sel[0].Base.Geometry:
+                    # Avoid process the geometric element that match StartPoint and EndPoint and also just have process elements with  a common point
+                    if (
+                        element.EndPoint != subelement.EndPoint
+                        or element.StartPoint != subelement.StartPoint
+                        or (
+                            element.EndPoint != subelement.EndPoint
+                            and element.StartPoint != subelement.StartPoint
+                        )
+                        and (
+                            element.EndPoint != subelement.StartPoint
+                            and element.StartPoint != subelement.EndPoint
+                        )
+                    ):
+                        # WARN:intersectionCLines method forces to detect infinite intersections that is not required
+                        # interVertex=fCmd.intersectionCLines(element.toShape().Edges[0],subelement.toShape().Edges[0])
+                        interVertex = findIntersection(
+                            element.toShape().Edges[0],
+                            subelement.toShape().Edges[0],
+                            infinite1=False,
+                            infinite2=False,
+                        )
+                        if interVertex:
+                            roundelementStart = self.roundVectors(element.StartPoint, 2)
+                            roundelementEnd = self.roundVectors(element.EndPoint, 2)
+                            roundsubelementStart = self.roundVectors(subelement.StartPoint, 2)
+                            roundsubelementEnd = self.roundVectors(subelement.EndPoint, 2)
+                            roundinterVertex = self.roundVectors(interVertex[0], 2)
+                            if [element.Tag, subelement.Tag] not in reachedlines:
+                                content = True
+                                reachedlines.append([element.Tag, subelement.Tag])
+                            else:
+                                content = False
+                            if [subelement.Tag, element.Tag] not in reachedlines:
+                                contentsub = True
+                                reachedlines.append([subelement.Tag, element.Tag])
+                            else:
+                                contentsub = False
+                            if (content) or (contentsub):
+                                # FreeCAD.Console.PrintMessage('Punto de interseccion: '+str(interVertex[0])+'\r\n')
+                                # Store edge pair that intersect
+                                FreeCAD.Console.PrintMessage(
+                                    "Reachedlines: {0} and {1}".format(
+                                        reachedlines[rep][0], reachedlines[rep][1]
+                                    )
+                                    + "\r\n"
+                                )
+                                rep = rep + 1
+                                # FIXME: intersectCC method does not return line intersection; findIntersection method does it right
+                                # interpoint=element.intersectCC(subelement)[0]
 
-                              # FreeCAD.Console.PrintMessage('Segmento '+str(element)+' intersecta con segmento '+str(subelement)+' aqui:'+ str(interpoint)+'\r\n')
-                              # FreeCAD.Console.PrintMessage(str(type(interpoint)))
-                              # INFO:Section aided to get bisect vector on each intersection
-                              if roundelementStart== roundinterVertex:
-                                  resultv1 = FreeCAD.Vector(element.EndPoint-element.StartPoint)
-                              elif roundelementEnd == roundinterVertex:
-                                  resultv1 = FreeCAD.Vector(element.StartPoint-element.EndPoint)
-                              if roundsubelementStart == roundinterVertex:
-                                  resultv2 = FreeCAD.Vector(subelement.EndPoint-subelement.StartPoint)
-                              elif roundsubelementEnd == roundinterVertex:
-                                  resultv2 = FreeCAD.Vector(subelement.StartPoint-subelement.EndPoint)
-                              bisectvector=fCmd.bisect(resultv1,resultv2)
-                              plane=FreeCAD.activeDocument().addObject("Part::Plane","cutplane")
-                              import numpy
-                              from math import pi
-                              plane.AttachmentSupport = sel[0].Base.AttachmentSupport
-                              plane.MapMode = 'FlatFace'
-                              self.rotvector =(interVertex[0])-(FreeCAD.Vector(0,plane.Length/2,-plane.Length/2))
-                              # INFO: Section aided to apply random color to each plane
-                              randomcolorarray=numpy.random.choice(range(256),size=3)
-                              plane.ViewObject.ShapeAppearance = FreeCAD.Material(DiffuseColor= tuple(map(int,randomcolorarray)))
-                              plane.recompute()
-                              # self.CenterOfMass = plane.Shape.CenterOfMass
-                              # INFO:Section aided to get the correct plane orientation on each intersection
-                              self.placementrotplan = FreeCAD.Placement(self.rotvector,FreeCAD.Rotation(FreeCAD.Vector(0,1,0),90))
-                              plane.AttachmentOffset = self.placementrotplan
-                              # FreeCAD.Console.PrintMessage('Antes Angulo de arista a vector bisectriz: '+str((FreeCAD.Rotation(bisectvector,plane.Shape.normalAt(0,0)).Angle)*180/pi)+'\r\n')
-                              # crossvector=resultv1.cross(resultv2).normalize()
-                              # FreeCAD.Console.PrintMessage('Vector cruz: '+str(crossvector)+'\r\n')
-                              # FreeCAD.Console.PrintMessage('Vector normal de plano: '+str(self.roundVectors(plane.Shape.normalAt(0,0),2))+'\r\n')
-                              self.placementrelative = FreeCAD.Placement(FreeCAD.Vector(0,0,0),FreeCAD.Rotation(plane.Shape.normalAt(0,0),bisectvector),interVertex[0]).multiply(self.placementrotplan)
-                              # plane.AttachmentOffset = self.placementrelative
-                              # FreeCAD.Console.PrintMessage('Despues Angulo de arista a vector bisectriz: '+str((FreeCAD.Rotation(bisectvector,plane.Shape.normalAt(0,0)).Angle)*180/pi)+'\r\n')
-                              if self.roundVectors(plane.Shape.normalAt(0,0),0) == FreeCAD.Vector(1.0, 0.0, 0.0):
-                                  rotateplane=90
-                              else:
-                                  rotateplane=0
-                              self.placementfinal = FreeCAD.Placement(FreeCAD.Vector(0,0,0),FreeCAD.Rotation(FreeCAD.Vector(0,0,1),rotateplane),interVertex[0]).multiply(self.placementrelative)
-                              plane.AttachmentOffset = self.placementfinal
-                              # FreeCAD.Console.PrintMessage(str(plane.Name))
-                              # sel[0].cutplanes.append(plane.Name)
-              # TODO::Made method definition to change plane dots colors
-              # if i==0:
-              #     FreeCADGui.ActiveDocument.myplane.PointSize = 10
-              #     FreeCADGui.ActiveDocument.myplane.PointColor = 100,50,20
-              # elif i>=1:
-              #     obj=FreeCADGui.ActiveDocument.getObject('myplane00'+str(i))
-              #     obj.PointSize = 10
-              #     obj.PointColor = 100,50,20
-              i=i+1
+                                # FreeCAD.Console.PrintMessage('Segmento '+str(element)+' intersecta con segmento '+str(subelement)+' aqui:'+ str(interpoint)+'\r\n')
+                                # FreeCAD.Console.PrintMessage(str(type(interpoint)))
+                                # INFO:Section aided to get bisect vector on each intersection
+                                if roundelementStart == roundinterVertex:
+                                    resultv1 = FreeCAD.Vector(element.EndPoint - element.StartPoint)
+                                elif roundelementEnd == roundinterVertex:
+                                    resultv1 = FreeCAD.Vector(element.StartPoint - element.EndPoint)
+                                if roundsubelementStart == roundinterVertex:
+                                    resultv2 = FreeCAD.Vector(
+                                        subelement.EndPoint - subelement.StartPoint
+                                    )
+                                elif roundsubelementEnd == roundinterVertex:
+                                    resultv2 = FreeCAD.Vector(
+                                        subelement.StartPoint - subelement.EndPoint
+                                    )
+                                bisectvector = fCmd.bisect(resultv1, resultv2)
+                                plane = FreeCAD.activeDocument().addObject(
+                                    "Part::Plane", "cutplane"
+                                )
+                                import numpy
+
+                                plane.AttachmentSupport = sel[0].Base.AttachmentSupport
+                                plane.MapMode = "FlatFace"
+                                self.rotvector = (interVertex[0]) - (
+                                    FreeCAD.Vector(0, plane.Length / 2, -plane.Length / 2)
+                                )
+                                # INFO: Section aided to apply random color to each plane
+                                randomcolorarray = numpy.random.choice(range(256), size=3)
+                                plane.ViewObject.ShapeAppearance = FreeCAD.Material(
+                                    DiffuseColor=tuple(map(int, randomcolorarray))
+                                )
+                                plane.recompute()
+                                # self.CenterOfMass = plane.Shape.CenterOfMass
+                                # INFO:Section aided to get the correct plane orientation on each intersection
+                                self.placementrotplan = FreeCAD.Placement(
+                                    self.rotvector, FreeCAD.Rotation(FreeCAD.Vector(0, 1, 0), 90)
+                                )
+                                plane.AttachmentOffset = self.placementrotplan
+                                # FreeCAD.Console.PrintMessage('Antes Angulo de arista a vector bisectriz: '+str((FreeCAD.Rotation(bisectvector,plane.Shape.normalAt(0,0)).Angle)*180/pi)+'\r\n')
+                                # crossvector=resultv1.cross(resultv2).normalize()
+                                # FreeCAD.Console.PrintMessage('Vector cruz: '+str(crossvector)+'\r\n')
+                                # FreeCAD.Console.PrintMessage('Vector normal de plano: '+str(self.roundVectors(plane.Shape.normalAt(0,0),2))+'\r\n')
+                                self.placementrelative = FreeCAD.Placement(
+                                    FreeCAD.Vector(0, 0, 0),
+                                    FreeCAD.Rotation(plane.Shape.normalAt(0, 0), bisectvector),
+                                    interVertex[0],
+                                ).multiply(self.placementrotplan)
+                                # plane.AttachmentOffset = self.placementrelative
+                                # FreeCAD.Console.PrintMessage('Despues Angulo de arista a vector bisectriz: '+str((FreeCAD.Rotation(bisectvector,plane.Shape.normalAt(0,0)).Angle)*180/pi)+'\r\n')
+                                if self.roundVectors(
+                                    plane.Shape.normalAt(0, 0), 0
+                                ) == FreeCAD.Vector(1.0, 0.0, 0.0):
+                                    rotateplane = 90
+                                else:
+                                    rotateplane = 0
+                                self.placementfinal = FreeCAD.Placement(
+                                    FreeCAD.Vector(0, 0, 0),
+                                    FreeCAD.Rotation(FreeCAD.Vector(0, 0, 1), rotateplane),
+                                    interVertex[0],
+                                ).multiply(self.placementrelative)
+                                plane.AttachmentOffset = self.placementfinal
+                                # FreeCAD.Console.PrintMessage(str(plane.Name))
+                                # sel[0].cutplanes.append(plane.Name)
+                # TODO::Made method definition to change plane dots colors
+                # if i==0:
+                #     FreeCADGui.ActiveDocument.myplane.PointSize = 10
+                #     FreeCADGui.ActiveDocument.myplane.PointColor = 100,50,20
+                # elif i>=1:
+                #     obj=FreeCADGui.ActiveDocument.getObject('myplane00'+str(i))
+                #     obj.PointSize = 10
+                #     obj.PointColor = 100,50,20
+                i = i + 1
 
     def accept(self):
         if FreeCAD.ActiveDocument:
             # GET BASE
-            bases = [
-                b for b in FreeCADGui.Selection.getSelection() if hasattr(b, "Shape")
-            ]
+            bases = [b for b in FreeCADGui.Selection.getSelection() if hasattr(b, "Shape")]
             if bases and self.form.listSizes.selectedItems():
-                FreeCAD.activeDocument().openTransaction("Insert FrameBranch")
+                FreeCAD.activeDocument().openTransaction(
+                    translate("Transaction", "Insert Frame Branch")
+                )
                 if self.SType == "<by sketch>":
                     profile = FreeCAD.ActiveDocument.getObjectsByLabel(
                         self.form.listSizes.currentItem().text()
                     )[0]
                 else:
                     # prop = self.sectDictList[self.form.listSizes.currentRow()]
-                    prop=self.getPropsfromlistSizes()
+                    prop = self.getPropsfromlistSizes()
                     profile = makeProfile(prop)
                     # profile = newProfile(prop)
                 # MAKE FRAMEBRANCH
                 if self.form.editName.text():
                     name = self.form.editName.text()
                 else:
-                    name = translate("makeframenbranch","Travatura") 
+                    name = translate("makeframenbranch", "Structure")  # Travatura is Structure?
                 a = FreeCAD.ActiveDocument.addObject("Part::FeaturePython", name)
                 FrameBranch(a, bases[0], profile)
                 ViewProviderFrameBranch(a.ViewObject)
@@ -784,11 +845,7 @@ class frameBranchForm(dodoDialogs.protoTypeDialog):
         if i:
             labText = i["Object"]
             obj = FreeCAD.ActiveDocument.getObject(i["Object"])
-            if (
-                hasattr(obj, "tailOffset")
-                and hasattr(obj, "headOffset")
-                and hasattr(obj, "spin")
-            ):
+            if hasattr(obj, "tailOffset") and hasattr(obj, "headOffset") and hasattr(obj, "spin"):
                 self.form.editTail.setText(str(obj.tailOffset))
                 self.form.editHead.setText(str(obj.headOffset))
                 self.form.editAngle.setText(str(obj.spin))
@@ -797,7 +854,9 @@ class frameBranchForm(dodoDialogs.protoTypeDialog):
                     labText += ": part of " + fb.Label
                 if self.labTail:
                     self.labTail.removeLabel()
-                self.labTail = label3D(pl=obj.Placement, text=translate("mouseActionB1","____TAIL"))
+                self.labTail = label3D(
+                    pl=obj.Placement, text=translate("mouseActionB1", "____TAIL")
+                )
             else:
                 if self.labTail:
                     self.labTail.removeLabel()
@@ -819,9 +878,9 @@ class frameBranchForm(dodoDialogs.protoTypeDialog):
             self.form.lab1.setText("<no item selected>")
 
     def fillSizes(self):
-        '''
-        Fill standart beam sizes into a framebeams widget
-        '''
+        """
+        Fill standard beam sizes into a framebeams widget
+        """
         self.SType = self.form.comboRatings.currentText()
         self.form.listSizes.clear()
         if self.SType == "<by sketch>":
@@ -921,7 +980,7 @@ class frameBranchForm(dodoDialogs.protoTypeDialog):
                     self.form.listSizes.currentItem().text()
                 )[0]
             else:
-                prop=self.getPropsfromlistSizes()
+                prop = self.getPropsfromlistSizes()
                 # prop = self.sectDictList[self.form.listSizes.currentRow()]
                 # profile = newProfile(prop)
                 profile = makeProfile(prop)
@@ -985,12 +1044,14 @@ class frameBranchForm(dodoDialogs.protoTypeDialog):
         self.changeAngle()
 
     def trim(self):
-        FreeCAD.ActiveDocument.openTransaction("Trim FB")
+        FreeCAD.activeDocument().openTransaction(translate("Transaction", "Trim Frame Branch"))
         for target in self.targets:
             for b in fCmd.beams():
                 if hasattr(b, "tailOffset") and hasattr(b, "headOffset"):
                     if int(FreeCAD.Version()[0]) >= 1:
-                        edge = b.AttachmentSupport[0][0].Shape.getElement(b.AttachmentSupport[0][1][0])
+                        edge = b.AttachmentSupport[0][0].Shape.getElement(
+                            b.AttachmentSupport[0][1][0]
+                        )
                     else:
                         edge = b.Support[0][0].Shape.getElement(b.Support[0][1][0])
                     ax = edge.tangentAt(0).normalize()  # fCmd.beamAx(b).normalize()
@@ -1058,9 +1119,7 @@ class FrameLine(object):
             "FrameLine",
             QT_TRANSLATE_NOOP("App::PropertyString", "The group."),
         ).Group = obj.Label + "_pieces"
-        group = FreeCAD.activeDocument().addObject(
-            "App::DocumentObjectGroup", obj.Group
-        )
+        group = FreeCAD.activeDocument().addObject("App::DocumentObjectGroup", obj.Group)
         group.addObject(obj)
         FreeCAD.Console.PrintWarning("Created group " + obj.Group + "\n")
         obj.addProperty(
@@ -1081,9 +1140,7 @@ class FrameLine(object):
             fp.InList[0].Label = fp.Label + "_pieces"
             fp.Group = fp.Label + "_pieces"
         if prop == "Base" and fp.Base:
-            FreeCAD.Console.PrintWarning(
-                fp.Label + " Base has changed to " + fp.Base.Label + "\n"
-            )
+            FreeCAD.Console.PrintWarning(fp.Label + " Base has changed to " + fp.Base.Label + "\n")
         if prop == "Profile" and fp.Profile:
             fp.Profile.ViewObject.Visibility = False
             FreeCAD.Console.PrintWarning(
@@ -1108,7 +1165,7 @@ class FrameLine(object):
                 return
         group = FreeCAD.activeDocument().getObjectsByLabel(fp.Group)[0]
         if fp.Profile:
-            FreeCAD.activeDocument().openTransaction("Update frameLine")
+            FreeCAD.activeDocument().openTransaction(translate("Transaction", "Update Frame Line"))
             for e in edges:
                 if copyProfile:
                     p = FreeCAD.activeDocument().copyObject(fp.Profile, True)
@@ -1166,17 +1223,13 @@ class FrameBranch(object):
                     edge = obj.Base.Shape.Edges[i]
                     beam = FreeCAD.ActiveDocument.getObject(obj.Beams[i])
                     beam.Height = (
-                        float(obj.Base.Shape.Edges[i].Length)
-                        + beam.tailOffset
-                        + beam.headOffset
+                        float(obj.Base.Shape.Edges[i].Length) + beam.tailOffset + beam.headOffset
                     )
                     offset = FreeCAD.Vector(0, 0, beam.tailOffset).negative()
                     spin = FreeCAD.Rotation()
                     beam.AttachmentOffset = FreeCAD.Placement(offset, spin)
                     angle = degrees(fCmd.beamAx(beam, X).getAngle(n))
-                    beam.AttachmentOffset.Rotation = FreeCAD.Rotation(
-                        Z, angle + beam.spin
-                    )
+                    beam.AttachmentOffset.Rotation = FreeCAD.Rotation(Z, angle + beam.spin)
 
     def redraw(self, obj):
         # clear all
@@ -1233,7 +1286,7 @@ class ViewProviderFrameBranch:
         vobj.Proxy = self
 
     def getIcon(self):
-        return join(dirname(abspath(__file__)), "iconz", "framebranch.svg")
+        return get_icon_path("Quetzal_FrameBranchManager")
 
     def attach(self, vobj):
         self.ViewObject = vobj
@@ -1258,9 +1311,7 @@ class ViewProviderFrameBranch:
         return None
 
     def claimChildren(self):
-        children = [
-            FreeCAD.ActiveDocument.getObject(name) for name in self.Object.Beams
-        ]
+        children = [FreeCAD.ActiveDocument.getObject(name) for name in self.Object.Beams]
         return children
 
     def onDelete(self, feature, subelements):  # subelements is a tuple of strings
@@ -1273,26 +1324,27 @@ import Draft
 from FreeCAD import Vector
 
 
-def doProfile(typeS="RH", label="Square", dims=[50, 100, 5]):  # rearrange args in a better mnemonic way
+def doProfile(
+    typeS="RH", label="Square", dims=[50, 100, 5]
+):  # rearrange args in a better mnemonic way
     "doProfile(typeS, label, dims)"
     if typeS in ["RH", "R", "H", "U", "L", "T", "Z", "omega", "circle"]:
         profile = [0, "SECTION", label, typeS] + dims  # for py2.6 versions
-        obj = FreeCAD.ActiveDocument.addObject("Part::Part2DObjectPython", profile[2])
-        obj.Label = translate("Arch", profile[2])
+        obj = FreeCAD.ActiveDocument.addObject("Part::Part2DObjectPython", profile[2])  # FIXME:
         if profile[3] == "RH":
             _ProfileRH(obj, profile)
         elif profile[3] == "R":
             _ProfileR(obj, profile)
         elif profile[3] == "U":
             # _ProfileU(obj, profile)
-            _ProfileChannel(obj,profile)
+            _ProfileChannel(obj, profile)
         elif profile[3] == "T":
             _ProfileT(obj, profile)
         elif profile[3] == "H":
             _ProfileH(obj, profile)
         elif profile[3] == "L":
             # _ProfileL(obj, profile)
-            _ProfileAngle(obj,profile)
+            _ProfileAngle(obj, profile)
         elif profile[3] == "Z":
             _ProfileZ(obj, profile)
         elif profile[3] == "omega":
@@ -1347,67 +1399,67 @@ def pointsL(H, W, t1, t2):
 
 
 def pointsLWithRound(A, B, t, r1, r2):
-    x1=r2*(1-1/sqrt(2))
-    x2=r2-x1
-    y1=r1*(1-1/sqrt(2))
-    y2=r1-y1
-    y3=A-(r2+r1+t)
-    x=t-r2
-    p1=Vector(0,0,0)
-    p2=Vector(0,0,A)
-    p3=Vector(x,0,A)
-    p4=Vector(t-x1,0,A-x1)
-    p5=Vector(t,0,A-r2)
-    p6=Vector(t,0,A-(r2+y3))
-    p7=Vector(t+y1,0,t+y1)
-    p8=Vector(t+r1,0,t)
-    p9=Vector(B-r2,0,t)
-    p10=Vector(B-x1,0,t-x1)
-    p11=Vector(B,0,t-r2)
-    p12=Vector(B,0,0)
+    x1 = r2 * (1 - 1 / sqrt(2))
+    x2 = r2 - x1
+    y1 = r1 * (1 - 1 / sqrt(2))
+    y2 = r1 - y1
+    y3 = A - (r2 + r1 + t)
+    x = t - r2
+    p1 = Vector(0, 0, 0)
+    p2 = Vector(0, 0, A)
+    p3 = Vector(x, 0, A)
+    p4 = Vector(t - x1, 0, A - x1)
+    p5 = Vector(t, 0, A - r2)
+    p6 = Vector(t, 0, A - (r2 + y3))
+    p7 = Vector(t + y1, 0, t + y1)
+    p8 = Vector(t + r1, 0, t)
+    p9 = Vector(B - r2, 0, t)
+    p10 = Vector(B - x1, 0, t - x1)
+    p11 = Vector(B, 0, t - r2)
+    p12 = Vector(B, 0, 0)
     return [p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p1]
 
 
 def pointsChannelWithRound(H, B, t1, t2, r1, r2, Cy, s0):
-    s5=radians(s0)
-    s45=radians(45)
-    y1=r2*cos(s45)
-    y2=r2*cos(s5)
-    y3=r1*cos(s5)
-    x1=r2*(1-cos(s45))
-    x2=r2*sin(s5)
-    x30=r2-x2
-    x3=r1*sin(s5)
-    x4=r1*cos(s45)
-    x5=r1-x4
-    x40=r1+x3
-    x6=B-(x30+x40+t1)
-    y6=x6*tan(s5)
-    x7=Cy-(t1+x40)
-    x8=x6-x7
-    y7=x8*tan(s5)
-    y8=t2-y7
-    y4=y8-y2
-    y10=y4+y2+y6
-    y11=y4+y2+y6+x5
-    y12=y4+y2+y6+x5+x4
-    p1=Vector(0,0,0)
-    p2=Vector(0,0,H)
-    p3=Vector(B,0,H)
-    p4=Vector(B,0,H-y4)
-    p5=Vector(B-x1,0,H-(y4+y1))
-    p6=Vector(B-x30,0,H-(y4+y2))
-    p7=Vector(t1+x40,0,H-y10)
-    p8=Vector(t1+x5,0,H-y11)
-    p9=Vector(t1,0,H-y12)
-    p10=Vector(t1,0,y12)
-    p11=Vector(t1+x5,0,y11)
-    p12=Vector(t1+x40,0,y10)
-    p13=Vector(B-x30,0,y4+y2)
-    p14=Vector(B-x1,0,y4+y1)
-    p15=Vector(B,0,y4)
-    p16=Vector(B,0,0)
-    return [p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p1 ]
+    s5 = radians(s0)
+    s45 = radians(45)
+    y1 = r2 * cos(s45)
+    y2 = r2 * cos(s5)
+    y3 = r1 * cos(s5)
+    x1 = r2 * (1 - cos(s45))
+    x2 = r2 * sin(s5)
+    x30 = r2 - x2
+    x3 = r1 * sin(s5)
+    x4 = r1 * cos(s45)
+    x5 = r1 - x4
+    x40 = r1 + x3
+    x6 = B - (x30 + x40 + t1)
+    y6 = x6 * tan(s5)
+    x7 = Cy - (t1 + x40)
+    x8 = x6 - x7
+    y7 = x8 * tan(s5)
+    y8 = t2 - y7
+    y4 = y8 - y2
+    y10 = y4 + y2 + y6
+    y11 = y4 + y2 + y6 + x5
+    y12 = y4 + y2 + y6 + x5 + x4
+    p1 = Vector(0, 0, 0)
+    p2 = Vector(0, 0, H)
+    p3 = Vector(B, 0, H)
+    p4 = Vector(B, 0, H - y4)
+    p5 = Vector(B - x1, 0, H - (y4 + y1))
+    p6 = Vector(B - x30, 0, H - (y4 + y2))
+    p7 = Vector(t1 + x40, 0, H - y10)
+    p8 = Vector(t1 + x5, 0, H - y11)
+    p9 = Vector(t1, 0, H - y12)
+    p10 = Vector(t1, 0, y12)
+    p11 = Vector(t1 + x5, 0, y11)
+    p12 = Vector(t1 + x40, 0, y10)
+    p13 = Vector(B - x30, 0, y4 + y2)
+    p14 = Vector(B - x1, 0, y4 + y1)
+    p15 = Vector(B, 0, y4)
+    p16 = Vector(B, 0, 0)
+    return [p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p1]
 
 
 def pointsOmega(H, W, D, t1, t2, t3):
@@ -1477,6 +1529,7 @@ class _ProfileRH(_Profile):
     """A parametric Rectangular hollow beam profile. Profile data: [width, height, thickness]"""
 
     def __init__(self, obj, profile):
+        obj.Label = translate("Objects", "Rectangular hollow", "Profile name in the Tree View")
         obj.addProperty(
             "App::PropertyString",
             "FType",
@@ -1528,6 +1581,7 @@ class _ProfileR(_Profile):
     """A parametric Rectangular solid beam profile. Profile data: [width, height]"""
 
     def __init__(self, obj, profile):
+        obj.Label = translate("Objects", "Rectangular solid", "Profile name in the Tree View")
         obj.addProperty(
             "App::PropertyString",
             "FType",
@@ -1565,6 +1619,7 @@ class _ProfileCircle(_Profile):
       t1: thickness (optional; "0" for solid section)"""
 
     def __init__(self, obj, profile):
+        obj.Label = translate("Objects", "Circle-profile", "Profile name in the Tree View")
         obj.addProperty(
             "App::PropertyString",
             "FType",
@@ -1638,17 +1693,19 @@ class _ProfileL(_Profile):
 
 class _ProfileAngle(_Profile):
     def __init__(self, obj, profile):
-        self.label=obj.Name
-        self.size=FreeCAD.ActiveDocument.getObject(self.label).size
-        self.standard=FreeCAD.ActiveDocument.getObject(self.label).standard
-        self.Solid=FreeCAD.ActiveDocument.getObject(self.label).Solid
-        self.g0=FreeCAD.ActiveDocument.getObject(self.label).g0*1000
-        if self.standard=='SS_Equal':
-            self.sa=ShpstData.angle_ss_equal[self.size]
-        elif self.standard=='SS_Unequal':
-            self.sa=ShpstData.angle_ss_unequal[self.size]
-        elif self.standard=='SUS_Equal':
-            self.sa=ShpstData.angle_sus_equal[self.size]    
+        self.label = obj.Name
+        # FIXME: <class 'AttributeError'>: 'FeaturePython' object has no attribute 'size'
+        self.size = FreeCAD.ActiveDocument.getObject(self.label).size
+        self.standard = FreeCAD.ActiveDocument.getObject(self.label).standard
+        self.Solid = FreeCAD.ActiveDocument.getObject(self.label).Solid
+        self.g0 = FreeCAD.ActiveDocument.getObject(self.label).g0 * 1000
+        if self.standard == "SS_Equal":
+            self.sa = ShpstData.angle_ss_equal[self.size]
+        elif self.standard == "SS_Unequal":
+            self.sa = ShpstData.angle_ss_unequal[self.size]
+        elif self.standard == "SUS_Equal":
+            self.sa = ShpstData.angle_sus_equal[self.size]
+        obj.Label = translate("Objects", "L-profile", "Profile name in the Tree View")
         obj.addProperty(
             "App::PropertyString",
             "FType",
@@ -1677,47 +1734,49 @@ class _ProfileAngle(_Profile):
             "App::PropertyLength",
             "r1",
             "Draft",
-            QT_TRANSLATE_NOOP("App::Property", "Radius of cornes r1"),
+            QT_TRANSLATE_NOOP("App::Property", "Radius of corner r1"),
         ).r1 = float(self.sa[3])
         obj.addProperty(
             "App::PropertyLength",
             "r2",
             "Draft",
-            QT_TRANSLATE_NOOP("App::Property", "Radius of cornes r2"),
+            QT_TRANSLATE_NOOP("App::Property", "Radius of corner r2"),
         ).r2 = float(self.sa[4])
         _Profile.__init__(self, obj, profile)
         return
 
     def execute(self, obj):
-        A=float(self.sa[0])
-        B=float(self.sa[1])
-        t=float(self.sa[2])
-        r1=float(self.sa[3])
-        r2=float(self.sa[4])
-        cx=float(self.sa[7])*10
-        cy=float(self.sa[8])*10
-        L=FreeCAD.ActiveDocument.getObject(self.label).L
-        L=float(L)
-        obj.A=A
-        obj.B=B
-        obj.Shape=drawAndCenter(pointsLWithRound(A, B, t, r1, r2))
+        A = float(self.sa[0])
+        B = float(self.sa[1])
+        t = float(self.sa[2])
+        r1 = float(self.sa[3])
+        r2 = float(self.sa[4])
+        cx = float(self.sa[7]) * 10
+        cy = float(self.sa[8]) * 10
+        L = FreeCAD.ActiveDocument.getObject(self.label).L
+        L = float(L)
+        obj.A = A
+        obj.B = B
+        obj.Shape = drawAndCenter(pointsLWithRound(A, B, t, r1, r2))
 
 
 class _ProfileChannel(_Profile):
     def __init__(self, obj, profile):
-        self.label=obj.Name
-        self.size=FreeCAD.ActiveDocument.getObject(self.label).size
-        self.standard=FreeCAD.ActiveDocument.getObject(self.label).standard
-        Solid=FreeCAD.ActiveDocument.getObject(self.label).Solid
-        g0=FreeCAD.ActiveDocument.getObject(self.label).g0*1000
-        if self.standard=='SS':
-            self.sa=ShpstData.channel_ss[self.size]
-            self.s0=5
-            self.t2=float(self.sa[3])
-        elif self.standard=='SUS':
-            self.self.sa=ShpstData.channel_sus[self.size]
-            self.s0=0
-            self.t2=float(self.sa[2])
+        self.label = obj.Name
+        # FIXME: <class 'AttributeError'>: 'FeaturePython' object has no attribute 'size'
+        self.size = FreeCAD.ActiveDocument.getObject(self.label).size
+        self.standard = FreeCAD.ActiveDocument.getObject(self.label).standard
+        Solid = FreeCAD.ActiveDocument.getObject(self.label).Solid
+        g0 = FreeCAD.ActiveDocument.getObject(self.label).g0 * 1000
+        if self.standard == "SS":
+            self.sa = ShpstData.channel_ss[self.size]
+            self.s0 = 5
+            self.t2 = float(self.sa[3])
+        elif self.standard == "SUS":
+            self.self.sa = ShpstData.channel_sus[self.size]
+            self.s0 = 0
+            self.t2 = float(self.sa[2])
+        obj.Label = translate("Objects", "U-profile", "Profile name in the Tree View")
         obj.addProperty(
             "App::PropertyString",
             "FType",
@@ -1746,37 +1805,38 @@ class _ProfileChannel(_Profile):
             "App::PropertyLength",
             "r1",
             "Draft",
-            QT_TRANSLATE_NOOP("App::Property", "Radius of cornes r1"),
+            QT_TRANSLATE_NOOP("App::Property", "Radius of corner r1"),
         ).r1 = float(self.sa[3])
         obj.addProperty(
             "App::PropertyLength",
             "r2",
             "Draft",
-            QT_TRANSLATE_NOOP("App::Property", "Radius of cornes r2"),
+            QT_TRANSLATE_NOOP("App::Property", "Radius of corner r2"),
         ).r2 = float(self.sa[4])
         _Profile.__init__(self, obj, profile)
         return
 
-    def execute(self,obj):
-        H=float(self.sa[0])
-        B=float(self.sa[1])
-        t1=float(self.sa[2])
-        #t2=float(self.sa[3])
-        r1=float(self.sa[4])
-        r2=float(self.sa[5])
-        Cy=float(self.sa[8])*10
-        L=FreeCAD.ActiveDocument.getObject(self.label).L
-        L=float(L)
-        Solid=FreeCAD.ActiveDocument.getObject(self.label).Solid
-        obj.H=H
-        obj.B=B
-        obj.Shape=drawAndCenter(pointsChannelWithRound(H, B, t1, self.t2, r1, r2, Cy ,self.s0))
+    def execute(self, obj):
+        H = float(self.sa[0])
+        B = float(self.sa[1])
+        t1 = float(self.sa[2])
+        # t2=float(self.sa[3])
+        r1 = float(self.sa[4])
+        r2 = float(self.sa[5])
+        Cy = float(self.sa[8]) * 10
+        L = FreeCAD.ActiveDocument.getObject(self.label).L
+        L = float(L)
+        Solid = FreeCAD.ActiveDocument.getObject(self.label).Solid
+        obj.H = H
+        obj.B = B
+        obj.Shape = drawAndCenter(pointsChannelWithRound(H, B, t1, self.t2, r1, r2, Cy, self.s0))
 
 
 class _ProfileT(_Profile):
     """A parametric T beam profile. Profile data: [width, height, web thickness]"""
 
     def __init__(self, obj, profile):
+        obj.Label = translate("Objects", "T-profile", "Profile name in the Tree View")
         obj.addProperty(
             "App::PropertyString",
             "FType",
@@ -1818,6 +1878,7 @@ class _ProfileZ(_Profile):
     """A parametric Z beam profile. Profile data: [width, height, web thickness, flange thickness]"""
 
     def __init__(self, obj, profile):
+        obj.Label = translate("Objects", "Z-profile", "Profile name in the Tree View")
         obj.addProperty(
             "App::PropertyString",
             "FType",
@@ -1859,6 +1920,7 @@ class _ProfileOmega(_Profile):
     """A parametric omega beam profile. Profile data: [W, H, D, t1,t2,t3]"""
 
     def __init__(self, obj, profile):
+        obj.Label = translate("Objects", "Omega-profile", "Profile name in the Tree View")
         obj.addProperty(
             "App::PropertyString",
             "FType",
@@ -1919,6 +1981,7 @@ class _ProfileH(_Profile):
     """A parametric omega beam profile. Profile data: [W, H, D, t1,t2,t3]"""
 
     def __init__(self, obj, profile):
+        obj.Label = translate("Objects", "H-profile", "Profile name in the Tree View")
         obj.addProperty(
             "App::PropertyString",
             "FType",

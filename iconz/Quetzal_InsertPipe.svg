@@ -1,0 +1,261 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="64"
+   height="64"
+   viewBox="0 0 64 64"
+   version="1.1"
+   id="svg1"
+   inkscape:version="1.4 (e7c3feb100, 2024-10-09)"
+   sodipodi:docname="pipe.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:dc="http://purl.org/dc/elements/1.1/">
+  <title
+     id="title1">Quetzal - Insert Pipe</title>
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#323232"
+     bordercolor="#ffffff"
+     borderopacity="1"
+     inkscape:showpageshadow="0"
+     inkscape:pageopacity="0"
+     inkscape:pagecheckerboard="1"
+     inkscape:deskcolor="#191919"
+     inkscape:document-units="px"
+     showgrid="true"
+     inkscape:zoom="11.313708"
+     inkscape:cx="37.25569"
+     inkscape:cy="32.217554"
+     inkscape:window-width="1894"
+     inkscape:window-height="999"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg1"
+     showguides="true"
+     inkscape:lockguides="false"
+     guidecolor="#ffff00"
+     guideopacity="0.6"
+     guidehicolor="#ff00ff"
+     guidehiopacity="0.50196078">
+    <inkscape:grid
+       id="grid1"
+       units="px"
+       originx="0"
+       originy="0"
+       spacingx="2"
+       spacingy="2"
+       empcolor="#0099e5"
+       empopacity="0.30196078"
+       color="#0099e5"
+       opacity="0.14901961"
+       empspacing="4"
+       enabled="true"
+       visible="true" />
+    <sodipodi:guide
+       position="-2,62"
+       orientation="0,1"
+       id="guide5"
+       inkscape:locked="false"
+       inkscape:label="top margin"
+       inkscape:color="rgb(255,255,0)" />
+    <sodipodi:guide
+       position="64,2"
+       orientation="0,1"
+       id="guide6"
+       inkscape:locked="false"
+       inkscape:label="bottom margin"
+       inkscape:color="rgb(255,255,0)" />
+    <sodipodi:guide
+       position="2,-2"
+       orientation="-1,0"
+       id="guide7"
+       inkscape:locked="false"
+       inkscape:label="right margin"
+       inkscape:color="rgb(255,255,0)" />
+    <sodipodi:guide
+       position="62,64"
+       orientation="-1,0"
+       id="guide8"
+       inkscape:locked="false"
+       inkscape:label="left margin"
+       inkscape:color="rgb(255,255,0)" />
+    <sodipodi:guide
+       position="64,64"
+       orientation="0.70710678,-0.70710678"
+       id="guide1"
+       inkscape:locked="false"
+       inkscape:label=""
+       inkscape:color="rgb(255,255,0)" />
+    <sodipodi:guide
+       position="0,64"
+       orientation="0.70710678,0.70710678"
+       id="guide2"
+       inkscape:label=""
+       inkscape:locked="false"
+       inkscape:color="rgb(255,255,0)" />
+  </sodipodi:namedview>
+  <defs
+     id="defs1" />
+  <metadata
+     id="metadata1">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <cc:license
+           rdf:resource="http://creativecommons.org/licenses/by-nc-sa/4.0/" />
+        <dc:creator>
+          <cc:Agent>
+            <dc:title>hasecilu</dc:title>
+          </cc:Agent>
+        </dc:creator>
+        <dc:subject>
+          <rdf:Bag>
+            <rdf:li>FreeCAD</rdf:li>
+            <rdf:li>command</rdf:li>
+          </rdf:Bag>
+        </dc:subject>
+        <dc:description>Template file to create icons for FreeCAD commands.</dc:description>
+        <dc:date>2025</dc:date>
+        <dc:rights>
+          <cc:Agent>
+            <dc:title>FreeCAD LGPL2+</dc:title>
+          </cc:Agent>
+        </dc:rights>
+        <dc:identifier>FreeCAD/src/</dc:identifier>
+        <dc:publisher>
+          <cc:Agent>
+            <dc:title>FreeCAD</dc:title>
+          </cc:Agent>
+        </dc:publisher>
+        <dc:relation>https://wiki.freecad.org/Artwork</dc:relation>
+        <dc:title>Quetzal - Insert Pipe</dc:title>
+      </cc:Work>
+      <cc:License
+         rdf:about="http://creativecommons.org/licenses/by-nc-sa/4.0/">
+        <cc:permits
+           rdf:resource="http://creativecommons.org/ns#Reproduction" />
+        <cc:permits
+           rdf:resource="http://creativecommons.org/ns#Distribution" />
+        <cc:requires
+           rdf:resource="http://creativecommons.org/ns#Notice" />
+        <cc:requires
+           rdf:resource="http://creativecommons.org/ns#Attribution" />
+        <cc:prohibits
+           rdf:resource="http://creativecommons.org/ns#CommercialUse" />
+        <cc:permits
+           rdf:resource="http://creativecommons.org/ns#DerivativeWorks" />
+        <cc:requires
+           rdf:resource="http://creativecommons.org/ns#ShareAlike" />
+      </cc:License>
+    </rdf:RDF>
+  </metadata>
+  <path
+     id="path460"
+     style="fill:#729fcf;fill-opacity:1;stroke:#204a87;stroke-width:30.726;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+     d="M 424.47926,279.23775 A 287.89558,285.04248 0 0 0 136.54321,564.2451 287.89558,285.04248 0 0 0 424.47926,849.25244 287.89558,285.04248 0 0 0 712.33939,564.2451 287.89558,285.04248 0 0 0 424.47926,279.23775 Z m 0,142.50368 A 143.9478,142.52124 0 0 1 568.40932,564.2451 143.9478,142.52124 0 0 1 424.47926,706.74877 143.9478,142.52124 0 0 1 280.47327,564.2451 143.9478,142.52124 0 0 1 424.47926,421.74143 Z"
+     inkscape:label="tube"
+     transform="matrix(0.05211033,0,0,0.05211033,-1.3969404,-7.6209124)" />
+  <path
+     id="rect9016"
+     style="fill:#ef2929;fill-opacity:1;fill-rule:evenodd;stroke:#a40000;stroke-width:16.1796;stroke-linecap:square;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+     d="M 853.50598,706.10731 460.43569,1146.2389 814.01871,1299.2076 1199.1215,870.4489 Z m 10.49162,80.74821 241.5016,104.07799 -307.71441,329.95509 -241.50164,-104.0779 z"
+     sodipodi:nodetypes="cccccccccc"
+     inkscape:label="red rectangle"
+     transform="matrix(0.05211033,0,0,0.05211033,-1.3969404,-7.6209124)" />
+  <path
+     id="rect979-7"
+     style="fill:#fce94f;fill-opacity:1;fill-rule:evenodd;stroke:#c4a000;stroke-width:24.1651;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+     d="m 910.86479,860.29011 -61.38311,56.96584 -187.68026,-112.73767 -66.89404,61.86881 187.80751,112.81399 -61.41536,56.99572 89.25648,-22.3578 83.6285,-19.10921 c 6.93903,-54.63766 10.78118,-82.38448 16.68028,-134.43968 z"
+     sodipodi:nodetypes="ccccccccc"
+     inkscape:label="arrow"
+     transform="matrix(0.05211033,0,0,0.05211033,-1.3969404,-7.6209124)" />
+  <g
+     id="g436"
+     transform="matrix(0.03447685,0,0,0.0331799,1.6861754,3.9249113)"
+     style="fill:#babdb6;stroke:#2e3436"
+     inkscape:label="horixontal">
+    <rect
+       style="fill:#babdb6;fill-opacity:1;stroke:#2e3436;stroke-width:18.0489;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+       id="rect2516"
+       width="258.01907"
+       height="54.768028"
+       x="24.492556"
+       y="530.48853" />
+    <rect
+       style="fill:#babdb6;fill-opacity:1;stroke:#2e3436;stroke-width:20.8939;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+       id="rect2516-3"
+       width="70.789925"
+       height="57.622242"
+       x="308.60596"
+       y="528.94507" />
+    <rect
+       style="fill:#babdb6;fill-opacity:1;stroke:#2e3436;stroke-width:20.4323;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+       id="rect2516-6"
+       width="330.6622"
+       height="54.768028"
+       x="424.5777"
+       y="529.89618" />
+    <rect
+       style="fill:#babdb6;fill-opacity:1;stroke:#2e3436;stroke-width:24.2176;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+       id="rect2516-3-7"
+       width="100.92338"
+       height="54.298645"
+       x="796.99884"
+       y="528.68286" />
+    <rect
+       style="fill:#babdb6;fill-opacity:1;stroke:#2e3436;stroke-width:16.82;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+       id="rect2516-5"
+       width="205.70102"
+       height="59.660999"
+       x="937.92993"
+       y="523.72186" />
+  </g>
+  <g
+     id="g429"
+     transform="matrix(7.2588126e-5,0.03381956,-0.03582197,6.8530295e-5,47.010351,-4.4172197)"
+     style="fill:#babdb6;stroke:#2e3436"
+     inkscape:label="vertical">
+    <rect
+       style="fill:#babdb6;fill-opacity:1;stroke:#2e3436;stroke-width:18.0489;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+       id="rect1"
+       width="258.01907"
+       height="54.768028"
+       x="239.07593"
+       y="715.59937" />
+    <rect
+       style="fill:#babdb6;fill-opacity:1;stroke:#2e3436;stroke-width:20.8939;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+       id="rect2"
+       width="70.789925"
+       height="57.622242"
+       x="523.18933"
+       y="714.05591" />
+    <rect
+       style="fill:#babdb6;fill-opacity:1;stroke:#2e3436;stroke-width:20.4323;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+       id="rect3"
+       width="330.6622"
+       height="54.768028"
+       x="639.16107"
+       y="715.00702" />
+    <rect
+       style="fill:#babdb6;fill-opacity:1;stroke:#2e3436;stroke-width:24.2176;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+       id="rect4"
+       width="100.92338"
+       height="54.298645"
+       x="1011.5822"
+       y="713.7937" />
+    <rect
+       style="fill:#babdb6;fill-opacity:1;stroke:#2e3436;stroke-width:16.82;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+       id="rect5"
+       width="205.70102"
+       height="59.660999"
+       x="1152.5133"
+       y="708.8327" />
+  </g>
+</svg>

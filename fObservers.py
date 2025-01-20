@@ -219,9 +219,7 @@ class adjustAngleObserver(frameObserverPrototype):
         if len(self.edges) == len(self.beams) == 2:
             if fCmd.isOrtho(*self.edges):
                 self.beams.reverse()
-                FreeCAD.ActiveDocument.openTransaction(
-                    translate("fObservers", "Adjust angle", "Transaction")
-                )
+                FreeCAD.activeDocument().openTransaction(translate("Transaction", "Adjust angle"))
                 for i in range(len(self.edges)):
                     fCmd.extendTheBeam(self.beams[i], self.edges[i])
                 FreeCAD.ActiveDocument.commitTransaction()

@@ -30,16 +30,14 @@ class frameIt:
     """
 
     def Activated(self):
-        import FreeCAD, FreeCADGui, fObservers, fCmd
+        import fObservers
 
         s = fObservers.frameItObserver()
         FreeCADGui.Selection.addObserver(s)
 
     def GetResources(self):
         return {
-            "Pixmap": os.path.join(
-                os.path.dirname(os.path.abspath(__file__)), "iconz", "beamFit.svg"
-            ),
+            "Pixmap": "Quetzal_FrameIt",
             "MenuText": QT_TRANSLATE_NOOP("Quetzal_FrameIt", "Place one-beam over one-edge"),
             "ToolTip": QT_TRANSLATE_NOOP(
                 "Quetzal_FrameIt", "Place one beam after the other over the edges"
@@ -54,10 +52,9 @@ class spinSect:
     """
 
     def Activated(self):
-        import FreeCAD, FreeCADGui, fCmd, pCmd
-        from math import pi
+        import pCmd
 
-        FreeCAD.activeDocument().openTransaction("Spin")
+        FreeCAD.activeDocument().openTransaction(translate("Transaction", "Spin"))
         for beam in FreeCADGui.Selection.getSelection():
             pCmd.rotateTheTubeAx(beam)
         FreeCAD.activeDocument().recompute()
@@ -65,12 +62,10 @@ class spinSect:
 
     def GetResources(self):
         return {
-            "Pixmap": os.path.join(
-                os.path.dirname(os.path.abspath(__file__)), "iconz", "beamRot.svg"
-            ),
-            "MenuText": QT_TRANSLATE_NOOP("Quetzal_SpinSect", "Spin beams by 45 deg."),
+            "Pixmap": "Quetzal_SpinSection",
+            "MenuText": QT_TRANSLATE_NOOP("Quetzal_SpinSection", "Spin beams by 45 deg."),
             "ToolTip": QT_TRANSLATE_NOOP(
-                "Quetzal_SpinSect", "Rotates the section of the beam by 45 degrees"
+                "Quetzal_SpinSection", "Rotates the section of the beam by 45 degrees"
             ),
         }
 
@@ -84,9 +79,9 @@ class reverseBeam:
     """
 
     def Activated(self):
-        import FreeCAD, FreeCADGui, pCmd
+        import pCmd
 
-        FreeCAD.activeDocument().openTransaction("Reverse")
+        FreeCAD.activeDocument().openTransaction(translate("Transaction", "Reverse"))
         for objEx in FreeCADGui.Selection.getSelectionEx():
             pCmd.reverseTheTube(objEx)
         FreeCAD.activeDocument().recompute()
@@ -94,9 +89,7 @@ class reverseBeam:
 
     def GetResources(self):
         return {
-            "Pixmap": os.path.join(
-                os.path.dirname(os.path.abspath(__file__)), "iconz", "reverse.svg"
-            ),
+            "Pixmap": "Quetzal_ReverseBeam",
             "MenuText": QT_TRANSLATE_NOOP("Quetzal_ReverseBeam", "Reverse orientation"),
             "ToolTip": QT_TRANSLATE_NOOP(
                 "Quetzal_ReverseBeam", "Reverse the orientation of selected objects"
@@ -136,10 +129,8 @@ class alignFlange:
 
     def GetResources(self):
         return {
-            "Pixmap": os.path.join(
-                os.path.dirname(os.path.abspath(__file__)), "iconz", "flangeAlign.svg"
-            ),
-            "MenuText": QT_TRANSLATE_NOOP("Quetzal_AlignFlange", "alignFlange"),
+            "Pixmap": "Quetzal_AlignFlange",
+            "MenuText": QT_TRANSLATE_NOOP("Quetzal_AlignFlange", "Align flange"),
             "ToolTip": QT_TRANSLATE_NOOP(
                 "Quetzal_AlignFlange",
                 "Rotates the section of the beam to make the faces parallel to another face",
@@ -174,10 +165,8 @@ class shiftBeam:
 
     def GetResources(self):
         return {
-            "Pixmap": os.path.join(
-                os.path.dirname(os.path.abspath(__file__)), "iconz", "beamShift.svg"
-            ),
-            "MenuText": QT_TRANSLATE_NOOP("Quetzal_ShiftBeam", "shiftTheBeam"),
+            "Pixmap": "Quetzal_ShiftBeam",
+            "MenuText": QT_TRANSLATE_NOOP("Quetzal_ShiftBeam", "Shift the beam"),
             "ToolTip": QT_TRANSLATE_NOOP(
                 "Quetzal_ShiftBeam", "Translate objects by vectors defined on existing geometry"
             ),
@@ -195,13 +184,14 @@ class levelBeam:
     """
 
     def Activated(self):
-        import FreeCAD, FreeCADGui, fCmd, fObservers
+        import fCmd
+        import fObservers
 
-        selex = Gui.Selection.getSelectionEx()
+        selex = FreeCADGui.Selection.getSelectionEx()
         faces = fCmd.faces(selex)
         beams = [sx.Object for sx in selex]
         if len(faces) == len(beams) > 1:
-            FreeCAD.activeDocument().openTransaction("LevelTheBeams")
+            FreeCAD.activeDocument().openTransaction(translate("Transaction", "Level The Beams"))
             beams.pop(0)
             fBase = faces.pop(0)
             for i in range(len(beams)):
@@ -216,9 +206,7 @@ class levelBeam:
 
     def GetResources(self):
         return {
-            "Pixmap": os.path.join(
-                os.path.dirname(os.path.abspath(__file__)), "iconz", "beamLevel.svg"
-            ),
+            "Pixmap": "Quetzal_LevelBeam",
             "MenuText": QT_TRANSLATE_NOOP("Quetzal_LevelBeam", "Flush the surfaces"),
             "ToolTip": QT_TRANSLATE_NOOP(
                 "Quetzal_LevelBeam",
@@ -240,7 +228,8 @@ class alignEdge:
     """
 
     def Activated(self):
-        import FreeCAD, FreeCADGui, fCmd, fObservers
+        import fCmd
+        import fObservers
 
         edges = fCmd.edges()
         if len(edges) >= 2 and len(FreeCADGui.Selection.getSelection()) >= 2:
@@ -248,7 +237,7 @@ class alignEdge:
             beams = FreeCADGui.Selection.getSelection()[1:]
             if len(edges) == len(beams):
                 pairs = [(beams[i], edges[i]) for i in range(len(beams))]
-                FreeCAD.activeDocument().openTransaction("AlignEdge")
+                FreeCAD.activeDocument().openTransaction(translate("Transaction", "Align Edge"))
                 for p in pairs:
                     fCmd.joinTheBeamsEdges(p[0], e1, p[1])
                 FreeCAD.activeDocument().commitTransaction()
@@ -259,9 +248,7 @@ class alignEdge:
 
     def GetResources(self):
         return {
-            "Pixmap": os.path.join(
-                os.path.dirname(os.path.abspath(__file__)), "iconz", "edgeAlign.svg"
-            ),
+            "Pixmap": "Quetzal_AlignEdge",
             "MenuText": QT_TRANSLATE_NOOP("Quetzal_AlignEdge", "Mate the edges"),
             "ToolTip": QT_TRANSLATE_NOOP(
                 "Quetzal_AlignEdge", "Join two edges: select two or pre-select several"
@@ -286,10 +273,8 @@ class pivotBeam:
 
     def GetResources(self):
         return {
-            "Pixmap": os.path.join(
-                os.path.dirname(os.path.abspath(__file__)), "iconz", "around.svg"
-            ),
-            "MenuText": QT_TRANSLATE_NOOP("Quetzal_PivotBeam", "pivotTheBeam"),
+            "Pixmap": "Quetzal_PivotBeam",
+            "MenuText": QT_TRANSLATE_NOOP("Quetzal_PivotBeam", "Pivot the beam"),
             "ToolTip": QT_TRANSLATE_NOOP(
                 "Quetzal_PivotBeam", "Rotates the beam around an axis (edge or center-of-curvature)"
             ),
@@ -317,10 +302,8 @@ class stretchBeam:
 
     def GetResources(self):
         return {
-            "Pixmap": os.path.join(
-                os.path.dirname(os.path.abspath(__file__)), "iconz", "beamStretch.svg"
-            ),
-            "MenuText": QT_TRANSLATE_NOOP("Quetzal_StretchBeam", "stretchTheBeam"),
+            "Pixmap": "Quetzal_StretchBeam",
+            "MenuText": QT_TRANSLATE_NOOP("Quetzal_StretchBeam", "Stretch the beam"),
             "ToolTip": QT_TRANSLATE_NOOP(
                 "Quetzal_StretchBeam",
                 "Changes the length of the beam, either according a preselected edge or a direct input",
@@ -344,12 +327,10 @@ class extend:
 
     def GetResources(self):
         return {
-            "Pixmap": os.path.join(
-                os.path.dirname(os.path.abspath(__file__)), "iconz", "extend.svg"
-            ),
-            "MenuText": QT_TRANSLATE_NOOP("Quetzal_Extend", "extendTheBeam"),
+            "Pixmap": "Quetzal_ExtendBeam",
+            "MenuText": QT_TRANSLATE_NOOP("Quetzal_ExtendBeam", "Extend the beam"),
             "ToolTip": QT_TRANSLATE_NOOP(
-                "Quetzal_Extend",
+                "Quetzal_ExtendBeam",
                 "Extend the beam either to a face, a vertex or the c.o.m. of the selected object",
             ),
         }
@@ -361,7 +342,7 @@ class adjustFrameAngle:
     """
 
     def Activated(self):
-        import FreeCADGui, fObservers
+        import fObservers
 
         FreeCADGui.Selection.clearSelection()
         s = fObservers.adjustAngleObserver()
@@ -369,10 +350,8 @@ class adjustFrameAngle:
 
     def GetResources(self):
         return {
-            "Pixmap": os.path.join(
-                os.path.dirname(os.path.abspath(__file__)), "iconz", "adjustAngle.svg"
-            ),
-            "MenuText": QT_TRANSLATE_NOOP("Quetzal_AdjustFrameAngle", "adjustFrameAngle"),
+            "Pixmap": "Quetzal_AdjustFrameAngle",
+            "MenuText": QT_TRANSLATE_NOOP("Quetzal_AdjustFrameAngle", "Adjust frame angle"),
             "ToolTip": QT_TRANSLATE_NOOP(
                 "Quetzal_AdjustFrameAngle", "Adjust the angle of frame by two edges"
             ),
@@ -385,10 +364,13 @@ class rotJoin:
     """
 
     def Activated(self):
-        import FreeCAD, fCmd
+        import FreeCAD
+        import fCmd
 
         if len(fCmd.beams()) > 1:
-            FreeCAD.activeDocument().openTransaction("rotJoin")
+            FreeCAD.activeDocument().openTransaction(
+                translate("Transaction", "Rotate to Join on Edge")
+            )
             fCmd.rotjoinTheBeam()
             FreeCAD.activeDocument().recompute()
             FreeCAD.activeDocument().commitTransaction()
@@ -397,12 +379,10 @@ class rotJoin:
 
     def GetResources(self):
         return {
-            "Pixmap": os.path.join(
-                os.path.dirname(os.path.abspath(__file__)), "iconz", "rotjoin.svg"
-            ),
-            "MenuText": QT_TRANSLATE_NOOP("Quetzal_RotJoin", "rotJoinEdge"),
+            "Pixmap": "Quetzal_RotateJoin",
+            "MenuText": QT_TRANSLATE_NOOP("Quetzal_RotateJoin", "Rotate join to edge"),
             "ToolTip": QT_TRANSLATE_NOOP(
-                "Quetzal_RotJoin", "Rotates and align the beam according another edge"
+                "Quetzal_RotateJoin", "Rotates and align the beam according another edge"
             ),
         }
 
@@ -417,15 +397,15 @@ class insertPath:
     def Activated(self):
         import pCmd
 
-        FreeCAD.activeDocument().openTransaction("make Path")
+        FreeCAD.activeDocument().openTransaction(translate("Transaction", "Make Path"))
         pCmd.makeW()
         FreeCAD.activeDocument().recompute()
         FreeCAD.activeDocument().commitTransaction()
 
     def GetResources(self):
         return {
-            "Pixmap": os.path.join(os.path.dirname(os.path.abspath(__file__)), "iconz", "path.svg"),
-            "MenuText": QT_TRANSLATE_NOOP("Quetzal_InsertPath", "insert Path"),
+            "Pixmap": "Quetzal_InsertPath",
+            "MenuText": QT_TRANSLATE_NOOP("Quetzal_InsertPath", "Insert path"),
             "ToolTip": QT_TRANSLATE_NOOP(
                 "Quetzal_InsertPath", "Creates one path along selected edges"
             ),
@@ -488,9 +468,7 @@ class FrameBranchManager:
 
     def GetResources(self):
         return {
-            "Pixmap": os.path.join(
-                os.path.dirname(os.path.abspath(__file__)), "iconz", "framebranch.svg"
-            ),
+            "Pixmap": "Quetzal_FrameBranchManager",
             "MenuText": QT_TRANSLATE_NOOP("Quetzal_FrameBranchManager", "FrameBranch Manager"),
             "ToolTip": QT_TRANSLATE_NOOP("Quetzal_FrameBranchManager", "Open FrameBranch Manager"),
         }
@@ -509,7 +487,7 @@ class insertSection:
 
     def GetResources(self):
         return {
-            "Pixmap": os.path.join(os.path.dirname(os.path.abspath(__file__)), "iconz", "sect.svg"),
+            "Pixmap": "Quetzal_InsertSection",
             "MenuText": QT_TRANSLATE_NOOP("Quetzal_InsertSection", "Insert sections"),
             "ToolTip": QT_TRANSLATE_NOOP(
                 "Quetzal_InsertSection", "Creates customized beam profiles 2D"
@@ -521,7 +499,7 @@ class insertSection:
 # Adds the commands to the FreeCAD command manager
 # ---------------------------------------------------------------------------
 addCommand("Quetzal_FrameIt", frameIt())
-addCommand("Quetzal_SpinSect", spinSect())
+addCommand("Quetzal_SpinSection", spinSect())
 addCommand("Quetzal_ReverseBeam", reverseBeam())
 # addCommand('fillFrame',fillFrame())
 addCommand("Quetzal_AlignFlange", alignFlange())
@@ -530,9 +508,9 @@ addCommand("Quetzal_LevelBeam", levelBeam())
 addCommand("Quetzal_AlignEdge", alignEdge())
 addCommand("Quetzal_PivotBeam", pivotBeam())
 addCommand("Quetzal_StretchBeam", stretchBeam())
-addCommand("Quetzal_Extend", extend())
+addCommand("Quetzal_ExtendBeam", extend())
 addCommand("Quetzal_AdjustFrameAngle", adjustFrameAngle())
-addCommand("Quetzal_RotJoin", rotJoin())
+addCommand("Quetzal_RotateJoin", rotJoin())
 addCommand("Quetzal_InsertPath", insertPath())
 # addCommand('FrameLineManager',FrameLineManager())
 addCommand("Quetzal_InsertSection", insertSection())
