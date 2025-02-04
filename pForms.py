@@ -17,6 +17,7 @@ from PySide.QtGui import *
 import dodoDialogs
 import fCmd
 import pCmd
+from PySide.QtWidgets import QCheckBox
 
 pq = FreeCAD.Units.parseQuantity
 translate = FreeCAD.Qt.translate
@@ -406,16 +407,17 @@ class insertFlangeForm(dodoDialogs.protoPypeForm):
         self.btn1.clicked.connect(self.insert)
         self.btn2 = QPushButton(translate("insertFlangeForm", "Reverse"))
         self.secondCol.layout().addWidget(self.btn2)
-        self.btn2.clicked.connect(
-            self.reverse
-        )  # lambda: pCmd.rotateTheTubeAx(self.lastFlange,FreeCAD.Vector(1,0,0),180))
+        self.btn2.clicked.connect(self.reverse)  # lambda: pCmd.rotateTheTubeAx(self.lastFlange,FreeCAD.Vector(1,0,0),180))
         self.btn3 = QPushButton(translate("insertFlangeForm", "Apply"))
         self.secondCol.layout().addWidget(self.btn3)
+        self.btn4 = QCheckBox(translate("insertFlangeForm", "Remove pipe equivalent length"))
+        self.secondCol.layout().addWidget(self.btn4)
         self.btn3.clicked.connect(self.apply)
         self.btn1.setDefault(True)
         self.btn1.setFocus()
         self.show()
         self.lastFlange = None
+        self.offsetoption=False
 
     def reverse(self):
         selFlanges = [
@@ -430,6 +432,7 @@ class insertFlangeForm(dodoDialogs.protoPypeForm):
             pCmd.rotateTheTubeAx(self.lastFlange, FreeCAD.Vector(1, 0, 0), 180)
 
     def insert(self):
+        self.offsetoption=self.btn4.isChecked()
         tubes = [t for t in fCmd.beams() if hasattr(t, "PSize")]
         if len(tubes) > 0 and tubes[0].PSize in [prop["PSize"] for prop in self.pipeDictList]:
             for prop in self.pipeDictList:
@@ -480,8 +483,8 @@ class insertFlangeForm(dodoDialogs.protoPypeForm):
             propList.append(float(d["Y"]))
         except:
             propList.append(0)
-        # FreeCAD.Console.PrintMessage(str(propList)+'\r\n')
-        self.lastFlange = pCmd.doFlanges(propList, FreeCAD.__activePypeLine__)[-1]
+        # FreeCAD.Console.PrintMessage(self.offsetoption)
+        self.lastFlange = pCmd.doFlanges(propList, pypeline=FreeCAD.__activePypeLine__, doOffset=self.offsetoption)
 
     def apply(self):
         for obj in FreeCADGui.Selection.getSelection():

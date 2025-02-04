@@ -417,7 +417,7 @@ def doElbow(propList=["DN50", 60.3, 3, 90, 45.225], pypeline=None):
     return elist
 
 
-def makeFlange(propList=[], pos=None, Z=None):
+def makeFlange(propList=[], pos=None, Z=None,doOffset=None):
     """Adds a Flange object
     makeFlange(propList,pos,Z);
       propList is one optional list with 8 elements:
@@ -456,24 +456,27 @@ def makeFlange(propList=[], pos=None, Z=None):
     a.Placement.Base = pos
     rot = FreeCAD.Rotation(FreeCAD.Vector(0, 0, 1), Z)
     a.Placement.Rotation = rot.multiply(a.Placement.Rotation)
-    if a.FlangeType == "WN":
-        zpos = -a.T1 + a.trf
-    elif a.FlangeType == "SW":
-        zpos = -a.T1 + a.Y + a.trf
-    elif a.FlangeType == "LJ":
-        zpos = 0
-    else:
-        zpos = 0
-    a.Placement = a.Placement.multiply(
-        FreeCAD.Placement(FreeCAD.Vector(0, 0, zpos), FreeCAD.Rotation(1, 0, 0))
-    )
+    if not doOffset:
+        if a.FlangeType == "WN":
+            zpos = -a.T1 + a.trf
+        elif a.FlangeType == "SW":
+            zpos = -a.T1 + a.Y + a.trf
+        elif a.FlangeType == "LJ":
+            zpos = 0
+        else:
+            zpos = 0
+        a.Placement = a.Placement.multiply(
+            FreeCAD.Placement(FreeCAD.Vector(0, 0, zpos), FreeCAD.Rotation(1, 0, 0))
+        )
     FreeCAD.ActiveDocument.recompute()
     a.Label = translate("Objects", "Flange")
     return a
 
 
 def doFlanges(
-    propList=["DN50", "SO", 160, 60.3, 132, 14, 15, 4, 0, 0, 0, 0, 0, 0, 0], pypeline=None
+    propList=["DN50", "SO", 160, 60.3, 132, 14, 15, 4, 0, 0, 0, 0, 0, 0, 0],
+    pypeline=None,
+    doOffset=None
 ):
     """
     propList = [
@@ -523,8 +526,22 @@ def doFlanges(
                                 edge.centerOfCurvatureAt(0),
                                 sx.Object.Shape.Solids[0].CenterOfMass
                                 - edge.centerOfCurvatureAt(0),
+                                doOffset
                             )
                         )
+                        if doOffset:
+                            a=flist.pop()
+                            if a.FlangeType == "WN":
+                                zpos = -a.T1 + a.trf
+                            elif a.FlangeType == "SW":
+                                zpos = -a.T1 + a.Y + a.trf
+                            elif a.FlangeType == "LJ":
+                                zpos = 0
+                            else:
+                                zpos = 0
+                            pipe = fCmd.beams()[0]
+                            respos=a.Placement.multiply(FreeCAD.Placement(FreeCAD.Vector(0,0,-zpos), FreeCAD.Rotation(1, 0, 0)))
+                            fCmd.extendTheBeam(pipe,respos.Base)
     else:
         for edge in fCmd.edges():
             if edge.curvatureAt(0) != 0:
@@ -533,6 +550,7 @@ def doFlanges(
                         propList,
                         edge.centerOfCurvatureAt(0),
                         edge.tangentAt(0).cross(edge.normalAt(0)),
+                        doOffset
                     )
                 )
     if pypeline:

@@ -1157,6 +1157,12 @@ class FrameLine(object):
                 for p in profiles:
                     FreeCAD.ActiveDocument.removeObject(p.Name)
 
+    def IsActive(self):
+        if FreeCAD.ActiveDocument is None:
+            return False
+        else:
+            return True
+
     def update(self, fp, copyProfile=True):
         if hasattr(fp.Base, "Shape"):
             edges = fp.Base.Shape.Edges
@@ -1284,6 +1290,12 @@ class FrameBranch(object):
 class ViewProviderFrameBranch:
     def __init__(self, vobj):
         vobj.Proxy = self
+
+    def IsActive(self):
+        if FreeCAD.ActiveDocument is None:
+            return False
+        else:
+            return True
 
     def getIcon(self):
         return get_icon_path("Quetzal_FrameBranchManager")

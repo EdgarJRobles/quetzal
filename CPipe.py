@@ -218,6 +218,13 @@ class breakPipe:
 
 
 class mateEdges:
+
+    def IsActive(self):
+        if FreeCAD.ActiveDocument is None:
+            return False
+        else:
+            return True
+
     def Activated(self):
         import pCmd
 
@@ -238,6 +245,13 @@ class mateEdges:
 
 
 class flat:
+
+    def IsActive(self):
+        if FreeCAD.ActiveDocument is None:
+            return False
+        else:
+            return True
+
     def Activated(self):
         import pCmd
 
@@ -254,6 +268,13 @@ class flat:
 
 
 class extend2intersection:
+
+    def IsActive(self):
+        if FreeCAD.ActiveDocument is None:
+            return False
+        else:
+            return True
+
     def Activated(self):
         import pCmd
 
@@ -277,6 +298,13 @@ class extend2intersection:
 
 
 class extend1intersection:
+
+    def IsActive(self):
+        if FreeCAD.ActiveDocument is None:
+            return False
+        else:
+            return True
+
     def Activated(self):
         import pCmd
 
@@ -300,6 +328,13 @@ class extend1intersection:
 
 
 class laydown:
+
+    def IsActive(self):
+        if FreeCAD.ActiveDocument is None:
+            return False
+        else:
+            return True
+
     def Activated(self):
         import pCmd
         import fCmd
@@ -324,6 +359,13 @@ class laydown:
 
 
 class raiseup:
+
+    def IsActive(self):
+        if FreeCAD.ActiveDocument is None:
+            return False
+        else:
+            return True
+    
     def Activated(self):
         import pCmd
         import fCmd
@@ -353,6 +395,12 @@ class raiseup:
 
 class joinPype:
     """ """
+
+    def IsActive(self):
+        if FreeCAD.ActiveDocument is None:
+            return False
+        else:
+            return True
 
     def Activated(self):
         import FreeCADGui
@@ -392,6 +440,13 @@ class insertValve:
 
 
 class attach2tube:
+
+    def IsActive(self):
+        if FreeCAD.ActiveDocument is None:
+            return False
+        else:
+            return True
+
     def Activated(self):
         import pCmd
 
@@ -411,6 +466,14 @@ class attach2tube:
 
 
 class point2point:
+
+    def IsActive(self):
+        if FreeCAD.ActiveDocument is None:
+            return False
+        else:
+            return True
+
+
     def Activated(self):
         import pForms
 
@@ -431,6 +494,13 @@ class insertAnyz:
     Dialog to insert any object saved as .STEP, .IGES or .BREP in folder ../Mod/dodo/shapez or subfolders.
     """
 
+    def IsActive(self):
+        if FreeCAD.ActiveDocument is None:
+            return False
+        else:
+            return True
+
+
     def Activated(self):
         import anyShapez
 
@@ -445,6 +515,13 @@ class insertAnyz:
 
 
 class insertTank:
+
+    def IsActive(self):
+        if FreeCAD.ActiveDocument is None:
+            return False
+        else:
+            return True
+
     def Activated(self):
         import FreeCADGui
         import pForms
@@ -460,6 +537,13 @@ class insertTank:
 
 
 class insertRoute:
+
+    def IsActive(self):
+        if FreeCAD.ActiveDocument is None:
+            return False
+        else:
+            return True
+
     def Activated(self):
         import FreeCADGui
         import pForms
@@ -477,6 +561,13 @@ class insertRoute:
 
 
 class makeHeader:
+
+    def IsActive(self):
+        if FreeCAD.ActiveDocument is None:
+            return False
+        else:
+            return True
+
     def Activated(self):
         import pCmd
 
@@ -526,6 +617,13 @@ addCommand("Quetzal_MakeHeader", makeHeader())
 
 ### QkMenus ###
 class pipeQM:
+
+    def IsActive(self):
+        if FreeCAD.ActiveDocument is None:
+            return False
+        else:
+            return True
+
     def Activated(self):
         import dodoPM
 
@@ -546,6 +644,13 @@ addCommand("Quetzal_PipeQM", pipeQM())
 
 
 class elbowQM:
+
+    def IsActive(self):
+        if FreeCAD.ActiveDocument is None:
+            return False
+        else:
+            return True
+
     def Activated(self):
         import dodoPM
 
@@ -562,6 +667,13 @@ addCommand("Quetzal_ElbowQM", elbowQM())
 
 
 class flangeQM:
+
+    def IsActive(self):
+        if FreeCAD.ActiveDocument is None:
+            return False
+        else:
+            return True
+
     def Activated(self):
         import dodoPM
 
@@ -578,6 +690,13 @@ addCommand("Quetzal_FlangeQM", flangeQM())
 
 
 class valveQM:
+
+    def IsActive(self):
+        if FreeCAD.ActiveDocument is None:
+            return False
+        else:
+            return True
+
     def Activated(self):
         import dodoPM
 
@@ -594,6 +713,13 @@ addCommand("Quetzal_ValveQM", valveQM())
 
 
 class capQM:
+
+    def IsActive(self):
+        if FreeCAD.ActiveDocument is None:
+            return False
+        else:
+            return True
+
     def Activated(self):
         import dodoPM
 

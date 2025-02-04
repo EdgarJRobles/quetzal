@@ -6,6 +6,7 @@ import FreeCAD
 import FreeCADGui
 from PySide.QtCore import *
 from PySide.QtGui import *
+from pFeatures import Flange
 
 translate = FreeCAD.Qt.translate
 
@@ -150,7 +151,7 @@ class protoPypeForm(QDialog):
         self.secondCol = QWidget()
         self.secondCol.setLayout(QVBoxLayout())
         self.combo = QComboBox()
-        self.combo.addItem("<none>")
+        self.combo.addItem(translate("protoPypeForm","<none>"))
         try:
             self.combo.addItems(
                 [
@@ -161,11 +162,42 @@ class protoPypeForm(QDialog):
             )
         except:
             None
+        self.combostandart = QComboBox()
+        try:
+            asmeflag = False
+            dinflag = False
+            apiflag = False
+            asflag = False
+            bsflag = False
+            isoflag = False
+            for fstadart in self.fileList:
+                if fstadart.startswith("Flange_ASME") and asmeflag == False:
+                    self.combostandart.addItem("ANSI/ASME")
+                    asmeflag = True
+                elif fstadart.startswith("Flange_DIN") and dinflag == False:
+                    self.combostandart.addItem("DIN")
+                    dinflag = True
+                elif fstadart.startswith("Flange_API") and apiflag == False:
+                    self.combostandart.addItem("API")
+                    apiflag = True
+                elif fstadart.startswith("Flange_AS") and asflag == False:
+                    self.combostandart.addItem("AS")
+                    asflag = True
+                elif fstadart.startswith("Flange_BS") and bsflag == False:
+                    self.combostandart.addItem("BS")
+                    bsflag = True
+                elif fstadart.startswith("Flange_ISO") and isoflag == False:
+                    self.combostandart.addItem("ISO")
+                    isoflag = True
+            #TODO:Still doing some work here in order to sort standarts search
+        except Exception as e:
+            None 
         self.combo.currentIndexChanged.connect(self.setCurrentPL)
         if FreeCAD.__activePypeLine__ and FreeCAD.__activePypeLine__ in [
             self.combo.itemText(i) for i in range(self.combo.count())
         ]:
             self.combo.setCurrentIndex(self.combo.findText(FreeCAD.__activePypeLine__))
+        self.secondCol.layout().addWidget(self.combostandart)
         self.secondCol.layout().addWidget(self.combo)
         self.ratingList = QListWidget()
         self.ratingList.addItems(self.PRatingsList)

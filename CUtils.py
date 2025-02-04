@@ -18,6 +18,12 @@ QT_TRANSLATE_NOOP = FreeCAD.Qt.QT_TRANSLATE_NOOP
 
 
 class queryModel:
+    def IsActive(self):
+        if FreeCAD.ActiveDocument is None:
+            return False
+        else:
+            return True
+
     def Activated(self):
         import uForms
 
@@ -45,6 +51,11 @@ class moveWorkPlane:
     * then according the center of curvature of a curved edge,
     * at last according the intersection of two straight edges.
     """
+    def IsActive(self):
+        if FreeCAD.ActiveDocument is None:
+            return False
+        else:
+            return True
 
     def Activated(self):
         import uCmd
@@ -64,6 +75,13 @@ class moveWorkPlane:
 
 
 class rotateWorkPlane:
+
+    def IsActive(self):
+        if FreeCAD.ActiveDocument is None:
+            return False
+        else:
+            return True
+
     def Activated(self):
         import uForms
 
@@ -81,6 +99,13 @@ class rotateWorkPlane:
 
 
 class offsetWorkPlane:
+
+    def IsActive(self):
+        if FreeCAD.ActiveDocument is None:
+            return False
+        else:
+            return True
+
     def Activated(self):
         if hasattr(FreeCAD, "DraftWorkingPlane") and hasattr(FreeCADGui, "Snapper"):
             import uCmd
@@ -114,6 +139,13 @@ class offsetWorkPlane:
 
 
 class hackedL:
+
+    def IsActive(self):
+        if FreeCAD.ActiveDocument is None:
+            return False
+        else:
+            return True
+
     def Activated(self):
         import uCmd
 
@@ -132,6 +164,13 @@ class hackedL:
 
 
 class moveHandle:
+
+    def IsActive(self):
+        if FreeCAD.ActiveDocument is None:
+            return False
+        else:
+            return True
+
     def Activated(self):
         import uCmd
 
@@ -150,6 +189,13 @@ class moveHandle:
 
 
 class dpCalc:
+
+    def IsActive(self):
+        if FreeCAD.ActiveDocument is None:
+            return False
+        else:
+            return True
+
     def Activated(self):
         import uForms
 
@@ -170,6 +216,13 @@ class dpCalc:
 
 
 class selectSolids:
+
+    def IsActive(self):
+        if FreeCAD.ActiveDocument is None:
+            return False
+        else:
+            return True
+
     def Activated(self):
         from fCmd import getSolids
 

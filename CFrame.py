@@ -28,6 +28,11 @@ class frameIt:
     beam over the edge by selecting them one after the other until ESC is
     pressed.
     """
+    def IsActive(self):
+        if FreeCAD.ActiveDocument is None:
+            return False
+        else:
+            return True
 
     def Activated(self):
         import fObservers
@@ -50,6 +55,11 @@ class spinSect:
     Tool to spin one object around the "Z" axis of its shape
     by 45 degrees.
     """
+    def IsActive(self):
+        if FreeCAD.ActiveDocument is None:
+            return False
+        else:
+            return True
 
     def Activated(self):
         import pCmd
@@ -77,6 +87,11 @@ class reverseBeam:
     Note: - if one edge of the object is selected, that is used
     as the pivot of rotation.
     """
+    def IsActive(self):
+        if FreeCAD.ActiveDocument is None:
+            return False
+        else:
+            return True
 
     def Activated(self):
         import pCmd
@@ -121,6 +136,11 @@ class alignFlange:
     to select one reference face and then the faces to be reoriented until
     ESC is pressed.
     """
+    def IsActive(self):
+        if FreeCAD.ActiveDocument is None:
+            return False
+        else:
+            return True
 
     def Activated(self):
         import fForms
@@ -156,6 +176,11 @@ class shiftBeam:
     * [OK] button: execute the translation
     * [Cancel]: exits
     """
+    def IsActive(self):
+        if FreeCAD.ActiveDocument is None:
+            return False
+        else:
+            return True
 
     def Activated(self):
         import fForms
@@ -182,6 +207,11 @@ class levelBeam:
     of all faces selected. Thus it translates the objects even if the
     faces are not parallel.
     """
+    def IsActive(self):
+        if FreeCAD.ActiveDocument is None:
+            return False
+        else:
+            return True
 
     def Activated(self):
         import fCmd
@@ -226,6 +256,11 @@ class alignEdge:
     this method is possible to move quickly one object by steps defined
     on its own geometry.
     """
+    def IsActive(self):
+        if FreeCAD.ActiveDocument is None:
+            return False
+        else:
+            return True
 
     def Activated(self):
         import fCmd
@@ -264,6 +299,11 @@ class pivotBeam:
     * [Select axis] button: choose the pivot.
     * [X / Y / Z]: choose one principal axis as pivot.
     """
+    def IsActive(self):
+        if FreeCAD.ActiveDocument is None:
+            return False
+        else:
+            return True
 
     def Activated(self):
         import fForms
@@ -293,6 +333,11 @@ class stretchBeam:
     * slider: extends the reference length from -100% to +100%.
 
     """
+    def IsActive(self):
+        if FreeCAD.ActiveDocument is None:
+            return False
+        else:
+            return True
 
     def Activated(self):
         import fForms
@@ -318,6 +363,11 @@ class extend:
     first entity is automatically taken as target and the object attached
     to it is removed from selection set.
     """
+    def IsActive(self):
+        if FreeCAD.ActiveDocument is None:
+            return False
+        else:
+            return True
 
     def Activated(self):
         import fForms
@@ -340,6 +390,11 @@ class adjustFrameAngle:
     """
     Tool to adjust the beams at square angles of frames.
     """
+    def IsActive(self):
+        if FreeCAD.ActiveDocument is None:
+            return False
+        else:
+            return True
 
     def Activated(self):
         import fObservers
@@ -362,6 +417,11 @@ class rotJoin:
     """
     Tool to translate and rotate the beams to mate two edges.
     """
+    def IsActive(self):
+        if FreeCAD.ActiveDocument is None:
+            return False
+        else:
+            return True
 
     def Activated(self):
         import FreeCAD
@@ -393,6 +453,11 @@ class insertPath:
     edges selected in the viewport, even if these are not continuous or
     belongs to different objects.
     """
+    def IsActive(self):
+        if FreeCAD.ActiveDocument is None:
+            return False
+        else:
+            return True
 
     def Activated(self):
         import pCmd
@@ -459,6 +524,11 @@ class FrameBranchManager:
     """
     Dialog to create and change properties of objects FrameBranch
     """
+    def IsActive(self):
+        if FreeCAD.ActiveDocument is None:
+            return False
+        else:
+            return True
 
     def Activated(self):
         if FreeCAD.ActiveDocument:
@@ -478,6 +548,11 @@ class insertSection:
     """
     Dialog to create the set of profiles to be used in the model.
     """
+    def IsActive(self):
+        if FreeCAD.ActiveDocument is None:
+            return False
+        else:
+            return True
 
     def Activated(self):
         if FreeCAD.ActiveDocument:
