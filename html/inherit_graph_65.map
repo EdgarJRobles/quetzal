@@ -1,0 +1,31 @@
+<map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
+<area shape="rect" id="Node000000" title=" " alt="" coords="5,301,80,327"/>
+<area shape="rect" id="Node000001" href="$classdodoDialogs_1_1protoPypeForm.html" title=" " alt="" coords="128,203,335,228"/>
+<area shape="poly" id="edge57_Node000000_Node000001" title=" " alt="" coords="62,289,91,262,127,237,155,226,157,231,129,242,94,266,66,293"/>
+<area shape="rect" id="Node000011" href="$classfFeatures_1_1frameLineForm.html" title="DIALOGS #############################." alt="" coords="138,252,325,277"/>
+<area shape="poly" id="edge67_Node000000_Node000011" title=" " alt="" coords="92,296,127,286,173,275,174,280,129,291,94,301"/>
+<area shape="rect" id="Node000012" href="$classpForms_1_1breakForm.html" title=" " alt="" coords="159,301,303,327"/>
+<area shape="poly" id="edge68_Node000000_Node000012" title=" " alt="" coords="94,311,159,311,159,317,94,317"/>
+<area shape="rect" id="Node000013" href="$classpForms_1_1redrawDialog.html" title=" " alt="" coords="151,351,312,376"/>
+<area shape="poly" id="edge69_Node000000_Node000013" title=" " alt="" coords="94,326,129,335,178,348,177,353,127,341,93,331"/>
+<area shape="rect" id="Node000014" href="$classuForms_1_1rotWPForm.html" title=" " alt="" coords="158,400,305,425"/>
+<area shape="poly" id="edge70_Node000000_Node000014" title=" " alt="" coords="66,335,95,361,129,385,161,397,159,402,127,390,91,366,63,339"/>
+<area shape="rect" id="Node000002" href="$classpForms_1_1insertBranchForm.html" title=" " alt="" coords="389,5,579,31"/>
+<area shape="poly" id="edge58_Node000001_Node000002" title=" " alt="" coords="245,189,267,155,298,114,337,74,381,40,406,28,408,33,384,44,340,78,302,118,271,158,249,192"/>
+<area shape="rect" id="Node000003" href="$classpForms_1_1insertCapForm.html" title=" " alt="" coords="399,55,569,80"/>
+<area shape="poly" id="edge59_Node000001_Node000003" title=" " alt="" coords="251,191,307,139,343,112,381,89,411,78,413,83,384,94,346,116,310,143,255,195"/>
+<area shape="rect" id="Node000004" href="$classpForms_1_1insertElbowForm.html" title=" " alt="" coords="393,104,575,129"/>
+<area shape="poly" id="edge60_Node000001_Node000004" title=" " alt="" coords="265,194,319,165,382,138,419,127,421,132,384,143,321,170,267,198"/>
+<area shape="rect" id="Node000005" href="$classpForms_1_1insertFlangeForm.html" title=" " alt="" coords="390,153,578,179"/>
+<area shape="poly" id="edge61_Node000001_Node000005" title=" " alt="" coords="310,197,418,176,419,181,311,203"/>
+<area shape="rect" id="Node000006" href="$classpForms_1_1insertPipeForm.html" title=" " alt="" coords="398,203,570,228"/>
+<area shape="poly" id="edge62_Node000001_Node000006" title=" " alt="" coords="348,213,398,213,398,218,348,218"/>
+<area shape="rect" id="Node000007" href="$classpForms_1_1insertPypeLineForm.html" title=" " alt="" coords="383,252,585,277"/>
+<area shape="poly" id="edge63_Node000001_Node000007" title=" " alt="" coords="311,228,419,249,418,255,310,233"/>
+<area shape="rect" id="Node000008" href="$classpForms_1_1insertReductForm.html" title=" " alt="" coords="389,301,579,327"/>
+<area shape="poly" id="edge64_Node000001_Node000008" title=" " alt="" coords="322,230,336,237,352,249,361,262,370,275,384,286,413,299,411,304,381,291,366,278,357,265,348,253,333,242,320,235"/>
+<area shape="rect" id="Node000009" href="$classpForms_1_1insertUboltForm.html" title=" " alt="" coords="395,351,573,376"/>
+<area shape="poly" id="edge65_Node000001_Node000009" title=" " alt="" coords="330,232,336,237,348,249,355,262,361,288,367,313,373,325,384,336,405,348,403,353,381,340,369,328,362,315,356,289,350,264,344,253,333,241,326,237"/>
+<area shape="rect" id="Node000010" href="$classpForms_1_1insertValveForm.html" title=" " alt="" coords="394,400,574,425"/>
+<area shape="poly" id="edge66_Node000001_Node000010" title=" " alt="" coords="332,233,337,237,352,256,359,275,361,313,364,350,371,368,384,385,403,398,400,402,381,389,366,371,358,351,356,313,354,276,347,259,333,241,328,237"/>
+</map>

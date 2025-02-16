@@ -79,7 +79,7 @@ class cutListUI:
 
         if profils == []:
             # Do not try to create a cut list with an empty selection
-            # TODO: Add Message Box
+            FreeCAD.Console.PrintMessage("Nothing selected")
             return
         # Get the Nesting Information or set the default
         if self.form.use_nesting.checkState() == False:

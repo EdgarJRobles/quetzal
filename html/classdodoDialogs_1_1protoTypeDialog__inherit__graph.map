@@ -1,0 +1,31 @@
+<map id="dodoDialogs.protoTypeDialog" name="dodoDialogs.protoTypeDialog">
+<area shape="rect" id="Node000001" title=" " alt="" coords="116,301,329,327"/>
+<area shape="rect" id="Node000003" href="$classanyShapez_1_1shapezDialog.html" title=" " alt="" coords="387,5,572,31"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="228,287,246,235,276,168,318,98,345,67,376,40,396,28,399,33,379,44,349,71,323,102,280,170,251,237,233,289"/>
+<area shape="rect" id="Node000004" href="$classfFeatures_1_1frameBranchForm.html" title=" " alt="" coords="377,55,581,80"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="232,287,252,244,283,190,325,135,349,110,376,89,398,78,400,82,379,94,353,114,329,139,288,193,257,246,237,289"/>
+<area shape="rect" id="Node000005" href="$classfForms_1_1alignForm.html" title=" " alt="" coords="411,104,547,129"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="236,288,259,254,291,213,330,173,376,138,410,124,412,129,379,143,334,177,295,217,263,257,241,291"/>
+<area shape="rect" id="Node000006" href="$classfForms_1_1extendForm.html" title=" " alt="" coords="405,153,554,179"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="243,290,300,238,337,211,376,188,406,176,408,181,378,192,340,215,303,242,247,294"/>
+<area shape="rect" id="Node000007" href="$classfForms_1_1fillForm.html" title=" " alt="" coords="419,203,539,228"/>
+<area shape="poly" id="edge6_Node000001_Node000007" title=" " alt="" coords="257,292,312,264,376,237,418,225,420,230,378,242,314,269,259,297"/>
+<area shape="rect" id="Node000008" href="$classfForms_1_1profEdit.html" title=" " alt="" coords="418,252,541,277"/>
+<area shape="poly" id="edge7_Node000001_Node000008" title=" " alt="" coords="302,296,417,274,418,279,303,301"/>
+<area shape="rect" id="Node000009" href="$classfForms_1_1rotateAroundForm.html" title=" " alt="" coords="385,301,574,327"/>
+<area shape="poly" id="edge8_Node000001_Node000009" title=" " alt="" coords="343,311,385,311,385,317,343,317"/>
+<area shape="rect" id="Node000010" href="$classfForms_1_1stretchForm.html" title=" " alt="" coords="405,351,554,376"/>
+<area shape="poly" id="edge9_Node000001_Node000010" title=" " alt="" coords="303,327,413,348,412,353,302,332"/>
+<area shape="rect" id="Node000011" href="$classfForms_1_1translateForm.html" title=" " alt="" coords="398,400,561,425"/>
+<area shape="poly" id="edge10_Node000001_Node000011" title=" " alt="" coords="259,331,314,359,378,386,416,397,414,402,376,391,312,364,257,336"/>
+<area shape="rect" id="Node000012" href="$classpForms_1_1insertRouteForm.html" title=" " alt="" coords="388,449,571,475"/>
+<area shape="poly" id="edge11_Node000001_Node000012" title=" " alt="" coords="247,334,303,386,340,413,378,436,408,447,406,452,376,440,337,417,300,390,243,338"/>
+<area shape="rect" id="Node000013" href="$classpForms_1_1insertTankForm.html" title=" " alt="" coords="392,499,567,524"/>
+<area shape="poly" id="edge12_Node000001_Node000013" title=" " alt="" coords="241,337,263,371,295,411,334,451,379,485,403,496,401,501,376,490,330,455,291,415,259,374,236,340"/>
+<area shape="rect" id="Node000014" href="$classpForms_1_1joinForm.html" title=" " alt="" coords="414,548,545,573"/>
+<area shape="poly" id="edge13_Node000001_Node000014" title=" " alt="" coords="237,339,257,382,288,435,329,489,353,514,379,534,415,550,413,555,376,539,349,518,325,493,283,438,252,384,232,341"/>
+<area shape="rect" id="Node000015" href="$classuCmd_1_1handleDialog.html" title=" " alt="" coords="404,597,555,623"/>
+<area shape="poly" id="edge14_Node000001_Node000015" title=" " alt="" coords="233,339,251,391,280,458,323,526,349,557,379,584,405,597,403,602,376,588,345,561,318,530,276,460,246,393,228,341"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="5,301,68,327"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="82,311,116,311,116,317,82,317"/>
+</map>

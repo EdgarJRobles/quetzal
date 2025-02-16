@@ -1,0 +1,25 @@
+<map id="fObservers.frameObserverPrototype" name="fObservers.frameObserverPrototype">
+<area shape="rect" id="Node000001" title=" " alt="" coords="116,221,311,261"/>
+<area shape="rect" id="Node000003" href="$classfObservers_1_1adjustAngleObserver.html" title=" " alt="" coords="361,5,595,31"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="226,207,247,168,276,122,313,77,357,40,380,28,383,33,360,44,316,81,280,125,251,170,231,210"/>
+<area shape="rect" id="Node000004" href="$classfObservers_1_1alignEdgeObserver.html" title=" " alt="" coords="368,55,588,80"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="234,207,285,146,319,115,357,89,384,78,386,83,360,94,323,119,289,150,238,211"/>
+<area shape="rect" id="Node000005" href="$classfObservers_1_1alignFlangeObserver.html" title=" " alt="" coords="362,104,594,129"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="246,210,297,172,358,138,391,127,393,132,360,143,299,177,249,214"/>
+<area shape="rect" id="Node000006" href="$classfObservers_1_1extendObserver.html" title=" " alt="" coords="377,153,579,179"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="278,213,358,187,405,176,406,181,359,193,279,219"/>
+<area shape="rect" id="Node000007" href="$classfObservers_1_1fillFrameObserver.html" title=" " alt="" coords="371,203,585,228"/>
+<area shape="poly" id="edge6_Node000001_Node000007" title=" " alt="" coords="324,227,371,223,372,228,325,233"/>
+<area shape="rect" id="Node000008" href="$classfObservers_1_1frameItObserver.html" title=" " alt="" coords="376,252,580,277"/>
+<area shape="poly" id="edge7_Node000001_Node000008" title=" " alt="" coords="325,248,376,253,376,258,324,253"/>
+<area shape="rect" id="Node000009" href="$classfObservers_1_1levelBeamObserver.html" title=" " alt="" coords="365,301,591,327"/>
+<area shape="poly" id="edge8_Node000001_Node000009" title=" " alt="" coords="281,263,359,287,407,299,406,304,358,293,280,268"/>
+<area shape="rect" id="Node000010" href="$classfObservers_1_1rotjoinObserver.html" title=" " alt="" coords="379,351,577,376"/>
+<area shape="poly" id="edge9_Node000001_Node000010" title=" " alt="" coords="250,267,300,304,360,337,394,348,392,353,358,342,297,308,247,272"/>
+<area shape="rect" id="Node000011" href="$classfObservers_1_1stretchBeamObserver.html" title=" " alt="" coords="359,400,597,425"/>
+<area shape="poly" id="edge10_Node000001_Node000011" title=" " alt="" coords="238,271,289,331,323,361,360,386,386,397,384,402,357,391,320,365,286,335,234,274"/>
+<area shape="rect" id="Node000012" href="$classpObservers_1_1joinObserver.html" title=" " alt="" coords="387,449,569,475"/>
+<area shape="poly" id="edge11_Node000001_Node000012" title=" " alt="" coords="231,272,251,310,280,355,316,399,360,436,387,449,385,453,357,440,313,403,276,358,247,313,226,274"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="5,228,68,253"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="82,238,116,238,116,243,82,243"/>
+</map>

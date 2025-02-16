@@ -1704,12 +1704,22 @@ class _ProfileL(_Profile):
 
 
 class _ProfileAngle(_Profile):
-    def __init__(self, obj, profile):
+    """
+    # Create a angle profile considering round edges
+    obj: _Profile object
+    profile: list of profile parameters
+    """
+    def __init__(self, obj:_Profile, profile:list):
+        ## Profile name
         self.label = obj.Name
         # FIXME: <class 'AttributeError'>: 'FeaturePython' object has no attribute 'size'
+        
+        ## Profile size base on .csv semantic
         self.size = FreeCAD.ActiveDocument.getObject(self.label).size
+        ## Profile proportion type
         self.standard = FreeCAD.ActiveDocument.getObject(self.label).standard
         self.Solid = FreeCAD.ActiveDocument.getObject(self.label).Solid
+        ## Profile final length
         self.g0 = FreeCAD.ActiveDocument.getObject(self.label).g0 * 1000
         if self.standard == "SS_Equal":
             self.sa = ShpstData.angle_ss_equal[self.size]
@@ -1757,7 +1767,10 @@ class _ProfileAngle(_Profile):
         _Profile.__init__(self, obj, profile)
         return
 
-    def execute(self, obj):
+    def execute(self, obj:_Profile):
+        """
+        Modify provided object based on profile list parameters
+        """
         A = float(self.sa[0])
         B = float(self.sa[1])
         t = float(self.sa[2])

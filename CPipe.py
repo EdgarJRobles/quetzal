@@ -8,12 +8,12 @@ __license__ = "LGPL 3"
 # import FreeCAD modules
 import FreeCAD
 import FreeCADGui
+import tooltips
 
 from quetzal_config import addCommand
 
 QT_TRANSLATE_NOOP = FreeCAD.Qt.QT_TRANSLATE_NOOP
 translate = FreeCAD.Qt.translate
-
 
 def updatesPL(dialogqm):
     if FreeCAD.activeDocument():
@@ -50,7 +50,7 @@ class insertPipe:
         return {
             "Pixmap": "Quetzal_InsertPipe",
             "MenuText": QT_TRANSLATE_NOOP("Quetzal_InsertPipe", "Insert a tube"),
-            "ToolTip": QT_TRANSLATE_NOOP("Quetzal_InsertPipe", "Insert a tube"),
+            "ToolTip": QT_TRANSLATE_NOOP("Quetzal_InsertPipe",  tooltips.insert_tube_tooltip),
         }
 
 
@@ -570,11 +570,11 @@ class makeHeader:
 
     def Activated(self):
         import pCmd
-
-        FreeCAD.activeDocument().openTransaction(translate("Transaction", "Connect to header"))
-        pCmd.header()
+        # FreeCAD.activeDocument().openTransaction(translate("Transaction", "Connect to header"))
+        FreeCAD.activeDocument().openTransaction()
         FreeCAD.activeDocument().recompute()
         FreeCAD.activeDocument().commitTransaction()
+        pCmd.header()
 
     def GetResources(self):
         return {

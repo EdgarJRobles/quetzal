@@ -8,9 +8,11 @@ __license__ = "LGPL 3"
 # import FreeCAD modules
 import os
 
+import tooltips
 import FreeCAD
 import FreeCADGui
 
+from pCmd import fCmd
 from quetzal_config import addCommand
 
 QT_TRANSLATE_NOOP = FreeCAD.Qt.QT_TRANSLATE_NOOP
@@ -45,7 +47,7 @@ class frameIt:
             "Pixmap": "Quetzal_FrameIt",
             "MenuText": QT_TRANSLATE_NOOP("Quetzal_FrameIt", "Place one-beam over one-edge"),
             "ToolTip": QT_TRANSLATE_NOOP(
-                "Quetzal_FrameIt", "Place one beam after the other over the edges"
+                "Quetzal_FrameIt", tooltips.frameit_tooltip
             ),
         }
 
@@ -64,7 +66,9 @@ class spinSect:
     def Activated(self):
         import pCmd
 
-        FreeCAD.activeDocument().openTransaction(translate("Transaction", "Spin"))
+        # FreeCAD.activeDocument().openTransaction(translate("Transaction", "Spin"))
+        # FIXME: Transaction break when name is assign
+        FreeCAD.activeDocument().openTransaction()
         for beam in FreeCADGui.Selection.getSelection():
             pCmd.rotateTheTubeAx(beam)
         FreeCAD.activeDocument().recompute()
@@ -75,7 +79,7 @@ class spinSect:
             "Pixmap": "Quetzal_SpinSection",
             "MenuText": QT_TRANSLATE_NOOP("Quetzal_SpinSection", "Spin beams by 45 deg."),
             "ToolTip": QT_TRANSLATE_NOOP(
-                "Quetzal_SpinSection", "Rotates the section of the beam by 45 degrees"
+                "Quetzal_SpinSection", tooltips.spinsect_tooltip
             ),
         }
 
@@ -96,7 +100,9 @@ class reverseBeam:
     def Activated(self):
         import pCmd
 
-        FreeCAD.activeDocument().openTransaction(translate("Transaction", "Reverse"))
+        # FreeCAD.activeDocument().openTransaction(translate("Transaction", "Reverse"))
+        # FIXME: Transaction break when name is assign
+        FreeCAD.activeDocument().openTransaction()
         for objEx in FreeCADGui.Selection.getSelectionEx():
             pCmd.reverseTheTube(objEx)
         FreeCAD.activeDocument().recompute()
@@ -107,7 +113,7 @@ class reverseBeam:
             "Pixmap": "Quetzal_ReverseBeam",
             "MenuText": QT_TRANSLATE_NOOP("Quetzal_ReverseBeam", "Reverse orientation"),
             "ToolTip": QT_TRANSLATE_NOOP(
-                "Quetzal_ReverseBeam", "Reverse the orientation of selected objects"
+                "Quetzal_ReverseBeam", tooltips.reversebeam_tooltip
             ),
         }
 
@@ -193,7 +199,7 @@ class shiftBeam:
             "Pixmap": "Quetzal_ShiftBeam",
             "MenuText": QT_TRANSLATE_NOOP("Quetzal_ShiftBeam", "Shift the beam"),
             "ToolTip": QT_TRANSLATE_NOOP(
-                "Quetzal_ShiftBeam", "Translate objects by vectors defined on existing geometry"
+                "Quetzal_ShiftBeam", tooltips.shiftbeam_tooltip
             ),
         }
 
@@ -221,7 +227,10 @@ class levelBeam:
         faces = fCmd.faces(selex)
         beams = [sx.Object for sx in selex]
         if len(faces) == len(beams) > 1:
-            FreeCAD.activeDocument().openTransaction(translate("Transaction", "Level The Beams"))
+            #FIXME:openTransaction does not accept translate name
+
+            # FreeCAD.activeDocument().openTransaction(translate("Transaction", "Level The Beams"))
+            FreeCAD.activeDocument().openTransaction()
             beams.pop(0)
             fBase = faces.pop(0)
             for i in range(len(beams)):
@@ -240,7 +249,7 @@ class levelBeam:
             "MenuText": QT_TRANSLATE_NOOP("Quetzal_LevelBeam", "Flush the surfaces"),
             "ToolTip": QT_TRANSLATE_NOOP(
                 "Quetzal_LevelBeam",
-                "Shift the beams to line-up the faces to the first selection (faces must be //)",
+                tooltips.levelbeam_tooltip,
             ),
         }
 
@@ -272,7 +281,10 @@ class alignEdge:
             beams = FreeCADGui.Selection.getSelection()[1:]
             if len(edges) == len(beams):
                 pairs = [(beams[i], edges[i]) for i in range(len(beams))]
-                FreeCAD.activeDocument().openTransaction(translate("Transaction", "Align Edge"))
+                #FIXME:openTransaction does not accept translate name
+
+                # FreeCAD.activeDocument().openTransaction(translate("Transaction", "Align Edge"))
+                FreeCAD.activeDocument().openTransaction()
                 for p in pairs:
                     fCmd.joinTheBeamsEdges(p[0], e1, p[1])
                 FreeCAD.activeDocument().commitTransaction()
@@ -316,7 +328,7 @@ class pivotBeam:
             "Pixmap": "Quetzal_PivotBeam",
             "MenuText": QT_TRANSLATE_NOOP("Quetzal_PivotBeam", "Pivot the beam"),
             "ToolTip": QT_TRANSLATE_NOOP(
-                "Quetzal_PivotBeam", "Rotates the beam around an axis (edge or center-of-curvature)"
+                "Quetzal_PivotBeam", tooltips.pivotbeam_tooltip
             ),
         }
 
@@ -428,9 +440,8 @@ class rotJoin:
         import fCmd
 
         if len(fCmd.beams()) > 1:
-            FreeCAD.activeDocument().openTransaction(
-                translate("Transaction", "Rotate to Join on Edge")
-            )
+            # FreeCAD.activeDocument().openTransaction(translate("Transaction", "Rotate to Join on Edge"))
+            FreeCAD.activeDocument().openTransaction()
             fCmd.rotjoinTheBeam()
             FreeCAD.activeDocument().recompute()
             FreeCAD.activeDocument().commitTransaction()
@@ -462,7 +473,8 @@ class insertPath:
     def Activated(self):
         import pCmd
 
-        FreeCAD.activeDocument().openTransaction(translate("Transaction", "Make Path"))
+        # FreeCAD.activeDocument().openTransaction(translate("Transaction", "Make Path"))
+        FreeCAD.activeDocument().openTransaction()
         pCmd.makeW()
         FreeCAD.activeDocument().recompute()
         FreeCAD.activeDocument().commitTransaction()
@@ -540,7 +552,7 @@ class FrameBranchManager:
         return {
             "Pixmap": "Quetzal_FrameBranchManager",
             "MenuText": QT_TRANSLATE_NOOP("Quetzal_FrameBranchManager", "FrameBranch Manager"),
-            "ToolTip": QT_TRANSLATE_NOOP("Quetzal_FrameBranchManager", "Open FrameBranch Manager"),
+            "ToolTip": QT_TRANSLATE_NOOP("Quetzal_FrameBranchManager", tooltips.framebranchmanager_tooltip),
         }
 
 

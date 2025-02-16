@@ -1,0 +1,17 @@
+<map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
+<area shape="rect" id="Node000000" title=" " alt="" coords="5,129,120,155"/>
+<area shape="rect" id="Node000001" href="$classdodoPM_1_1DialogQM.html" title=" " alt="" coords="170,104,313,129"/>
+<area shape="poly" id="edge71_Node000000_Node000001" title=" " alt="" coords="133,129,169,124,170,129,134,135"/>
+<area shape="rect" id="Node000007" href="$classuForms_1_1QueryForm.html" title=" " alt="" coords="168,153,315,179"/>
+<area shape="poly" id="edge77_Node000000_Node000007" title=" " alt="" coords="134,149,168,153,167,159,133,154"/>
+<area shape="rect" id="Node000002" href="$classdodoPM_1_1cQM.html" title=" " alt="" coords="363,5,470,31"/>
+<area shape="poly" id="edge72_Node000001_Node000002" title=" " alt="" coords="271,94,361,40,384,28,387,33,364,44,274,99"/>
+<area shape="rect" id="Node000003" href="$classdodoPM_1_1eQM.html" title=" " alt="" coords="363,55,471,80"/>
+<area shape="poly" id="edge73_Node000001_Node000003" title=" " alt="" coords="299,98,370,78,371,83,301,103"/>
+<area shape="rect" id="Node000004" href="$classdodoPM_1_1fQM.html" title=" " alt="" coords="364,104,469,129"/>
+<area shape="poly" id="edge74_Node000001_Node000004" title=" " alt="" coords="327,114,364,114,364,119,327,119"/>
+<area shape="rect" id="Node000005" href="$classdodoPM_1_1pQM.html" title=" " alt="" coords="363,153,471,179"/>
+<area shape="poly" id="edge75_Node000001_Node000005" title=" " alt="" coords="301,131,371,151,370,156,299,136"/>
+<area shape="rect" id="Node000006" href="$classdodoPM_1_1vQM.html" title=" " alt="" coords="363,203,471,228"/>
+<area shape="poly" id="edge76_Node000001_Node000006" title=" " alt="" coords="305,132,316,138,332,151,341,163,350,175,364,188,386,200,383,205,361,192,346,179,337,166,328,155,313,143,302,137"/>
+</map>

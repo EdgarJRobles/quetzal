@@ -1,0 +1,25 @@
+<map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
+<area shape="rect" id="Node000000" title=" " alt="" coords="5,252,76,277"/>
+<area shape="rect" id="Node000001" href="$classfFeatures_1_1__ProfileAngle.html" title=" " alt="" coords="132,5,304,31"/>
+<area shape="poly" id="edge1_Node000000_Node000001" title=" " alt="" coords="41,238,48,195,62,141,85,87,102,62,122,40,140,28,143,33,126,44,106,65,90,89,67,143,53,196,47,238"/>
+<area shape="rect" id="Node000002" href="$classfFeatures_1_1__ProfileChannel.html" title=" " alt="" coords="124,55,312,80"/>
+<area shape="poly" id="edge2_Node000000_Node000002" title=" " alt="" coords="44,238,54,204,69,164,91,124,122,89,141,78,144,82,126,93,96,127,74,166,59,206,50,239"/>
+<area shape="rect" id="Node000003" href="$classfFeatures_1_1__ProfileCircle.html" title=" " alt="" coords="132,104,304,129"/>
+<area shape="poly" id="edge3_Node000000_Node000003" title=" " alt="" coords="50,238,77,187,98,161,122,138,144,127,146,132,126,143,102,165,82,190,54,241"/>
+<area shape="rect" id="Node000004" href="$classfFeatures_1_1__ProfileH.html" title=" " alt="" coords="145,153,291,179"/>
+<area shape="poly" id="edge4_Node000000_Node000004" title=" " alt="" coords="60,240,88,212,123,188,150,176,152,181,125,192,91,216,64,243"/>
+<area shape="rect" id="Node000005" href="$classfFeatures_1_1__ProfileL.html" title=" " alt="" coords="147,203,289,228"/>
+<area shape="poly" id="edge5_Node000000_Node000005" title=" " alt="" coords="88,247,123,237,165,226,166,231,125,242,90,252"/>
+<area shape="rect" id="Node000006" href="$classfFeatures_1_1__ProfileOmega.html" title=" " alt="" coords="127,252,309,277"/>
+<area shape="poly" id="edge6_Node000000_Node000006" title=" " alt="" coords="89,262,126,262,126,267,89,267"/>
+<area shape="rect" id="Node000007" href="$classfFeatures_1_1__ProfileR.html" title=" " alt="" coords="146,301,290,327"/>
+<area shape="poly" id="edge7_Node000000_Node000007" title=" " alt="" coords="90,276,125,286,170,299,169,304,123,291,88,281"/>
+<area shape="rect" id="Node000008" href="$classfFeatures_1_1__ProfileRH.html" title=" " alt="" coords="141,351,295,376"/>
+<area shape="poly" id="edge8_Node000000_Node000008" title=" " alt="" coords="64,285,91,312,125,336,155,348,153,353,123,340,88,316,60,289"/>
+<area shape="rect" id="Node000009" href="$classfFeatures_1_1__ProfileT.html" title=" " alt="" coords="147,400,289,425"/>
+<area shape="poly" id="edge9_Node000000_Node000009" title=" " alt="" coords="55,289,82,338,102,364,126,385,149,398,147,402,122,390,98,367,78,341,50,291"/>
+<area shape="rect" id="Node000010" href="$classfFeatures_1_1__ProfileU.html" title=" " alt="" coords="145,449,291,475"/>
+<area shape="poly" id="edge10_Node000000_Node000010" title=" " alt="" coords="50,290,59,324,74,363,96,402,126,435,147,447,144,452,122,439,92,405,69,365,54,325,45,292"/>
+<area shape="rect" id="Node000011" href="$classfFeatures_1_1__ProfileZ.html" title=" " alt="" coords="146,499,290,524"/>
+<area shape="poly" id="edge11_Node000000_Node000011" title=" " alt="" coords="47,291,53,333,67,385,90,439,106,463,126,484,147,497,144,502,122,488,102,466,86,441,62,387,48,334,41,291"/>
+</map>
