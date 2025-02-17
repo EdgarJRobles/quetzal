@@ -489,7 +489,7 @@ class Flange(pypeType):
                 hole.rotate(FreeCAD.Vector(0, 0, 0), FreeCAD.Vector(0, 0, 1), 360.0 / fp.n)
         # creates flange thickness
         flange = base.extrude(FreeCAD.Vector(0, 0, fp.t - fp.trf))
-        FreeCADGui.ActiveDocument.Flange.Deviation = 0.10
+        fp.ViewObject.Deviation = 0.10
         if (
             fp.FlangeType == "SW"
             or fp.FlangeType == "WN"
