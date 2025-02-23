@@ -69,6 +69,7 @@ def setWP():  # TARGET [working]: deal with App::Parts
 def rotWP(ax=None, ang=45):
     import FreeCAD
     import FreeCADGui
+    newpl = None
 
     if not ax:
         ax = FreeCAD.Vector(0, 0, 1)

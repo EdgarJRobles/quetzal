@@ -138,6 +138,12 @@ class QuetzalWorkbench(Workbench):
         ]
         from dodoPM import toolList
 
+        import DraftTools
+        import draftutils.init_tools as it
+
+        it.init_toolbar(self,
+                        QT_TRANSLATE_NOOP("Workbench", "Draft snap"),
+                        it.get_draft_snap_commands())
         self.qm = toolList  # ["pipeQM","elbowQM","reductQM"]
         self.appendToolbar(QT_TRANSLATE_NOOP("Workbench", "Pipe tools"), self.pypeList)
         Log("Loading Pipe tools: done\n")
@@ -153,11 +159,27 @@ class QuetzalWorkbench(Workbench):
         self.appendContextMenu(QT_TRANSLATE_NOOP("Workbench", "Pipes"), self.pypeList)
         self.appendContextMenu(QT_TRANSLATE_NOOP("Workbench", "Utils"), self.utilsList)
 
+    def setWatchers(self):
+        class QuetzalCreateWatcher:
+            def __init__(self):
+                QT_TRANSLATE_NOOP = FreeCAD.Qt.QT_TRANSLATE_NOOP
+                self.commands = ["Quetzal_InsertPypeLine",
+                                 "Quetzal_Point2Point",
+                                 "Quetzal_InsertFlange",
+                                 "Quetzal_FrameBranchManager",
+                                 "Quetzal_FrameIt"
+                                 ]
+                self.title = QT_TRANSLATE_NOOP("Quetzal","Create objects")
+            def shouldShow(self):
+                return (FreeCAD.ActiveDocument is not None)
+        FreeCADGui.Control.addTaskWatcher([QuetzalCreateWatcher()])
+
     def Activated(self):
         # if hasattr(FreeCADGui, "draftToolBar"):  # patch
         #     FreeCADGui.draftToolBar.Activated()  # patch
         # if hasattr(FreeCADGui, "Snapper"):  # patch
         #     FreeCADGui.Snapper.show()  # patchm
+        self.setWatchers()
         FreeCAD.__activePypeLine__ = None
         FreeCAD.__activeFrameLine__ = None
         Msg("Created variables in FreeCAD module:\n")

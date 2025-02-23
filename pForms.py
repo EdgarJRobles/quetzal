@@ -1454,13 +1454,17 @@ import uCmd
 from PySide.QtGui import *
 
 
-class point2pointPipe(DraftTools.Line):
+class point2pointPipe(DraftTools.Wire):
     """
     Draw pipes by sequence point.
     """
 
     def __init__(self, wireFlag=True):
-        DraftTools.Line.__init__(self, wireFlag)
+        # view = FreeCADGui.ActiveDocument.ActiveView
+        # view.setAxisCross(True)
+        # view.hasAxisCross()
+        # DraftTools.Line.__init__(self, wireFlag)
+        DraftTools.Wire.__init__(self)
         self.Activated()
         self.pform = insertPipeForm()
         self.pform.btn1.setText(translate("point2pointPipe", "Reset"))
@@ -1516,9 +1520,13 @@ class point2pointPipe(DraftTools.Line):
             if arg["Key"] == "ESCAPE":
                 self.pform.close()
                 self.finish()
+            return
         elif arg["Type"] == "SoLocation2Event":
             # mouse movement detection
             self.point, ctrlPoint, info = DraftTools.getPoint(self, arg)
+            DraftTools.redraw3DView()
+            # FreeCAD.Console.PrintMessage(self.point)
+            return
         elif arg["Type"] == "SoMouseButtonEvent":
             FreeCAD.activeDocument().openTransaction(translate("Transaction", "Point to Point"))
             # mouse button detection
@@ -1587,6 +1595,7 @@ class point2pointPipe(DraftTools.Line):
                                 self.undolast()
                                 self.finish(True, cont=True)
             FreeCAD.activeDocument().commitTransaction()
+            return
 
 
 class insertTankForm(dodoDialogs.protoTypeDialog):
