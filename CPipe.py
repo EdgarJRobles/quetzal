@@ -227,8 +227,9 @@ class mateEdges:
 
     def Activated(self):
         import pCmd
-
-        FreeCAD.activeDocument().openTransaction(translate("Transaction", "Mate"))
+        #FIXME:translate function does not works
+        # result=translate("Transaction", "Mate")
+        FreeCAD.activeDocument().openTransaction()
         pCmd.alignTheTube()
         FreeCAD.activeDocument().commitTransaction()
         FreeCAD.activeDocument().recompute()
@@ -277,10 +278,9 @@ class extend2intersection:
 
     def Activated(self):
         import pCmd
-
-        FreeCAD.activeDocument().openTransaction(
-            translate("Transaction", "Extend pipes to intersection")
-        )
+        #FIXME:translate function does not works
+        # result=translate("Transaction", "Extend pipes to intersection")
+        FreeCAD.activeDocument().openTransaction()
         pCmd.extendTheTubes2intersection()
         FreeCAD.activeDocument().recompute()
         FreeCAD.activeDocument().commitTransaction()
@@ -307,10 +307,9 @@ class extend1intersection:
 
     def Activated(self):
         import pCmd
-
-        FreeCAD.activeDocument().openTransaction(
-            translate("Transaction", "Extend pipe to intersection")
-        )
+        #FIXME:translate function does not works
+        # result=translate("Transaction", "Extend pipe to intersection")
+        FreeCAD.activeDocument().openTransaction()
         pCmd.extendTheTubes2intersection(both=False)
         FreeCAD.activeDocument().recompute()
         FreeCAD.activeDocument().commitTransaction()
@@ -341,7 +340,9 @@ class laydown:
         from Part import Plane
 
         refFace = [f for f in fCmd.faces() if isinstance(f.Surface, Plane)][0]
-        FreeCAD.activeDocument().openTransaction(translate("Transaction", "Lay-down the pipe"))
+        #FIXME:translate function does not works
+        # result=translate("Transaction", "Lay-down the pipe")
+        FreeCAD.activeDocument().openTransaction()
         for b in fCmd.beams():
             if pCmd.isPipe(b):
                 pCmd.laydownTheTube(b, refFace)
@@ -377,7 +378,9 @@ class raiseup:
             if len(sxFaces) > 0:
                 refFace = sxFaces[0]
                 support = sx.Object
-        FreeCAD.activeDocument().openTransaction(translate("Transaction", "Raise-up the support"))
+        #FIXME:translate function does not works
+        # result=translate("Transaction", "Raise-up the support")
+        FreeCAD.activeDocument().openTransaction()
         for b in fCmd.beams():
             if pCmd.isPipe(b):
                 pCmd.laydownTheTube(b, refFace, support)
@@ -449,8 +452,9 @@ class attach2tube:
 
     def Activated(self):
         import pCmd
-
-        FreeCAD.activeDocument().openTransaction(translate("Transaction", "Attach to tube"))
+        #FIXME:translate function does not works
+        # result=translate("Transaction", "Attach to tube")
+        FreeCAD.activeDocument().openTransaction()
         pCmd.attachToTube()
         FreeCAD.activeDocument().recompute()
         FreeCAD.activeDocument().commitTransaction()
