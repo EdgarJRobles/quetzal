@@ -69,8 +69,31 @@ class insertElbow:
     def GetResources(self):
         return {
             "Pixmap": "Quetzal_InsertElbow",
-            "MenuText": QT_TRANSLATE_NOOP("Quetzal_InsertElbow", "Insert a curve"),
-            "ToolTip": QT_TRANSLATE_NOOP("Quetzal_InsertElbow", "Insert a curve"),
+            "MenuText": QT_TRANSLATE_NOOP("Quetzal_InsertElbow", "Insert a elbow"),
+            "ToolTip": QT_TRANSLATE_NOOP("Quetzal_InsertElbow", tooltips.elbow_tooltip),
+        }
+
+
+class insertTerminalAdapter:
+    def IsActive(self):
+        if FreeCAD.ActiveDocument is None:
+            return False
+        else:
+            return True
+
+    def Activated(self):
+        # import pCmd
+        # pCmd.makeTerminalAdapter()
+        import pForms
+        TerminalA=pForms.insertTerminalAdapterForm()
+        TerminalA.show()
+        # FreeCAD.activeDocument().recompute()
+
+    def GetResources(self):
+        return {
+            "Pixmap": "Quetzal_TerminalAdapter",
+            "MenuText": QT_TRANSLATE_NOOP("Quetzal_InsertTerminalAdapter", "Insert Terminal adapter"),
+            "ToolTip": QT_TRANSLATE_NOOP("Quetzal_InsertTerminalAdapter", "Insert Terminal adapter"),
         }
 
 
@@ -263,7 +286,7 @@ class flat:
             "Pixmap": "Quetzal_Flat",
             "MenuText": QT_TRANSLATE_NOOP("Quetzal_Flat", "Fit one elbow"),
             "ToolTip": QT_TRANSLATE_NOOP(
-                "Quetzal_Flat", "Place the elbow between two pipes or beams"
+                "Quetzal_Flat", "Place a existing elbow between two pipes adjusting lenght pipes"
             ),
         }
 
@@ -617,6 +640,7 @@ addCommand("Quetzal_Raiseup", raiseup())
 addCommand("Quetzal_Point2Point", point2point())
 addCommand("Quetzal_InsertAnyShape", insertAnyz())
 addCommand("Quetzal_MakeHeader", makeHeader())
+addCommand("Quetzal_InsertTerminalAdapter", insertTerminalAdapter())
 
 
 ### QkMenus ###

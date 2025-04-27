@@ -152,7 +152,8 @@ class insertPipeForm(dodoDialogs.protoPypeForm):
 
     def insert(self):  # insert the pipe
         self.lastPipe = None
-        d = self.pipeDictList[self.sizeList.currentRow()]
+        pipe_size_selected = self.pipeDictList[self.sizeList.currentRow()]
+        rating = self.ratingList.currentItem().text()
         if self.edit1.text():
             self.H = float(self.edit1.text())
         self.sli.setValue(100)
@@ -178,16 +179,16 @@ class insertPipeForm(dodoDialogs.protoPypeForm):
                         break
                 else:
                     propList = [
-                        d["PSize"],
-                        float(pq(d["OD"])),
-                        float(pq(d["thk"])),
+                        pipe_size_selected["PSize"],
+                        float(pq(pipe_size_selected["OD"])),
+                        float(pq(pipe_size_selected["thk"])),
                         self.H,
                     ]  # props of the dialog
                     break
         else:
-            propList = [d["PSize"], float(pq(d["OD"])), float(pq(d["thk"])), self.H]
+            propList = [pipe_size_selected["PSize"], float(pq(pipe_size_selected["OD"])), float(pq(pipe_size_selected["thk"])), self.H]
         # INSERT PIPES
-        self.lastPipe = pCmd.doPipes(propList, FreeCAD.__activePypeLine__)[-1]
+        self.lastPipe = pCmd.doPipes(rating,propList, FreeCAD.__activePypeLine__)[-1]
         self.H = float(self.lastPipe.Height)
         self.edit1.setText(str(float(self.H)))
         # TODO: SET PRATING
@@ -379,6 +380,156 @@ class insertElbowForm(dodoDialogs.protoPypeForm):
             self.lastElbow.Placement.move(
                 self.lastElbow.Placement.Rotation.multVec(self.lastElbow.Ports[0]) * -2
             )
+
+
+class insertTerminalAdapterForm(dodoDialogs.protoPypeForm):
+    """
+    Dialog to insert adapter.
+    For position and orientation you can select
+      - two pipes parallel (possibly co-linear)
+      - one pipe at one of its ends
+      - one pipe
+      - one circular edge
+      - one straight edge
+      - one vertex
+      - nothing (created at origin)
+    In case one pipe is selected, its properties are applied to the reduction.
+    Available one button to reverse the orientation of the last or selected
+    reductions.
+    """
+
+    def __init__(self):
+        super(insertTerminalAdapterForm, self).__init__(
+            translate("insertTerminalAdapter", "Insert terminal adapter"),
+            "TerminalAdapter",
+            "ConduitPVCSCH-40",
+            "reduct.svg",
+            x,
+            y,
+        )
+        self.sizeList.setCurrentRow(0)
+        self.ratingList.setCurrentRow(0)
+        self.ratingList.itemClicked.connect(self.changeRating2)
+        self.ratingList.setMaximumHeight(50)
+        self.btn2 = QPushButton(translate("insertReductForm", "Reverse"))
+        self.secondCol.layout().addWidget(self.btn2)
+        self.btn3 = QPushButton(translate("insertReductForm", "Apply"))
+        self.secondCol.layout().addWidget(self.btn3)
+        self.btn1.clicked.connect(self.insert)
+        self.btn2.clicked.connect(self.reverse)
+        self.btn3.clicked.connect(self.applyProp)
+        self.btn1.setDefault(True)
+        self.btn1.setFocus()
+        self.show()
+        self.lastReduct = None
+
+    def applyProp(self):
+        r = self.pipeDictList[self.sizeList.currentRow()]
+        DN = r["PSize"]
+        OD1 = float(pq(r["OD"]))
+        OD2 = float(pq(self.OD2list.currentItem().text()))
+        thk1 = float(pq(r["thk"]))
+        try:
+            thk2 = float(pq(r["thk2"].split(">")[self.OD2list.currentRow()]))
+        except:
+            thk2 = thk1
+        H = pq(r["H"])
+        reductions = [
+            red
+            for red in FreeCADGui.Selection.getSelection()
+            if hasattr(red, "PType") and red.PType == "Reduct"
+        ]
+        if len(reductions):
+            for reduct in reductions:
+                reduct.PSize = DN
+                reduct.PRating = self.PRating
+                reduct.OD = OD1
+                reduct.OD2 = OD2
+                reduct.thk = thk1
+                reduct.thk2 = thk2
+                reduct.Height = H
+        elif self.lastReduct:
+            self.lastReduct.PSize = DN
+            self.lastReduct.PRating = self.PRating
+            self.lastReduct.OD = OD1
+            self.lastReduct.OD2 = OD2
+            self.lastReduct.thk = thk1
+            self.lastReduct.thk2 = thk2
+            self.lastReduct.Height = H
+        FreeCAD.activeDocument().recompute()
+
+    def reverse(self):
+        selRed = [
+            r
+            for r in FreeCADGui.Selection.getSelection()
+            if hasattr(r, "PType") and r.PType == "TerminalAdapter"
+        ]
+        if len(selRed):
+            for r in selRed:
+                pCmd.rotateTheTubeAx(r, FreeCAD.Vector(1, 0, 0), 180)
+        elif self.lastReduct:
+            pCmd.rotateTheTubeAx(self.lastReduct, FreeCAD.Vector(1, 0, 0), 180)
+
+    def insert(self):
+        size = self.pipeDictList[self.sizeList.currentRow()]
+        rating = self.ratingList.currentItem().text()
+        # FreeCAD.Console.PrintMessage(rating)
+        propList=[]
+        pos = Z = None
+        selex = FreeCADGui.Selection.getSelectionEx()
+        pipes = [p.Object for p in selex if hasattr(p.Object, "PType") and p.Object.PType == "Pipe"]
+        if len(pipes) > 0:  # if 1 pipe is selected...
+            Psize_data = pipes[0].PSize
+            # OD1 = float(pipes[0].OD)
+            curves = [e for e in fCmd.edges() if e.curvatureAt(0) > 0]
+            if len(curves):  # ...and 1 curve is selected...
+                pos = curves[0].centerOfCurvatureAt(0)
+            else:  # ...or no curve is selected...
+                pos = pipes[0].Placement.Base
+            Z = pos - pipes[0].Shape.Solids[0].CenterOfMass
+            # FreeCAD.Console.PrintMessage(Psize_data)
+            # FreeCAD.Console.PrintMessage(self.sizeList.findItems(Psize_data,Qt.MatchExactly))
+            for sub in self.pipeDictList:
+                if sub["PSize"] == Psize_data:
+                    size2 = sub
+                    propList = [
+                        Psize_data,
+                        float(pq(size2["OD"])),
+                        float(pq(size2["L"])),
+                        float(pq(size2["SW"])),
+                        float(pq(size2["OD2"])),
+                    ]
+        else:  # if no pipe is selected...
+            if not propList:
+                propList = [
+                    size["PSize"],
+                    float(pq(size["OD"])),
+                    float(pq(size["L"])),
+                    float(pq(size["SW"])),
+                    float(pq(size["OD2"])),
+                ]
+                # FreeCAD.Console.PrintMessage(propList)
+            if fCmd.edges():  # ...but 1 curve is selected...
+                edge = fCmd.edges()[0]
+                if edge.curvatureAt(0) > 0:
+                    pos = edge.centerOfCurvatureAt(0)
+                    Z = edge.tangentAt(0).cross(edge.normalAt(0))
+                else:
+                    pos = edge.valueAt(0)
+                    Z = edge.tangentAt(0)
+            elif selex and selex[0].SubObjects[0].ShapeType == "Vertex":  # ...or 1 vertex..
+                pos = selex[0].SubObjects[0].Point
+        FreeCAD.activeDocument().openTransaction(translate("Transaction", "Insert reduction"))
+        self.lastReduct = pCmd.makeTerminalAdapter(rating,propList, pos, Z)
+        FreeCAD.activeDocument().commitTransaction()
+        FreeCAD.activeDocument().recompute()
+        if self.combo.currentText() != "<none>":
+            pCmd.moveToPyLi(self.lastReduct, self.combo.currentText())
+
+    def changeRating2(self, item):
+        self.PRating = item.text()
+        self.fillSizes()
+        self.sizeList.setCurrentRow(0)
 
 
 class insertFlangeForm(dodoDialogs.protoPypeForm):
@@ -1308,12 +1459,12 @@ class breakForm(QDialog):
                     pipes=[p],
                     gap=float(self.edit2.text()),
                 )
-                if p2nd and self.combo.currentText() != "<none>":
+                if p2nd and self.combo.currentText() != translate("breakForm","<none>"):
                     for p in p2nd:
                         pCmd.moveToPyLi(p, self.combo.currentText())
         else:
             p2nd = pCmd.breakTheTubes(float(self.edit1.text()), gap=float(self.edit2.text()))
-            if p2nd and self.combo.currentText() != "<none>":
+            if p2nd and self.combo.currentText() != translate("breakForm","<none>"):
                 for p in p2nd:
                     pCmd.moveToPyLi(p, self.combo.currentText())
         FreeCAD.activeDocument().commitTransaction()
@@ -1513,8 +1664,72 @@ class point2pointPipe(DraftTools.Wire):
         self.start = None
         self.lastPipe = None
 
+    def numericInput(self, numx, numy, numz):
+        """Validate the entry fields in the user interface.
+
+        This function is called by the toolbar or taskpanel interface
+        when valid x, y, and z have been entered in the input fields.
+        """
+        self.point = FreeCAD.Vector(numx, numy, numz)
+        self.node.append(self.point)
+        self.drawSegment(self.point)
+        self.sequencepiping()
+        if self.mode == "line" and len(self.node) == 2:
+            self.finish(cont=None, closed=False)
+        self.ui.setNextFocus()
+    
+    def sequencepiping(self):
+            if not self.start:
+                self.start = self.point
+            else:
+                if self.lastPipe:
+                    prev = self.lastPipe
+                else:
+                    prev = None
+                d = self.pform.pipeDictList[self.pform.sizeList.currentRow()]
+                rating = self.pform.ratingList.currentItem().text()
+                v = self.point - self.start
+                propList = [
+                    d["PSize"],
+                    float(pq(d["OD"])),
+                    float(pq(d["thk"])),
+                    float(v.Length),
+                ]
+                self.lastPipe = pCmd.makePipe(rating,propList, self.start, v)
+                if self.pform.combo.currentText() != "<none>":
+                    pCmd.moveToPyLi(self.lastPipe, self.pform.combo.currentText())
+                self.start = self.point
+                FreeCAD.ActiveDocument.recompute()
+                if prev:
+                    c = pCmd.makeElbowBetweenThings(
+                        prev,
+                        self.lastPipe,
+                        [
+                            d["PSize"],
+                            float(pq(d["OD"])),
+                            float(pq(d["thk"])),
+                            90,
+                            float(pq(d["OD"]) * 0.75),
+                        ],
+                    )
+                    if c and self.pform.combo.currentText() != "<none>":
+                        pCmd.moveToPyLi(c, self.pform.combo.currentText())
+                    FreeCAD.ActiveDocument.recompute()
+            if self.pform.cb1.isChecked():
+                rot = FreeCAD.DraftWorkingPlane.getPlacement().Rotation
+                normal = rot.multVec(FreeCAD.Vector(0, 0, 1))
+                FreeCAD.DraftWorkingPlane.alignToPointAndAxis(self.point, normal)
+                FreeCADGui.Snapper.setGrid()
+            # if not self.isWire and len(self.node) == 2:
+            #     self.finish(False, cont=True)
+            if len(self.node) > 2:
+                if (self.point - self.node[0]).Length < Draft.tolerance():
+                    self.undolast()
+                    self.finish(True, cont=True)
+
     def action(self, arg):  # re-defintition of the method of parent
         "scene event handler"
+        # FreeCAD.Console.PrintMessage("Tecla presionada: "+str(arg["Key"]))
         if arg["Type"] == "SoKeyboardEvent" and arg["State"] == "DOWN":
             # key detection
             if arg["Key"] == "ESCAPE":
@@ -1524,7 +1739,7 @@ class point2pointPipe(DraftTools.Wire):
         elif arg["Type"] == "SoLocation2Event":
             # mouse movement detection
             self.point, ctrlPoint, info = DraftTools.getPoint(self, arg)
-            DraftTools.redraw3DView()
+            # DraftTools.redraw3DView()
             # FreeCAD.Console.PrintMessage(self.point)
             return
         elif arg["Type"] == "SoMouseButtonEvent":
@@ -1541,6 +1756,7 @@ class point2pointPipe(DraftTools.Wire):
                         self.ui.redraw()
                         self.pos = arg["Position"]
                         self.nodes.append(self.point)
+                        self.sequencepiping()
                         # try:
                         # print(arg)
                         # print(self.point)
@@ -1548,52 +1764,6 @@ class point2pointPipe(DraftTools.Wire):
                         # print(info)
                         # except:
                         # pass
-                        if not self.start:
-                            self.start = self.point
-                        else:
-                            if self.lastPipe:
-                                prev = self.lastPipe
-                            else:
-                                prev = None
-                            d = self.pform.pipeDictList[self.pform.sizeList.currentRow()]
-                            v = self.point - self.start
-                            propList = [
-                                d["PSize"],
-                                float(pq(d["OD"])),
-                                float(pq(d["thk"])),
-                                float(v.Length),
-                            ]
-                            self.lastPipe = pCmd.makePipe(propList, self.start, v)
-                            if self.pform.combo.currentText() != "<none>":
-                                pCmd.moveToPyLi(self.lastPipe, self.pform.combo.currentText())
-                            self.start = self.point
-                            FreeCAD.ActiveDocument.recompute()
-                            if prev:
-                                c = pCmd.makeElbowBetweenThings(
-                                    prev,
-                                    self.lastPipe,
-                                    [
-                                        d["PSize"],
-                                        float(pq(d["OD"])),
-                                        float(pq(d["thk"])),
-                                        90,
-                                        float(pq(d["OD"]) * 0.75),
-                                    ],
-                                )
-                                if c and self.pform.combo.currentText() != "<none>":
-                                    pCmd.moveToPyLi(c, self.pform.combo.currentText())
-                                FreeCAD.ActiveDocument.recompute()
-                        if self.pform.cb1.isChecked():
-                            rot = FreeCAD.DraftWorkingPlane.getPlacement().Rotation
-                            normal = rot.multVec(FreeCAD.Vector(0, 0, 1))
-                            FreeCAD.DraftWorkingPlane.alignToPointAndAxis(self.point, normal)
-                            FreeCADGui.Snapper.setGrid()
-                        if not self.isWire and len(self.node) == 2:
-                            self.finish(False, cont=True)
-                        if len(self.node) > 2:
-                            if (self.point - self.node[0]).Length < Draft.tolerance():
-                                self.undolast()
-                                self.finish(True, cont=True)
             FreeCAD.activeDocument().commitTransaction()
             return
 

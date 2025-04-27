@@ -158,15 +158,16 @@ def simpleSurfBend(path=None, profile=None):
         curva.Shape = Part.makeSweepSurface(path, profile)
 
 
-def makePipe(propList=[], pos=None, Z=None):
+def makePipe(rating,propList=[], pos=None, Z=None):
     """add a Pipe object
-    makePipe(propList,pos,Z);
+    makePipe(rating,propList,pos,Z);
     propList is one optional list with 4 elements:
       DN (string): nominal diameter
       OD (float): outside diameter
       thk (float): shell thickness
       H (float): length of pipe
     Default is "DN50 (SCH-STD)"
+    rating pipe pressure capability
     pos (vector): position of insertion; default = 0,0,0
     Z (vector): orientation: default = 0,0,1
     Remember: property PRating must be defined afterwards
@@ -177,9 +178,9 @@ def makePipe(propList=[], pos=None, Z=None):
         Z = FreeCAD.Vector(0, 0, 1)
     a = FreeCAD.ActiveDocument.addObject("Part::FeaturePython", "Tube")
     if len(propList) == 4:
-        pFeatures.Pipe(a, *propList)
+        pFeatures.Pipe(a,rating, *propList)
     else:
-        pFeatures.Pipe(a)
+        pFeatures.Pipe(a,rating)
     ViewProvider(a.ViewObject, "Quetzal_InsertPipe")
     a.Placement.Base = pos
     rot = FreeCAD.Rotation(FreeCAD.Vector(0, 0, 1), Z)
@@ -188,7 +189,7 @@ def makePipe(propList=[], pos=None, Z=None):
     return a
 
 
-def doPipes(propList=["DN50", 60.3, 3, 1000], pypeline=None):
+def doPipes(rating,propList=["DN50", 60.3, 3, 1000], pypeline=None):
     """
     propList = [
       DN (string): nominal diameter
@@ -207,10 +208,10 @@ def doPipes(propList=["DN50", 60.3, 3, 1000], pypeline=None):
             for v in so.Vertexes
         ]
         if len(vs) == 0:  # ...no vertexes selected
-            plist.append(makePipe(propList))
+            plist.append(makePipe(rating,propList))
         else:  # ... one or more vertexes
             for v in vs:
-                plist.append(makePipe(propList, v.Point))
+                plist.append(makePipe(rating,propList, v.Point))
     else:
         selex = FreeCADGui.Selection.getSelectionEx()
         for objex in selex:
@@ -219,7 +220,7 @@ def doPipes(propList=["DN50", 60.3, 3, 1000], pypeline=None):
                 for face in fCmd.faces():
                     x = (face.ParameterRange[0] + face.ParameterRange[1]) / 2
                     y = (face.ParameterRange[2] + face.ParameterRange[3]) / 2
-                    plist.append(makePipe(propList, face.valueAt(x, y), face.normalAt(x, y)))
+                    plist.append(makePipe(rating,propList, face.valueAt(x, y), face.normalAt(x, y)))
                 FreeCAD.activeDocument().commitTransaction()
                 FreeCAD.activeDocument().recompute()
             else:
@@ -227,7 +228,7 @@ def doPipes(propList=["DN50", 60.3, 3, 1000], pypeline=None):
                     if edge.curvatureAt(0) == 0:  # ...straight edges
                         pL = propList
                         pL[3] = edge.Length
-                        plist.append(makePipe(pL, edge.valueAt(0), edge.tangentAt(0)))
+                        plist.append(makePipe(rating,pL, edge.valueAt(0), edge.tangentAt(0)))
                     else:  # ...curved edges
                         pos = edge.centerOfCurvatureAt(0)
                         Z = edge.tangentAt(0).cross(edge.normalAt(0))
@@ -235,13 +236,28 @@ def doPipes(propList=["DN50", 60.3, 3, 1000], pypeline=None):
                             p0, p1 = [o.Placement.Rotation.multVec(p) for p in o.Ports]
                             if not fCmd.isParallel(Z, p0):
                                 Z = p1
-                        plist.append(makePipe(propList, pos, Z))
+                        plist.append(makePipe(rating,propList, pos, Z))
     if pypeline:
         for p in plist:
             moveToPyLi(p, pypeline)
     FreeCAD.activeDocument().commitTransaction()
     FreeCAD.activeDocument().recompute()
     return plist
+
+
+def makeTerminalAdapter(rating,propList=[],pos=None,Z=None):
+    """Add TerminalAdapter object
+    """
+    if pos == None:
+        pos = FreeCAD.Vector(0, 0, 0)
+    if Z == None:
+        Z = FreeCAD.Vector(0, 0, 1)
+    a = FreeCAD.ActiveDocument.addObject("Part::FeaturePython", "TerminalAdapter")
+    pFeatures.TerminalAdapter(a,rating, *propList)
+    ViewProvider(a.ViewObject, "Quetzal_TerminalAdapter")
+    a.Placement.Base = pos
+    rot = FreeCAD.Rotation(FreeCAD.Vector(0, 0, 1), -Z)
+    a.Placement.Rotation = rot.multiply(a.Placement.Rotation)
 
 
 def makeElbow(propList=[], pos=None, Z=None):
@@ -1178,6 +1194,7 @@ def breakTheTubes(point, pipes=[], gap=0):
     if pipes:
         for pipe in pipes:
             if point < float(pipe.Height) and gap < (float(pipe.Height) - point):
+                rating=pipe.PRating
                 propList = [
                     pipe.PSize,
                     float(pipe.OD),
@@ -1187,7 +1204,7 @@ def breakTheTubes(point, pipes=[], gap=0):
                 pipe.Height = point
                 Z = fCmd.beamAx(pipe)
                 pos = pipe.Placement.Base + Z * (float(pipe.Height) + gap)
-                pipe2nd = makePipe(propList, pos, Z)
+                pipe2nd = makePipe(rating,propList, pos, Z)
                 pipes2nd.append(pipe2nd)
         # FreeCAD.activeDocument().recompute()
     return pipes2nd
@@ -1517,3 +1534,14 @@ def flatten(p1=None, p2=None, c=None):
         FreeCAD.ActiveDocument.commitTransaction()
     except:
         FreeCAD.Console.PrintError("Intersection point not found\n")
+
+
+def makeRegularPolygon(n,r):
+    """
+    make a Wire with polygon shape
+    n : number of sides.
+    r : circunscrit radius
+    """
+    from math import cos, sin, pi
+    vecs = [FreeCAD.Vector(cos(2*pi*i/n)*r, sin(2*pi*i/n)*r) for i in range(n+1)]
+    return Part.makePolygon(vecs)

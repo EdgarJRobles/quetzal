@@ -77,3 +77,12 @@ pivotbeam_tooltip = (
     "3.- Press 'x' key to execute rotation\n"
     "Note: - actually the command takes to the same level, respect the position and orientation \n of the first face selected, the center-of-mass of all faces selected. Thus it translates the objects even if the faces are not parallel.\n"
 )
+elbow_tooltip = (
+    "Tool to insert a elbow based on gui option selections\n"
+    "_________________________________________________ \n"
+	"Usage \n"
+    "1.- Select edge or edges where you want to attach the elbow; should select circular end edges\n"
+    "2.- Choose elbow type according your needs on the GUI\n"
+    "3.- Press 'insert' button\n"
+    "Note: - There is dial available in case inserted elbow does not have right orientation\n"
+)

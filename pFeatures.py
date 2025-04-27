@@ -116,13 +116,13 @@ class Pipe(pypeType):
       thk (float): shell thickness
       H (float): length of pipe"""
 
-    def __init__(self, obj, DN="DN50", OD=60.3, thk=3, H=100):
+    def __init__(self, obj,rating, DN="DN50", OD=60.3, thk=3, H=100):
         # initialize the parent class
         super(Pipe, self).__init__(obj)
         # define common properties
         obj.PType = "Pipe"
         obj.Proxy = self
-        obj.PRating = "SCH-STD"
+        obj.PRating = rating
         obj.PSize = DN
         # define specific properties
         obj.addProperty(
@@ -197,9 +197,70 @@ class Pipe(pypeType):
         super(Pipe, self).execute(fp)  # perform common operations
 
 
+class TerminalAdapter(pypeType):
+    """Class for objet Ptype="TerminalAdapter"
+      obj: the "App::FeaturePython" object
+      PSize (string): nominal diameter
+      OD (float): outside diameter
+      L (float): Overall length
+      SW (float): Support width
+    """
+    def __init__(self,obj,rating,DN="PCV-1/2",OD=21.3,L=33.2,SW=18.7, OD2=21.33):
+        super(TerminalAdapter,self).__init__(obj)
+        obj.Proxy = self
+        obj.PType = "TerminalAdapter"
+        obj.PRating =rating
+        obj.PSize = DN
+        obj.addProperty(
+            "App::PropertyLength",
+            "OD",
+            "TerminalAdapter",
+            QT_TRANSLATE_NOOP("App::Property", "Outside diameter"),
+        ).OD = OD
+        obj.addProperty(
+            "App::PropertyLength",
+            "L",
+            "TerminalAdapter",
+            QT_TRANSLATE_NOOP("App::Property", "Overall lenght"),
+        ).L = L
+        obj.addProperty(
+            "App::PropertyLength",
+            "SW",
+            "TerminalAdapter",
+            QT_TRANSLATE_NOOP("App::Property", "Support width"),
+        ).SW = SW
+        obj.addProperty(
+            "App::PropertyLength",
+            "OD2",
+            "TerminalAdapter",
+            QT_TRANSLATE_NOOP("App::Property", "Outside thread side"),
+        ).OD2 = OD2
+        self.execute(obj)
+    def onChanged(self, fp,prop):
+        pass
+    def execute(self, fp):
+        from math import tan
+        polygonthickness = fp.SW/5
+        threadthickness = fp.L-fp.SW
+        cyl1=Part.makeCylinder(fp.OD/2,fp.SW-polygonthickness,FreeCAD.Vector(0,0,-polygonthickness),FreeCAD.Vector(0,0,-1))
+        pwire=pCmd.makeRegularPolygon(6,(fp.OD*1.2)/2)
+        polygonf=Part.Face(pwire)
+        extrpoly=polygonf.extrude(FreeCAD.Vector(0,0,-polygonthickness))
+        result=cyl1.fuse(extrpoly)
+        cone2=Part.makeCone(fp.OD2/2,(fp.OD2/2-(tan(0.0312396483)*threadthickness)),threadthickness,FreeCAD.Vector(0,0,-polygonthickness),FreeCAD.Vector(0,0,1),360)
+        result2=cone2.fuse(result)
+        filletres=result2.makeFillet(2.5,[result2.Edges[16],result2.Edges[12],result2.Edges[9],result2.Edges[10],result2.Edges[14],result2.Edges[18]])
+        cyl2=Part.makeCylinder((fp.OD/3),fp.SW,FreeCAD.Vector(0,0,-polygonthickness),FreeCAD.Vector(0,0,-1))
+        cutres=filletres.cut(cyl2)
+        cone3=Part.makeCone(fp.OD2/2*0.8,(fp.OD2/2-(tan(0.0312396483)*threadthickness))*0.8,threadthickness,FreeCAD.Vector(0,0,-polygonthickness),FreeCAD.Vector(0,0,1),360)
+        cutres2=cutres.cut(cone3)
+        fp.Shape = cutres2
+        super(TerminalAdapter, self).execute(fp)  # perform common operations
+
+
 class Elbow(pypeType):
     """Class for object PType="Elbow"
-    Elbow(obj,[PSize="DN50",OD=60.3,thk=3,BA=90,BR=45.225])
+      Elbow(obj,[PSize="DN50",OD=60.3,thk=3,BA=90,BR=45.225])
       obj: the "App::FeaturePython" object
       PSize (string): nominal diameter
       OD (float): outside diameter
@@ -547,7 +608,7 @@ class Flange(pypeType):
     #!TODO:this method generate a PartDesign object with sketch nest, pending feature compatibility
 
     # def execute(self,fp):
-    #     obj=FreeCAD.activeDocument().addObject('PartDesign::Body','Flange')
+    #     obj=FreeCAD.activeDocument().addObject('u','Flange')
     #     sketch=obj.newObject('Sketcher::SketchObject','Sketch')
     #     sketch.AttachmentSupport=(FreeCAD.activeDocument().getObject('YZ_Plane'),[''])
     #     sketch.MapMode='FlatFace'
