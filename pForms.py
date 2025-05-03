@@ -241,7 +241,7 @@ class insertElbowForm(dodoDialogs.protoPypeForm):
             translate("insertElbowForm", "Insert elbows"),
             "Elbow",
             "SCH-STD",
-            "elbow.svg",
+            "eilbow.svg",
             x,
             y,
         )
@@ -402,7 +402,7 @@ class insertTerminalAdapterForm(dodoDialogs.protoPypeForm):
         super(insertTerminalAdapterForm, self).__init__(
             translate("insertTerminalAdapter", "Insert terminal adapter"),
             "TerminalAdapter",
-            "ConduitPVCSCH-40",
+            "ConduitPVC0.5in-SCH-40",
             "reduct.svg",
             x,
             y,

@@ -842,7 +842,7 @@ def makeBranch(
             base = makeW()
     if base:
         a = FreeCAD.ActiveDocument.addObject("Part::FeaturePython", lab)
-        pFeatures.PypeBranch2(a, base, DN, PRating, OD, thk, BR)
+        pFeatures.PypeBranch2(a,PRating, base, DN, OD, thk, BR)
         pFeatures.ViewProviderPypeBranch(a.ViewObject)
         return a
     else:

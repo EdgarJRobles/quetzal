@@ -879,14 +879,14 @@ class PypeLine2(pypeType):
     with possibility to group them automatically and extract the part-list.
     """
 
-    def __init__(self, obj, DN="DN50", PRating="SCH-STD", OD=60.3, thk=3, BR=None, lab=None):
+    def __init__(self, obj,rating, DN="DN50", OD=60.3, thk=3, BR=None, lab=None):
         # initialize the parent class
         super(PypeLine2, self).__init__(obj)
         # define common properties
         obj.Proxy = self
         obj.PType = "PypeLine"
         obj.PSize = DN
-        obj.PRating = PRating
+        obj.PRating = rating
         if lab:
             obj.Label = lab
         # define specific properties
@@ -929,7 +929,6 @@ class PypeLine2(pypeType):
             FreeCAD.Console.PrintWarning(fp.Label + " Base has changed to " + fp.Base.Label + "\n")
         if prop == "OD":
             fp.BendRadius = 0.75 * fp.OD
-        fp.Proxy.update(fp)
 
     def purge(self, fp):
         group = FreeCAD.activeDocument().getObjectsByLabel(fp.Group)[0]
@@ -949,7 +948,7 @@ class PypeLine2(pypeType):
         pipes = list()
         for e in edges:
             # ---Create the tube---
-            p = pCmd.makePipe(
+            p = pCmd.makePipe(fp.PRating,
                 [fp.PSize, fp.OD, fp.thk, e.Length], pos=e.valueAt(0), Z=e.tangentAt(0)
             )
             p.PRating = fp.PRating
@@ -1257,14 +1256,14 @@ class PypeBranch2(pypeType):  # use AttachExtensionPython
       type(base)=DWire or SketchObject
     """
 
-    def __init__(self, obj, base, DN="DN50", PRating="SCH-STD", OD=60.3, thk=3, BR=None):
+    def __init__(self, obj,rating, base, DN="DN50", OD=60.3, thk=3, BR=None):
         # initialize the parent class
         super(PypeBranch2, self).__init__(obj)
         # define common properties
         obj.Proxy = self
         obj.PType = "PypeBranch"
         obj.PSize = DN
-        obj.PRating = PRating
+        obj.PRating = rating
         # define specific properties
         if FREECADVERSION > 0.19:
             obj.addExtension("App::GroupExtensionPython")
@@ -1365,7 +1364,7 @@ class PypeBranch2(pypeType):  # use AttachExtensionPython
                     alfa = e.tangentAt(0).getAngle(fp.Base.Shape.Edges[i + 1].tangentAt(0)) / 2
                     L -= R * tan(alfa)
                 eSupport = "Edge" + str(i + 1)
-                t = pCmd.makePipe([fp.PSize, float(fp.OD), float(fp.thk), L])
+                t = pCmd.makePipe(fp.PRating,[fp.PSize, float(fp.OD), float(fp.thk), L])
                 t.PRating = fp.PRating
                 t.PSize = fp.PSize
                 t.AttachmentSupport = [(fp.Base, eSupport)]
@@ -1392,9 +1391,9 @@ class PypeBranch2(pypeType):  # use AttachExtensionPython
             fp.Curves = curves
             objs = [FreeCAD.ActiveDocument.getObject(name) for name in fp.Tubes + fp.Curves]
             # FreeCAD.Console.PrintMessage(objs)
-            fp.addObjects(objs)
-            for obj in objs:
-                obj.Proxy.execute(obj)
+            # fp.addObjects(objs)
+            # for obj in objs:
+            #     obj.Proxy.execute(obj)
 
     def purge(self, fp):
         if hasattr(fp, "Tubes"):

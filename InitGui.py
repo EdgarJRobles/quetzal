@@ -27,7 +27,7 @@ import sys
 
 import FreeCAD
 import FreeCADGui
-from FreeCADGui import Workbench
+from FreeCADGui import ActiveDocument, Workbench
 
 
 Log = FreeCAD.Console.PrintLog
@@ -161,19 +161,53 @@ class QuetzalWorkbench(Workbench):
         self.appendContextMenu(QT_TRANSLATE_NOOP("Workbench", "Utils"), self.utilsList)
 
     def setWatchers(self):
-        class QuetzalCreateWatcher:
-            def __init__(self):
+        class QuetzalWatcher:
+            def __init__(self,commands,title):
                 QT_TRANSLATE_NOOP = FreeCAD.Qt.QT_TRANSLATE_NOOP
-                self.commands = ["Quetzal_InsertPypeLine",
-                                 "Quetzal_Point2Point",
-                                 "Quetzal_InsertFlange",
-                                 "Quetzal_FrameBranchManager",
-                                 "Quetzal_FrameIt"
-                                 ]
-                self.title = QT_TRANSLATE_NOOP("Quetzal","Create objects")
+                self.commands = commands
+                self.title = QT_TRANSLATE_NOOP("Quetzal",title)
+
             def shouldShow(self):
-                return (FreeCAD.ActiveDocument is not None)
-        FreeCADGui.Control.addTaskWatcher([QuetzalCreateWatcher()])
+                result:bool
+                if self.title == "No Objects":
+                    if FreeCAD.ActiveDocument is not None and FreeCAD.ActiveDocument.ActiveObject is None:
+                        result=True
+                    else:
+                        result=False
+                elif self.title == "Wire Objects":
+                    if FreeCAD.ActiveDocument is not None and FreeCAD.ActiveDocument.ActiveObject is not None:
+                        try:
+                            obj = FreeCADGui.Selection.getSelection()[0]
+                            isWire = hasattr(obj, "Shape") and obj.Shape.Edges  # type(obj.Shape)==Part.Wire
+                            if isWire:
+                                result=True
+                            else:
+                                result=False
+                        except Exception as e:
+                            result=False
+                    else:
+                        result=False
+                elif self.title == "Tube Objects":
+                    if FreeCAD.ActiveDocument is not None and FreeCAD.ActiveDocument.ActiveObject is not None:
+                        try:
+                            from pCmd import isPipe
+                            obj = FreeCADGui.Selection.getSelection()[0]
+                            if isPipe(obj):
+                                result=True
+                            else:
+                                result=False
+                        except Exception as e:
+                            result=False
+                    else:
+                        result=False
+                return result
+        self.NoObjects=["Quetzal_HackedLine","Quetzal_Point2Point"]
+        self.WireObjects=["Quetzal_FrameBranchManager","Quetzal_InsertPipe","Quetzal_InsertPypeLine","Quetzal_InsertBranch"]
+        self.TubeObjects=["Quetzal_InsertFlange","Quetzal_InsertTerminalAdapter","Quetzal_InsertElbow"]
+        FreeCADGui.Control.addTaskWatcher([
+            QuetzalWatcher(self.NoObjects,"No Objects"),
+            QuetzalWatcher(self.WireObjects,"Wire Objects"),
+            QuetzalWatcher(self.TubeObjects,"Tube Objects")])
 
     def Activated(self):
         # if hasattr(FreeCADGui, "draftToolBar"):  # patch
