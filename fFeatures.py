@@ -1265,7 +1265,7 @@ class FrameBranch(object):
                     "FrameBranch",
                     QT_TRANSLATE_NOOP("App::Property", "The rotation of the section"),
                 )
-                if int(FreeCAD.Version()[1]) > 19:  # 20220704
+                if FREECADVERSION > 0.19:  # 20220704
                     beam.addExtension("Part::AttachExtensionPython")
                 else:
                     beam.addExtension("Part::AttachExtensionPython", beam)
