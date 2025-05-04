@@ -11,6 +11,8 @@
 Quetzal is the fork of Dodo workbench for [FreeCAD](https://freecad.org).
 Extending Dodo workbench support & adding translation support.
 ![screenshot1](https://github.com/user-attachments/assets/70e96920-34db-40d9-a8d6-102e690a13ee "Metal frame created with Quetzal")
+![imagen](https://github.com/user-attachments/assets/78974156-9582-4676-acd1-b3689fcd74be)
+
 
 ## Installation
 
