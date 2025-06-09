@@ -26,7 +26,11 @@ class cutListUI:
         self.form.cut_width.setProperty("minimum", 0.0)
 
         # Set Default Options
-        self.form.use_nesting.stateChanged.connect(self.useNestingToggle)
+        if hasattr(self.form.use_nesting, "checkStateChanged"):
+            self.form.use_nesting.checkStateChanged.connect(self.useNestingToggle)
+        else:
+            self.form.use_nesting.stateChanged.connect(self.useNestingToggle)
+        self.form.use_nesting.setChecked(False)
 
         self.form.use_nesting.setChecked(False)
 
