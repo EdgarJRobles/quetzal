@@ -8,7 +8,7 @@ __license__ = "LGPL 3"
 # import FreeCAD modules
 import os
 
-import tooltips
+import Quetzal_tooltips
 import FreeCAD
 import FreeCADGui
 
@@ -47,7 +47,7 @@ class frameIt:
             "Pixmap": "Quetzal_FrameIt",
             "MenuText": QT_TRANSLATE_NOOP("Quetzal_FrameIt", "Place one-beam over one-edge"),
             "ToolTip": QT_TRANSLATE_NOOP(
-                "Quetzal_FrameIt", tooltips.frameit_tooltip
+                "Quetzal_FrameIt", Quetzal_tooltips.frameit_tooltip
             ),
         }
 
@@ -79,7 +79,7 @@ class spinSect:
             "Pixmap": "Quetzal_SpinSection",
             "MenuText": QT_TRANSLATE_NOOP("Quetzal_SpinSection", "Spin beams by 45 deg."),
             "ToolTip": QT_TRANSLATE_NOOP(
-                "Quetzal_SpinSection", tooltips.spinsect_tooltip
+                "Quetzal_SpinSection", Quetzal_tooltips.spinsect_tooltip
             ),
         }
 
@@ -113,7 +113,7 @@ class reverseBeam:
             "Pixmap": "Quetzal_ReverseBeam",
             "MenuText": QT_TRANSLATE_NOOP("Quetzal_ReverseBeam", "Reverse orientation"),
             "ToolTip": QT_TRANSLATE_NOOP(
-                "Quetzal_ReverseBeam", tooltips.reversebeam_tooltip
+                "Quetzal_ReverseBeam", Quetzal_tooltips.reversebeam_tooltip
             ),
         }
 
@@ -199,7 +199,7 @@ class shiftBeam:
             "Pixmap": "Quetzal_ShiftBeam",
             "MenuText": QT_TRANSLATE_NOOP("Quetzal_ShiftBeam", "Shift the beam"),
             "ToolTip": QT_TRANSLATE_NOOP(
-                "Quetzal_ShiftBeam", tooltips.shiftbeam_tooltip
+                "Quetzal_ShiftBeam", Quetzal_tooltips.shiftbeam_tooltip
             ),
         }
 
@@ -249,7 +249,7 @@ class levelBeam:
             "MenuText": QT_TRANSLATE_NOOP("Quetzal_LevelBeam", "Flush the surfaces"),
             "ToolTip": QT_TRANSLATE_NOOP(
                 "Quetzal_LevelBeam",
-                tooltips.levelbeam_tooltip,
+                Quetzal_tooltips.levelbeam_tooltip,
             ),
         }
 
@@ -328,7 +328,7 @@ class pivotBeam:
             "Pixmap": "Quetzal_PivotBeam",
             "MenuText": QT_TRANSLATE_NOOP("Quetzal_PivotBeam", "Pivot the beam"),
             "ToolTip": QT_TRANSLATE_NOOP(
-                "Quetzal_PivotBeam", tooltips.pivotbeam_tooltip
+                "Quetzal_PivotBeam", Quetzal_tooltips.pivotbeam_tooltip
             ),
         }
 
@@ -552,7 +552,7 @@ class FrameBranchManager:
         return {
             "Pixmap": "Quetzal_FrameBranchManager",
             "MenuText": QT_TRANSLATE_NOOP("Quetzal_FrameBranchManager", "FrameBranch Manager"),
-            "ToolTip": QT_TRANSLATE_NOOP("Quetzal_FrameBranchManager", tooltips.framebranchmanager_tooltip),
+            "ToolTip": QT_TRANSLATE_NOOP("Quetzal_FrameBranchManager", Quetzal_tooltips.framebranchmanager_tooltip),
         }
 
 
