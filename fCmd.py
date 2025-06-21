@@ -5,16 +5,19 @@ __author__ = "oddtopus"
 __url__ = "github.com/oddtopus/dodo"
 __license__ = "LGPL 3"
 
+from typing_extensions import Any
 import FreeCAD
 import FreeCADGui
 import DraftGeomUtils as dgu
 from DraftVecUtils import rounded
+from Part import Edge, Face, Vertex
+import Part
 
 ############## AUXILIARY FUNCTIONS ###############
 
 
-def edges(selex=[], except1st=False):
-    """returns the list of edges in the selection set"""
+def edges(selex:list[Any]=[], except1st:bool=False)->list[Any]:
+    """returns the list of edges in the selection set from current 3D view"""
     if len(selex) == 0:
         selex = FreeCADGui.Selection.getSelectionEx()
     try:
@@ -25,23 +28,17 @@ def edges(selex=[], except1st=False):
         # FreeCAD.Console.PrintMessage('\nFound '+str(len(eds))+' edge(s).\n')
     except:
         FreeCAD.Console.PrintError("\nNo valid selection.\n")
+        return []
     return eds
 
-
-def beams(sel=[]):
-    """
-    Returns the selected "beams", i.e. FeaturePythons which have a Profile and an Height properties.
+def beams(sel:list[Any]=[])->list[Any]:
+    """Returns the selected "beams", i.e. FeaturePythons which have a Profile and an Height properties.
     """
     if len(sel) == 0:
         sel = FreeCADGui.Selection.getSelection()
-    return [
-        i
-        for i in sel
-        if i.TypeId == "Part::FeaturePython" and hasattr(i, "Height") and hasattr(i, "Profile")
-    ]
+    return [i for i in sel if i.TypeId == "Part::FeaturePython" and hasattr(i, "Height") and hasattr(i, "Profile")]
 
-
-def faces(selex=[]):
+def faces(selex:list[Any]=[])->list[Face]:
     """returns the list of faces in the selection set"""
     if len(selex) == 0:
         selex = FreeCADGui.Selection.getSelectionEx()
@@ -50,17 +47,16 @@ def faces(selex=[]):
         # FreeCAD.Console.PrintMessage('\nFound '+str(len(fcs))+' face(s).\n')
     except:
         FreeCAD.Console.PrintError("\nNo valid selection.\n")
+        fcs = []
     return fcs
 
-
-def points(selex=[]):
+def points(selex:list[Any]=[])->list[Vertex]:
     """returns a list of selected vertexes"""
     if len(selex) == 0:
         selex = FreeCADGui.Selection.getSelectionEx()
     return [p for sx in selex for so in sx.SubObjects for p in so.Vertexes]
 
-
-def intersectionLines2(p1=None, v1=None, p2=None, v2=None):  # TODO!
+def intersectionLines2(p1:Vertex, v1:FreeCAD.Vector, p2:Vertex, v2:FreeCAD.Vector):  # TODO!
     """
     intersectionLines2(p1,v1,p2,v2)
     Returns the intersection between one line and the plane that includes the
@@ -82,8 +78,7 @@ def intersectionLines2(p1=None, v1=None, p2=None, v2=None):  # TODO!
         # P1=FreeCAD.Vector(p1.x,p1.y,p1.z)
         return p1.projectToPlane(p2, norm)
 
-
-def intersectionCLines(thing1=None, thing2=None):
+def intersectionCLines(thing1:Any=None, thing2:Any=None)->FreeCAD.Vector:
     """
     intersectionCLines(thing1=None, thing2=None)
     Returns the intersection (vector) of the center lines of thing1 and thing2.
@@ -111,9 +106,7 @@ def intersectionCLines(thing1=None, thing2=None):
         return None
 
 
-def intersectionLines(
-    p1=None, v1=None, p2=None, v2=None
-):  # OBSOLETE: replaced with intersectionCLines
+def intersectionLines(p1=None, v1=None, p2=None, v2=None):# OBSOLETE: replaced with intersectionCLines
     """
     intersectionLines(p1,v1,p2,v2)
     If exist, returns the intersection (vector) between two lines
@@ -159,8 +152,7 @@ def intersectionLines(
         FreeCAD.Console.PrintError("Lines are parallel.\n")
         return None
 
-
-def intersectionPlane(base=None, v=None, face=None):
+def intersectionPlane(base:FreeCAD.Vector=None, v:FreeCAD.Vector=None, face:Face=None)->FreeCAD.Vector:
     """
     intersectionPlane(base,v,face)
     Returns the point (vector) at the intersection of a line and a plane.
@@ -191,9 +183,10 @@ def intersectionPlane(base=None, v=None, face=None):
         P = base + v * k
         return rounded(P)
 
-
-def isOrtho(e1=None, e2=None):
-    '"True" if two Edges or Vectors or the normal of Faces are orthogonal (with a margin)'
+def isOrtho(e1:Any=None, e2:Any=None)->bool:
+    """
+    True" if two Edges or Vectors or the normal of Faces are orthogonal (with a margin)
+    """
     v = []
     if e1 == None or e2 == None:
         if len(faces()) > 1:
@@ -210,9 +203,10 @@ def isOrtho(e1=None, e2=None):
             v.append(e)
     return round(v[0].dot(v[1]), 2) == 0
 
-
-def isParallel(e1=None, e2=None):
-    '"True" if two Edges or Vectors or the normal of Faces are parallel (with a margin)'
+def isParallel(e1:Any=None, e2:Any=None)->bool:
+    """
+    True" if two Edges or Vectors or the normal of Faces are parallel (with a margin)
+    """
     v = []
     if e1 == None or e2 == None:
         if len(faces()) > 1:
@@ -230,7 +224,8 @@ def isParallel(e1=None, e2=None):
     return round(v[0].cross(v[1]).Length, 2) == 0  # v[0].cross(v[1]).Length==0
 
 
-def beamAx(beam, vShapeRef=None):
+
+def beamAx(beam:Any, vShapeRef=None)->Any:
     """
     beamAx(beam, vShapeRef=None)
     Returns the new orientation of a vector referred to Shape's coordinates
@@ -241,6 +236,7 @@ def beamAx(beam, vShapeRef=None):
     if vShapeRef == None:
         vShapeRef = FreeCAD.Vector(0.0, 0.0, 1.0)
     return beam.Placement.Rotation.multVec(vShapeRef).normalize()
+
 
 
 def getDistance(shapes=None):
@@ -260,7 +256,7 @@ def getDistance(shapes=None):
         return None
 
 
-def bisect(w1=None, w2=None):
+def bisect(w1:FreeCAD.Vector=None, w2:FreeCAD.Vector=None)->FreeCAD.Vector:
     """
     bisect(w1=None,w2=None)
     Returns the bisect vector between vectors w1 and w2.
@@ -278,7 +274,7 @@ def bisect(w1=None, w2=None):
         return b.normalize()
 
 
-def ortho(w1=None, w2=None):
+def ortho(w1:FreeCAD.Vector=None, w2:FreeCAD.Vector=None)->FreeCAD.Vector:
     """
     ortho(w1=None,w2=None)
     Returns the orthogonal vector to vectors w1 and w2.
@@ -290,7 +286,7 @@ def ortho(w1=None, w2=None):
         return w1.cross(w2).normalize()
 
 
-def vec2edge(point, direct):
+def vec2edge(point, direct)->Edge:
     """
     vec2edge(point,direct)
     Returns an edge placed at point with the orientation and length of direct.
@@ -317,9 +313,10 @@ def edgeName(obj=None, edge=None):
         return None
 
 
-def isPartOfPart(obj):
+def isPartOfPart(obj:FreeCAD.DocumentObject)->Part:
     """
-    returns the part to which obj belongs"""
+    returns the part to which obj belongs
+    """
     for c in obj.InList:
         if "App.Part" in str(type(c)):
             return c
@@ -421,9 +418,7 @@ def stretchTheBeam(beam, L):
         beam.Height = L
 
 
-def extendTheBeam(
-    beam, target
-):  # TARGET [working]: make it work when target and beam belong to different App::Parts
+def extendTheBeam(beam, target):  # TARGET [working]: make it work when target and beam belong to different App::Parts
     """arg1=beam, arg2=target: extend the beam to a plane, normal to its axis, defined by target.
     If target is a Vertex or a Vector, the plane is the one that includes the point defined by target.
     If target is a Face, the plane is the one that includes the intersection between the axis of beam and the plane of the face.

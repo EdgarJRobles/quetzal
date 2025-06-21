@@ -9,6 +9,7 @@ import csv
 from math import degrees, sqrt, cos, radians, sin, tan
 from os import listdir
 from os.path import abspath, dirname, join
+from sys import float_info
 
 import ArchProfile
 import FreeCAD
@@ -1336,9 +1337,7 @@ import Draft
 from FreeCAD import Vector
 
 
-def doProfile(
-    typeS="RH", label="Square", dims=[50, 100, 5]
-):  # rearrange args in a better mnemonic way
+def doProfile(typeS="RH", label="Square", dims=[50, 100, 5])->FreeCAD.DocumentObject:
     "doProfile(typeS, label, dims)"
     if typeS in ["RH", "R", "H", "U", "L", "T", "Z", "omega", "circle"]:
         profile = [0, "SECTION", label, typeS] + dims  # for py2.6 versions
@@ -1372,7 +1371,10 @@ def doProfile(
         FreeCAD.Console.PrintError("Not such section!\n")
 
 
-def drawAndCenter(points):
+def drawAndCenter(points:list[Vector])->Part.Face:
+    """
+    Create a Face from a given list of vectors
+    """
     p = Part.makePolygon(points)
     s = Part.Face(p)
     v = s.CenterOfMass
@@ -1384,7 +1386,7 @@ def drawAndCenter(points):
 ############ pointsXXX() functions #################
 
 
-def pointsH(H, W, D, t1, t2, t3):
+def pointsH(H:float, W:float, D:float, t1:float, t2:float, t3:float)->list[Vector]:
     p1 = Vector(0, 0, 0)
     p2 = Vector(W, 0, 0)
     p3 = Vector(W, t2, 0)
@@ -1399,8 +1401,7 @@ def pointsH(H, W, D, t1, t2, t3):
     p12 = Vector(0, t2, 0)
     return [p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p1]
 
-
-def pointsL(H, W, t1, t2):
+def pointL(H:float, W:float, t1:float, t2:float)->list[Vector]:
     p1 = Vector(-W / 2, -H / 2, 0)
     p2 = Vector(W / 2, -H / 2, 0)
     p3 = Vector(W / 2, H / 2, 0)
@@ -1409,8 +1410,7 @@ def pointsL(H, W, t1, t2):
     p6 = Vector(-W / 2, t2 - H / 2, 0)
     return [p1, p2, p3, p4, p5, p6, p1]
 
-
-def pointsLWithRound(A, B, t, r1, r2):
+def pointsLWithRound(A:float, B:float, t:float, r1:float, r2:float)->list[Vector]:
     x1 = r2 * (1 - 1 / sqrt(2))
     x2 = r2 - x1
     y1 = r1 * (1 - 1 / sqrt(2))
@@ -1431,8 +1431,7 @@ def pointsLWithRound(A, B, t, r1, r2):
     p12 = Vector(B, 0, 0)
     return [p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p1]
 
-
-def pointsChannelWithRound(H, B, t1, t2, r1, r2, Cy, s0):
+def pointsChannelWithRound(H:float, B:float, t1:float, t2:float, r1:float, r2:float, Cy:float, s0:float)->list[Vector]:
     s5 = radians(s0)
     s45 = radians(45)
     y1 = r2 * cos(s45)
@@ -1473,8 +1472,7 @@ def pointsChannelWithRound(H, B, t1, t2, r1, r2, Cy, s0):
     p16 = Vector(B, 0, 0)
     return [p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p1]
 
-
-def pointsOmega(H, W, D, t1, t2, t3):
+def pointsOmega(H:float, W:float, D:float, t1:float, t2:float, t3:float)->list[Vector]:
     p1 = Vector(0, 0, 0)
     p2 = Vector(W, 0, 0)
     p3 = Vector(W, H - t3, 0)
@@ -1489,8 +1487,7 @@ def pointsOmega(H, W, D, t1, t2, t3):
     p12 = Vector(0, H - t3, 0)
     return [p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p1]
 
-
-def pointsT(H, W, t1, t2):
+def pointsT(H:float, W:float, t1:float, t2:float)->list[Vector]:
     p1 = Vector(-W / 2, -H / 2, 0)
     p2 = Vector(W / 2, -H / 2, 0)
     p3 = Vector(W / 2, (-H / 2) + t2, 0)
@@ -1501,8 +1498,7 @@ def pointsT(H, W, t1, t2):
     p8 = Vector(-W / 2, (-H / 2) + t2, 0)
     return [p1, p2, p3, p4, p5, p6, p7, p8, p1]
 
-
-def pointsU(H, W, D, t1, t2, t3):
+def pointsU(H:float, W:float, D:float, t1:float, t2:float, t3:float)->list[Vector]:
     p1 = Vector(0, 0, 0)
     p2 = Vector(W, 0, 0)
     p3 = Vector(W, H, 0)
@@ -1513,8 +1509,7 @@ def pointsU(H, W, D, t1, t2, t3):
     p8 = Vector(0, t2, 0)
     return [p1, p2, p3, p4, p5, p6, p7, p8, p1]
 
-
-def pointsZ(H, W, t1, t2):
+def pointsZ(H:float, W:float, t1:float, t2:float)->list[Vector]:
     p1 = Vector(-t1 / 2, -W / 2, 0)
     p2 = Vector(-t1 / 2, (W / 2) - t2, 0)
     p3 = Vector(t1 / 2 - H, (W / 2) - t2, 0)
@@ -1524,7 +1519,6 @@ def pointsZ(H, W, t1, t2):
     p7 = Vector(H - t1 / 2, t2 - W / 2, 0)
     p8 = Vector(H - t1 / 2, -W / 2, 0)
     return [p1, p8, p7, p6, p5, p4, p3, p2, p1]
-
 
 ########### _ ProfileXXX() classes ###############
 
@@ -1540,7 +1534,7 @@ from ArchProfile import _Profile
 class _ProfileRH(_Profile):
     """A parametric Rectangular hollow beam profile. Profile data: [width, height, thickness]"""
 
-    def __init__(self, obj, profile):
+    def __init__(self, obj:FreeCAD.DocumentObject, profile:list[str])->None:
         obj.Label = translate("Objects", "Rectangular hollow", "Profile name in the Tree View")
         obj.addProperty(
             "App::PropertyString",
@@ -1574,7 +1568,7 @@ class _ProfileRH(_Profile):
         ).t2 = profile[7]
         _Profile.__init__(self, obj, profile)
 
-    def execute(self, obj):
+    def execute(self, obj:FreeCAD.DocumentObject)->None:
         W, H, t1, t2 = obj.W.Value, obj.H.Value, obj.t1.Value, obj.t2.Value
         p1 = Vector(-W / 2, -H / 2, 0)
         p2 = Vector(W / 2, -H / 2, 0)
@@ -1588,11 +1582,10 @@ class _ProfileRH(_Profile):
         q = Part.makePolygon([q1, q2, q3, q4, q1])
         obj.Shape = Part.Face(p).cut(Part.Face(q))
 
-
 class _ProfileR(_Profile):
     """A parametric Rectangular solid beam profile. Profile data: [width, height]"""
 
-    def __init__(self, obj, profile):
+    def __init__(self, obj:FreeCAD.DocumentObject, profile:list[str])->None:
         obj.Label = translate("Objects", "Rectangular solid", "Profile name in the Tree View")
         obj.addProperty(
             "App::PropertyString",
@@ -1614,7 +1607,7 @@ class _ProfileR(_Profile):
         ).H = profile[5]
         _Profile.__init__(self, obj, profile)
 
-    def execute(self, obj):
+    def execute(self, obj:FreeCAD.DocumentObject)->None:
         W, H = obj.W.Value, obj.H.Value
         p1 = Vector(-W / 2, -H / 2, 0)
         p2 = Vector(W / 2, -H / 2, 0)
@@ -1623,14 +1616,13 @@ class _ProfileR(_Profile):
         p = Part.makePolygon([p1, p2, p3, p4, p1])
         obj.Shape = Part.Face(p)
 
-
 class _ProfileCircle(_Profile):
     """A parametric circular beam profile.
     Profile data:
       D: diameter
       t1: thickness (optional; "0" for solid section)"""
 
-    def __init__(self, obj, profile):
+    def __init__(self, obj:FreeCAD.DocumentObject, profile:list[str])->None:
         obj.Label = translate("Objects", "Circle-profile", "Profile name in the Tree View")
         obj.addProperty(
             "App::PropertyString",
@@ -1652,7 +1644,7 @@ class _ProfileCircle(_Profile):
         ).t1 = profile[5]
         _Profile.__init__(self, obj, profile)
 
-    def execute(self, obj):
+    def execute(self, obj:FreeCAD.DocumentObject)->None:
         D, t1 = obj.D.Value, obj.t1.Value
         if not t1:
             obj.Shape = Part.makeFace([Part.makeCircle(D / 2)], "Part::FaceMakerSimple")
@@ -1661,11 +1653,10 @@ class _ProfileCircle(_Profile):
             c2 = Part.makeFace([Part.makeCircle(D / 2 - t1)], "Part::FaceMakerSimple")
             obj.Shape = c1.cut(c2)
 
-
 class _ProfileL(_Profile):
     """A parametric L beam profile. Profile data: [width, height, web thickness]"""
 
-    def __init__(self, obj, profile):
+    def __init__(self, obj:FreeCAD.DocumentObject, profile:list[str])->None:
         obj.addProperty(
             "App::PropertyString",
             "FType",
@@ -1698,10 +1689,9 @@ class _ProfileL(_Profile):
         ).t2 = profile[7]
         _Profile.__init__(self, obj, profile)
 
-    def execute(self, obj):
+    def execute(self, obj:FreeCAD.DocumentObject)->None:
         W, H, t1, t2 = obj.W.Value, obj.H.Value, obj.t1.Value, obj.t2.Value
         obj.Shape = drawAndCenter(pointsL(H, W, t1, t2))
-
 
 class _ProfileAngle(_Profile):
     """
@@ -1709,7 +1699,7 @@ class _ProfileAngle(_Profile):
     obj: _Profile object
     profile: list of profile parameters
     """
-    def __init__(self, obj:_Profile, profile:list):
+    def __init__(self, obj:FreeCAD.DocumentObject, profile:list[str])->None:
         ## Profile name
         self.label = obj.Name
         # FIXME: <class 'AttributeError'>: 'FeaturePython' object has no attribute 'size'
@@ -1765,9 +1755,8 @@ class _ProfileAngle(_Profile):
             QT_TRANSLATE_NOOP("App::Property", "Radius of corner r2"),
         ).r2 = float(self.sa[4])
         _Profile.__init__(self, obj, profile)
-        return
 
-    def execute(self, obj:_Profile):
+    def execute(self, obj:FreeCAD.DocumentObject)->None:
         """
         Modify provided object based on profile list parameters
         """
@@ -1784,9 +1773,8 @@ class _ProfileAngle(_Profile):
         obj.B = B
         obj.Shape = drawAndCenter(pointsLWithRound(A, B, t, r1, r2))
 
-
 class _ProfileChannel(_Profile):
-    def __init__(self, obj, profile):
+    def __init__(self, obj:FreeCAD.DocumentObject, profile:list[str])->None:
         self.label = obj.Name
         # FIXME: <class 'AttributeError'>: 'FeaturePython' object has no attribute 'size'
         self.size = FreeCAD.ActiveDocument.getObject(self.label).size
@@ -1839,9 +1827,8 @@ class _ProfileChannel(_Profile):
             QT_TRANSLATE_NOOP("App::Property", "Radius of corner r2"),
         ).r2 = float(self.sa[4])
         _Profile.__init__(self, obj, profile)
-        return
 
-    def execute(self, obj):
+    def execute(self, obj:FreeCAD.DocumentObject)->None:
         H = float(self.sa[0])
         B = float(self.sa[1])
         t1 = float(self.sa[2])
@@ -1856,11 +1843,10 @@ class _ProfileChannel(_Profile):
         obj.B = B
         obj.Shape = drawAndCenter(pointsChannelWithRound(H, B, t1, self.t2, r1, r2, Cy, self.s0))
 
-
 class _ProfileT(_Profile):
     """A parametric T beam profile. Profile data: [width, height, web thickness]"""
 
-    def __init__(self, obj, profile):
+    def __init__(self, obj:FreeCAD.DocumentObject, profile:list[str])->None:
         obj.Label = translate("Objects", "T-profile", "Profile name in the Tree View")
         obj.addProperty(
             "App::PropertyString",
@@ -1894,15 +1880,14 @@ class _ProfileT(_Profile):
         ).t2 = profile[7]
         _Profile.__init__(self, obj, profile)
 
-    def execute(self, obj):
+    def execute(self, obj:FreeCAD.DocumentObject)->None:
         W, H, t1, t2 = obj.W.Value, obj.H.Value, obj.t1.Value, obj.t2.Value
         obj.Shape = drawAndCenter(pointsT(H, W, t1, t2))
-
 
 class _ProfileZ(_Profile):
     """A parametric Z beam profile. Profile data: [width, height, web thickness, flange thickness]"""
 
-    def __init__(self, obj, profile):
+    def __init__(self, obj:FreeCAD.DocumentObject, profile:list[str])->None:
         obj.Label = translate("Objects", "Z-profile", "Profile name in the Tree View")
         obj.addProperty(
             "App::PropertyString",
@@ -1936,15 +1921,14 @@ class _ProfileZ(_Profile):
         ).t2 = profile[7]
         _Profile.__init__(self, obj, profile)
 
-    def execute(self, obj):
+    def execute(self, obj:FreeCAD.DocumentObject)->None:
         W, H, t1, t2 = obj.W.Value, obj.H.Value, obj.t1.Value, obj.t2.Value
         obj.Shape = drawAndCenter(pointsZ(H, W, t1, t2))
-
 
 class _ProfileOmega(_Profile):
     """A parametric omega beam profile. Profile data: [W, H, D, t1,t2,t3]"""
 
-    def __init__(self, obj, profile):
+    def __init__(self, obj:FreeCAD.DocumentObject, profile:list[str]):
         obj.Label = translate("Objects", "Omega-profile", "Profile name in the Tree View")
         obj.addProperty(
             "App::PropertyString",
@@ -1990,7 +1974,7 @@ class _ProfileOmega(_Profile):
         ).t3 = profile[9]
         _Profile.__init__(self, obj, profile)
 
-    def execute(self, obj):
+    def execute(self, obj:FreeCAD.DocumentObject)->None:
         W, H, D, t1, t2, t3 = (
             obj.W.Value,
             obj.H.Value,
@@ -2001,11 +1985,10 @@ class _ProfileOmega(_Profile):
         )
         obj.Shape = drawAndCenter(pointsOmega(H, W, D, t1, t2, t3))
 
-
 class _ProfileH(_Profile):
     """A parametric omega beam profile. Profile data: [W, H, D, t1,t2,t3]"""
 
-    def __init__(self, obj, profile):
+    def __init__(self, obj:FreeCAD.DocumentObject, profile:list[str]):
         obj.Label = translate("Objects", "H-profile", "Profile name in the Tree View")
         obj.addProperty(
             "App::PropertyString",
@@ -2051,7 +2034,7 @@ class _ProfileH(_Profile):
         ).t3 = profile[9]
         _Profile.__init__(self, obj, profile)
 
-    def execute(self, obj):
+    def execute(self, obj:FreeCAD.DocumentObject)->None:
         W, H, D, t1, t2, t3 = (
             obj.W.Value,
             obj.H.Value,
@@ -2062,11 +2045,10 @@ class _ProfileH(_Profile):
         )
         obj.Shape = drawAndCenter(pointsH(H, W, D, t1, t2, t3))
 
-
 class _ProfileU(_Profile):
     """A parametric U beam profile. Profile data: [W, H, D, t1,t2,t3]"""
 
-    def __init__(self, obj, profile):
+    def __init__(self, obj:FreeCAD.DocumentObject, profile:list[str]):
         obj.addProperty(
             "App::PropertyString",
             "FType",
@@ -2111,7 +2093,7 @@ class _ProfileU(_Profile):
         ).t3 = profile[9]
         _Profile.__init__(self, obj, profile)
 
-    def execute(self, obj):
+    def execute(self, obj:FreeCAD.DocumentObject)->None:
         W, H, D, t1, t2, t3 = (
             obj.W.Value,
             obj.H.Value,
