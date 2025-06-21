@@ -8,7 +8,7 @@ __license__ = "LGPL 3"
 # import FreeCAD modules
 import FreeCAD
 import FreeCADGui
-import tooltips
+import Quetzal_tooltips
 
 from quetzal_config import addCommand
 
@@ -50,7 +50,7 @@ class insertPipe:
         return {
             "Pixmap": "Quetzal_InsertPipe",
             "MenuText": QT_TRANSLATE_NOOP("Quetzal_InsertPipe", "Insert a tube"),
-            "ToolTip": QT_TRANSLATE_NOOP("Quetzal_InsertPipe",  tooltips.insert_tube_tooltip),
+            "ToolTip": QT_TRANSLATE_NOOP("Quetzal_InsertPipe",  Quetzal_tooltips.insert_tube_tooltip),
         }
 
 
@@ -70,7 +70,7 @@ class insertElbow:
         return {
             "Pixmap": "Quetzal_InsertElbow",
             "MenuText": QT_TRANSLATE_NOOP("Quetzal_InsertElbow", "Insert a elbow"),
-            "ToolTip": QT_TRANSLATE_NOOP("Quetzal_InsertElbow", tooltips.elbow_tooltip),
+            "ToolTip": QT_TRANSLATE_NOOP("Quetzal_InsertElbow", Quetzal_tooltips.elbow_tooltip),
         }
 
 
