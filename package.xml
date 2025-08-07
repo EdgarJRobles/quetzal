@@ -31,7 +31,7 @@
 
   <content>
     <workbench>
-      <depend optional="False" type="automatic">typing_extensions</depend>
+      <depend optional="False" type="automatic">typing-extensions</depend>
       <depend optional="False" type="automatic">Draft</depend>
       <tag>beams</tag>
       <tag>frames</tag>

@@ -1520,6 +1520,11 @@ def pointsZ(H:float, W:float, t1:float, t2:float)->list[Vector]:
     p8 = Vector(H - t1 / 2, -W / 2, 0)
     return [p1, p8, p7, p6, p5, p4, p3, p2, p1]
 
+def pointsTslot(H:float, W:float):
+    pass
+    #TODO:
+    # p1 = Vector()
+    
 ########### _ ProfileXXX() classes ###############
 
 # class _Profile(Draft._DraftObject):
