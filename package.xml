@@ -31,8 +31,8 @@
 
   <content>
     <workbench>
-      <depend optional="False" type="automatic">typing-extensions</depend>
-      <depend optional="False" type="automatic">Draft</depend>
+      <depend optional="false" type="python">typing-extensions</depend>
+      <depend optional="false" type="internal">Draft</depend>
       <tag>beams</tag>
       <tag>frames</tag>
       <tag>pipe</tag>
