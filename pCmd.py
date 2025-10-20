@@ -1,4 +1,4 @@
-# (c) 2019 R. T. LGPL: part of dodo tools w.b. for FreeCAD
+# SPDX-License-Identifier: LGPL-3.0-or-later
 
 __title__ = "pypeTools functions"
 import FreeCAD
