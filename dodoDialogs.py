@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: LGPL-3.0-or-later
+
 import csv
 from os import listdir
 from os.path import abspath, dirname, join

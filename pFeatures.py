@@ -1,4 +1,4 @@
-# (c) 2019 R. T. LGPL: part ofdodo tools w.b. for FreeCAD
+# SPDX-License-Identifier: LGPL-3.0-or-later
 
 __title__ = "pypeTools objects"
 __author__ = "oddtopus"

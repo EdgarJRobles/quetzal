@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: LGPL-3.0-or-later
+
 insert_tube_tooltip = (
     "Create a tube not referenced to a single wire\n"
     "______________________________________________________________________________________________________________________________________ \n"

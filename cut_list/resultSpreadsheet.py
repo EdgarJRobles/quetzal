@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: LGPL-3.0-or-later
+
 # Heavily Inspired Code from
 # https://github.com/furti/FreeCAD-Reporting/blob/master/report.py
 
