@@ -8,7 +8,7 @@ __license__ = "LGPL 3"
 import csv
 from math import degrees, sqrt, cos, radians, sin, tan
 from os import listdir
-from os.path import abspath, dirname, join
+from os.path import abspath, dirname, join, isfile
 from sys import float_info
 
 import ArchProfile
@@ -39,6 +39,7 @@ import ShpstData
 
 translate = FreeCAD.Qt.translate
 QT_TRANSLATE_NOOP = FreeCAD.Qt.QT_TRANSLATE_NOOP
+settings = QSettings("quetzal","fFeatures")
 
 ################ FUNCTIONS ###########################
 
@@ -457,7 +458,7 @@ class frameBranchForm(dodoDialogs.protoTypeDialog):
 
     def __init__(self):
         super(frameBranchForm, self).__init__("fbranch.ui")
-        self.sectDictList = []  # list (sizes) of properties (dictionaries) of the current type of section
+        self.LocalSizesDict = []  # list (sizes) of properties (dictionaries) of the current type of section
         self.form.editAngle.setValidator(QDoubleValidator())
         self.form.editAngle.editingFinished.connect(self.changeAngle)
         self.form.editHead.setValidator(QDoubleValidator())
@@ -465,20 +466,12 @@ class frameBranchForm(dodoDialogs.protoTypeDialog):
         self.form.editTail.setValidator(QDoubleValidator())
         self.form.editTail.editingFinished.connect(self.changeTailOffset)
         self.form.editLength.setValidator(QDoubleValidator())
-        tablez = listdir(join(dirname(abspath(__file__)), "tablez"))
-        files = [name for name in tablez if name.startswith("Section")]
-        # RatingsList = [s.lstrip("Section_").rstrip(".csv") for s in files]
-        import ArchProfile
-
-        buffer = list()
-        self.ArchList = ArchProfile.readPresets()
-        for rating in self.ArchList:
-            if rating[1] not in buffer:
-                buffer.append(rating[1])
-        # self.form.comboRatings.addItems(RatingsList)
-        self.form.comboRatings.addItems(buffer)
-        self.form.comboRatings.addItems(["<by sketch>"])
-        self.form.comboRatings.currentIndexChanged.connect(self.fillSizes)
+        QuetzalRatings = self.fillRatings()
+        self.form.Rate_comboBox.addItems(QuetzalRatings)
+        self.form.Rate_comboBox.setCurrentText(settings.value("LastRateApplied"))
+        self.form.Rate_comboBox.addItems(["<by sketch>"])
+        self.form.Rate_comboBox.currentIndexChanged.connect(self.fillSizes)
+        self.form.Sizes_comboBox.currentIndexChanged.connect(self.on_currentIndexChanged)
         self.form.btnRemove.clicked.connect(self.removeBeams)
         self.form.btnAdd.clicked.connect(self.addBeams)
         self.form.btnGenPlanes.clicked.connect(self.generateBisectPlanes)
@@ -497,12 +490,22 @@ class frameBranchForm(dodoDialogs.protoTypeDialog):
         self.actionX.triggered.disconnect(self.accept)  # disconnect from accept()
         self.actionX.triggered.connect(self.trim)  # reconnect to trim()
 
-    def getPropsfromlistSizes(self):
+    def on_currentIndexChanged(self) -> None:
+        profilepath = "/home/edgar/.local/share/FreeCAD/Mod/quetzal/iconz/PreviewSections/"
+        lastsizeselected=self.form.Sizes_comboBox.currentText()
+        fullimagepath = profilepath+str(lastsizeselected)+".png"
+        FreeCAD.Console.PrintMessage(fullimagepath+"\r\n")
+        profilepixmap = QPixmap(fullimagepath)
+        self.form.ProfileImage.setPixmap(profilepixmap)
+
+    def getPropsfromSizes(self):
         """
-        Check profileslist and return full properties selected on the widget list
+        Check profileslist and return full properties selected on the widget list from BIM workbench
         """
-        for value in self.ArchList:
-            if self.form.listSizes.currentItem().text() in value[2]:
+        for value in self.BIM_PropList:
+            if self.form.Sizes_comboBox.currentText() in value[2]:
+                settings.setValue("LastRateApplied",self.form.Rate_comboBox.currentText())
+                settings.setValue("LastSizeApplied",self.form.Sizes_comboBox.currentText())
                 return value
 
     def makeSingle(self):
@@ -511,11 +514,18 @@ class frameBranchForm(dodoDialogs.protoTypeDialog):
         )
         if self.SType == "<by sketch>":
             profile = FreeCAD.ActiveDocument.getObjectsByLabel(
-                self.form.listSizes.currentItem().text()
+                self.form.Sizes_comboBox.currentText()
             )[0]
         else:
-            prop = self.getPropsfromlistSizes()
-            # prop = self.sectDictList[self.form.listSizes.currentRow()]
+            #Properties from selected row dict to list from BIM
+            prop = self.getPropsfromSizes()
+            # FreeCAD.Console.PrintMessage(prop)
+            if len(self.LocalSizesDict) != 0:
+                # prop2 = self.sectDictList[self.form.Sizes_comboBox.currentRow()]
+                index=self.form.Sizes_comboBox.currentIndex()
+                #Convert localsizedict to list
+                # prop2 = list(self.LocalSizesDict[index].values())
+                # prop=prop2
             FreeCAD.Console.PrintMessage(prop)
             profile = makeProfile(prop)
             # profile = newProfile(prop)
@@ -712,12 +722,12 @@ class frameBranchForm(dodoDialogs.protoTypeDialog):
                             if (content) or (contentsub):
                                 # FreeCAD.Console.PrintMessage('Punto de interseccion: '+str(interVertex[0])+'\r\n')
                                 # Store edge pair that intersect
-                                FreeCAD.Console.PrintMessage(
-                                    "Reachedlines: {0} and {1}".format(
-                                        reachedlines[rep][0], reachedlines[rep][1]
-                                    )
-                                    + "\r\n"
-                                )
+                                # FreeCAD.Console.PrintMessage(
+                                #     "Reachedlines: {0} and {1}".format(
+                                #         reachedlines[rep][0], reachedlines[rep][1]
+                                #     )
+                                #     + "\r\n"
+                                # )
                                 rep = rep + 1
                                 # FIXME: intersectCC method does not return line intersection; findIntersection method does it right
                                 # interpoint=element.intersectCC(subelement)[0]
@@ -738,6 +748,7 @@ class frameBranchForm(dodoDialogs.protoTypeDialog):
                                         subelement.StartPoint - subelement.EndPoint
                                     )
                                 bisectvector = fCmd.bisect(resultv1, resultv2)
+                                # FreeCAD.Console.PrintMessage('Vector bisector: '+str(bisectvector)+'\r\n')
                                 plane = FreeCAD.activeDocument().addObject(
                                     "Part::Plane", "cutplane"
                                 )
@@ -759,7 +770,7 @@ class frameBranchForm(dodoDialogs.protoTypeDialog):
                                 self.placementrotplan = FreeCAD.Placement(
                                     self.rotvector, FreeCAD.Rotation(FreeCAD.Vector(0, 1, 0), 90)
                                 )
-                                plane.AttachmentOffset = self.placementrotplan
+                                plane.Placement = self.placementrotplan
                                 # FreeCAD.Console.PrintMessage('Antes Angulo de arista a vector bisectriz: '+str((FreeCAD.Rotation(bisectvector,plane.Shape.normalAt(0,0)).Angle)*180/pi)+'\r\n')
                                 # crossvector=resultv1.cross(resultv2).normalize()
                                 # FreeCAD.Console.PrintMessage('Vector cruz: '+str(crossvector)+'\r\n')
@@ -769,7 +780,7 @@ class frameBranchForm(dodoDialogs.protoTypeDialog):
                                     FreeCAD.Rotation(plane.Shape.normalAt(0, 0), bisectvector),
                                     interVertex[0],
                                 ).multiply(self.placementrotplan)
-                                # plane.AttachmentOffset = self.placementrelative
+                                # plane.Placement = self.placementrelative
                                 # FreeCAD.Console.PrintMessage('Despues Angulo de arista a vector bisectriz: '+str((FreeCAD.Rotation(bisectvector,plane.Shape.normalAt(0,0)).Angle)*180/pi)+'\r\n')
                                 if self.roundVectors(
                                     plane.Shape.normalAt(0, 0), 0
@@ -782,7 +793,7 @@ class frameBranchForm(dodoDialogs.protoTypeDialog):
                                     FreeCAD.Rotation(FreeCAD.Vector(0, 0, 1), rotateplane),
                                     interVertex[0],
                                 ).multiply(self.placementrelative)
-                                plane.AttachmentOffset = self.placementfinal
+                                plane.Placement = self.placementfinal
                                 # FreeCAD.Console.PrintMessage(str(plane.Name))
                                 # sel[0].cutplanes.append(plane.Name)
                 # TODO::Made method definition to change plane dots colors
@@ -799,17 +810,18 @@ class frameBranchForm(dodoDialogs.protoTypeDialog):
         if FreeCAD.ActiveDocument:
             # GET BASE
             bases = [b for b in FreeCADGui.Selection.getSelection() if hasattr(b, "Shape")]
-            if bases and self.form.listSizes.selectedItems():
+            if bases:
                 FreeCAD.activeDocument().openTransaction(
                     translate("Transaction", "Insert Frame Branch")
                 )
                 if self.SType == "<by sketch>":
                     profile = FreeCAD.ActiveDocument.getObjectsByLabel(
-                        self.form.listSizes.currentItem().text()
+                        self.form.Sizes_comboBox.currentText()
                     )[0]
                 else:
                     # prop = self.sectDictList[self.form.listSizes.currentRow()]
-                    prop = self.getPropsfromlistSizes()
+                    prop = self.getPropsfromSizes()
+                    # FreeCAD.Console.PrintMessage(prop)
                     profile = makeProfile(prop)
                     # profile = newProfile(prop)
                 # MAKE FRAMEBRANCH
@@ -878,14 +890,30 @@ class frameBranchForm(dodoDialogs.protoTypeDialog):
             self.form.dialAngle.setValue(0)
             self.form.lab1.setText("<no item selected>")
 
+    def fillRatings(self):
+        """
+        Fill standard section profiles name into ratings list
+        """
+        tablez = listdir(join(dirname(abspath(__file__)), "tablez"))
+        files = [name for name in tablez if name.startswith("Section")]
+        QuetzalRatings = [s.lstrip("Section_").rstrip(".csv") for s in files]
+        self.BIM_PropList = ArchProfile.readPresets()
+        "Avoid to add dublicated ratings names in widget"
+        for rating in self.BIM_PropList:
+            if rating[1] not in QuetzalRatings:
+                QuetzalRatings.append(rating[1])
+        return QuetzalRatings
+
     def fillSizes(self):
         """
-        Fill standard beam sizes into a framebeams widget
+        Fill standard beam sizes into a framebeams widget based on previus selected rating
         """
-        self.SType = self.form.comboRatings.currentText()
-        self.form.listSizes.clear()
+        "Selected rating"
+        self.SType = self.form.Rate_comboBox.currentText()
+        "Clean list of sizes"
+        self.form.Sizes_comboBox.clear()
         if self.SType == "<by sketch>":
-            self.form.listSizes.addItems(
+            self.form.Sizes_comboBox.addItems(
                 [
                     s.Label
                     for s in FreeCAD.ActiveDocument.Objects
@@ -897,23 +925,31 @@ class frameBranchForm(dodoDialogs.protoTypeDialog):
                 for s in FreeCAD.ActiveDocument.Objects
                 if hasattr(s, "Shape") and s.Shape.Faces and not s.Shape.Solids
             ]
-            self.form.listSizes.addItems(obj2D)
+            self.form.Sizes_comboBox.addItems(obj2D)
         else:
-            sizelist = list()
-            for profilesizes in self.ArchList:
-                if profilesizes[1] == self.form.comboRatings.currentText():
+            temp_sizelist = list()
+            "Retrieved ratings from BIM csv library"
+            for profilesizes in self.BIM_PropList:
+                if profilesizes[1] == self.form.Rate_comboBox.currentText() and profilesizes[2] not in temp_sizelist:
                     # FreeCAD.Console.PrintMessage(profilesizes[2]+'\r\n')
-                    sizelist.append(profilesizes[2])
-            self.form.listSizes.addItems(sizelist)
-            # fileName = "Section_" + self.SType + ".csv"
-            # f = open(join(dirname(abspath(__file__)), "tablez", fileName), "r")
-            # reader = csv.DictReader(f, delimiter=";")
-            # self.sectDictList = [x for x in reader]
-            self.sectDictList = [x for x in self.ArchList]
-            # f.close()
-            # for row in self.sectDictList:
-            #     s = row["SSize"]
-            #     self.form.listSizes.addItem(s)
+                    temp_sizelist.append(profilesizes[2])
+            "Add BIM list to listSizes"
+            self.form.Sizes_comboBox.addItems(temp_sizelist)
+            self.form.Sizes_comboBox.setCurrentText(settings.value("LastSizeApplied"))
+            "Retrieved profiles sizes from quetzal tablez"
+            # "Create file name based on rating selection"
+            # "Open quetzal CSV file based on rating selection"
+            fileName = "Section_" + self.SType + ".csv"
+            filepath = join(dirname(abspath(__file__)), "tablez", fileName)
+            if isfile(filepath):
+                f = open(filepath, "r")
+                reader = csv.DictReader(f, delimiter=";")
+                self.LocalSizesDict = [x for x in reader]
+                for row1 in self.LocalSizesDict:
+                    s1 = row1["SSize"]
+                    # FreeCAD.Console.PrintMessage(s1+"\r\n")
+                    self.form.Sizes_comboBox.addItem(s1)
+                f.close()
 
     def addBeams(self):
         # find selected FB
@@ -975,13 +1011,13 @@ class frameBranchForm(dodoDialogs.protoTypeDialog):
         except:
             FreeCAD.Console.PrintError("Nothing selected\n")
             return
-        if FB and self.form.listSizes.selectedItems():
+        if FB:
             if self.SType == "<by sketch>":
                 profile = FreeCAD.ActiveDocument.getObjectsByLabel(
-                    self.form.listSizes.currentItem().text()
+                    self.form.Sizes_comboBox.currentText()
                 )[0]
             else:
-                prop = self.getPropsfromlistSizes()
+                prop = self.getPropsfromSizes()
                 # prop = self.sectDictList[self.form.listSizes.currentRow()]
                 # profile = newProfile(prop)
                 profile = makeProfile(prop)
@@ -1339,7 +1375,7 @@ from FreeCAD import Vector
 
 def doProfile(typeS="RH", label="Square", dims=[50, 100, 5])->FreeCAD.DocumentObject:
     "doProfile(typeS, label, dims)"
-    if typeS in ["RH", "R", "H", "U", "L", "T", "Z", "omega", "circle"]:
+    if typeS in ["RH", "R", "H", "U", "L", "T","TSLOT", "Z", "omega", "circle"]:
         profile = [0, "SECTION", label, typeS] + dims  # for py2.6 versions
         obj = FreeCAD.ActiveDocument.addObject("Part::Part2DObjectPython", profile[2])  # FIXME:
         if profile[3] == "RH":
@@ -1351,6 +1387,8 @@ def doProfile(typeS="RH", label="Square", dims=[50, 100, 5])->FreeCAD.DocumentOb
             _ProfileChannel(obj, profile)
         elif profile[3] == "T":
             _ProfileT(obj, profile)
+        elif profile[3] == "TSLOT":
+            _ProfileTSLOT(obj, profile)
         elif profile[3] == "H":
             _ProfileH(obj, profile)
         elif profile[3] == "L":
@@ -1520,10 +1558,25 @@ def pointsZ(H:float, W:float, t1:float, t2:float)->list[Vector]:
     p8 = Vector(H - t1 / 2, -W / 2, 0)
     return [p1, p8, p7, p6, p5, p4, p3, p2, p1]
 
-def pointsTslot(H:float, W:float):
-    pass
+def pointsTSLOT(H:float, W:float, slot_width:float, slot_depth:float):
     #TODO:
-    # p1 = Vector()
+    Polivect =[]
+    Polivect.append(Vector(0, 2.1, 0))
+    Polivect.append(Vector(0, 3.8, 0))
+    Polivect.append(Vector(2.74, 3.8, 0))
+    Polivect.append(Vector(6, 7.06, 0))
+    Polivect.append(Vector(6, 8.5, 0))
+    Polivect.append(Vector(2.63, 8.5, 0))
+    Polivect.append(Vector(2.63, 10, 0))
+    Polivect.append(Vector(10, 10, 0))
+    Polivect.append(Vector(10,2.63,0))
+    Polivect.append(Vector(8.5, 2.63, 0))
+    Polivect.append(Vector(8.5, 6, 0))
+    Polivect.append(Vector(7.06, 6, 0))
+    Polivect.append(Vector(3.8, 2.74, 0))
+    Polivect.append(Vector(3.8, 0, 0))
+    Polivect.append(Vector(2.1, 0, 0))
+    return [px for px in Polivect]
     
 ########### _ ProfileXXX() classes ###############
 
@@ -1587,6 +1640,47 @@ class _ProfileRH(_Profile):
         q = Part.makePolygon([q1, q2, q3, q4, q1])
         obj.Shape = Part.Face(p).cut(Part.Face(q))
 
+class _ProfileTSLOT(_Profile):
+    """A parametric Rectangular hollow beam profile. Profile data: [width, height, thickness]"""
+
+    def __init__(self, obj:FreeCAD.DocumentObject, profile:list[str])->None:
+        obj.Label = translate("Objects", "Rectangular t-slot profile", "Profile name in the Tree View")
+        obj.addProperty(
+            "App::PropertyString",
+            "FType",
+            "Profile",
+            QT_TRANSLATE_NOOP("App::Property", "Type of section"),
+        ).FType = "TSLOT"
+        obj.addProperty(
+            "App::PropertyLength",
+            "W",
+            "Draft",
+            QT_TRANSLATE_NOOP("App::Property", "Width of the beam"),
+        ).W = profile[4]
+        obj.addProperty(
+            "App::PropertyLength",
+            "H",
+            "Draft",
+            QT_TRANSLATE_NOOP("App::Property", "Height of the beam"),
+        ).H = profile[5]
+        obj.addProperty(
+            "App::PropertyLength",
+            "t1",
+            "Draft",
+            QT_TRANSLATE_NOOP("App::Property", "Thickness of the vertical sides"),
+        ).slot_width = profile[6]
+        obj.addProperty(
+            "App::PropertyLength",
+            "t2",
+            "Draft",
+            QT_TRANSLATE_NOOP("App::Property", "Thickness of the horizontal sides"),
+        ).slot_depth = profile[7]
+        _Profile.__init__(self, obj, profile)
+
+    def execute(self, obj:FreeCAD.DocumentObject)->None:
+        W, H, t1, t2 = obj.W.Value, obj.H.Value, obj.slot_width.Value, obj.slot_depth.Value
+        obj.Shape = drawAndCenter(pointsTSLOT(H,W,slot_width,slot_depth))
+        
 class _ProfileR(_Profile):
     """A parametric Rectangular solid beam profile. Profile data: [width, height]"""
 
