@@ -221,7 +221,7 @@ class TerminalAdapter(pypeType):
             "App::PropertyLength",
             "L",
             "TerminalAdapter",
-            QT_TRANSLATE_NOOP("App::Property", "Overall lenght"),
+            QT_TRANSLATE_NOOP("App::Property", "Overall length"),
         ).L = L
         obj.addProperty(
             "App::PropertyLength",
