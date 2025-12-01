@@ -5,7 +5,7 @@
 
   <description>A set of commands and objects that help to speed-up the drawing of frames and pipelines. Dodo successor.</description>
 
-  <version>1.5.6</version>
+  <version>1.6.7</version>
 
   <date>2025-01-15</date>
 
@@ -31,8 +31,8 @@
 
   <content>
     <workbench>
-      <depend optional="False" type="automatic">typing-extensions</depend>
-      <depend optional="False" type="automatic">Draft</depend>
+      <depend>typing-extensions</depend>
+      <depend>Draft</depend>
       <tag>beams</tag>
       <tag>frames</tag>
       <tag>pipe</tag>

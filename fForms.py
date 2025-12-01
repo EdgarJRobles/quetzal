@@ -15,7 +15,7 @@ from uCmd import label3D
 
 translate = FreeCAD.Qt.translate
 
-FTypes = ["R", "circle", "T", "H", "U", "L", "Z", "omega"]
+FTypes = ["R", "circle", "T", "TSLOT", "H", "U", "L", "Z", "omega"]
 
 
 class fillForm(dodoDialogs.protoTypeDialog):
@@ -536,6 +536,10 @@ class profEdit(dodoDialogs.protoTypeDialog):
             self.form.labImg.setPixmap(pixT)
             self.type = "T"
             self.label = "T-profile"
+        elif typeS == "TSLOT":
+            self.form.labImg.setPixmap(pixT)
+            self.type = "TSLOT"
+            self.label = "T-slot"
         elif typeS == "U":
             self.form.labImg.setPixmap(pixU)
             self.type = "U"
@@ -584,10 +588,8 @@ class profEdit(dodoDialogs.protoTypeDialog):
             elif self.type == "H":
                 sect = fFeatures.doProfile(self.type, label, [B, H, D, t1, t2, t3])
             elif self.type == "U" and t2 < H and t1 < B / 2:
-                #FIXME:Add radius or include exception
                 sect = fFeatures.doProfile(self.type, label, [B, H, D, t1, t2, t3])
             elif self.type == "L" and t2 < H and t1 < B:
-                #FIXME:Add radius or include exception
                 sect = fFeatures.doProfile(self.type, label, [B, H, t1, t2])
             elif self.type == "T" and t2 < H and t1 < B:
                 sect = fFeatures.doProfile(self.type, label, [B, H, t1, t2])
