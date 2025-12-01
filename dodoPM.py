@@ -1,10 +1,4 @@
-# Copyright (C) 2018 oddtopus (www.github.com/oddtopus/dodo)
-# Following code is derived from
-# PieMenu widget for FreeCAD
-#
-# Copyright (C) 2016, 2017 triplus @ FreeCAD
-# Copyright (C) 2015,2016 looo @ FreeCAD
-# Copyright (C) 2015 microelly <microelly2@freecadbuch.de>
+# SPDX-License-Identifier: LGPL-3.0-or-later
 
 import FreeCAD
 import FreeCADGui

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: LGPL-3.0-or-later
+
 type=[
 '00_Angle','01_Channel','02_H_Shape','03_I-Shape','04_CT_Shape','05_Pipe',
 '06_Flat_Bar','07_Light_Weight_Angle','08_Light_Weight_Channel','09_Rip_Channel','10_Square_Pipe',
