@@ -491,7 +491,7 @@ class frameBranchForm(dodoDialogs.protoTypeDialog):
         self.actionX.triggered.connect(self.trim)  # reconnect to trim()
 
     def on_currentIndexChanged(self) -> None:
-        profilepath = "/home/edgar/.local/share/FreeCAD/Mod/quetzal/iconz/PreviewSections/"
+        profilepath = FreeCAD.getUserAppDataDir() + "Mod/quetzal/iconz/PreviewSections/"
         lastsizeselected=self.form.Sizes_comboBox.currentText()
         fullimagepath = profilepath+str(lastsizeselected)+".png"
         FreeCAD.Console.PrintMessage(fullimagepath+"\r\n")
