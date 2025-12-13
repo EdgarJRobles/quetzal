@@ -115,14 +115,22 @@ def findFB(beamName=None, baseName=None):
     return None
 
 
-def refresh():
-    for b in [
-        o
-        for o in FreeCAD.ActiveDocument.Objects
-        if hasattr(o, "FType") and o.FType == "FrameBranch"
-    ]:
-        b.touch()
-    FreeCAD.ActiveDocument.recompute()
+def refreshBranchObject(beamChild=None):
+    """
+    Touch each FrameBranch object in document
+    """
+    # import timeit
+    # codigomedir2='''for b in [o for o in FreeCAD.ActiveDocument.Objects if hasattr(o, "FType") and o.FType == "FrameBranch"]:
+    #     b.touch()'''
+    # timefull2=timeit.timeit(codigomedir2,number=1,globals={'FreeCAD': FreeCAD,'fCmd':fCmd})
+    # print("Algoritmo de busqueda de FrameBranch:")
+    # print(f"tiempo total: {timefull2:.4f} segundos")
+    # print(f"Promedio por ejecución: {timefull2/1000:.6f} segundos")
+    for bf in [o for o in FreeCAD.ActiveDocument.Objects if hasattr(o, "FType") and o.FType == "FrameBranch"]:
+        for selected in bf.Beams:
+            if selected == beamChild.Name:
+                # print(bf.Name)
+                bf.touch()
     FreeCAD.ActiveDocument.recompute()
 
 
@@ -478,7 +486,9 @@ class frameBranchForm(dodoDialogs.protoTypeDialog):
         self.form.btnMiter.clicked.connect(self.cutMiters)
         self.form.btnProfile.clicked.connect(self.changeProfile)
         self.form.btnRefresh.clicked.connect(self.refresh)
+        # Signal connection to get targets for trim or extend
         self.form.btnTargets.clicked.connect(self.selectAction)
+        # Signal connection to execute trim or extend operation
         self.form.btnTrim.clicked.connect(self.trim)
         self.form.btnSingle.clicked.connect(self.makeSingle)
         self.form.sliTail.valueChanged.connect(self.stretchTail)
@@ -494,7 +504,7 @@ class frameBranchForm(dodoDialogs.protoTypeDialog):
         profilepath = FreeCAD.getUserAppDataDir() + "Mod/quetzal/iconz/PreviewSections/"
         lastsizeselected=self.form.Sizes_comboBox.currentText()
         fullimagepath = profilepath+str(lastsizeselected)+".png"
-        FreeCAD.Console.PrintMessage(fullimagepath+"\r\n")
+        # FreeCAD.Console.PrintMessage(fullimagepath+"\r\n")
         profilepixmap = QPixmap(fullimagepath)
         self.form.ProfileImage.setPixmap(profilepixmap)
 
@@ -1081,6 +1091,9 @@ class frameBranchForm(dodoDialogs.protoTypeDialog):
         self.changeAngle()
 
     def trim(self):
+        """
+        Trim or extend function for preselected beams
+        """
         FreeCAD.activeDocument().openTransaction(translate("Transaction", "Trim Frame Branch"))
         for target in self.targets:
             for b in fCmd.beams():
@@ -1109,16 +1122,18 @@ class frameBranchForm(dodoDialogs.protoTypeDialog):
                             b.tailOffset = -deltaTail
                         else:
                             b.headOffset = deltaHead
-        refresh()
+                    refreshBranchObject(b)
         FreeCAD.ActiveDocument.commitTransaction()
 
     def refresh(self):
+        """
+        no used
+        """
         obj = findFB(fCmd.beams()[0].Name)
         if not obj:
             obj = findFB(baseName=FreeCADGui.Selection.getSelection()[0])
         if obj:
             obj.Proxy.redraw(obj)
-        FreeCAD.ActiveDocument.recompute()
         FreeCAD.ActiveDocument.recompute()
 
 
