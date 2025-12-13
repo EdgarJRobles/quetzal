@@ -111,7 +111,7 @@
       </size>
      </property>
      <property name="currentIndex">
-      <number>0</number>
+      <number>1</number>
      </property>
      <widget class="QWidget" name="tab_2">
       <property name="sizePolicy">
@@ -151,6 +151,12 @@
           <layout class="QVBoxLayout" name="verticalLayout_2">
            <item>
             <widget class="QComboBox" name="Rate_comboBox">
+             <property name="minimumSize">
+              <size>
+               <width>0</width>
+               <height>22</height>
+              </size>
+             </property>
              <property name="maxVisibleItems">
               <number>20</number>
              </property>
@@ -161,6 +167,12 @@
            </item>
            <item>
             <widget class="QComboBox" name="Sizes_comboBox">
+             <property name="minimumSize">
+              <size>
+               <width>0</width>
+               <height>22</height>
+              </size>
+             </property>
              <property name="maxVisibleItems">
               <number>20</number>
              </property>
@@ -180,6 +192,12 @@
         <layout class="QVBoxLayout" name="verticalLayout">
          <item>
           <widget class="QPushButton" name="btnSingle">
+           <property name="minimumSize">
+            <size>
+             <width>0</width>
+             <height>22</height>
+            </size>
+           </property>
            <property name="toolTip">
             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Create a single beam.&lt;/p&gt;&lt;p&gt;if a wire is previous selected beam will reorientade normal to wire but no based frame will be created.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
            </property>
@@ -190,6 +208,12 @@
          </item>
          <item>
           <widget class="QPushButton" name="btnAdd">
+           <property name="minimumSize">
+            <size>
+             <width>0</width>
+             <height>22</height>
+            </size>
+           </property>
            <property name="toolTip">
             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Add a beam to a existing structure object&lt;/p&gt;&lt;p&gt;-------------------------------------------------------------------------&lt;/p&gt;&lt;p&gt;1.-Select a wire/sketch that belongs to the structure you want to add.&lt;/p&gt;&lt;p&gt;2.-Press the AddBeams button&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
            </property>
@@ -200,6 +224,12 @@
          </item>
          <item>
           <widget class="QPushButton" name="btnRemove">
+           <property name="minimumSize">
+            <size>
+             <width>0</width>
+             <height>22</height>
+            </size>
+           </property>
            <property name="toolTip">
             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Remove a beam to a existing structure object&lt;/p&gt;&lt;p&gt;-------------------------------------------------------------------------&lt;/p&gt;&lt;p&gt;1.-Select a beam that belongs to the structure you want to remove.&lt;/p&gt;&lt;p&gt;2.-Press the RemoveBeams button&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
            </property>
@@ -210,6 +240,12 @@
          </item>
          <item>
           <widget class="QPushButton" name="btnProfile">
+           <property name="minimumSize">
+            <size>
+             <width>0</width>
+             <height>22</height>
+            </size>
+           </property>
            <property name="toolTip">
             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Change beam profile to a existing structure object&lt;/p&gt;&lt;p&gt;-------------------------------------------------------------------------&lt;/p&gt;&lt;p&gt;1.-Select the wire / sketch that belongs to the structure&lt;/p&gt;&lt;p&gt;2.-Select the new profile on the drop down menu&lt;/p&gt;&lt;p&gt;3.-Press the ChangeProfile button&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
            </property>
@@ -406,7 +442,7 @@
            <property name="minimumSize">
             <size>
              <width>80</width>
-             <height>0</height>
+             <height>22</height>
             </size>
            </property>
            <property name="alignment">
@@ -426,7 +462,7 @@
            <property name="minimumSize">
             <size>
              <width>80</width>
-             <height>0</height>
+             <height>22</height>
             </size>
            </property>
            <property name="alignment">
@@ -439,6 +475,12 @@
          </item>
          <item>
           <widget class="QLineEdit" name="editLength">
+           <property name="minimumSize">
+            <size>
+             <width>0</width>
+             <height>22</height>
+            </size>
+           </property>
            <property name="alignment">
             <set>Qt::AlignCenter</set>
            </property>
@@ -453,6 +495,12 @@
         <layout class="QVBoxLayout" name="verticalLayout_3">
          <item>
           <widget class="QPushButton" name="btnTargets">
+           <property name="minimumSize">
+            <size>
+             <width>0</width>
+             <height>22</height>
+            </size>
+           </property>
            <property name="toolTip">
             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Store the edge or face that will be use has reference for trim or extend beams inside structure object.&lt;/p&gt;&lt;p&gt;------------------------------------------------------------------------------------------------------------------------&lt;/p&gt;&lt;p&gt;1.-Select the reference edge or face.&lt;/p&gt;&lt;p&gt;2.-Press Get targets button to save reference.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
            </property>
@@ -463,6 +511,12 @@
          </item>
          <item>
           <widget class="QPushButton" name="btnTrim">
+           <property name="minimumSize">
+            <size>
+             <width>0</width>
+             <height>22</height>
+            </size>
+           </property>
            <property name="toolTip">
             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Trim or extend selected beam using preselected target as reference.&lt;/p&gt;&lt;p&gt;Operation can be applied on multiple beam at ones.&lt;/p&gt;&lt;p&gt;---------------------------------------------------------------------------&lt;/p&gt;&lt;p&gt;1.-Select the reference beam edge or face.&lt;/p&gt;&lt;p&gt;2.-Press Trim/Extend button.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
            </property>
@@ -473,6 +527,12 @@
          </item>
          <item>
           <widget class="QPushButton" name="btnMiter">
+           <property name="minimumSize">
+            <size>
+             <width>0</width>
+             <height>22</height>
+            </size>
+           </property>
            <property name="toolTip">
             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Cut miters from structure.&lt;/p&gt;&lt;p&gt;Important!. Reference planes must be generated first &lt;/p&gt;&lt;p&gt;---------------------------------------------------------------------------&lt;/p&gt;&lt;p&gt;1.-Select the structure object to process.&lt;/p&gt;&lt;p&gt;2.-Press Cut Miters button.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
            </property>
@@ -483,6 +543,12 @@
          </item>
          <item>
           <widget class="QPushButton" name="btnGenPlanes">
+           <property name="minimumSize">
+            <size>
+             <width>0</width>
+             <height>22</height>
+            </size>
+           </property>
            <property name="toolTip">
             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Create bisect planes between beams required for cut miter operation.&lt;/p&gt;&lt;p&gt;---------------------------------------------------------------------------&lt;/p&gt;&lt;p&gt;1.-Select the structure object to process.&lt;/p&gt;&lt;p&gt;2.-Press Generate planes button.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
            </property>
@@ -497,6 +563,12 @@
         <layout class="QVBoxLayout" name="verticalLayout_4">
          <item>
           <widget class="QLineEdit" name="editHead">
+           <property name="minimumSize">
+            <size>
+             <width>0</width>
+             <height>22</height>
+            </size>
+           </property>
            <property name="alignment">
             <set>Qt::AlignCenter</set>
            </property>
@@ -517,6 +589,12 @@
          </item>
          <item>
           <widget class="QLineEdit" name="editTail">
+           <property name="minimumSize">
+            <size>
+             <width>0</width>
+             <height>22</height>
+            </size>
+           </property>
            <property name="alignment">
             <set>Qt::AlignCenter</set>
            </property>

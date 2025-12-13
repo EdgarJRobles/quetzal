@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.7.8] - 2025-12-13
+
+- Sync quetzal version
+- Improve branch frame trim and extend method
+
 ## [1.1.0] - 2025-01-17
 
 ### Added
