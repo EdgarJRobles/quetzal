@@ -2,3 +2,6 @@ test_**.sh
 __pycache__/
 cut_list/__pycache__/
 pyrightconfig.json
+# Visual Studio temporary files
+.vs/
+*.vsidx
