@@ -93,6 +93,7 @@ class QuetzalWorkbench(Workbench):
         self.pypeList = [
             "Quetzal_InsertPipe",
             "Quetzal_InsertElbow",
+            "Quetzal_InsertTee",
             "Quetzal_InsertTerminalAdapter",
             "Quetzal_InsertReduct",
             "Quetzal_InsertCap",
@@ -181,7 +182,7 @@ class QuetzalWorkbench(Workbench):
                 return result
         self.NoObjects=["Quetzal_HackedLine","Quetzal_Point2Point"]
         self.WireObjects=["Quetzal_FrameBranchManager","Quetzal_InsertPipe","Quetzal_InsertPypeLine","Quetzal_InsertBranch"]
-        self.TubeObjects=["Quetzal_InsertFlange","Quetzal_InsertTerminalAdapter","Quetzal_InsertElbow"]
+        self.TubeObjects=["Quetzal_InsertFlange","Quetzal_InsertTerminalAdapter","Quetzal_InsertElbow","Quetzal_InsertTee"]
         FreeCADGui.Control.addTaskWatcher([
             QuetzalWatcher(self.NoObjects,"No Objects"),
             QuetzalWatcher(self.WireObjects,"Wire Objects"),

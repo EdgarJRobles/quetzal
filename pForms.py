@@ -382,6 +382,170 @@ class insertElbowForm(dodoDialogs.protoPypeForm):
             )
 
 
+class insertTeeForm(dodoDialogs.protoPypeForm):
+    """
+    Dialog to insert one tee.
+    For position and orientation you can select
+      - one vertex,
+      - one circular edge
+      - a pair of edges or pipes or beams
+      - one pipe at one of its ends
+      - nothing.
+    In case one pipe is selected, its properties are applied to the elbow and
+    the tube or tubes are trimmed or extended automatically.
+    Also available one button to trim/extend one selected pipe to the selected
+    edges, if necessary.
+    """
+
+    def __init__(self):
+        super(insertTeeForm, self).__init__(
+            translate("insertTeeForm", "Insert tee"),
+            "Tee",
+            "SCH-STD",
+            "Tee.svg",
+            x,
+            y,
+        )
+        self.sizeList.setCurrentRow(0)
+        self.ratingList.setCurrentRow(0)
+        self.btn1.clicked.connect(self.insert)
+       
+        #Need to add a way to select whether the branch or run is connected
+        self.insertModeGroup = QButtonGroup()
+
+        self.runRadio = QRadioButton("Insert on Run")
+        self.branchRadio = QRadioButton("Insert on Branch")
+
+        self.runRadio.setChecked(True)
+
+        self.insertModeGroup.addButton(self.runRadio)
+        self.insertModeGroup.addButton(self.branchRadio)
+
+        self.secondCol.layout().addWidget(self.runRadio)
+        self.secondCol.layout().addWidget(self.branchRadio)
+        # See if the above works
+        
+        self.btn3 = QPushButton(translate("insertTeeForm", "Reverse"))
+        self.secondCol.layout().addWidget(self.btn3)
+        self.btn3.clicked.connect(self.reverse)
+        self.btn4 = QPushButton(translate("insertTeeForm", "Apply"))
+        self.secondCol.layout().addWidget(self.btn4)
+        self.btn4.clicked.connect(self.apply)
+        self.btn1.setDefault(True)
+        self.btn1.setFocus()
+        self.screenDial = QWidget()
+        self.screenDial.setLayout(QHBoxLayout())
+        self.dial = QDial()
+        self.dial.setMaximumSize(80, 80)
+        self.dial.setWrapping(True)
+        self.dial.setMaximum(180)
+        self.dial.setMinimum(-180)
+        self.dial.setNotchTarget(15)
+        self.dial.setNotchesVisible(True)
+        self.dial.setMaximumSize(70, 70)
+        self.screenDial.layout().addWidget(self.dial)
+        self.lab = QLabel(translate("insertTeeForm", "0 deg"))
+        self.lab.setAlignment(Qt.AlignCenter)
+        #self.dial.valueChanged.connect(self.rotatePort)
+        self.screenDial.layout().addWidget(self.lab)
+        self.firstCol.layout().addWidget(self.screenDial)
+        self.show()
+        self.lastTee = None
+        self.lastAngle = 0
+    
+    def insert(self):
+        self.lastAngle = 0
+        self.dial.setValue(0)
+        insertOnBranch = self.branchRadio.isChecked()
+        DN = OD = OD2 = thk = tdhk2 = PRating = C = M = None
+        propList = []
+        d = self.pipeDictList[self.sizeList.currentRow()]
+        
+        selex = FreeCADGui.Selection.getSelectionEx()
+        # DEFINE PROPERTIES
+        """ Do not override selection
+        for sx in selex:
+            if hasattr(sx.Object, "PType") and sx.Object.PType in [
+                "Pipe",
+                "Elbow",
+                "Cap",
+                "Reduct",
+                "Tee"
+            ]:
+                DN = sx.Object.PSize
+                OD = sx.Object.OD
+                thk = floatsx.Object.thk
+                BR = None
+                
+                propList = [
+                    DN,
+                    OD,
+                    OD if OD2 is None else OD2,
+                    thk,
+                    thk if thk2 is None else thk2,
+                    d["C"] if C is None else C,
+                    d["M"] if M is None else M,
+                ]
+                break
+        """
+        
+
+        
+        propList = [
+            d["PSize"],
+            float(pq(d["OD"])),
+            float(pq(d["OD2"])),
+            float(pq(d["thk"])),
+            float(pq(d["thk2"])),
+            float(pq(d["C"])),
+            float(pq(d["M"])),
+        ]
+        
+        # INSERT Tee
+        self.lastTee = pCmd.doTees(propList,FreeCAD.__activePypeLine__,insertOnBranch)#[-1]
+        # TODO: SET PRATING
+        FreeCAD.activeDocument().recompute()
+
+    def trim(self):
+        if len(fCmd.beams()) == 1:
+            pipe = fCmd.beams()[0]
+            comPipeEdges = [e.CenterOfMass for e in pipe.Shape.Edges]
+            eds = [e for e in fCmd.edges() if e.CenterOfMass not in comPipeEdges]
+            FreeCAD.activeDocument().openTransaction(translate("Transaction", "Trim pipes"))
+            for edge in eds:
+                fCmd.extendTheBeam(fCmd.beams()[0], edge)
+            FreeCAD.activeDocument().commitTransaction()
+            FreeCAD.activeDocument().recompute()
+        else:
+            FreeCAD.Console.PrintError(translate("insertTeeForm", "Wrong selection\n"))
+    
+    def rotatePort(self):
+        if self.lastTee:
+            pCmd.rotateTheElbowPort(self.lastTee, 0, self.lastAngle * -1)
+            self.lastAngle = self.dial.value()
+            pCmd.rotateTheElbowPort(self.lastTee, 0, self.lastAngle)
+        self.lab.setText(str(self.dial.value()) + translate("insertTeeForm", " deg"))
+
+    def apply(self):
+        for obj in FreeCADGui.Selection.getSelection():
+            d = self.pipeDictList[self.sizeList.currentRow()]
+            if hasattr(obj, "PType") and obj.PType == self.PType:
+                obj.PSize = d["PSize"]
+                obj.OD = pq(d["OD"])
+                obj.thk = pq(d["thk"])
+                
+                obj.PRating = self.PRating
+                FreeCAD.activeDocument().recompute()
+
+    def reverse(self):
+        if self.lastTee:
+            pCmd.rotateTheTubeAx(self.lastTee, angle=180)
+            self.lastTee.Placement.move(
+                self.lastTee.Placement.Rotation.multVec(self.lastTee.Ports[0]) * -2
+            )
+
+
+
 class insertTerminalAdapterForm(dodoDialogs.protoPypeForm):
     """
     Dialog to insert adapter.
@@ -1185,6 +1349,7 @@ class insertPypeLineForm(dodoDialogs.protoPypeForm):
                             "Clamp",
                             "Reduct",
                             "Cap",
+                            "Tee",
                         ]:
                             data = [o.Label, o.PType, o.PSize, o.Shape.Volume, "-"]
                             if o.PType == "Pipe":

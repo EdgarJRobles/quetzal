@@ -11,7 +11,7 @@ from quetzal_config import get_icon_path
 
 from math import degrees
 
-objToPaint = ["Pipe", "Elbow", "Reduct", "Flange", "Cap"]
+objToPaint = ["Pipe", "Elbow", "Reduct", "Flange", "Cap", "Tee"]
 
 
 __author__ = "oddtopus"
@@ -728,6 +728,118 @@ def doCaps(propList=["DN50", 60.3, 3], pypeline=None):
     FreeCAD.activeDocument().commitTransaction()
     FreeCAD.activeDocument().recompute()
 
+    
+def makeTee(propList=[], pos=None, Z=None, insertOnBranch = False):
+    """add a Tee object
+    makeTee(propList,pos,Z);
+    propList is one optional list with 7 elements:
+      DN (string): nominal diameter
+      OD (float): outside diameter of run
+      OD2 (float): outside diameter of branch
+      thk (float): shell thickness of run
+      thk (float): shell thickness of branch
+      C (float): Length of run from centerline
+      M (float): Length of branch from centerline
+    Default is "DN50 (SCH-STD)"
+    pos (vector): position of insertion; default = 0,0,0
+    Z (vector): orientation: default = 0,0,1
+    Remember: property PRating must be defined afterwards
+    """
+    if pos == None:
+        pos = FreeCAD.Vector(0, 0, 0)
+    if Z == None:
+        Z = FreeCAD.Vector(0, 0, 1)
+    a = FreeCAD.ActiveDocument.addObject("Part::FeaturePython", "Tee")
+    if len(propList) == 7:
+        pFeatures.Tee(a, *propList)
+    else:
+        pFeatures.Tee(a)
+    ViewProvider(a.ViewObject, "Quetzal_InsertTee")
+    """
+    if insertOnBranch:
+        local_axis = FreeCAD.Vector(0, 1, 0)  # branch axis
+    else:
+        local_axis = FreeCAD.Vector(0, 0, 1)  # run axis
+  
+    rot = FreeCAD.Rotation(local_axis, Z)
+    if insertOnBranch:       
+        a.Placement.Base = pos + rot.multiply(FreeCAD.Vector(0, a.M, 0))  
+    else:       
+        a.Placement.Base = pos + rot.multiply(FreeCAD.Vector(0, 0, a.C))
+
+    a.Placement.Rotation = rot.multiply(a.Placement.Rotation)
+   """
+
+    a.Placement.Base = pos
+
+    
+    
+    
+    if insertOnBranch:
+        zpos = 0
+        ypos = -a.M
+        rot = FreeCAD.Rotation(FreeCAD.Vector(0, -1, 0), Z)
+    else:
+        zpos = a.C
+        ypos = 0
+        rot = FreeCAD.Rotation(FreeCAD.Vector(0, 0, 1), Z)
+    a.Placement.Rotation = rot.multiply(a.Placement.Rotation)
+
+    a.Placement = a.Placement.multiply(
+        FreeCAD.Placement(FreeCAD.Vector(0, ypos, zpos), FreeCAD.Rotation(0, 0, 0))
+    )
+
+    
+    a.Label = translate("Objects", "Tee")
+    return a
+
+
+def doTees(propList=["DN150", 168.27, 114.3,7.11,6.02,178,156], pypeline=None, insertOnBranch=False):
+    """
+    propList = [
+      DN (string): nominal diameter
+      OD (float): outside diameter
+      thk (float): shell thickness ]
+    pypeline = string
+    """
+    clist = []
+    FreeCAD.activeDocument().openTransaction(translate("Transaction", "Insert Tee"))
+    if len(fCmd.edges()) == 0:
+        vs = [
+            v
+            for sx in FreeCADGui.Selection.getSelectionEx()
+            for so in sx.SubObjects
+            for v in so.Vertexes
+        ]
+        if len(vs) == 0:  # nothing is selected
+            clist.append(makeTee(propList))
+        else:
+            for v in vs:  # vertexes are selected
+                clist.append(makeTee(propList, v.Point, None, insertOnBranch))
+    else:
+        for edge in fCmd.edges():
+            if edge.curvatureAt(0) != 0:  # curved edges are selected...
+                objs = [
+                    o
+                    for o in FreeCADGui.Selection.getSelection()
+                    if hasattr(o, "PSize") and hasattr(o, "OD") and hasattr(o, "thk")
+                ]
+                #Z = None
+                Z = edge.tangentAt(0).cross(edge.normalAt(0))
+                Z= Z.normalize()
+                """
+                if len(objs) > 0:  # ...pype objects are selected
+                    Z = edge.centerOfCurvatureAt(0)# - objs[0].Shape.Solids[0].CenterOfMass
+                                                    # correct to remove misalignment for asymmetric objects like ells and tees
+                else:  # ...no pype objects are selected
+                    Z = edge.tangentAt(0).cross(edge.normalAt(0))
+                """
+                clist.append(makeTee(propList, edge.centerOfCurvatureAt(0), Z, insertOnBranch))
+    if pypeline:
+        for c in clist:
+            moveToPyLi(c, pypeline)
+    FreeCAD.activeDocument().commitTransaction()
+    FreeCAD.activeDocument().recompute()
 
 def makeW():
     edges = fCmd.edges()
@@ -869,6 +981,7 @@ def updatePLColor(sel=None, color=None):
                             e.ViewObject.ShapeColor = color
     else:
         FreeCAD.Console.PrintError("Select first one pype line\n")
+
 
 
 def alignTheTube():
