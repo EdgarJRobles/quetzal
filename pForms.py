@@ -303,6 +303,7 @@ class insertElbowForm(dodoDialogs.protoPypeForm):
             ang = float(pq(d["BendAngle"]))
         selex = FreeCADGui.Selection.getSelectionEx()
         # DEFINE PROPERTIES
+        """ Do not override selected properties
         for sx in selex:
             if hasattr(sx.Object, "PType") and sx.Object.PType in [
                 "Pipe",
@@ -321,6 +322,7 @@ class insertElbowForm(dodoDialogs.protoPypeForm):
                     BR = 1.5 * OD / 2
                 propList = [DN, OD, thk, ang, BR]
                 break
+        """
         if not propList:
             propList = [
                 d["PSize"],
@@ -354,7 +356,7 @@ class insertElbowForm(dodoDialogs.protoPypeForm):
             pCmd.rotateTheElbowPort(self.lastElbow, 0, self.lastAngle * -1)
             self.lastAngle = self.dial.value()
             pCmd.rotateTheElbowPort(self.lastElbow, 0, self.lastAngle)
-        self.lab.setText(str(self.dial.value()) + translate("insertElbowForm", " deg"))
+            self.lab.setText(str(self.dial.value()) + translate("insertElbowForm", " deg"))
 
     def apply(self):
         for obj in FreeCADGui.Selection.getSelection():
@@ -410,7 +412,7 @@ class insertTeeForm(dodoDialogs.protoPypeForm):
         self.ratingList.setCurrentRow(0)
         self.btn1.clicked.connect(self.insert)
        
-        #Need to add a way to select whether the branch or run is connected
+        
         self.insertModeGroup = QButtonGroup()
 
         self.runRadio = QRadioButton("Insert on Run")
@@ -423,7 +425,7 @@ class insertTeeForm(dodoDialogs.protoPypeForm):
 
         self.secondCol.layout().addWidget(self.runRadio)
         self.secondCol.layout().addWidget(self.branchRadio)
-        # See if the above works
+     
         
         self.btn3 = QPushButton(translate("insertTeeForm", "Reverse"))
         self.secondCol.layout().addWidget(self.btn3)
@@ -446,7 +448,7 @@ class insertTeeForm(dodoDialogs.protoPypeForm):
         self.screenDial.layout().addWidget(self.dial)
         self.lab = QLabel(translate("insertTeeForm", "0 deg"))
         self.lab.setAlignment(Qt.AlignCenter)
-        #self.dial.valueChanged.connect(self.rotatePort)
+        self.dial.valueChanged.connect(self.rotatePort)
         self.screenDial.layout().addWidget(self.lab)
         self.firstCol.layout().addWidget(self.screenDial)
         self.show()
@@ -488,9 +490,7 @@ class insertTeeForm(dodoDialogs.protoPypeForm):
                 ]
                 break
         """
-        
 
-        
         propList = [
             d["PSize"],
             float(pq(d["OD"])),
@@ -502,9 +502,13 @@ class insertTeeForm(dodoDialogs.protoPypeForm):
         ]
         
         # INSERT Tee
-        self.lastTee = pCmd.doTees(propList,FreeCAD.__activePypeLine__,insertOnBranch)#[-1]
-        # TODO: SET PRATING
+        self.lastTee = pCmd.doTees(propList,FreeCAD.__activePypeLine__,insertOnBranch)[-1]
+        
+        
         FreeCAD.activeDocument().recompute()
+        FreeCADGui.Selection.clearSelection()
+        #FreeCADGui.Selection.addSelection(FreeCAD.ActiveDocument, self.lastTee.Name)
+        FreeCADGui.Selection.addSelection(self.lastTee)
 
     def trim(self):
         if len(fCmd.beams()) == 1:
@@ -520,10 +524,18 @@ class insertTeeForm(dodoDialogs.protoPypeForm):
             FreeCAD.Console.PrintError(translate("insertTeeForm", "Wrong selection\n"))
     
     def rotatePort(self):
-        if self.lastTee:
-            pCmd.rotateTheElbowPort(self.lastTee, 0, self.lastAngle * -1)
+        insertOnBranch = self.branchRadio.isChecked()
+        #if self.lastTee:
+        if insertOnBranch:
+            pCmd.rotateTheTeePort(self.lastTee, 2, self.lastAngle * -1)
             self.lastAngle = self.dial.value()
-            pCmd.rotateTheElbowPort(self.lastTee, 0, self.lastAngle)
+            pCmd.rotateTheTeePort(self.lastTee, 2, self.lastAngle)
+            
+        else:
+            pCmd.rotateTheTeePort(self.lastTee, 0, self.lastAngle * -1)
+            self.lastAngle = self.dial.value()
+            pCmd.rotateTheTeePort(self.lastTee, 0, self.lastAngle)
+            
         self.lab.setText(str(self.dial.value()) + translate("insertTeeForm", " deg"))
 
     def apply(self):
@@ -536,13 +548,37 @@ class insertTeeForm(dodoDialogs.protoPypeForm):
                 
                 obj.PRating = self.PRating
                 FreeCAD.activeDocument().recompute()
-
+    """
     def reverse(self):
-        if self.lastTee:
-            pCmd.rotateTheTubeAx(self.lastTee, angle=180)
+        #need to rotate it 180 degrees and then offset it the appropriate amount depending on if its on the run or branch
+        #if self.lastTee:
+        insertOnBranch = self.branchRadio.isChecked()
+        
+    )
+        pCmd.rotateTheTubeAx(self.lastTee, angle=180)
+        if insertOnBranch:
+            self.lastTee.Placement.move(
+                self.lastTee.Placement.Rotation.multVec(self.lastTee.Ports[2]) * -2
+            )
+        else:
             self.lastTee.Placement.move(
                 self.lastTee.Placement.Rotation.multVec(self.lastTee.Ports[0]) * -2
             )
+    """
+    def reverse(self):
+
+        #if not self.lastTee:
+            #return
+
+        insertOnBranch = self.branchRadio.isChecked()
+
+        # determine active port
+        portIndex = 2 if insertOnBranch else 0
+        
+        oldPortPos = self.lastTee.Placement.multVec(tee.Ports[portIndex])
+        pCmd.rotateTheTubeAx(self.lastTee, angle=180)
+        newPortPos = self.lastTee.Placement.multVec(tee.Ports[portIndex])
+        self.lastTee = Placement.move(oldPortPos - newPortPos)
 
 
 

@@ -78,6 +78,10 @@ def isElbow(obj):
     "True if obj is an elbow"
     return hasattr(obj, "PType") and obj.PType == "Elbow"
 
+def isTee(obj):
+    "True if obj is a Tee"
+    return hasattr(obj, "PType") and obj.PType == "Tee"
+
 
 def moveToPyLi(obj, plName):
     """
@@ -768,13 +772,10 @@ def makeTee(propList=[], pos=None, Z=None, insertOnBranch = False):
         a.Placement.Base = pos + rot.multiply(FreeCAD.Vector(0, 0, a.C))
 
     a.Placement.Rotation = rot.multiply(a.Placement.Rotation)
-   """
+    """
 
     a.Placement.Base = pos
 
-    
-    
-    
     if insertOnBranch:
         zpos = 0
         ypos = -a.M
@@ -788,7 +789,6 @@ def makeTee(propList=[], pos=None, Z=None, insertOnBranch = False):
     a.Placement = a.Placement.multiply(
         FreeCAD.Placement(FreeCAD.Vector(0, ypos, zpos), FreeCAD.Rotation(0, 0, 0))
     )
-
     
     a.Label = translate("Objects", "Tee")
     return a
@@ -822,25 +822,53 @@ def doTees(propList=["DN150", 168.27, 114.3,7.11,6.02,178,156], pypeline=None, i
                 objs = [
                     o
                     for o in FreeCADGui.Selection.getSelection()
-                    if hasattr(o, "PSize") and hasattr(o, "OD") and hasattr(o, "thk")
+                    if hasattr(o, "Ports")
                 ]
-                #Z = None
+                insertPos = edge.centerOfCurvatureAt(0)
                 Z = edge.tangentAt(0).cross(edge.normalAt(0))
                 Z= Z.normalize()
-                """
-                if len(objs) > 0:  # ...pype objects are selected
-                    Z = edge.centerOfCurvatureAt(0)# - objs[0].Shape.Solids[0].CenterOfMass
-                                                    # correct to remove misalignment for asymmetric objects like ells and tees
-                else:  # ...no pype objects are selected
-                    Z = edge.tangentAt(0).cross(edge.normalAt(0))
-                """
-                clist.append(makeTee(propList, edge.centerOfCurvatureAt(0), Z, insertOnBranch))
+                tee = makeTee(propList, FreeCAD.Vector(0,0,0), FreeCAD.Vector(0,0,0), insertOnBranch)
+                clist.append(tee)
+                FreeCAD.activeDocument().commitTransaction()
+                FreeCAD.activeDocument().recompute()
+                 #align new tee
+                for obj in objs:
+
+                    closestPort = None
+                    minDist = None
+
+                    for i, portVec in enumerate(obj.Ports):
+
+                        worldPort = obj.Placement.multVec(portVec)
+                        dist = (worldPort - insertPos).Length
+
+                        if minDist is None or dist < minDist:
+                            minDist = dist
+                            closestPort = i
+
+                    if closestPort is not None:
+
+                        # decide which tee port connects
+                        if insertOnBranch:
+                            teePort = 2
+                        else:
+                            teePort = 0
+
+                        alignTwoPorts(
+                            tee,
+                            teePort,
+                            obj,
+                            closestPort
+                        )
+               
+      
     if pypeline:
         for c in clist:
             moveToPyLi(c, pypeline)
     FreeCAD.activeDocument().commitTransaction()
     FreeCAD.activeDocument().recompute()
-
+    return clist
+   
 def makeW():
     edges = fCmd.edges()
     if len(edges) > 1:
@@ -983,7 +1011,6 @@ def updatePLColor(sel=None, color=None):
         FreeCAD.Console.PrintError("Select first one pype line\n")
 
 
-
 def alignTheTube():
     """
     Mates the selected 2 circular edges
@@ -1025,7 +1052,90 @@ def alignTheTube():
         part = fCmd.isPartOfPart(t2)
         t2.Placement = part.Placement.inverse().multiply(t2.Placement)
 
+def alignTwoPorts(obj2, port2, obj1, port1):
+    """
+    Mates the selected 2 circular edges
+    of 2 separate objects. Object 1 is stationary, Object 2 moves. port1 and port2 are port numbers, not the port vectors
+    """
+    #FreeCADGui.Selection.getSelection()[0]
+     #FreeCADGui.Selection.getSelection()[-1]
+    #d1, d2 = fCmd.edges()[:2]
+    
 
+    """
+    if d1.curvatureAt(0) != 0 and d2.curvatureAt(0) != 0:
+        n1 = d1.tangentAt(0).cross(d1.normalAt(0))
+        n2 = d2.tangentAt(0).cross(d2.normalAt(0))
+    else:
+        FreeCAD.Console.PrintError("Select 2 curved edges.\n")
+        return None
+    """
+    #calculate absolute positions of the two ports
+    p1 = obj1.Placement.multVec(obj1.Ports[port1])
+    p2 = obj2.Placement.multVec(obj2.Ports[port2])
+
+    #calculate the local positions of the ports relative to each object's base position
+    obj1PortPos = p1-obj1.Placement.Base
+    obj2PortPos = p2-obj2.Placement.Base
+
+    #calculate the rotation required of object 2
+    rot = FreeCAD.Rotation(obj2PortPos.normalize(), obj1PortPos.normalize())
+
+    #perform the rotation, which aligns the two ports
+    obj2.Placement.Rotation = rot.multiply(obj2.Placement.Rotation)
+    
+    # get new positions of the ports after rotation (object 1 shouldn't have moved but recalculate for good measure)
+    d1=obj1.Placement.multVec(obj1.Ports[port1])
+    d2=obj2.Placement.multVec(obj2.Ports[port2])
+
+    #calculate the distance between the two and move object 2
+    dist = d1 - d2
+    obj2.Placement.move(dist)
+
+    #get new position of object 2's port
+    d2=obj2.Placement.multVec(obj2.Ports[port2])
+
+    #check if center of masses aligned correctly by calculating the dot product of the port vectors to the opposite object's center of mass. 
+    Obj1PorttoObj2COM = d1-obj2.Shape.Solids[0].CenterOfMass
+    Obj2PorttoObj1COM = d2-obj1.Shape.Solids[0].CenterOfMass
+
+    #if the port is at Vector(0,0,0) or Vector(1,0,0), it will cause problems, so catch those and assign different rotation axes.
+    if Obj1PorttoObj2COM.dot(Obj2PorttoObj1COM) > 0:
+        crossVector1 = FreeCAD.Vector(1,0,0)
+        crossVector2 = obj2.Ports[port2].normalize()
+        if crossVector2 == crossVector1:
+            crossVector1 = FreeCAD.Vector(0,1,0)
+        if crossVector2 == FreeCAD.Vector(0,0,0):
+            crossVector2 = FreeCAD.Vector(0, 1, 0)
+
+
+        rotateTheTubeAx(obj=obj2,vShapeRef=crossVector2.cross(crossVector1), angle=180)
+        # get new positions of the ports after rotation, again (object 1 shouldn't have moved but recalculate for good measure)
+        d1=obj1.Placement.multVec(obj1.Ports[port1])
+        d2=obj2.Placement.multVec(obj2.Ports[port2])
+
+        #recalculate the distance between the two and move object 2 again
+        dist = d1 - d2
+        obj2.Placement.move(dist)
+
+    """
+    # verifica posizione relativa
+    try:
+        com1, com2 = [t.Shape.Solids[0].CenterOfMass for t in [t1, t2]]
+        if isElbow(t2):
+            pass
+        elif (com1 - d1.centerOfCurvatureAt(0)).dot(com2 - d1.centerOfCurvatureAt(0)) > 0:
+            reverseTheTube(FreeCADGui.Selection.getSelectionEx()[:2][1])
+    except:
+        pass
+    # TARGET [solved]: verify if t1 or t2 belong to App::Part and changes the Placement consequently
+    if fCmd.isPartOfPart(t1):
+        part = fCmd.isPartOfPart(t1)
+        t2.Placement = part.Placement.multiply(t2.Placement)
+    if fCmd.isPartOfPart(t2):
+        part = fCmd.isPartOfPart(t2)
+        t2.Placement = part.Placement.inverse().multiply(t2.Placement)
+    """
 def rotateTheTubeAx(obj=None, vShapeRef=None, angle=45):
     """
     rotateTheTubeAx(obj=None,vShapeRef=None,angle=45)
@@ -1340,6 +1450,17 @@ def getElbowPort(elbow, portId=0):
     if isElbow(elbow):
         return elbow.Placement.multVec(elbow.Ports[portId])
 
+
+def rotateTheTeePort(curve=None, port=0, ang=45):
+    if curve == None:
+        try:
+            curve = FreeCADGui.Selection.getSelection()[0]
+            if not isTee(curve):
+                FreeCAD.Console.PrintError("Please select a Tee.\n")
+                return
+        except:
+            FreeCAD.Console.PrintError("Please select something before.\n")
+    rotateTheTubeAx(curve, curve.Ports[port], ang)
 
 def rotateTheElbowPort(curve=None, port=0, ang=45):
     """
