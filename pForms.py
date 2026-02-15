@@ -566,6 +566,30 @@ class insertTeeForm(dodoDialogs.protoPypeForm):
             )
     """
     def reverse(self):
+        
+        
+        
+        if self.branchRadio.isChecked():
+            port = 2
+        else:
+            port = 0
+
+        initial_port_pos = self.lastTee.Placement.multVec(self.lastTee.Ports[port])
+        crossVector1 = FreeCAD.Vector(1,0,0)
+        crossVector2 = self.lastTee.Ports[port].normalize()
+        #if the port is at Vector(0,0,0) or Vector(1,0,0), it will cause problems, so catch those and assign different rotation axes.
+        if crossVector2 == crossVector1:
+            crossVector1 = FreeCAD.Vector(0,1,0)
+        if crossVector2 == FreeCAD.Vector(0,0,0):
+            crossVector2 = FreeCAD.Vector(0,1,0)
+        pCmd.rotateTheTubeAx(self.lastTee,crossVector1.cross(crossVector2), angle=180)
+        final_port_pos = self.lastTee.Placement.multVec(self.lastTee.Ports[port])
+        
+        #recalculate the distance between the two and move object again
+        dist = initial_port_pos - final_port_pos
+        self.lastTee.Placement.move(dist)
+    """
+    def reverse(self):
 
         #if not self.lastTee:
             #return
@@ -579,7 +603,7 @@ class insertTeeForm(dodoDialogs.protoPypeForm):
         pCmd.rotateTheTubeAx(self.lastTee, angle=180)
         newPortPos = self.lastTee.Placement.multVec(tee.Ports[portIndex])
         self.lastTee = Placement.move(oldPortPos - newPortPos)
-
+    """
 
 
 class insertTerminalAdapterForm(dodoDialogs.protoPypeForm):
