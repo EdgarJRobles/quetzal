@@ -747,6 +747,7 @@ def makeTee(propList=[], pos=None, Z=None, insertOnBranch = False):
     Default is "DN50 (SCH-STD)"
     pos (vector): position of insertion; default = 0,0,0
     Z (vector): orientation: default = 0,0,1
+    insertOnBranch = Boolean 
     Remember: property PRating must be defined afterwards
     """
     if pos == None:
@@ -759,23 +760,12 @@ def makeTee(propList=[], pos=None, Z=None, insertOnBranch = False):
     else:
         pFeatures.Tee(a)
     ViewProvider(a.ViewObject, "Quetzal_InsertTee")
-    """
-    if insertOnBranch:
-        local_axis = FreeCAD.Vector(0, 1, 0)  # branch axis
-    else:
-        local_axis = FreeCAD.Vector(0, 0, 1)  # run axis
-  
-    rot = FreeCAD.Rotation(local_axis, Z)
-    if insertOnBranch:       
-        a.Placement.Base = pos + rot.multiply(FreeCAD.Vector(0, a.M, 0))  
-    else:       
-        a.Placement.Base = pos + rot.multiply(FreeCAD.Vector(0, 0, a.C))
 
-    a.Placement.Rotation = rot.multiply(a.Placement.Rotation)
-    """
-
+    
     a.Placement.Base = pos
 
+    #Rotate tee to have proper port (run or branch) facing the passed orientation (Z). 
+    
     if insertOnBranch:
         zpos = 0
         ypos = -a.M
@@ -784,6 +774,8 @@ def makeTee(propList=[], pos=None, Z=None, insertOnBranch = False):
         zpos = a.C
         ypos = 0
         rot = FreeCAD.Rotation(FreeCAD.Vector(0, 0, 1), Z)
+
+
     a.Placement.Rotation = rot.multiply(a.Placement.Rotation)
 
     a.Placement = a.Placement.multiply(
@@ -797,10 +789,17 @@ def makeTee(propList=[], pos=None, Z=None, insertOnBranch = False):
 def doTees(propList=["DN150", 168.27, 114.3,7.11,6.02,178,156], pypeline=None, insertOnBranch=False):
     """
     propList = [
-      DN (string): nominal diameter
-      OD (float): outside diameter
-      thk (float): shell thickness ]
-    pypeline = string
+       DN (string): nominal diameter
+      OD (float): outside diameter of run
+      OD2 (float): outside diameter of branch
+      thk (float): shell thickness of run
+      thk (float): shell thickness of branch
+      C (float): Length of run from centerline
+      M (float): Length of branch from centerline
+      Default is "DN50 (SCH-STD)"
+
+      pypeline = string
+      insertOnBranch = Boolean 
     """
     clist = []
     FreeCAD.activeDocument().openTransaction(translate("Transaction", "Insert Tee"))
@@ -822,23 +821,24 @@ def doTees(propList=["DN150", 168.27, 114.3,7.11,6.02,178,156], pypeline=None, i
                 objs = [
                     o
                     for o in FreeCADGui.Selection.getSelection()
-                    if hasattr(o, "Ports")
+                    if hasattr(o, "Ports") #PypeObjects have this attribute, which can be used to ensure orientation is correct later
                 ]
                 insertPos = edge.centerOfCurvatureAt(0)
                 Z = edge.tangentAt(0).cross(edge.normalAt(0))
                 Z= Z.normalize()
-                tee = makeTee(propList, FreeCAD.Vector(0,0,0), FreeCAD.Vector(0,0,0), insertOnBranch)
+                #Insert the tee at the default position, as it will be moved to the proper location with the alignTwoPorts function a bit later
+                tee = makeTee(propList, None, None, insertOnBranch)
                 clist.append(tee)
                 FreeCAD.activeDocument().commitTransaction()
                 FreeCAD.activeDocument().recompute()
-                 #align new tee
+                 #Loop through all selected objects and insert tees at their ports
                 for obj in objs:
 
                     closestPort = None
                     minDist = None
-
+                    #loop through each port in the selected object(s) and determine their position, then figure out which one is closest to the selected position.
                     for i, portVec in enumerate(obj.Ports):
-
+                        
                         worldPort = obj.Placement.multVec(portVec)
                         dist = (worldPort - insertPos).Length
 
@@ -853,7 +853,7 @@ def doTees(propList=["DN150", 168.27, 114.3,7.11,6.02,178,156], pypeline=None, i
                             teePort = 2
                         else:
                             teePort = 0
-
+                        #call alignment function to align the desired tee port with the selected object's port.
                         alignTwoPorts(
                             tee,
                             teePort,
@@ -1055,21 +1055,10 @@ def alignTheTube():
 def alignTwoPorts(obj2, port2, obj1, port1):
     """
     Mates the selected 2 circular edges
-    of 2 separate objects. Object 1 is stationary, Object 2 moves. port1 and port2 are port numbers, not the port vectors
+    of 2 separate objects. Object 1 is stationary, Object 2 moves. port1 and port2 are port indexes, not the port vectors
     """
-    #FreeCADGui.Selection.getSelection()[0]
-     #FreeCADGui.Selection.getSelection()[-1]
-    #d1, d2 = fCmd.edges()[:2]
+ 
     
-
-    """
-    if d1.curvatureAt(0) != 0 and d2.curvatureAt(0) != 0:
-        n1 = d1.tangentAt(0).cross(d1.normalAt(0))
-        n2 = d2.tangentAt(0).cross(d2.normalAt(0))
-    else:
-        FreeCAD.Console.PrintError("Select 2 curved edges.\n")
-        return None
-    """
     #calculate absolute positions of the two ports
     p1 = obj1.Placement.multVec(obj1.Ports[port1])
     p2 = obj2.Placement.multVec(obj2.Ports[port2])
@@ -1096,13 +1085,17 @@ def alignTwoPorts(obj2, port2, obj1, port1):
     d2=obj2.Placement.multVec(obj2.Ports[port2])
 
     #check if center of masses aligned correctly by calculating the dot product of the port vectors to the opposite object's center of mass. 
-    Obj1PorttoObj2COM = d1-obj2.Shape.Solids[0].CenterOfMass
-    Obj2PorttoObj1COM = d2-obj1.Shape.Solids[0].CenterOfMass
+    #If the dot product >0, then the port is facing the wrong way, so flip it 180 degrees around an axis perpendicular to the port axis. 
+    #This won't work properly if the object's center of mass is facing the connection point, which would be extremely unusual for most common piping components,
+    # but could plausibly happen on an object with a circuitous shape
+    obj1PorttoObj2COM = d1-obj2.Shape.Solids[0].CenterOfMass
+    obj2PorttoObj1COM = d2-obj1.Shape.Solids[0].CenterOfMass
 
-    #if the port is at Vector(0,0,0) or Vector(1,0,0), it will cause problems, so catch those and assign different rotation axes.
-    if Obj1PorttoObj2COM.dot(Obj2PorttoObj1COM) > 0:
+    
+    if obj1PorttoObj2COM.dot(obj2PorttoObj1COM) > 0:
         crossVector1 = FreeCAD.Vector(1,0,0)
         crossVector2 = obj2.Ports[port2].normalize()
+        #if the port is at Vector(0,0,0) or Vector(1,0,0), it will cause problems, so catch those and assign different rotation axes.
         if crossVector2 == crossVector1:
             crossVector1 = FreeCAD.Vector(0,1,0)
         if crossVector2 == FreeCAD.Vector(0,0,0):
@@ -1118,24 +1111,7 @@ def alignTwoPorts(obj2, port2, obj1, port1):
         dist = d1 - d2
         obj2.Placement.move(dist)
 
-    """
-    # verifica posizione relativa
-    try:
-        com1, com2 = [t.Shape.Solids[0].CenterOfMass for t in [t1, t2]]
-        if isElbow(t2):
-            pass
-        elif (com1 - d1.centerOfCurvatureAt(0)).dot(com2 - d1.centerOfCurvatureAt(0)) > 0:
-            reverseTheTube(FreeCADGui.Selection.getSelectionEx()[:2][1])
-    except:
-        pass
-    # TARGET [solved]: verify if t1 or t2 belong to App::Part and changes the Placement consequently
-    if fCmd.isPartOfPart(t1):
-        part = fCmd.isPartOfPart(t1)
-        t2.Placement = part.Placement.multiply(t2.Placement)
-    if fCmd.isPartOfPart(t2):
-        part = fCmd.isPartOfPart(t2)
-        t2.Placement = part.Placement.inverse().multiply(t2.Placement)
-    """
+    
 def rotateTheTubeAx(obj=None, vShapeRef=None, angle=45):
     """
     rotateTheTubeAx(obj=None,vShapeRef=None,angle=45)

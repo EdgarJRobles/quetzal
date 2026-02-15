@@ -736,7 +736,6 @@ class Tee(pypeType):
         obj.OD = OD
         obj.thk = thk
         obj.C = C
-        #Not quite sure what this next one does.
         
         obj.addProperty(
             "App::PropertyString",
@@ -757,18 +756,33 @@ class Tee(pypeType):
         RunHole = Part.makeCylinder(fp.OD/2 - fp.thk, fp.C*2, FreeCAD.Vector(0, 0, -fp.C), FreeCAD.Vector(0, 0, 1), )
         BranchHole = Part.makeCylinder(fp.OD2/2 - fp.thk2, fp.M, FreeCAD.Vector(0, 0, 0), FreeCAD.Vector(0, 1, 0),  )
         
-        #CommonOD = Base.common(BranchTube)
-        #CommonID = RunHole.common(BranchHole)
+        CommonOD = Base.common(BranchTube)
+        CommonID = RunHole.common(BranchHole)
 
         Base = Base.fuse(BranchTube)
 
         Base = Base.cut(RunHole)
         Base = Base.cut(BranchHole)
         
-        #First get general shape working. If all works out, try a fillet to make it look more like a typical tee
-        #ODFillet = CommonOD.makeFillet(fp.M/2-fp.C/4, CommonOD.Edges)
-        #IDFillet = CommonID.makeFillet(fp.M/2-fp.C/4, CommonID.Edges)
+        #Filleting to make the shape look more like an actual tee does not work. Need to figure out why. 
+        ##Fillet edges are Edge 4 and 10 for reducing tees and 5, 6, 7, 14, 15, 16 for straight tees
 
+        #ODFillet = CommonOD.makeFillet(fp.M/2-fp.OD/4, CommonOD.Edges)
+        #IDFillet = CommonID.makeFillet(fp.M/2-fp.OD/4, CommonID.Edges)
+        
+        #Base = Base.fuse(ODFillet)
+        #Base = Base.fuse(IDFillet)
+
+        """ Alternate way of filleting directly doesn't work. Also can't figure out why.
+        if fp.M==fp.C :
+            commonEdges = [Base.Edges[5], Base.Edges[6], Base.Edges[7], Base.Edges[14], Base.Edges[15], Base.Edges[16]]
+            
+        else:
+            commonEdges = [Base.Edges[4], Base.Edges[10]]
+
+        Base = Base.makeFillet(fp.M/2-fp.OD/4, commonEdges)
+        #Base = Base.fuse(ODFillet)
+        """
         fp.Shape = Base
         fp.Ports = [FreeCAD.Vector(0, 0, -float(fp.C)), FreeCAD.Vector(0, 0, float(fp.C)), FreeCAD.Vector(0, float(fp.M), 0)]
         super(Tee, self).execute(fp)  # perform common operations
