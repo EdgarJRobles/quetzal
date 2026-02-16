@@ -487,9 +487,9 @@ class frameBranchForm(dodoDialogs.protoTypeDialog):
         self.form.btnProfile.clicked.connect(self.changeProfile)
         self.form.btnRefresh.clicked.connect(self.refresh)
         # Signal connection to get targets for trim or extend
-        self.form.btnTargets.clicked.connect(self.selectAction)
+        self.form.btnGetTargets.clicked.connect(self.getTargets)
         # Signal connection to execute trim or extend operation
-        self.form.btnTrim.clicked.connect(self.trim)
+        self.form.btnTrimExtend.clicked.connect(self.trimOrExtend)
         self.form.btnSingle.clicked.connect(self.makeSingle)
         self.form.sliTail.valueChanged.connect(self.stretchTail)
         self.form.sliHead.valueChanged.connect(self.stretchHead)
@@ -498,7 +498,7 @@ class frameBranchForm(dodoDialogs.protoTypeDialog):
         self.targets = list()
         self.labTail = None
         self.actionX.triggered.disconnect(self.accept)  # disconnect from accept()
-        self.actionX.triggered.connect(self.trim)  # reconnect to trim()
+        self.actionX.triggered.connect(self.trimOrExtend)  # reconnect to trim()
 
     def on_currentIndexChanged(self) -> None:
         profilepath = FreeCAD.getUserAppDataDir() + "Mod/quetzal/iconz/PreviewSections/"
@@ -672,6 +672,7 @@ class frameBranchForm(dodoDialogs.protoTypeDialog):
         for object in seldoc.Objects:
             if object.Name.startswith("cutplane"):
                 miterplanes.append(object.Shape.Faces[0])
+                object.Visibility=False
         return miterplanes
 
     def roundVectors(self, vxlist, num):
@@ -682,139 +683,99 @@ class frameBranchForm(dodoDialogs.protoTypeDialog):
         """Get intersection between lines, generate a plane between lines & do a boolean diferente"""
         sel = FreeCADGui.Selection.getSelection()
         from DraftGeomUtils import findIntersection
-
         # FreeCAD.Console.PrintMessage('posicion de boceto:'+ str(sel[0].Placement.Rotation)+'\r\n')
-        i = 0
-        rep = 0
+        i=0
+        rep=0
         reachedlines = []
         interVertex = []
-        if sel[0].FType == "FrameBranch":
-            for element in sel[0].Base.Geometry:
-                # FreeCAD.Console.PrintMessage('Segmento '+str(element)+'\r\n')
-                for subelement in sel[0].Base.Geometry:
-                    # Avoid process the geometric element that match StartPoint and EndPoint and also just have process elements with  a common point
-                    if (
-                        element.EndPoint != subelement.EndPoint
-                        or element.StartPoint != subelement.StartPoint
-                        or (
-                            element.EndPoint != subelement.EndPoint
-                            and element.StartPoint != subelement.StartPoint
-                        )
-                        and (
-                            element.EndPoint != subelement.StartPoint
-                            and element.StartPoint != subelement.EndPoint
-                        )
-                    ):
-                        # WARN:intersectionCLines method forces to detect infinite intersections that is not required
-                        # interVertex=fCmd.intersectionCLines(element.toShape().Edges[0],subelement.toShape().Edges[0])
-                        interVertex = findIntersection(
-                            element.toShape().Edges[0],
-                            subelement.toShape().Edges[0],
-                            infinite1=False,
-                            infinite2=False,
-                        )
-                        if interVertex:
-                            roundelementStart = self.roundVectors(element.StartPoint, 2)
-                            roundelementEnd = self.roundVectors(element.EndPoint, 2)
-                            roundsubelementStart = self.roundVectors(subelement.StartPoint, 2)
-                            roundsubelementEnd = self.roundVectors(subelement.EndPoint, 2)
-                            roundinterVertex = self.roundVectors(interVertex[0], 2)
-                            if [element.Tag, subelement.Tag] not in reachedlines:
-                                content = True
-                                reachedlines.append([element.Tag, subelement.Tag])
-                            else:
-                                content = False
-                            if [subelement.Tag, element.Tag] not in reachedlines:
-                                contentsub = True
-                                reachedlines.append([subelement.Tag, element.Tag])
-                            else:
-                                contentsub = False
-                            if (content) or (contentsub):
-                                # FreeCAD.Console.PrintMessage('Punto de interseccion: '+str(interVertex[0])+'\r\n')
-                                # Store edge pair that intersect
-                                # FreeCAD.Console.PrintMessage(
-                                #     "Reachedlines: {0} and {1}".format(
-                                #         reachedlines[rep][0], reachedlines[rep][1]
-                                #     )
-                                #     + "\r\n"
-                                # )
-                                rep = rep + 1
-                                # FIXME: intersectCC method does not return line intersection; findIntersection method does it right
-                                # interpoint=element.intersectCC(subelement)[0]
+        if sel[0].FType == 'FrameBranch':
+          for element in sel[0].Base.Geometry:
+              # FreeCAD.Console.PrintMessage('Segmento '+str(element)+'\r\n')
+              for subelement in sel[0].Base.Geometry:
+                  # Avoid process the geometric element that match StartPoint and EndPoint and also just have process elements with  a common point
+                  if  (element.EndPoint != subelement.EndPoint or
+                       element.StartPoint != subelement.StartPoint or
+                       (element.EndPoint != subelement.EndPoint and
+                        element.StartPoint != subelement.StartPoint) and
+                       (element.EndPoint != subelement.StartPoint and
+                        element.StartPoint != subelement.EndPoint)):
+                      #WARN:intersectionCLines method forces to detect infinite intersections that is not required
+                      # interVertex=fCmd.intersectionCLines(element.toShape().Edges[0],subelement.toShape().Edges[0])                        
+                      interVertex=findIntersection(element.toShape().Edges[0],subelement.toShape().Edges[0],infinite1=False, infinite2=False)
+                      if interVertex:
+                          roundelementStart=self.roundVectors(element.StartPoint,2)
+                          roundelementEnd=self.roundVectors(element.EndPoint,2)
+                          roundsubelementStart=self.roundVectors(subelement.StartPoint,2)
+                          roundsubelementEnd=self.roundVectors(subelement.EndPoint,2)
+                          roundinterVertex=self.roundVectors(interVertex[0],2)
+                          if [element.Tag,subelement.Tag] not in reachedlines:
+                              content=True
+                              reachedlines.append([element.Tag,subelement.Tag])
+                          else:
+                              content=False
+                          if [subelement.Tag,element.Tag] not in reachedlines:
+                              contentsub=True
+                              reachedlines.append([subelement.Tag,element.Tag])
+                          else:
+                              contentsub=False
+                          if (content) or (contentsub):
+                              # FreeCAD.Console.PrintMessage('Punto de interseccion: '+str(interVertex[0])+'\r\n')
+                              # Store edge pair that intersect
+                              FreeCAD.Console.PrintMessage('Reachedlines: {0} and {1}'.format(reachedlines[rep][0],reachedlines[rep][1])+'\r\n')
+                              rep=rep+1
+                              # FIXME: intersectCC method does not return line intersection; findIntersection method does it right
+                              # interpoint=element.intersectCC(subelement)[0] 
 
-                                # FreeCAD.Console.PrintMessage('Segmento '+str(element)+' intersecta con segmento '+str(subelement)+' aqui:'+ str(interpoint)+'\r\n')
-                                # FreeCAD.Console.PrintMessage(str(type(interpoint)))
-                                # INFO:Section aided to get bisect vector on each intersection
-                                if roundelementStart == roundinterVertex:
-                                    resultv1 = FreeCAD.Vector(element.EndPoint - element.StartPoint)
-                                elif roundelementEnd == roundinterVertex:
-                                    resultv1 = FreeCAD.Vector(element.StartPoint - element.EndPoint)
-                                if roundsubelementStart == roundinterVertex:
-                                    resultv2 = FreeCAD.Vector(
-                                        subelement.EndPoint - subelement.StartPoint
-                                    )
-                                elif roundsubelementEnd == roundinterVertex:
-                                    resultv2 = FreeCAD.Vector(
-                                        subelement.StartPoint - subelement.EndPoint
-                                    )
-                                bisectvector = fCmd.bisect(resultv1, resultv2)
-                                # FreeCAD.Console.PrintMessage('Vector bisector: '+str(bisectvector)+'\r\n')
-                                plane = FreeCAD.activeDocument().addObject(
-                                    "Part::Plane", "cutplane"
-                                )
-                                import numpy
-
-                                plane.AttachmentSupport = sel[0].Base.AttachmentSupport
-                                plane.MapMode = "FlatFace"
-                                self.rotvector = (interVertex[0]) - (
-                                    FreeCAD.Vector(0, plane.Length / 2, -plane.Length / 2)
-                                )
-                                # INFO: Section aided to apply random color to each plane
-                                randomcolorarray = numpy.random.choice(range(256), size=3)
-                                plane.ViewObject.ShapeAppearance = FreeCAD.Material(
-                                    DiffuseColor=tuple(map(int, randomcolorarray))
-                                )
-                                plane.recompute()
-                                # self.CenterOfMass = plane.Shape.CenterOfMass
-                                # INFO:Section aided to get the correct plane orientation on each intersection
-                                self.placementrotplan = FreeCAD.Placement(
-                                    self.rotvector, FreeCAD.Rotation(FreeCAD.Vector(0, 1, 0), 90)
-                                )
-                                plane.Placement = self.placementrotplan
-                                # FreeCAD.Console.PrintMessage('Antes Angulo de arista a vector bisectriz: '+str((FreeCAD.Rotation(bisectvector,plane.Shape.normalAt(0,0)).Angle)*180/pi)+'\r\n')
-                                # crossvector=resultv1.cross(resultv2).normalize()
-                                # FreeCAD.Console.PrintMessage('Vector cruz: '+str(crossvector)+'\r\n')
-                                # FreeCAD.Console.PrintMessage('Vector normal de plano: '+str(self.roundVectors(plane.Shape.normalAt(0,0),2))+'\r\n')
-                                self.placementrelative = FreeCAD.Placement(
-                                    FreeCAD.Vector(0, 0, 0),
-                                    FreeCAD.Rotation(plane.Shape.normalAt(0, 0), bisectvector),
-                                    interVertex[0],
-                                ).multiply(self.placementrotplan)
-                                # plane.Placement = self.placementrelative
-                                # FreeCAD.Console.PrintMessage('Despues Angulo de arista a vector bisectriz: '+str((FreeCAD.Rotation(bisectvector,plane.Shape.normalAt(0,0)).Angle)*180/pi)+'\r\n')
-                                if self.roundVectors(
-                                    plane.Shape.normalAt(0, 0), 0
-                                ) == FreeCAD.Vector(1.0, 0.0, 0.0):
-                                    rotateplane = 90
-                                else:
-                                    rotateplane = 0
-                                self.placementfinal = FreeCAD.Placement(
-                                    FreeCAD.Vector(0, 0, 0),
-                                    FreeCAD.Rotation(FreeCAD.Vector(0, 0, 1), rotateplane),
-                                    interVertex[0],
-                                ).multiply(self.placementrelative)
-                                plane.Placement = self.placementfinal
-                                # FreeCAD.Console.PrintMessage(str(plane.Name))
-                                # sel[0].cutplanes.append(plane.Name)
-                # TODO::Made method definition to change plane dots colors
-                # if i==0:
-                #     FreeCADGui.ActiveDocument.myplane.PointSize = 10
-                #     FreeCADGui.ActiveDocument.myplane.PointColor = 100,50,20
-                # elif i>=1:
-                #     obj=FreeCADGui.ActiveDocument.getObject('myplane00'+str(i))
-                #     obj.PointSize = 10
-                #     obj.PointColor = 100,50,20
-                i = i + 1
+                              # FreeCAD.Console.PrintMessage('Segmento '+str(element)+' intersecta con segmento '+str(subelement)+' aqui:'+ str(interpoint)+'\r\n')
+                              # FreeCAD.Console.PrintMessage(str(type(interpoint)))
+                              # INFO:Section aided to get bisect vector on each intersection
+                              if roundelementStart== roundinterVertex:
+                                  resultv1 = FreeCAD.Vector(element.EndPoint-element.StartPoint)
+                              elif roundelementEnd == roundinterVertex:
+                                  resultv1 = FreeCAD.Vector(element.StartPoint-element.EndPoint)
+                              if roundsubelementStart == roundinterVertex:
+                                  resultv2 = FreeCAD.Vector(subelement.EndPoint-subelement.StartPoint)
+                              elif roundsubelementEnd == roundinterVertex:
+                                  resultv2 = FreeCAD.Vector(subelement.StartPoint-subelement.EndPoint)
+                              bisectvector=fCmd.bisect(resultv1,resultv2)
+                              plane=FreeCAD.activeDocument().addObject("Part::Plane","cutplane")
+                              import numpy
+                              from math import pi
+                              plane.AttachmentSupport = sel[0].Base.AttachmentSupport
+                              plane.MapMode = 'FlatFace'
+                              self.rotvector =(interVertex[0])-(FreeCAD.Vector(0,plane.Length/2,-plane.Length/2))
+                              # INFO: Section aided to apply random color to each plane
+                              randomcolorarray=numpy.random.choice(range(256),size=3)
+                              plane.ViewObject.ShapeAppearance = FreeCAD.Material(DiffuseColor= tuple(map(int,randomcolorarray)))
+                              plane.recompute()
+                              # self.CenterOfMass = plane.Shape.CenterOfMass
+                              # INFO:Section aided to get the correct plane orientation on each intersection
+                              self.placementrotplan = FreeCAD.Placement(self.rotvector,FreeCAD.Rotation(FreeCAD.Vector(0,1,0),90))
+                              plane.AttachmentOffset = self.placementrotplan
+                              # FreeCAD.Console.PrintMessage('Antes Angulo de arista a vector bisectriz: '+str((FreeCAD.Rotation(bisectvector,plane.Shape.normalAt(0,0)).Angle)*180/pi)+'\r\n')
+                              # crossvector=resultv1.cross(resultv2).normalize()
+                              # FreeCAD.Console.PrintMessage('Vector cruz: '+str(crossvector)+'\r\n')
+                              # FreeCAD.Console.PrintMessage('Vector normal de plano: '+str(self.roundVectors(plane.Shape.normalAt(0,0),2))+'\r\n')
+                              self.placementrelative = FreeCAD.Placement(FreeCAD.Vector(0,0,0),FreeCAD.Rotation(plane.Shape.normalAt(0,0),bisectvector),interVertex[0]).multiply(self.placementrotplan)
+                              # plane.AttachmentOffset = self.placementrelative
+                              # FreeCAD.Console.PrintMessage('Despues Angulo de arista a vector bisectriz: '+str((FreeCAD.Rotation(bisectvector,plane.Shape.normalAt(0,0)).Angle)*180/pi)+'\r\n')
+                              if self.roundVectors(plane.Shape.normalAt(0,0),0) == FreeCAD.Vector(1.0, 0.0, 0.0):
+                                  rotateplane=90
+                              else:
+                                  rotateplane=0
+                              self.placementfinal = FreeCAD.Placement(FreeCAD.Vector(0,0,0),FreeCAD.Rotation(FreeCAD.Vector(0,0,1),rotateplane),interVertex[0]).multiply(self.placementrelative)
+                              plane.AttachmentOffset = self.placementfinal
+                              # FreeCAD.Console.PrintMessage(str(plane.Name))
+                              # sel[0].cutplanes.append(plane.Name)
+              # TODO::Made method definition to change plane dots colors
+              # if i==0:
+              #     FreeCADGui.ActiveDocument.myplane.PointSize = 10
+              #     FreeCADGui.ActiveDocument.myplane.PointColor = 100,50,20
+              # elif i>=1:
+              #     obj=FreeCADGui.ActiveDocument.getObject('myplane00'+str(i))
+              #     obj.PointSize = 10
+              #     obj.PointColor = 100,50,20
+              i=i+1
 
     def accept(self):
         if FreeCAD.ActiveDocument:
@@ -851,16 +812,22 @@ class frameBranchForm(dodoDialogs.protoTypeDialog):
             self.labTail.removeLabel()
         super(frameBranchForm, self).reject()
 
-    def selectAction(self):
+    def getTargets(self):
+        """
+        Get Shapes used as reference to trim or extend beams
+        """
         self.targets = []
         selex = FreeCADGui.Selection.getSelectionEx()
-        shapes = [(sx.SubObjects[0], sx.Object.Label) for sx in selex if sx.SubObjects]
-        for shape in shapes:
-            self.targets.append(shape[0])
-        if len(shapes) > 1:
-            self.form.lab2.setText("<multiple selection>")
-        else:
-            self.form.lab2.setText(shapes[0][1] + ": " + shapes[0][0].ShapeType)
+        try:
+            shapes = [(sx.SubObjects[0], sx.Object.Label) for sx in selex if sx.SubObjects]
+            for shape in shapes:
+                self.targets.append(shape[0])
+            if len(shapes) > 1:
+                self.form.lab2.setText("<multiple selection>")
+            else:
+                self.form.lab2.setText(shapes[0][1] + ": " + shapes[0][0].ShapeType)
+        except (IndexError,ValueError) as e:
+            FreeCAD.Console.PrintError("Not Vertex, edge or face selected as trim or extend target \n")
 
     def mouseActionB1(self, CtrlAltShift):
         v = FreeCADGui.ActiveDocument.ActiveView
@@ -1090,14 +1057,19 @@ class frameBranchForm(dodoDialogs.protoTypeDialog):
         self.form.editAngle.setText(str(self.form.dialAngle.value()))
         self.changeAngle()
 
-    def trim(self):
+    def trimOrExtend(self):
         """
-        Trim or extend function for preselected beams
+        Trim or extend function for preselected beams.
+        first a face or a edge must be selected with selected objetives button before any trim or extend operation.
         """
-        FreeCAD.activeDocument().openTransaction(translate("Transaction", "Trim Frame Branch"))
-        for target in self.targets:
-            for b in fCmd.beams():
-                if hasattr(b, "tailOffset") and hasattr(b, "headOffset"):
+        try:
+            FreeCAD.activeDocument().openTransaction(translate("Transaction", "Trim Frame Branch"))
+            if not self.targets:
+                raise IndexError("Targets do not selected with set objetives button previus to execute this command \n")
+            for target in self.targets:
+                for b in fCmd.beams():
+                    if not hasattr(b, "tailOffset") and not hasattr(b, "headOffset"):
+                        raise AttributeError("Missing tail and head variables, it may not a beam object \n")
                     if int(FreeCAD.Version()[0]) >= 1:
                         edge = b.AttachmentSupport[0][0].Shape.getElement(
                             b.AttachmentSupport[0][1][0]
@@ -1123,7 +1095,9 @@ class frameBranchForm(dodoDialogs.protoTypeDialog):
                         else:
                             b.headOffset = deltaHead
                     refreshBranchObject(b)
-        FreeCAD.ActiveDocument.commitTransaction()
+            FreeCAD.ActiveDocument.commitTransaction()
+        except Exception as e:
+            FreeCAD.Console.PrintError(""+str(e))
 
     def refresh(self):
         """
@@ -1326,7 +1300,7 @@ class FrameBranch(object):
                 else:
                     beam.Support = [(obj.Base, "Edge" + str(i + 1))]
                 beam.MapMode = "NormalToEdge"
-                beam.MapReversed = True
+                beam.MapReversed = False
                 beamsList.append(str(beam.Name))
                 i += 1
         obj.Beams = beamsList
