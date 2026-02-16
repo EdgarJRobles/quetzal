@@ -4,7 +4,7 @@ __title__ = "pypeTools objects"
 __author__ = "oddtopus"
 __url__ = "github.com/oddtopus/dodo"
 __license__ = "LGPL 3"
-objs = ["Pipe", "Elbow", "Reduct", "Cap", "Flange", "Ubolt", "Valve"]
+objs = ["Pipe", "Elbow", "Reduct", "Cap", "Flange", "Tee", "Ubolt", "Valve"]
 metaObjs = ["PypeLine", "PypeBranch"]
 
 from os.path import abspath, dirname, join
@@ -660,6 +660,132 @@ class Flange(pypeType):
     #     revolution.ReferenceAxis = (sketch, ['H_Axis'])
     #     fp.Placement=fp.Placement
     #     fp.Shape= obj.Shape
+
+class Tee(pypeType):
+    """  
+    Tee(obj, [PSize="DN150", OD=168.27, OD2=114.3,thk=7.11,thk2=6.02,C=178,M=156])
+      obj: the "App::FeaturePython object"
+      PSize (string): nominal diameter (run)
+      OD (float): Run outside diameter
+      OD2 (float): Branch outside diameter. If None, assumes same diameter as run
+      thk (float): Run shell thickness
+      thk2 (float): Branch shell thickness. If None, assumes same thickness as run
+      C (float): Length from branch centerline to run edge
+      M (float): Length from run centerline to branch edge. If None, assumes same length as run
+    """
+    def __init__(self, obj, DN="DN150", OD=168.27, OD2=168.27,thk=7.11,thk2=7.11,C=178.0,M=178.0):
+         # initialize the parent class
+        super(Tee, self).__init__(obj)
+         # define common properties
+        obj.Proxy = self
+        obj.PType = "Tee"
+        obj.PRating = "SCH-STD"
+        obj.PSize = DN
+        # define specific properties
+        obj.addProperty(
+            "App::PropertyLength",
+            "OD",
+            "Tee",
+            QT_TRANSLATE_NOOP("App::Property", "Run diameter"),
+        ).OD
+        obj.addProperty(
+            "App::PropertyLength",
+            "OD2",
+            "Tee",
+            QT_TRANSLATE_NOOP("App::Property", "Branch diameter"),
+        ).OD2
+        obj.addProperty(
+            "App::PropertyLength",
+            "thk",
+            "Tee",
+            QT_TRANSLATE_NOOP("App::Property", "Run Wall thickness"),
+        ).thk
+        obj.addProperty(
+            "App::PropertyLength",
+            "thk2",
+            "Tee",
+            QT_TRANSLATE_NOOP("App::Property", "Branch Wall thickness"),
+        ).thk2
+        obj.addProperty(
+            "App::PropertyLength",
+            "C",
+            "Tee",
+            QT_TRANSLATE_NOOP("App::Property", "Run half length"),
+        ).C
+        obj.addProperty(
+            "App::PropertyLength",
+            "M",
+            "Tee",
+            QT_TRANSLATE_NOOP("App::Property", "Branch length"),
+        ).M
+        #If branch diameter is equal to run, set branch OD, thickness, and length to be equal to branch's
+        if not thk2:
+            obj.thk2 = thk
+        else:
+            obj.thk2 = thk2
+
+        if not OD2:
+            obj.OD2 = OD
+        else:
+            obj.OD2 = OD2
+
+        if not M:
+            obj.M = C
+        else:
+            obj.M = M
+        obj.OD = OD
+        obj.thk = thk
+        obj.C = C
+        
+        obj.addProperty(
+            "App::PropertyString",
+            "Profile",
+            "Tee",
+            QT_TRANSLATE_NOOP("App::Property", "Run and Branch Size"),
+        ).Profile = str(obj.OD) + "x" + str(obj.OD2)
+        
+    def onChanged(self, fp, prop):
+        return None
+
+    def execute(self, fp):
+        
+        fp.Profile = str(fp.OD) + "x" + str(fp.OD2)        
+            
+        Base = Part.makeCylinder(fp.OD/2, fp.C*2, FreeCAD.Vector(0, 0, -fp.C), FreeCAD.Vector(0, 0, 1), ) #run tube
+        BranchTube = Part.makeCylinder(fp.OD2/2, fp.M, FreeCAD.Vector(0, 0, 0), FreeCAD.Vector(0, 1, 0),  )
+        RunHole = Part.makeCylinder(fp.OD/2 - fp.thk, fp.C*2, FreeCAD.Vector(0, 0, -fp.C), FreeCAD.Vector(0, 0, 1), )
+        BranchHole = Part.makeCylinder(fp.OD2/2 - fp.thk2, fp.M, FreeCAD.Vector(0, 0, 0), FreeCAD.Vector(0, 1, 0),  )
+        
+        CommonOD = Base.common(BranchTube)
+        CommonID = RunHole.common(BranchHole)
+
+        Base = Base.fuse(BranchTube)
+
+        Base = Base.cut(RunHole)
+        Base = Base.cut(BranchHole)
+        
+        #Filleting to make the shape look more like an actual tee does not work. Need to figure out why. 
+        ##Fillet edges are Edge 4 and 10 for reducing tees and 5, 6, 7, 14, 15, 16 for straight tees
+
+        #ODFillet = CommonOD.makeFillet(fp.M/2-fp.OD/4, CommonOD.Edges)
+        #IDFillet = CommonID.makeFillet(fp.M/2-fp.OD/4, CommonID.Edges)
+        
+        #Base = Base.fuse(ODFillet)
+        #Base = Base.fuse(IDFillet)
+
+        """ Alternate way of filleting directly doesn't work. Also can't figure out why.
+        if fp.M==fp.C :
+            commonEdges = [Base.Edges[5], Base.Edges[6], Base.Edges[7], Base.Edges[14], Base.Edges[15], Base.Edges[16]]
+            
+        else:
+            commonEdges = [Base.Edges[4], Base.Edges[10]]
+
+        Base = Base.makeFillet(fp.M/2-fp.OD/4, commonEdges)
+        #Base = Base.fuse(ODFillet)
+        """
+        fp.Shape = Base
+        fp.Ports = [FreeCAD.Vector(0, 0, -float(fp.C)), FreeCAD.Vector(0, 0, float(fp.C)), FreeCAD.Vector(0, float(fp.M), 0)]
+        super(Tee, self).execute(fp)  # perform common operations
 
 
 class Reduct(pypeType):

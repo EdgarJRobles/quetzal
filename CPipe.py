@@ -136,6 +136,24 @@ class insertCap:
             "ToolTip": QT_TRANSLATE_NOOP("Quetzal_InsertCap", "Insert a cap"),
         }
 
+class insertTee:
+    def IsActive(self):
+        if FreeCAD.ActiveDocument is None:
+            return False
+        else:
+            return True
+
+    def Activated(self):
+        import pForms
+
+        pipeFormObj = pForms.insertTeeForm()
+
+    def GetResources(self):
+        return {
+            "Pixmap": "Quetzal_InsertTee",
+            "MenuText": QT_TRANSLATE_NOOP("Quetzal_InsertTee", "Insert a tee"),
+            "ToolTip": QT_TRANSLATE_NOOP("Quetzal_InsertTee", "Insert a tee"),
+        }
 
 class insertFlange:
     def IsActive(self):
@@ -615,6 +633,7 @@ addCommand("Quetzal_InsertPipe", insertPipe())
 addCommand("Quetzal_InsertElbow", insertElbow())
 addCommand("Quetzal_InsertReduct", insertReduct())
 addCommand("Quetzal_InsertCap", insertCap())
+addCommand("Quetzal_InsertTee", insertTee())
 addCommand("Quetzal_InsertValve", insertValve())
 addCommand("Quetzal_InsertFlange", insertFlange())
 addCommand("Quetzal_InsertUBolt", insertUbolt())
@@ -751,6 +770,28 @@ class capQM:
         return {
             "Pixmap": "Quetzal_InsertCap",
             "MenuText": QT_TRANSLATE_NOOP("Quetzal_CapQM", "QM for caps"),
+        }
+
+
+addCommand("Quetzal_CapQM", capQM())
+
+class teeQM:
+
+    def IsActive(self):
+        if FreeCAD.ActiveDocument is None:
+            return False
+        else:
+            return True
+
+    def Activated(self):
+        import dodoPM
+
+        dodoPM.cqm.show()
+
+    def GetResources(self):
+        return {
+            "Pixmap": "Quetzal_InsertTee",
+            "MenuText": QT_TRANSLATE_NOOP("Quetzal_TeeQM", "QM for tees"),
         }
 
 

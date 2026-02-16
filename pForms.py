@@ -303,6 +303,7 @@ class insertElbowForm(dodoDialogs.protoPypeForm):
             ang = float(pq(d["BendAngle"]))
         selex = FreeCADGui.Selection.getSelectionEx()
         # DEFINE PROPERTIES
+        """ Do not override selected properties
         for sx in selex:
             if hasattr(sx.Object, "PType") and sx.Object.PType in [
                 "Pipe",
@@ -321,6 +322,7 @@ class insertElbowForm(dodoDialogs.protoPypeForm):
                     BR = 1.5 * OD / 2
                 propList = [DN, OD, thk, ang, BR]
                 break
+        """
         if not propList:
             propList = [
                 d["PSize"],
@@ -354,7 +356,7 @@ class insertElbowForm(dodoDialogs.protoPypeForm):
             pCmd.rotateTheElbowPort(self.lastElbow, 0, self.lastAngle * -1)
             self.lastAngle = self.dial.value()
             pCmd.rotateTheElbowPort(self.lastElbow, 0, self.lastAngle)
-        self.lab.setText(str(self.dial.value()) + translate("insertElbowForm", " deg"))
+            self.lab.setText(str(self.dial.value()) + translate("insertElbowForm", " deg"))
 
     def apply(self):
         for obj in FreeCADGui.Selection.getSelection():
@@ -380,6 +382,228 @@ class insertElbowForm(dodoDialogs.protoPypeForm):
             self.lastElbow.Placement.move(
                 self.lastElbow.Placement.Rotation.multVec(self.lastElbow.Ports[0]) * -2
             )
+
+
+class insertTeeForm(dodoDialogs.protoPypeForm):
+    """
+    Dialog to insert one tee.
+    For position and orientation you can select
+      - one vertex,
+      - one circular edge
+      - a pair of edges or pipes or beams
+      - one pipe at one of its ends
+      - nothing.
+    In case one pipe is selected, its properties are applied to the elbow and
+    the tube or tubes are trimmed or extended automatically.
+    Also available one button to trim/extend one selected pipe to the selected
+    edges, if necessary.
+    """
+
+    def __init__(self):
+        super(insertTeeForm, self).__init__(
+            translate("insertTeeForm", "Insert tee"),
+            "Tee",
+            "SCH-STD",
+            "Tee.svg",
+            x,
+            y,
+        )
+        self.sizeList.setCurrentRow(0)
+        self.ratingList.setCurrentRow(0)
+        self.btn1.clicked.connect(self.insert)
+       
+        
+        self.insertModeGroup = QButtonGroup()
+
+        self.runRadio = QRadioButton("Insert on Run")
+        self.branchRadio = QRadioButton("Insert on Branch")
+
+        self.runRadio.setChecked(True)
+
+        self.insertModeGroup.addButton(self.runRadio)
+        self.insertModeGroup.addButton(self.branchRadio)
+
+        self.secondCol.layout().addWidget(self.runRadio)
+        self.secondCol.layout().addWidget(self.branchRadio)
+     
+        
+        self.btn3 = QPushButton(translate("insertTeeForm", "Reverse"))
+        self.secondCol.layout().addWidget(self.btn3)
+        self.btn3.clicked.connect(self.reverse)
+        self.btn4 = QPushButton(translate("insertTeeForm", "Apply"))
+        self.secondCol.layout().addWidget(self.btn4)
+        self.btn4.clicked.connect(self.apply)
+        self.btn1.setDefault(True)
+        self.btn1.setFocus()
+        self.screenDial = QWidget()
+        self.screenDial.setLayout(QHBoxLayout())
+        self.dial = QDial()
+        self.dial.setMaximumSize(80, 80)
+        self.dial.setWrapping(True)
+        self.dial.setMaximum(180)
+        self.dial.setMinimum(-180)
+        self.dial.setNotchTarget(15)
+        self.dial.setNotchesVisible(True)
+        self.dial.setMaximumSize(70, 70)
+        self.screenDial.layout().addWidget(self.dial)
+        self.lab = QLabel(translate("insertTeeForm", "0 deg"))
+        self.lab.setAlignment(Qt.AlignCenter)
+        self.dial.valueChanged.connect(self.rotatePort)
+        self.screenDial.layout().addWidget(self.lab)
+        self.firstCol.layout().addWidget(self.screenDial)
+        self.show()
+        self.lastTee = None
+        self.lastAngle = 0
+    
+    def insert(self):
+        self.lastAngle = 0
+        self.dial.setValue(0)
+        insertOnBranch = self.branchRadio.isChecked()
+        DN = OD = OD2 = thk = tdhk2 = PRating = C = M = None
+        propList = []
+        d = self.pipeDictList[self.sizeList.currentRow()]
+        
+        selex = FreeCADGui.Selection.getSelectionEx()
+        # DEFINE PROPERTIES
+        """ Do not override selection
+        for sx in selex:
+            if hasattr(sx.Object, "PType") and sx.Object.PType in [
+                "Pipe",
+                "Elbow",
+                "Cap",
+                "Reduct",
+                "Tee"
+            ]:
+                DN = sx.Object.PSize
+                OD = sx.Object.OD
+                thk = floatsx.Object.thk
+                BR = None
+                
+                propList = [
+                    DN,
+                    OD,
+                    OD if OD2 is None else OD2,
+                    thk,
+                    thk if thk2 is None else thk2,
+                    d["C"] if C is None else C,
+                    d["M"] if M is None else M,
+                ]
+                break
+        """
+
+        propList = [
+            d["PSize"],
+            float(pq(d["OD"])),
+            float(pq(d["OD2"])),
+            float(pq(d["thk"])),
+            float(pq(d["thk2"])),
+            float(pq(d["C"])),
+            float(pq(d["M"])),
+        ]
+        
+        # INSERT Tee
+        self.lastTee = pCmd.doTees(propList,FreeCAD.__activePypeLine__,insertOnBranch)[-1]
+        
+        
+        FreeCAD.activeDocument().recompute()
+        FreeCADGui.Selection.clearSelection()
+        #FreeCADGui.Selection.addSelection(FreeCAD.ActiveDocument, self.lastTee.Name)
+        FreeCADGui.Selection.addSelection(self.lastTee)
+
+    def trim(self):
+        if len(fCmd.beams()) == 1:
+            pipe = fCmd.beams()[0]
+            comPipeEdges = [e.CenterOfMass for e in pipe.Shape.Edges]
+            eds = [e for e in fCmd.edges() if e.CenterOfMass not in comPipeEdges]
+            FreeCAD.activeDocument().openTransaction(translate("Transaction", "Trim pipes"))
+            for edge in eds:
+                fCmd.extendTheBeam(fCmd.beams()[0], edge)
+            FreeCAD.activeDocument().commitTransaction()
+            FreeCAD.activeDocument().recompute()
+        else:
+            FreeCAD.Console.PrintError(translate("insertTeeForm", "Wrong selection\n"))
+    
+    def rotatePort(self):
+        insertOnBranch = self.branchRadio.isChecked()
+        #if self.lastTee:
+        if insertOnBranch:
+            pCmd.rotateTheTeePort(self.lastTee, 2, self.lastAngle * -1)
+            self.lastAngle = self.dial.value()
+            pCmd.rotateTheTeePort(self.lastTee, 2, self.lastAngle)
+            
+        else:
+            pCmd.rotateTheTeePort(self.lastTee, 0, self.lastAngle * -1)
+            self.lastAngle = self.dial.value()
+            pCmd.rotateTheTeePort(self.lastTee, 0, self.lastAngle)
+            
+        self.lab.setText(str(self.dial.value()) + translate("insertTeeForm", " deg"))
+
+    def apply(self):
+        for obj in FreeCADGui.Selection.getSelection():
+            d = self.pipeDictList[self.sizeList.currentRow()]
+            if hasattr(obj, "PType") and obj.PType == self.PType:
+                obj.PSize = d["PSize"]
+                obj.OD = pq(d["OD"])
+                obj.thk = pq(d["thk"])
+                
+                obj.PRating = self.PRating
+                FreeCAD.activeDocument().recompute()
+    """
+    def reverse(self):
+        #need to rotate it 180 degrees and then offset it the appropriate amount depending on if its on the run or branch
+        #if self.lastTee:
+        insertOnBranch = self.branchRadio.isChecked()
+        
+    )
+        pCmd.rotateTheTubeAx(self.lastTee, angle=180)
+        if insertOnBranch:
+            self.lastTee.Placement.move(
+                self.lastTee.Placement.Rotation.multVec(self.lastTee.Ports[2]) * -2
+            )
+        else:
+            self.lastTee.Placement.move(
+                self.lastTee.Placement.Rotation.multVec(self.lastTee.Ports[0]) * -2
+            )
+    """
+    def reverse(self):
+        
+        
+        
+        if self.branchRadio.isChecked():
+            port = 2
+        else:
+            port = 0
+
+        initial_port_pos = self.lastTee.Placement.multVec(self.lastTee.Ports[port])
+        crossVector1 = FreeCAD.Vector(1,0,0)
+        crossVector2 = self.lastTee.Ports[port].normalize()
+        #if the port is at Vector(0,0,0) or Vector(1,0,0), it will cause problems, so catch those and assign different rotation axes.
+        if crossVector2 == crossVector1:
+            crossVector1 = FreeCAD.Vector(0,1,0)
+        if crossVector2 == FreeCAD.Vector(0,0,0):
+            crossVector2 = FreeCAD.Vector(0,1,0)
+        pCmd.rotateTheTubeAx(self.lastTee,crossVector1.cross(crossVector2), angle=180)
+        final_port_pos = self.lastTee.Placement.multVec(self.lastTee.Ports[port])
+        
+        #recalculate the distance between the two and move object again
+        dist = initial_port_pos - final_port_pos
+        self.lastTee.Placement.move(dist)
+    """
+    def reverse(self):
+
+        #if not self.lastTee:
+            #return
+
+        insertOnBranch = self.branchRadio.isChecked()
+
+        # determine active port
+        portIndex = 2 if insertOnBranch else 0
+        
+        oldPortPos = self.lastTee.Placement.multVec(tee.Ports[portIndex])
+        pCmd.rotateTheTubeAx(self.lastTee, angle=180)
+        newPortPos = self.lastTee.Placement.multVec(tee.Ports[portIndex])
+        self.lastTee = Placement.move(oldPortPos - newPortPos)
+    """
 
 
 class insertTerminalAdapterForm(dodoDialogs.protoPypeForm):
@@ -1185,6 +1409,7 @@ class insertPypeLineForm(dodoDialogs.protoPypeForm):
                             "Clamp",
                             "Reduct",
                             "Cap",
+                            "Tee",
                         ]:
                             data = [o.Label, o.PType, o.PSize, o.Shape.Volume, "-"]
                             if o.PType == "Pipe":

@@ -497,6 +497,15 @@ class cQM(DialogQM):
         pCmd.doCaps([d["PSize"], float(d["OD"]), float(d["thk"])], FreeCAD.__activePypeLine__)
         super(cQM, self).go()
 
+class tQM(DialogQM):
+    def __init__(self):
+        super(tQM, self).__init__("Insert tee", "Tee")
+
+    def go(self):
+        d = self.dictList[self.QM.listSize.currentRow()]
+        proplist = []
+        pCmd.doCaps([d["PSize"], float(d["OD"]), float(d["OD2"]), float(d["thk"]), float(d["thk2"])],float(d["C"]),  float(d["M"]), FreeCAD.__activePypeLine__)
+        super(cQM, self).go()
 
 # create instances of qkMenu dialogs
 pqm = pQM()
@@ -504,6 +513,7 @@ eqm = eQM()
 fqm = fQM()
 vqm = vQM()
 cqm = cQM()
+tqm = tQM()
 
 # main
 mw = FreeCADGui.getMainWindow()
@@ -513,6 +523,7 @@ toolList = [
     "Quetzal_FlangeQM",
     "Quetzal_ValveQM",
     "Quetzal_CapQM",
+    "Quetzal_TeeQM",
 ]  # ["Quetzal_InsertPipe","Quetzal_InsertElbow","Quetzal_InsertReduct","Quetzal_InsertCap","Quetzal_InsertValve","Quetzal_InsertFlange","Quetzal_InsertUbolt"]
 compositingManager = True
 if QtCore.qVersion() < "5":
