@@ -134,6 +134,10 @@ class insertPipeForm(dodoDialogs.protoPypeForm):
         self.sli.setValue(100)
         self.mainHL.addWidget(self.sli)
         self.sli.valueChanged.connect(self.changeL)
+
+        #auto-select pipe size and rating if available
+        pCmd.autoSelectInPipeForm(self)
+
         self.show()
         self.lastPipe = None
         self.H = 200
@@ -285,9 +289,15 @@ class insertElbowForm(dodoDialogs.protoPypeForm):
         self.dial.valueChanged.connect(self.rotatePort)
         self.screenDial.layout().addWidget(self.lab)
         self.firstCol.layout().addWidget(self.screenDial)
+        
+        #auto-select pipe size and rating if available
+        pCmd.autoSelectInPipeForm(self)
+        
         self.show()
         self.lastElbow = None
         self.lastAngle = 0
+
+   
 
     def insert(self):
         self.lastAngle = 0
@@ -303,26 +313,7 @@ class insertElbowForm(dodoDialogs.protoPypeForm):
             ang = float(pq(d["BendAngle"]))
         selex = FreeCADGui.Selection.getSelectionEx()
         # DEFINE PROPERTIES
-        """ Do not override selected properties
-        for sx in selex:
-            if hasattr(sx.Object, "PType") and sx.Object.PType in [
-                "Pipe",
-                "Elbow",
-                "Cap",
-                "Reduct",
-            ]:
-                DN = sx.Object.PSize
-                OD = float(sx.Object.OD)
-                thk = float(sx.Object.thk)
-                BR = None
-                for prop in self.pipeDictList:
-                    if prop["PSize"] == DN:
-                        BR = float(pq(prop["BendRadius"]))
-                if BR == None:
-                    BR = 1.5 * OD / 2
-                propList = [DN, OD, thk, ang, BR]
-                break
-        """
+        
         if not propList:
             propList = [
                 d["PSize"],
@@ -451,6 +442,10 @@ class insertTeeForm(dodoDialogs.protoPypeForm):
         self.dial.valueChanged.connect(self.rotatePort)
         self.screenDial.layout().addWidget(self.lab)
         self.firstCol.layout().addWidget(self.screenDial)
+
+        #auto-select pipe size and rating if available
+        pCmd.autoSelectInPipeForm(self)
+
         self.show()
         self.lastTee = None
         self.lastAngle = 0
@@ -463,33 +458,9 @@ class insertTeeForm(dodoDialogs.protoPypeForm):
         propList = []
         d = self.pipeDictList[self.sizeList.currentRow()]
         
-        selex = FreeCADGui.Selection.getSelectionEx()
+        #selex = FreeCADGui.Selection.getSelectionEx()
         # DEFINE PROPERTIES
-        """ Do not override selection
-        for sx in selex:
-            if hasattr(sx.Object, "PType") and sx.Object.PType in [
-                "Pipe",
-                "Elbow",
-                "Cap",
-                "Reduct",
-                "Tee"
-            ]:
-                DN = sx.Object.PSize
-                OD = sx.Object.OD
-                thk = floatsx.Object.thk
-                BR = None
-                
-                propList = [
-                    DN,
-                    OD,
-                    OD if OD2 is None else OD2,
-                    thk,
-                    thk if thk2 is None else thk2,
-                    d["C"] if C is None else C,
-                    d["M"] if M is None else M,
-                ]
-                break
-        """
+        
 
         propList = [
             d["PSize"],
@@ -504,10 +475,8 @@ class insertTeeForm(dodoDialogs.protoPypeForm):
         # INSERT Tee
         self.lastTee = pCmd.doTees(propList,FreeCAD.__activePypeLine__,insertOnBranch)[-1]
         
-        
         FreeCAD.activeDocument().recompute()
         FreeCADGui.Selection.clearSelection()
-        #FreeCADGui.Selection.addSelection(FreeCAD.ActiveDocument, self.lastTee.Name)
         FreeCADGui.Selection.addSelection(self.lastTee)
 
     def trim(self):
@@ -548,26 +517,8 @@ class insertTeeForm(dodoDialogs.protoPypeForm):
                 
                 obj.PRating = self.PRating
                 FreeCAD.activeDocument().recompute()
-    """
+    
     def reverse(self):
-        #need to rotate it 180 degrees and then offset it the appropriate amount depending on if its on the run or branch
-        #if self.lastTee:
-        insertOnBranch = self.branchRadio.isChecked()
-        
-    )
-        pCmd.rotateTheTubeAx(self.lastTee, angle=180)
-        if insertOnBranch:
-            self.lastTee.Placement.move(
-                self.lastTee.Placement.Rotation.multVec(self.lastTee.Ports[2]) * -2
-            )
-        else:
-            self.lastTee.Placement.move(
-                self.lastTee.Placement.Rotation.multVec(self.lastTee.Ports[0]) * -2
-            )
-    """
-    def reverse(self):
-        
-        
         
         if self.branchRadio.isChecked():
             port = 2
@@ -588,22 +539,7 @@ class insertTeeForm(dodoDialogs.protoPypeForm):
         #recalculate the distance between the two and move object again
         dist = initial_port_pos - final_port_pos
         self.lastTee.Placement.move(dist)
-    """
-    def reverse(self):
-
-        #if not self.lastTee:
-            #return
-
-        insertOnBranch = self.branchRadio.isChecked()
-
-        # determine active port
-        portIndex = 2 if insertOnBranch else 0
-        
-        oldPortPos = self.lastTee.Placement.multVec(tee.Ports[portIndex])
-        pCmd.rotateTheTubeAx(self.lastTee, angle=180)
-        newPortPos = self.lastTee.Placement.multVec(tee.Ports[portIndex])
-        self.lastTee = Placement.move(oldPortPos - newPortPos)
-    """
+   
 
 
 class insertTerminalAdapterForm(dodoDialogs.protoPypeForm):
@@ -911,6 +847,16 @@ class insertReductForm(dodoDialogs.protoPypeForm):
         self.OD2list = QListWidget()
         self.OD2list.setMaximumHeight(80)
         self.secondCol.layout().addWidget(self.OD2list)
+        # Add radio buttons for insert mode selection
+        self.insertModeGroup = QButtonGroup()
+        self.largerEndRadio = QRadioButton(translate("insertReductForm", "Insert on Larger End"))
+        self.smallerEndRadio = QRadioButton(translate("insertReductForm", "Insert on Smaller End"))
+        self.largerEndRadio.setChecked(True)  # Default to larger end
+        self.insertModeGroup.addButton(self.largerEndRadio)
+        self.insertModeGroup.addButton(self.smallerEndRadio)
+        self.secondCol.layout().addWidget(self.largerEndRadio)
+        self.secondCol.layout().addWidget(self.smallerEndRadio)
+
         self.btn2 = QPushButton(translate("insertReductForm", "Reverse"))
         self.secondCol.layout().addWidget(self.btn2)
         self.btn3 = QPushButton(translate("insertReductForm", "Apply"))
@@ -923,6 +869,10 @@ class insertReductForm(dodoDialogs.protoPypeForm):
         self.cb1 = QCheckBox(translate("insertReductForm", "Eccentric"))
         self.secondCol.layout().addWidget(self.cb1)
         self.fillOD2()
+
+        #auto-select pipe size and rating if available
+        pCmd.autoSelectInPipeForm(self)
+
         self.show()
         self.lastReduct = None
 
@@ -983,63 +933,31 @@ class insertReductForm(dodoDialogs.protoPypeForm):
         pos = Z = H = None
         selex = FreeCADGui.Selection.getSelectionEx()
         pipes = [p.Object for p in selex if hasattr(p.Object, "PType") and p.Object.PType == "Pipe"]
-        if len(pipes) > 1 and fCmd.isParallel(
-            fCmd.beamAx(pipes[0]), fCmd.beamAx(pipes[1])
-        ):  # if at least 2 pipes are selected...
-            if pipes[0].OD >= pipes[1].OD:
-                p1, p2 = pipes[:2]
-            else:
-                p2, p1 = pipes[:2]
-            DN = p1.PSize
-            OD1 = float(p1.OD)
-            OD2 = float(p2.OD)
-            thk1 = float(p1.thk)
-            thk2 = float(p2.thk)
-            H = float(pq(self.findDN(DN)["H"]))
-            Z = p2.Shape.Solids[0].CenterOfMass - p1.Shape.Solids[0].CenterOfMass
-            Z.normalize()
-            pos = p1.Shape.Solids[0].CenterOfMass + Z * float(p1.Height / 2)
-        elif len(pipes) > 0:  # if 1 pipe is selected...
-            DN = pipes[0].PSize
-            OD1 = float(pipes[0].OD)
-            OD2 = float(pq(self.OD2list.currentItem().text()))
-            thk1 = float(pipes[0].thk)
+        DN = r["PSize"]
+        OD1 = float(pq(r["OD"]))
+        OD2 = float(pq(self.OD2list.currentItem().text()))
+        thk1 = float(pq(r["thk"]))
+        try:
             thk2 = float(pq(r["thk2"].split(">")[self.OD2list.currentRow()]))
-            H = float(pq(self.findDN(DN)["H"]))
-            curves = [e for e in fCmd.edges() if e.curvatureAt(0) > 0]
-            if len(curves):  # ...and 1 curve is selected...
-                pos = curves[0].centerOfCurvatureAt(0)
-            else:  # ...or no curve is selected...
-                pos = pipes[0].Placement.Base
-            Z = pos - pipes[0].Shape.Solids[0].CenterOfMass
-        else:  # if no pipe is selected...
-            DN = r["PSize"]
-            OD1 = float(pq(r["OD"]))
-            OD2 = float(pq(self.OD2list.currentItem().text()))
-            thk1 = float(pq(r["thk"]))
-            try:
-                thk2 = float(pq(r["thk2"].split(">")[self.OD2list.currentRow()]))
-            except:
-                thk2 = thk1
-            H = pq(r["H"])
-            if fCmd.edges():  # ...but 1 curve is selected...
-                edge = fCmd.edges()[0]
-                if edge.curvatureAt(0) > 0:
-                    pos = edge.centerOfCurvatureAt(0)
-                    Z = edge.tangentAt(0).cross(edge.normalAt(0))
-                else:
-                    pos = edge.valueAt(0)
-                    Z = edge.tangentAt(0)
-            elif selex and selex[0].SubObjects[0].ShapeType == "Vertex":  # ...or 1 vertex..
-                pos = selex[0].SubObjects[0].Point
+        except:
+            thk2 = thk1
+        H = pq(r["H"])
         if not H:  # calculate length if it's not defined
             H = float(3 * (OD1 - OD2))
+        # Determine if we should insert on smaller end (requires reversing)
+        insertOnSmallerEnd = self.smallerEndRadio.isChecked()
+
+
+        
         propList = [DN, OD1, OD2, thk1, thk2, H]
         FreeCAD.activeDocument().openTransaction(translate("Transaction", "Insert reduction"))
+
         if self.cb1.isChecked():
-            self.lastReduct = pCmd.makeReduct(propList, pos, Z, False)
+            self.lastReduct = pCmd.doReduct(propList, FreeCAD.__activePypeLine__, pos, Z, False, insertOnSmallerEnd)
         else:
-            self.lastReduct = pCmd.makeReduct(propList, pos, Z)
+            self.lastReduct = pCmd.doReduct(propList, FreeCAD.__activePypeLine__, pos, Z, True, insertOnSmallerEnd)
+
+        
         FreeCAD.activeDocument().commitTransaction()
         FreeCAD.activeDocument().recompute()
         if self.combo.currentText() != "<none>":
@@ -1198,6 +1116,10 @@ class insertCapForm(dodoDialogs.protoPypeForm):
         self.btn3.clicked.connect(self.apply)
         self.btn1.setDefault(True)
         self.btn1.setFocus()
+
+        #auto-select pipe size and rating if available
+        pCmd.autoSelectInPipeForm(self)
+
         self.show()
         self.lastPipe = None
 
@@ -1283,6 +1205,10 @@ class insertPypeLineForm(dodoDialogs.protoPypeForm):
         self.btn1.setDefault(True)
         self.btn1.setFocus()
         self.lastPypeLine = None
+
+        #auto-select pipe size and rating if available
+        pCmd.autoSelectInPipeForm(self)
+
         self.show()
 
     def summary(self, pl=None):

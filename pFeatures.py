@@ -58,6 +58,15 @@ class pypeType(object):
             ),
         )
         obj.addProperty(
+            "App::PropertyVectorList",
+            "PortDirections",
+            "PBase",
+            QT_TRANSLATE_NOOP(
+                "App::Property",
+                "Port direction vectors (unit vectors pointing outward from each port)",
+            ),
+        )
+        obj.addProperty(
             "App::PropertyFloat",
             "Kv",
             "PBase",
@@ -194,6 +203,7 @@ class Pipe(pypeType):
         else:
             fp.Shape = Part.makeCylinder(fp.OD / 2, fp.Height)
         fp.Ports = [FreeCAD.Vector(), FreeCAD.Vector(0, 0, float(fp.Height))]
+        fp.PortDirections = [FreeCAD.Vector(0, 0, -1), FreeCAD.Vector(0, 0, 1)] 
         super(Pipe, self).execute(fp)  # perform common operations
 
 
@@ -352,6 +362,10 @@ class Elbow(pypeType):
             R.translate(P)
             ## calculate Ports position ##
             fp.Ports = [R.valueAt(R.FirstParameter), R.valueAt(R.LastParameter)]
+            fp.PortDirections = [
+                R.tangentAt(R.FirstParameter) * -1,  #each port faces outward
+                R.tangentAt(R.LastParameter)          
+            ]
             ## make the shape of the elbow ##
             c = Part.makeCircle(fp.OD / 2, fp.Ports[0], R.tangentAt(R.FirstParameter) * -1)
             b = Part.makeSweepSurface(R, c)
@@ -603,6 +617,7 @@ class Flange(pypeType):
                 flange = nn.removeSplitter()
         fp.Shape = flange
         fp.Ports = [FreeCAD.Vector(), FreeCAD.Vector(0, 0, float(fp.t))]
+        fp.PortDirections = [FreeCAD.Vector(0, 0, -1), FreeCAD.Vector(0, 0, 1)] #Flange face is toward -Z direction, flange weld end faces in +Z direction
         super(Flange, self).execute(fp)  # perform common operations
 
     #!TODO:this method generate a PartDesign object with sketch nest, pending feature compatibility
@@ -785,6 +800,9 @@ class Tee(pypeType):
         """
         fp.Shape = Base
         fp.Ports = [FreeCAD.Vector(0, 0, -float(fp.C)), FreeCAD.Vector(0, 0, float(fp.C)), FreeCAD.Vector(0, float(fp.M), 0)]
+        fp.PortDirections = [FreeCAD.Vector(0, 0, -1), 
+                      FreeCAD.Vector(0, 0, 1), 
+                      FreeCAD.Vector(0, 1, 0)]
         super(Tee, self).execute(fp)  # perform common operations
 
 
@@ -888,6 +906,7 @@ class Reduct(pypeType):
                 else:
                     fp.Shape = sol
                 fp.Ports = [FreeCAD.Vector(), FreeCAD.Vector(0, 0, float(fp.Height))]
+
             else:
                 C = Part.makeCircle(fp.OD / 2, FreeCAD.Vector(0, 0, 0), FreeCAD.Vector(0, 0, 1))
                 c = Part.makeCircle(fp.OD2 / 2, FreeCAD.Vector(0, 0, 0), FreeCAD.Vector(0, 0, 1))
@@ -912,6 +931,7 @@ class Reduct(pypeType):
                     FreeCAD.Vector(),
                     FreeCAD.Vector((fp.OD - fp.OD2) / 2, 0, float(fp.Height)),
                 ]
+            fp.PortDirections = [FreeCAD.Vector(0, 0, -1), FreeCAD.Vector(0, 0, 1)] #in either case, ports face +Z and -Z
         super(Reduct, self).execute(fp)  # perform common operations
 
 
@@ -982,6 +1002,7 @@ class Cap(pypeType):
         cap = cut.makeThickness([f for f in cut.Faces if type(f.Surface) == Part.Plane], -s, 1.0e-3)
         fp.Shape = cap
         fp.Ports = [FreeCAD.Vector()]
+        fp.PortDirections = [FreeCAD.Vector(0, 0, -1)]
         super(Cap, self).execute(fp)  # perform common operations
 
 
@@ -1204,7 +1225,7 @@ class Ubolt:
         )
         path = Part.Wire([c, l1, l2])
         fp.Shape = path.makePipe(p)
-        fp.Ports = [FreeCAD.Vector(0, 0, 1)]
+        fp.Ports = [FreeCAD.Vector(0, 0, 1)] #not quite sure why a U-bolt has a port?
 
 
 class Shell:

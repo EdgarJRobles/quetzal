@@ -115,6 +115,30 @@ def portsDir(o):
     dirs = list()
     two_ways = ["Pipe", "Reduct", "Flange"]
     if hasattr(o, "PType"):
+        # Use explicit PortDirections if available
+        if hasattr(o, "PortDirections") and o.PortDirections:
+            # Transform port directions from local to world coordinates
+            dirs = [
+                rounded(o.Placement.Rotation.multVec(d).normalize())
+                for d in o.PortDirections
+            ]
+        #fallback for objects without explicit ports
+        elif o.PType in two_ways:
+            dirs = [
+                o.Placement.Rotation.multVec(p)
+                for p in [FreeCAD.Vector(0, 0, -1), FreeCAD.Vector(0, 0, 1)]
+            ]
+        elif hasattr(o, "Ports") and hasattr(o, "Placement"):
+            dirs = list()
+            for p in o.Ports:
+                if p.Length:
+                    dirs.append(rounded(o.Placement.Rotation.multVec(p).normalize()))
+                else:
+                    dirs.append(
+                        rounded(o.Placement.Rotation.multVec(FreeCAD.Vector(0, 0, -1)).normalize())
+                    )
+       
+        """
         if o.PType in two_ways:
             dirs = [
                 o.Placement.Rotation.multVec(p)
@@ -129,10 +153,172 @@ def portsDir(o):
                     dirs.append(
                         rounded(o.Placement.Rotation.multVec(FreeCAD.Vector(0, 0, -1)).normalize())
                     )
+        """
     return dirs
 
 
 ################## COMMANDS ########################
+
+def getSelectedPortDimensions():
+    """
+    Determine the OD and thickness of the selected port.
+    Returns (OD, thk, PRating, PSize) or (None, None, None, None) if cannot determine.
+    
+    For objects with multiple port sizes (Tee, Reduct), determines which port
+    is closest to the selected edge/vertex to get the correct dimensions.
+    
+    This is a helper function for form auto-selection features.
+    """
+    selex = FreeCADGui.Selection.getSelectionEx()
+    if not selex:
+        return None, None, None, None
+    
+    for sx in selex:
+        obj = sx.Object
+        if not hasattr(obj, "PType"):
+            continue
+        
+        # Get object properties
+        ptype = obj.PType
+        
+        # For objects with uniform port sizes (Pipe, Elbow, Flange, Cap, Valve)
+        if ptype in ["Pipe", "Elbow", "Flange", "Cap", "Valve"]:
+            if hasattr(obj, "OD") and hasattr(obj, "thk") and hasattr(obj, "PRating") and hasattr(obj, "PSize"):
+                return float(obj.OD), float(obj.thk), obj.PRating, obj.PSize
+        
+        # For Tee: has run and branch with potentially different sizes
+        elif ptype == "Tee":
+            if not (hasattr(obj, "Ports") and len(obj.Ports) >= 3):
+                continue
+            
+            # Determine which port is selected based on proximity
+            selectedPort = None
+            if sx.SubObjects:
+                subObj = sx.SubObjects[0]
+                if hasattr(subObj, "CenterOfMass"):
+                    selectionPoint = subObj.CenterOfMass
+                elif hasattr(subObj, "Point"):
+                    selectionPoint = subObj.Point
+                else:
+                    selectionPoint = None
+                
+                if selectionPoint:
+                    # Find closest port
+                    minDist = float('inf')
+                    for i, port in enumerate(obj.Ports):
+                        portWorldPos = obj.Placement.multVec(port)
+                        dist = (portWorldPos - selectionPoint).Length
+                        if dist < minDist:
+                            minDist = dist
+                            selectedPort = i
+            
+            # Port 2 is the branch, ports 0 and 1 are the run
+            if selectedPort == 2:
+                # Branch port
+                if hasattr(obj, "OD2") and hasattr(obj, "thk2"):
+                    return float(obj.OD2), float(obj.thk2), obj.PRating if hasattr(obj, "PRating") else None, obj.PSize if hasattr(obj, "PSize") else None
+            else:
+                # Run port (0 or 1, or default if couldn't determine)
+                if hasattr(obj, "OD") and hasattr(obj, "thk"):
+                    return float(obj.OD), float(obj.thk), obj.PRating if hasattr(obj, "PRating") else None, obj.PSize if hasattr(obj, "PSize") else None
+        
+        # For Reduct: port 0 is larger end, port 1 is smaller end
+        elif ptype == "Reduct":
+            if not (hasattr(obj, "Ports") and len(obj.Ports) >= 2):
+                continue
+            
+            # Determine which port is selected
+            selectedPort = None
+            if sx.SubObjects:
+                subObj = sx.SubObjects[0]
+                if hasattr(subObj, "CenterOfMass"):
+                    selectionPoint = subObj.CenterOfMass
+                elif hasattr(subObj, "Point"):
+                    selectionPoint = subObj.Point
+                else:
+                    selectionPoint = None
+                
+                if selectionPoint:
+                    # Find closest port
+                    minDist = float('inf')
+                    for i, port in enumerate(obj.Ports):
+                        portWorldPos = obj.Placement.multVec(port)
+                        dist = (portWorldPos - selectionPoint).Length
+                        if dist < minDist:
+                            minDist = dist
+                            selectedPort = i
+            
+            # Port 0 is larger end (OD), port 1 is smaller end (OD2)
+            if selectedPort == 1:
+                # Smaller end
+                if hasattr(obj, "OD2") and hasattr(obj, "thk2"):
+                    return float(obj.OD2), float(obj.thk2), obj.PRating if hasattr(obj, "PRating") else None, obj.PSize if hasattr(obj, "PSize") else None
+            else:
+                # Larger end (0 or default)
+                if hasattr(obj, "OD") and hasattr(obj, "thk"):
+                    return float(obj.OD), float(obj.thk), obj.PRating if hasattr(obj, "PRating") else None, obj.PSize if hasattr(obj, "PSize") else None
+    
+    return None, None, None, None
+
+
+def autoSelectInPipeForm(form):
+    """
+    Auto-select the size and rating in form lists based on selected object's port.
+    
+    Args:
+        form: The form object (must have ratingList, sizeList, pipeDictList, PRating, fillSizes())
+    
+    This is a helper function for form auto-selection features.
+    Works with any form that has the standard protoPypeForm structure.
+    """
+    from FreeCAD import Units
+    pq = Units.parseQuantity
+    
+    OD, thk, PRating, PSize = getSelectedPortDimensions()
+    
+    if OD is None:
+        return  # No valid selection, keep defaults
+    
+    # Try to select matching rating first
+    if PRating and hasattr(form, 'ratingList'):
+        for i in range(form.ratingList.count()):
+            if form.ratingList.item(i).text() == PRating:
+                form.ratingList.setCurrentRow(i)
+                form.PRating = PRating
+                if hasattr(form, 'fillSizes'):
+                    form.fillSizes()
+                break
+    
+    # Try to find matching size by OD and thk
+    if not hasattr(form, 'pipeDictList') or not hasattr(form, 'sizeList'):
+        return
+    
+    bestMatch = None
+    bestMatchScore = float('inf')
+    
+    for i, pipeDict in enumerate(form.pipeDictList):
+        try:
+            dictOD = float(pq(pipeDict["OD"]))
+            dictThk = float(pq(pipeDict["thk"]))
+            
+            # Calculate match score (lower is better)
+            # Prioritize OD match, then thk
+            odDiff = abs(dictOD - OD)
+            thkDiff = abs(dictThk - thk)
+            score = odDiff * 10 + thkDiff  # Weight OD more heavily
+            
+            if score < bestMatchScore:
+                bestMatchScore = score
+                bestMatch = i
+        except:
+            continue
+    
+    # Select the best match if found
+    if bestMatch is not None and bestMatchScore < 5.0:  # Reasonable tolerance
+        form.sizeList.setCurrentRow(bestMatch)
+        # Call form-specific update if it exists
+        if hasattr(form, 'fillOD2'):
+            form.fillOD2()
 
 
 class ViewProvider:
@@ -581,7 +767,7 @@ def doFlanges(
     return flist
 
 
-def makeReduct(propList=[], pos=None, Z=None, conc=True):
+def makeReduct(propList=[], pos=None, Z=None, conc=True, smallerEnd = False):
     """Adds a Reduct object
     makeReduct(propList=[], pos=None, Z=None, conc=True)
       propList is one optional list with 6 elements:
@@ -607,9 +793,96 @@ def makeReduct(propList=[], pos=None, Z=None, conc=True):
     a.Placement.Base = pos
     rot = FreeCAD.Rotation(FreeCAD.Vector(0, 0, 1), Z)
     a.Placement.Rotation = rot.multiply(a.Placement.Rotation)
+    if smallerEnd:
+        initPos = a.Placement.Base
+        rotateTheTubeAx(a, FreeCAD.Vector(0, 1, 0), 180)
+        finalPos = a.Placement.Base
+        dist = initPos-finalPos
+        a.Placement.move(dist)
+        
     a.Label = translate("Objects", "Reduct")
     return a
 
+def doReduct(propList=[], pypeline=None,  pos=None, Z=None, conc=True, smallerEnd = False):
+    """propList[] = 
+      PSize (string): nominal diameter
+        OD (float): major diameter
+        OD2 (float): minor diameter
+        thk (float): major thickness
+        thk2 (float): minor thickness
+        H (float): length of reduction
+      pos (vector): position of insertion; default = 0,0,0
+      Z (vector): orientation: default = 0,0,1
+      conc (bool): True for concentric or False for eccentric reduction
+    """
+    clist = []
+    FreeCAD.activeDocument().openTransaction(translate("Transaction", "Insert Tee"))
+    if len(fCmd.edges()) == 0:
+        vs = [
+            v
+            for sx in FreeCADGui.Selection.getSelectionEx()
+            for so in sx.SubObjects
+            for v in so.Vertexes
+        ]
+        if len(vs) == 0:  # nothing is selected
+            clist.append(makeReduct(propList))
+        else:
+            for v in vs:  # vertexes are selected
+                clist.append(makeReduct(propList, v.Point, None, conc, smallerEnd))
+    else:
+        for edge in fCmd.edges():
+            if edge.curvatureAt(0) != 0:  # curved edges are selected...
+                objs = [
+                    o
+                    for o in FreeCADGui.Selection.getSelection()
+                    if hasattr(o, "Ports") #PypeObjects have this attribute, which can be used to ensure orientation is correct later
+                ]
+                insertPos = edge.centerOfCurvatureAt(0)
+                Z = edge.tangentAt(0).cross(edge.normalAt(0))
+                Z= Z.normalize()
+                #Insert the reducer at the location. If the connecting object is a pipe object, the alignTwoPorts function later will guarantee the ports are mated correctly
+                #If it's not a pipe object, this should still insert it in the correct orientation.
+                reducer = makeReduct(propList, insertPos, Z, conc, smallerEnd)
+                clist.append(reducer)
+                FreeCAD.activeDocument().commitTransaction()
+                FreeCAD.activeDocument().recompute()
+                 #Loop through all selected objects and insert reducers at their ports
+                for obj in objs:
+
+                    closestPort = None
+                    minDist = None
+                    #loop through each port in the selected object(s) and determine their position, then figure out which one is closest to the selected position.
+                    for i, portVec in enumerate(obj.Ports):
+                        
+                        worldPort = obj.Placement.multVec(portVec)
+                        dist = (worldPort - insertPos).Length
+
+                        if minDist is None or dist < minDist:
+                            minDist = dist
+                            closestPort = i
+
+                    if closestPort is not None:
+
+                        # decide which tee port connects
+                        if smallerEnd:
+                            insertionPort = 1
+                        else:
+                            insertionPort = 0
+                        #call alignment function to align the desired tee port with the selected object's port.
+                        alignTwoPorts(
+                            reducer,
+                            insertionPort,
+                            obj,
+                            closestPort
+                        )
+               
+      
+    if pypeline:
+        for c in clist:
+            moveToPyLi(c, pypeline)
+    FreeCAD.activeDocument().commitTransaction()
+    FreeCAD.activeDocument().recompute()
+    return clist
 
 def makeUbolt(propList=[], pos=None, Z=None):
     """Adds a Ubolt object:
@@ -720,12 +993,43 @@ def doCaps(propList=["DN50", 60.3, 3], pypeline=None):
                     for o in FreeCADGui.Selection.getSelection()
                     if hasattr(o, "PSize") and hasattr(o, "OD") and hasattr(o, "thk")
                 ]
+                insertPos = edge.centerOfCurvatureAt(0)
                 Z = None
-                if len(objs) > 0:  # ...pype objects are selected
+                if len(objs) > 0:  # ...pype objects are selected.
+                    #This should be unnecessary with objects that work with the "alignTwoPorts" function below.
+                    #doesn't work for asymmetric pipe objects
                     Z = edge.centerOfCurvatureAt(0) - objs[0].Shape.Solids[0].CenterOfMass
                 else:  # ...no pype objects are selected
                     Z = edge.tangentAt(0).cross(edge.normalAt(0))
-                clist.append(makeCap(propList, edge.centerOfCurvatureAt(0), Z))
+                cap = makeCap(propList, edge.centerOfCurvatureAt(0), Z)
+                clist.append(cap)
+
+                
+                FreeCAD.activeDocument().commitTransaction()
+                FreeCAD.activeDocument().recompute()
+                for obj in objs:
+
+                    closestPort = None
+                    minDist = None
+                    #loop through each port in the selected object(s) and determine their position, then figure out which one is closest to the selected position.
+                    for i, portVec in enumerate(obj.Ports):
+                        
+                        worldPort = obj.Placement.multVec(portVec)
+                        dist = (worldPort - insertPos).Length
+
+                        if minDist is None or dist < minDist:
+                            minDist = dist
+                            closestPort = i
+
+                    if closestPort is not None:
+                        #call alignment function to align the cap's port with the selected object's port.
+                        alignTwoPorts(
+                            cap,
+                            0,
+                            obj,
+                            closestPort
+                        )
+                        
     if pypeline:
         for c in clist:
             moveToPyLi(c, pypeline)
@@ -761,7 +1065,6 @@ def makeTee(propList=[], pos=None, Z=None, insertOnBranch = False):
         pFeatures.Tee(a)
     ViewProvider(a.ViewObject, "Quetzal_InsertTee")
 
-    
     a.Placement.Base = pos
 
     #Rotate tee to have proper port (run or branch) facing the passed orientation (Z). 
@@ -774,7 +1077,6 @@ def makeTee(propList=[], pos=None, Z=None, insertOnBranch = False):
         zpos = a.C
         ypos = 0
         rot = FreeCAD.Rotation(FreeCAD.Vector(0, 0, 1), Z)
-
 
     a.Placement.Rotation = rot.multiply(a.Placement.Rotation)
 
@@ -826,8 +1128,8 @@ def doTees(propList=["DN150", 168.27, 114.3,7.11,6.02,178,156], pypeline=None, i
                 insertPos = edge.centerOfCurvatureAt(0)
                 Z = edge.tangentAt(0).cross(edge.normalAt(0))
                 Z= Z.normalize()
-                #Insert the tee at the default position, as it will be moved to the proper location with the alignTwoPorts function a bit later
-                tee = makeTee(propList, None, None, insertOnBranch)
+                #Insert the tee at the location. If the connecting object is a pipe object, the alignTwoPorts function later will guarantee the ports are mated correctly.
+                tee = makeTee(propList, insertPos, Z, insertOnBranch)
                 clist.append(tee)
                 FreeCAD.activeDocument().commitTransaction()
                 FreeCAD.activeDocument().recompute()
@@ -1057,8 +1359,26 @@ def alignTwoPorts(obj2, port2, obj1, port1):
     Mates the selected 2 circular edges
     of 2 separate objects. Object 1 is stationary, Object 2 moves. port1 and port2 are port indexes, not the port vectors
     """
- 
+    # Get world coordinates
+    p1_world = obj1.Placement.multVec(obj1.Ports[port1])
+    p2_world = obj2.Placement.multVec(obj2.Ports[port2])
+    dir1_world = obj1.Placement.Rotation.multVec(obj1.PortDirections[port1])
+    dir2_world = obj2.Placement.Rotation.multVec(obj2.PortDirections[port2])
     
+    # Ports should face opposite directions
+    target_dir = dir1_world * -1
+    
+    # Calculate and apply rotation
+    rot = FreeCAD.Rotation(dir2_world, target_dir)
+    obj2.Placement.Rotation = rot.multiply(obj2.Placement.Rotation)
+    
+    # Calculate and apply translation
+    p2_world = obj2.Placement.multVec(obj2.Ports[port2])
+    dist = p1_world - p2_world
+    obj2.Placement.move(dist)
+    
+    
+    """
     #calculate absolute positions of the two ports
     p1 = obj1.Placement.multVec(obj1.Ports[port1])
     p2 = obj2.Placement.multVec(obj2.Ports[port2])
@@ -1111,7 +1431,7 @@ def alignTwoPorts(obj2, port2, obj1, port1):
         dist = d1 - d2
         obj2.Placement.move(dist)
 
-    
+    """
 def rotateTheTubeAx(obj=None, vShapeRef=None, angle=45):
     """
     rotateTheTubeAx(obj=None,vShapeRef=None,angle=45)
