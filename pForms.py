@@ -162,6 +162,7 @@ class insertPipeForm(dodoDialogs.protoPypeForm):
             self.H = float(self.edit1.text())
         self.sli.setValue(100)
         # DEFINE PROPERTIES
+        """ Do not automatically choose rating, use only what is selected
         selex = FreeCADGui.Selection.getSelectionEx()
         if selex:
             for objex in selex:
@@ -190,7 +191,8 @@ class insertPipeForm(dodoDialogs.protoPypeForm):
                     ]  # props of the dialog
                     break
         else:
-            propList = [pipe_size_selected["PSize"], float(pq(pipe_size_selected["OD"])), float(pq(pipe_size_selected["thk"])), self.H]
+        """
+        propList = [pipe_size_selected["PSize"], float(pq(pipe_size_selected["OD"])), float(pq(pipe_size_selected["thk"])), self.H]
         # INSERT PIPES
         self.lastPipe = pCmd.doPipes(rating,propList, FreeCAD.__activePypeLine__)[-1]
         self.H = float(self.lastPipe.Height)
@@ -297,8 +299,6 @@ class insertElbowForm(dodoDialogs.protoPypeForm):
         self.lastElbow = None
         self.lastAngle = 0
 
-   
-
     def insert(self):
         self.lastAngle = 0
         self.dial.setValue(0)
@@ -401,6 +401,7 @@ class insertTeeForm(dodoDialogs.protoPypeForm):
         )
         self.sizeList.setCurrentRow(0)
         self.ratingList.setCurrentRow(0)
+        self.ratingList.itemClicked.connect(self.changeRating2)
         self.btn1.clicked.connect(self.insert)
        
         
@@ -454,14 +455,13 @@ class insertTeeForm(dodoDialogs.protoPypeForm):
         self.lastAngle = 0
         self.dial.setValue(0)
         insertOnBranch = self.branchRadio.isChecked()
-        DN = OD = OD2 = thk = tdhk2 = PRating = C = M = None
+        DN = OD = OD2 = thk = thk2 = PRating = C = M = None
         propList = []
         d = self.pipeDictList[self.sizeList.currentRow()]
         
         #selex = FreeCADGui.Selection.getSelectionEx()
         # DEFINE PROPERTIES
         
-
         propList = [
             d["PSize"],
             float(pq(d["OD"])),
@@ -518,6 +518,12 @@ class insertTeeForm(dodoDialogs.protoPypeForm):
                 obj.PRating = self.PRating
                 FreeCAD.activeDocument().recompute()
     
+                
+    def changeRating2(self, item):
+        self.PRating = item.text()
+        self.fillSizes()
+        self.sizeList.setCurrentRow(0)
+
     def reverse(self):
         
         if self.branchRadio.isChecked():
@@ -967,7 +973,6 @@ class insertReductForm(dodoDialogs.protoPypeForm):
         self.PRating = item.text()
         self.fillSizes()
         self.sizeList.setCurrentRow(0)
-        self.fillOD2()
 
 
 class insertUboltForm(dodoDialogs.protoPypeForm):
@@ -1136,17 +1141,52 @@ class insertCapForm(dodoDialogs.protoPypeForm):
             pCmd.rotateTheTubeAx(self.lastCap, FreeCAD.Vector(1, 0, 0), 180)
 
     def insert(self):
+        DN = OD = thk = PRating = None
         d = self.pipeDictList[self.sizeList.currentRow()]
+        propList = [d["PSize"], float(pq(d["OD"])), float(pq(d["thk"]))]
+
+        self.lastCap = pCmd.doCaps(propList, FreeCAD.__activePypeLine__)
+        FreeCAD.activeDocument().recompute()
+        FreeCADGui.Selection.clearSelection()
+        FreeCADGui.Selection.addSelection(self.lastTee)
+        """
         objs = [
             o
             for o in FreeCADGui.Selection.getSelection()
             if hasattr(o, "PSize") and hasattr(o, "OD") and hasattr(o, "thk")
         ]
+        
         if objs:
             propList = [objs[0].PSize, objs[0].OD, objs[0].thk]
         else:
             propList = [d["PSize"], float(pq(d["OD"])), float(pq(d["thk"]))]
         self.lastCap = pCmd.doCaps(propList, FreeCAD.__activePypeLine__)
+        """
+        """
+        DN = OD = OD2 = thk = tdhk2 = PRating = C = M = None
+        propList = []
+        d = self.pipeDictList[self.sizeList.currentRow()]
+        
+        #selex = FreeCADGui.Selection.getSelectionEx()
+        # DEFINE PROPERTIES
+        
+        propList = [
+            d["PSize"],
+            float(pq(d["OD"])),
+            float(pq(d["OD2"])),
+            float(pq(d["thk"])),
+            float(pq(d["thk2"])),
+            float(pq(d["C"])),
+            float(pq(d["M"])),
+        ]
+        
+        # INSERT Tee
+        self.lastTee = pCmd.doTees(propList,FreeCAD.__activePypeLine__,insertOnBranch)[-1]
+        
+        FreeCAD.activeDocument().recompute()
+        FreeCADGui.Selection.clearSelection()
+        FreeCADGui.Selection.addSelection(self.lastTee)
+        """
 
     def apply(self):
         for obj in FreeCADGui.Selection.getSelection():
