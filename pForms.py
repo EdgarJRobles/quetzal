@@ -744,6 +744,16 @@ class insertFlangeForm(dodoDialogs.protoPypeForm):
         self.sizeList.setCurrentRow(0)
         self.ratingList.setCurrentRow(0)
         self.btn1.clicked.connect(self.insert)
+        self.insertModeGroup = QButtonGroup()  
+        self.weldEndRadio = QRadioButton(translate("insertFlangeForm", "Connect on Weld End"))
+        self.faceEndRadio = QRadioButton(translate("insertFlangeForm", "Connect on Flange Face"))
+        self.weldEndRadio.setChecked(True)  # Default: weld end connects to pipe
+        self.insertModeGroup.addButton(self.weldEndRadio)
+        self.insertModeGroup.addButton(self.faceEndRadio)
+        self.secondCol.layout().addWidget(self.weldEndRadio)
+        self.secondCol.layout().addWidget(self.faceEndRadio)
+
+
         self.btn2 = QPushButton(translate("insertFlangeForm", "Reverse"))
         self.secondCol.layout().addWidget(self.btn2)
         self.btn2.clicked.connect(self.reverse)  # lambda: pCmd.rotateTheTubeAx(self.lastFlange,FreeCAD.Vector(1,0,0),180))
@@ -759,7 +769,7 @@ class insertFlangeForm(dodoDialogs.protoPypeForm):
         self.offsetoption=False
 
     def reverse(self):
-        port = 1    #pipe connection - need to update this if you add radio button for inserting on flange face
+        port = 0 if self.faceEndRadio.isChecked() else 1  
         """
         selFlanges = [
             f
@@ -789,6 +799,7 @@ class insertFlangeForm(dodoDialogs.protoPypeForm):
 
     def insert(self):
         self.offsetoption=self.btn4.isChecked()
+        attachFace = self.faceEndRadio.isChecked()
         tubes = [t for t in fCmd.beams() if hasattr(t, "PSize")]
         if len(tubes) > 0 and tubes[0].PSize in [prop["PSize"] for prop in self.pipeDictList]:
             for prop in self.pipeDictList:
@@ -840,7 +851,12 @@ class insertFlangeForm(dodoDialogs.protoPypeForm):
         except:
             propList.append(0)
         #FreeCAD.Console.PrintMessage(self.offsetoption)
-        self.lastFlange = pCmd.doFlanges(propList, pypeline=FreeCAD.__activePypeLine__, doOffset=self.offsetoption)[-1]
+        self.lastFlange = self.lastFlange = pCmd.doFlanges(
+            propList,
+            pypeline=FreeCAD.__activePypeLine__,
+            doOffset=self.offsetoption,
+            attachFace=attachFace,
+        )[-1]
         FreeCAD.activeDocument().recompute()
         FreeCADGui.Selection.clearSelection()
         FreeCADGui.Selection.addSelection(self.lastFlange)

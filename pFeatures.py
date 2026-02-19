@@ -1397,6 +1397,7 @@ class Valve(pypeType):
             v = v.fuse(Part.makeSphere(r, FreeCAD.Vector(0, 0, fp.Height / 2)))
         fp.Shape = v
         fp.Ports = [FreeCAD.Vector(), FreeCAD.Vector(0, 0, float(fp.Height))]
+        fp.PortDirections = [FreeCAD.Vector(0,0,-1), FreeCAD.Vector(0, 0, 1)]
         super(Valve, self).execute(fp)  # perform common operations
 
 
