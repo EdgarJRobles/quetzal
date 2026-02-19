@@ -494,7 +494,7 @@ class Flange(pypeType):
             "App::PropertyLength",
             "twn",
             "Flange2",
-            QT_TRANSLATE_NOOP("App::Property", "Length of welding neck"),
+            QT_TRANSLATE_NOOP("App::Property", "Length of welding neck"), #Thick part?
         ).twn = twn
         obj.addProperty(
             "App::PropertyLength",
@@ -518,7 +518,7 @@ class Flange(pypeType):
             "App::PropertyLength",
             "T1",
             "Flange",
-            QT_TRANSLATE_NOOP("App::Property", "Flange neck length"),
+            QT_TRANSLATE_NOOP("App::Property", "Flange neck length"), #neck same OD as pipe?
         ).T1 = T1
         obj.addProperty(
             "App::PropertyLength",
@@ -616,7 +616,12 @@ class Flange(pypeType):
                 )
                 flange = nn.removeSplitter()
         fp.Shape = flange
-        fp.Ports = [FreeCAD.Vector(), FreeCAD.Vector(0, 0, float(fp.t))]
+        if fp.FlangeType == "WN":
+            fp.Ports = [FreeCAD.Vector(0, 0, -float(fp.trf)), FreeCAD.Vector(0, 0, float(fp.T1)-float(fp.trf))] #weld neck flanges mate with pipe at T1 - RF thickness, raised face is at 0,0,-RF thickness
+        elif fp.FlangeType == "SW":
+            fp.Ports = [FreeCAD.Vector(0, 0, -float(fp.trf)), FreeCAD.Vector(0, 0, float(fp.T1)-float(fp.Y)-float(fp.trf))] #Socket weld flanges mate with pipe at Y - RF thickness, raised face is at 0,0,-RF thickness
+        else: #slip on and lap joint
+            fp.Ports = [FreeCAD.Vector(), FreeCAD.Vector(0, 0, float(fp.trf))] #Slip on and lap joint flanges should be mated with pipe at 0,0,0. Raised face will be at 0,0,-RF thickness
         fp.PortDirections = [FreeCAD.Vector(0, 0, -1), FreeCAD.Vector(0, 0, 1)] #Flange face is toward -Z direction, flange weld end faces in +Z direction
         super(Flange, self).execute(fp)  # perform common operations
 

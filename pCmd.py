@@ -843,7 +843,8 @@ def makeFlange(propList=[], pos=None, Z=None,doOffset=None):
 def doFlanges(
     propList=["DN50", "SO", 160, 60.3, 132, 14, 15, 4, 0, 0, 0, 0, 0, 0, 0],
     pypeline=None,
-    doOffset=None
+    doOffset=None, 
+    attachFace=None #TODO add radio buttons to flange insertion form for whether to attach flange at face or neck
 ):
     """
     propList = [
@@ -869,6 +870,57 @@ def doFlanges(
     flist = []
     tubes = [t for t in fCmd.beams() if hasattr(t, "PSize")]
     FreeCAD.activeDocument().openTransaction(translate("Transaction", "Insert flange"))
+    if attachFace:
+        connecting_port = 0
+    else:
+        connecting_port = 1
+    try:
+        #first, if a an object with ports is selected and edges, faces, or vertices are selected, insert the component at the closest port to the 
+        #first selected object's first selected edge, face, or vertex. If none of those are present, the entire object is selected - insert
+        #the component at the highest number port.
+        selex = FreeCADGui.Selection.getSelectionEx()[0]
+        usablePorts = False
+        if hasattr(selex.Object, "Ports"):
+            if hasattr(selex.Object, "PType"):
+                if selex.Object.PType != "Any":
+                    usablePorts = True
+        
+        pos, Z, srcObj, srcPort = getAttachmentPoints()
+
+        if usablePorts:
+            flange = makeFlange(propList, pos, Z, doOffset)
+            flist.append(flange)
+            
+            #if we need to remove pipe equivalent length
+            if doOffset:
+                #Correct offset for raised face flanges. If flat face flanges are added, presumably a.trf would be zero?
+                a=flist[-1]
+                if a.FlangeType == "WN":
+                    zpos = -a.T1 
+                elif a.FlangeType == "SW":
+                    zpos = -a.T1 + a.Y 
+                elif a.FlangeType == "LJ":
+                    zpos = 0
+                else:
+                    zpos = a.trf
+                pipe = fCmd.beams()[0]
+                #respos=a.Placement.multiply(FreeCAD.Placement(FreeCAD.Vector(0,0,-zpos), FreeCAD.Rotation(1, 0, 0)))
+                respos=a.Placement.multiply(FreeCAD.Placement(FreeCAD.Vector(0,0,zpos), FreeCAD.Rotation(1, 0, 0)))
+                fCmd.extendTheBeam(pipe,respos.Base)
+            FreeCAD.activeDocument().commitTransaction()
+            FreeCAD.activeDocument().recompute()
+         
+            alignTwoPorts(flange, connecting_port, srcObj, srcPort)
+
+
+        else:
+            flist.append(makeFlange(propList, pos, Z, doOffset))
+    except:
+        #nothing selected, insert at origin
+        flist.append(makeFlange(propList))
+
+    ###OLD METHOD
+    """
     if len(fCmd.edges()) == 0:
         vs = [
             v
@@ -920,6 +972,7 @@ def doFlanges(
                         doOffset
                     )
                 )
+    """
     if pypeline:
         for f in flist:
             moveToPyLi(f, pypeline)
@@ -1128,7 +1181,7 @@ def doCaps(propList=["DN50", 60.3, 3], pypeline=None):
             plist.append(makeCap(propList, pos, Z))
     except:
         #nothing selected, insert at origin
-        plist.append(makeCap(rating,propList))
+        plist.append(makeCap(propList))
         
     if pypeline:
         for p in plist:
@@ -1136,75 +1189,7 @@ def doCaps(propList=["DN50", 60.3, 3], pypeline=None):
     FreeCAD.activeDocument().commitTransaction()
     FreeCAD.activeDocument().recompute()
     return plist
-    """
-    clist = []
-    FreeCAD.activeDocument().openTransaction(translate("Transaction", "Insert cap"))
-
-   
     
-    if len(fCmd.edges()) == 0:
-        vs = [
-            v
-            for sx in FreeCADGui.Selection.getSelectionEx()
-            for so in sx.SubObjects
-            for v in so.Vertexes
-        ]
-        if len(vs) == 0:  # nothing is selected
-            clist.append(makeCap(propList))
-        else:
-            for v in vs:  # vertexes are selected
-                clist.append(makeCap(propList, v.Point))
-    else:
-        for edge in fCmd.edges():
-            if edge.curvatureAt(0) != 0:  # curved edges are selected...
-                objs = [
-                    o
-                    for o in FreeCADGui.Selection.getSelection()
-                    if hasattr(o, "PSize") and hasattr(o, "OD") and hasattr(o, "thk")
-                ]
-                insertPos = edge.centerOfCurvatureAt(0)
-                Z = None
-                if len(objs) > 0:  # ...pype objects are selected.
-                    #This should be unnecessary with objects that work with the "alignTwoPorts" function below.
-                    #doesn't work for asymmetric pipe objects
-                    Z = edge.centerOfCurvatureAt(0) - objs[0].Shape.Solids[0].CenterOfMass
-                else:  # ...no pype objects are selected
-                    Z = edge.tangentAt(0).cross(edge.normalAt(0))
-                cap = makeCap(propList, edge.centerOfCurvatureAt(0), Z)
-                clist.append(cap)
-
-                
-                FreeCAD.activeDocument().commitTransaction()
-                FreeCAD.activeDocument().recompute()
-                for obj in objs:
-
-                    closestPort = None
-                    minDist = None
-                    #loop through each port in the selected object(s) and determine their position, then figure out which one is closest to the selected position.
-                    for i, portVec in enumerate(obj.Ports):
-                        
-                        worldPort = obj.Placement.multVec(portVec)
-                        dist = (worldPort - insertPos).Length
-
-                        if minDist is None or dist < minDist:
-                            minDist = dist
-                            closestPort = i
-
-                    if closestPort is not None:
-                        #call alignment function to align the cap's port with the selected object's port.
-                        alignTwoPorts(
-                            cap,
-                            0,
-                            obj,
-                            closestPort
-                        )
-                        
-    if pypeline:
-        for c in clist:
-            moveToPyLi(c, pypeline)
-    FreeCAD.activeDocument().commitTransaction()
-    FreeCAD.activeDocument().recompute()
-    """
     
 def makeTee(propList=[], pos=None, Z=None, insertOnBranch = False):
     """add a Tee object
@@ -1308,75 +1293,7 @@ def doTees(propList=["DN150", 168.27, 114.3,7.11,6.02,178,156], pypeline=None, i
     FreeCAD.activeDocument().commitTransaction()
     FreeCAD.activeDocument().recompute()
     return plist
-    """
-    clist = []
-    FreeCAD.activeDocument().openTransaction(translate("Transaction", "Insert Tee"))
-    if len(fCmd.edges()) == 0:
-        vs = [
-            v
-            for sx in FreeCADGui.Selection.getSelectionEx()
-            for so in sx.SubObjects
-            for v in so.Vertexes
-        ]
-        if len(vs) == 0:  # nothing is selected
-            clist.append(makeTee(propList))
-        else:
-            for v in vs:  # vertexes are selected
-                clist.append(makeTee(propList, v.Point, None, insertOnBranch))
-    else:
-        for edge in fCmd.edges():
-            if edge.curvatureAt(0) != 0:  # curved edges are selected...
-                objs = [
-                    o
-                    for o in FreeCADGui.Selection.getSelection()
-                    if hasattr(o, "Ports") #PypeObjects have this attribute, which can be used to ensure orientation is correct later
-                ]
-                insertPos = edge.centerOfCurvatureAt(0)
-                Z = edge.tangentAt(0).cross(edge.normalAt(0))
-                Z= Z.normalize()
-                #Insert the tee at the location. If the connecting object is a pipe object, the alignTwoPorts function later will guarantee the ports are mated correctly.
-                tee = makeTee(propList, insertPos, Z, insertOnBranch)
-                clist.append(tee)
-                FreeCAD.activeDocument().commitTransaction()
-                FreeCAD.activeDocument().recompute()
-                 #Loop through all selected objects and insert tees at their ports
-                for obj in objs:
-
-                    closestPort = None
-                    minDist = None
-                    #loop through each port in the selected object(s) and determine their position, then figure out which one is closest to the selected position.
-                    for i, portVec in enumerate(obj.Ports):
-                        
-                        worldPort = obj.Placement.multVec(portVec)
-                        dist = (worldPort - insertPos).Length
-
-                        if minDist is None or dist < minDist:
-                            minDist = dist
-                            closestPort = i
-
-                    if closestPort is not None:
-
-                        # decide which tee port connects
-                        if insertOnBranch:
-                            teePort = 2
-                        else:
-                            teePort = 0
-                        #call alignment function to align the desired tee port with the selected object's port.
-                        alignTwoPorts(
-                            tee,
-                            teePort,
-                            obj,
-                            closestPort
-                        )
-               
-      
-    if pypeline:
-        for c in clist:
-            moveToPyLi(c, pypeline)
-    FreeCAD.activeDocument().commitTransaction()
-    FreeCAD.activeDocument().recompute()
-    return clist
-    """
+    
 def makeW():
     edges = fCmd.edges()
     if len(edges) > 1:
@@ -1565,6 +1482,45 @@ def alignTwoPorts(obj2, port2, obj1, port1):
     Mates the selected 2 circular edges
     of 2 separate objects. Object 1 is stationary, Object 2 moves. port1 and port2 are port indexes, not the port vectors
     """
+    """
+    Mates port port2 of obj2 (moves) to port port1 of obj1 (stationary).
+    The ports are brought to the same world position with their directions
+    anti-parallel (face to face).
+    """
+    #  1. Get world-space port directions 
+    dir1 = obj1.Placement.Rotation.multVec(obj1.PortDirections[port1]).normalize()
+    dir2 = obj2.Placement.Rotation.multVec(obj2.PortDirections[port2]).normalize()
+
+    # Target: obj2's port direction must be the opposite of obj1's port direction
+    target = dir1.negative()
+
+    #  2. Compute the alignment rotation 
+    dot = dir2.dot(target)
+
+    if abs(dot - 1.0) < 1e-6:
+        # Ports are already anti-parallel - no axis rotation needed,
+        # but we must check: are they actually anti-parallel (good) or parallel (bad)?
+        # dot near +1 means anti-parallel, already aligned, skip rotation.
+        pass
+    elif abs(dot + 1.0) < 1e-6:
+        # Ports are parallel (same direction), need a 180° flip.
+        # Pick an arbitrary perpendicular axis that is not degenerate.
+        perp = dir2.cross(FreeCAD.Vector(1, 0, 0))
+        if perp.Length < 1e-6:
+            perp = dir2.cross(FreeCAD.Vector(0, 1, 0))
+        perp.normalize()
+        rot180 = FreeCAD.Rotation(perp, 180)
+        obj2.Placement.Rotation = rot180.multiply(obj2.Placement.Rotation)
+    else:
+        # General case - shortest-arc rotation from dir2 to target
+        rot = FreeCAD.Rotation(dir2, target)
+        obj2.Placement.Rotation = rot.multiply(obj2.Placement.Rotation)
+
+    #  3. Translate obj2 so its port coincides with obj1's port 
+    p1_world = obj1.Placement.multVec(obj1.Ports[port1])
+    p2_world = obj2.Placement.multVec(obj2.Ports[port2])
+    obj2.Placement.move(p1_world - p2_world)
+    """
     # Get world coordinates
     p1_world = obj1.Placement.multVec(obj1.Ports[port1])
     p2_world = obj2.Placement.multVec(obj2.Ports[port2])
@@ -1582,7 +1538,7 @@ def alignTwoPorts(obj2, port2, obj1, port1):
     p2_world = obj2.Placement.multVec(obj2.Ports[port2])
     dist = p1_world - p2_world
     obj2.Placement.move(dist)
-    
+    """
     
     """
     #calculate absolute positions of the two ports
