@@ -720,6 +720,7 @@ def doElbow(propList=["DN50", 60.3, 3, 90, 45.225], pypeline=None):
     if len(selex) == 0:  # no selection -> insert one elbow at origin
         elist.append(makeElbow(propList))
     elif len(selex) == 1 and len(selex[0].SubObjects) == 1:  # one selection -> ...
+        """
         if selex[0].SubObjects[0].ShapeType == "Vertex":  # ...on vertex
             elist.append(makeElbow(propList, selex[0].SubObjects[0].Point))
         elif (
@@ -760,6 +761,28 @@ def doElbow(propList=["DN50", 60.3, 3, 90, 45.225], pypeline=None):
                 elb.Placement.move(v)
             elist.append(elb)
             FreeCAD.activeDocument().recompute()
+        """
+        
+        #first, if a an object with ports is selected and edges, faces, or vertices are selected, insert the component at the closest port to the 
+        #first selected object's first selected edge, face, or vertex. If none of those are present, the entire object is selected - insert
+        #the component at the highest number port.
+        selex = FreeCADGui.Selection.getSelectionEx()[0]
+        usablePorts = False
+        if hasattr(selex.Object, "Ports"):
+            if hasattr(selex.Object, "PType"):
+                if selex.Object.PType != "Any":
+                    usablePorts = True
+        
+        pos, Z, srcObj, srcPort = getAttachmentPoints()
+        if usablePorts:
+            elb = makeElbow(propList, pos, Z)
+            elist.append(elb)
+            FreeCAD.activeDocument().commitTransaction()
+            FreeCAD.activeDocument().recompute()
+            alignTwoPorts(elb, 0, srcObj, srcPort)
+        else:
+            elist.append(makeElbow(propList, pos, Z))
+
     else:  # multiple selection -> insert one elbow at intersection of two edges or beams or pipes ##
         things = []
         for objEx in selex:

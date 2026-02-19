@@ -370,11 +370,31 @@ class insertElbowForm(dodoDialogs.protoPypeForm):
                 FreeCAD.activeDocument().recompute()
 
     def reverse(self):
+        """
         if self.lastElbow:
             pCmd.rotateTheTubeAx(self.lastElbow, angle=180)
             self.lastElbow.Placement.move(
                 self.lastElbow.Placement.Rotation.multVec(self.lastElbow.Ports[0]) * -2
             )
+        """
+        port = 0
+
+        initial_port_pos = self.lastElbow.Placement.multVec(self.lastElbow.Ports[port])
+        crossVector1 = FreeCAD.Vector(0,0,1)
+        crossVector2 = self.lastElbow.Ports[port]
+        #if the port is at Vector(0,0,0) or Vector(1,0,0), it will cause problems, so catch those and assign different rotation axes.
+        if crossVector2 == FreeCAD.Vector(0,0,0):
+            crossVector2 = FreeCAD.Vector(0,1,0)
+        crossVector2.normalize()
+        if crossVector2 == crossVector1:
+            crossVector1 = FreeCAD.Vector(0,1,0)
+        
+        pCmd.rotateTheTubeAx(self.lastElbow,crossVector1.cross(crossVector2), angle=180)
+        final_port_pos = self.lastElbow.Placement.multVec(self.lastElbow.Ports[port])
+        
+        #recalculate the distance between the two and move object again
+        dist = initial_port_pos - final_port_pos
+        self.lastElbow.Placement.move(dist)
 
 
 class insertTeeForm(dodoDialogs.protoPypeForm):
