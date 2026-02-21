@@ -1646,12 +1646,12 @@ class Gasket(pypeType):
             )
             return
 
-        # Ring vertical offset so all three rings are centred on the mid-plane
+        # Ring vertical offset so all three rings are centered on the mid-plane
         # The sealing element spans 0 -> SEthk.
-        # The thinner rings are centred within that span.
+        # The thinner rings are centered at SEthk/2.
         ring_offset = (float(fp.SEthk) - float(fp.Rthk)) / 2.0
 
-        # Inner ring: IRID/2 -> SEID/2, height Rthk, centred vertically
+        # Inner ring: IRID/2 -> SEID/2, height Rthk, centered vertically
         inner_ring = Part.makeCylinder(
             fp.SEID / 2, fp.Rthk, FreeCAD.Vector(0, 0, ring_offset), vZ
         ).cut(
@@ -1660,14 +1660,14 @@ class Gasket(pypeType):
             )
         )
 
-        # Sealing element: SEID/2 -> SEOD/2, full height SEthk
+        # Sealing element: SEID/2 -> SEOD/2, height SEthk
         sealing_element = Part.makeCylinder(
             fp.SEOD / 2, fp.SEthk, vO, vZ
         ).cut(
             Part.makeCylinder(fp.SEID / 2, fp.SEthk, vO, vZ)
         )
 
-        # Centering ring: SEOD/2 -> CROD/2, height Rthk, centred vertically
+        # Centering ring: SEOD/2 -> CROD/2, height Rthk, centered vertically
         centering_ring = Part.makeCylinder(
             fp.CROD / 2, fp.Rthk, FreeCAD.Vector(0, 0, ring_offset), vZ
         ).cut(
