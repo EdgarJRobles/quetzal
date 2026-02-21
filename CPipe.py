@@ -155,6 +155,25 @@ class insertTee:
             "ToolTip": QT_TRANSLATE_NOOP("Quetzal_InsertTee", "Insert a tee"),
         }
 
+class insertGasket:
+    def IsActive(self):
+        if FreeCAD.ActiveDocument is None:
+            return False
+        else:
+            return True
+
+    def Activated(self):
+        import pForms
+
+        pipeFormObj = pForms.insertGasketForm()
+
+    def GetResources(self):
+        return {
+            "Pixmap": "Quetzal_InsertGasket",
+            "MenuText": QT_TRANSLATE_NOOP("Quetzal_InsertGasket", "Insert a gasket"),
+            "ToolTip": QT_TRANSLATE_NOOP("Quetzal_InsertGasket", "Insert a gasket"),
+        }
+
 class insertFlange:
     def IsActive(self):
         if FreeCAD.ActiveDocument is None:
@@ -636,6 +655,7 @@ addCommand("Quetzal_InsertCap", insertCap())
 addCommand("Quetzal_InsertTee", insertTee())
 addCommand("Quetzal_InsertValve", insertValve())
 addCommand("Quetzal_InsertFlange", insertFlange())
+addCommand("Quetzal_InsertGasket", insertGasket())
 addCommand("Quetzal_InsertUBolt", insertUbolt())
 addCommand("Quetzal_InsertPypeLine", insertPypeLine())
 addCommand("Quetzal_InsertBranch", insertBranch())

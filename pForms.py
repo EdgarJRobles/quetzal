@@ -2198,3 +2198,100 @@ class insertRouteForm(dodoDialogs.protoTypeDialog):
             self.obj = None
             self.edge = None
             self.form.lab2.setText(translate("insertRouteForm", "<select an edge>"))
+
+class insertGasketForm(dodoDialogs.protoPypeForm):
+    """
+    Dialog to insert spiral-wound gaskets.
+    For position and orientation you can select
+      - one circular edge (e.g. a flange face edge),
+      - one vertex,
+      - a ported object (e.g. a Flange) -- gasket snaps to the selected port,
+      - nothing (created at origin).
+    Available buttons to reverse the orientation of the last or selected
+    gaskets and to apply the current size to existing gaskets.
+    """
+
+    def __init__(self):
+        super(insertGasketForm, self).__init__(
+            translate("insertGasketForm", "Insert gaskets"),
+            "Gasket",
+            "150lb",
+            "gasket.svg",  
+            x,
+            y,
+        )
+        self.sizeList.setCurrentRow(0)
+        self.ratingList.setCurrentRow(0)
+        self.btn1.clicked.connect(self.insert)
+
+        self.btn2 = QPushButton(translate("insertGasketForm", "Reverse"))
+        self.secondCol.layout().addWidget(self.btn2)
+        self.btn2.clicked.connect(self.reverse)
+
+        self.btn3 = QPushButton(translate("insertGasketForm", "Apply"))
+        self.secondCol.layout().addWidget(self.btn3)
+        self.btn3.clicked.connect(self.apply)
+
+        self.btn1.setDefault(True)
+        self.btn1.setFocus()
+
+        # auto-select matching size from whatever is currently selected
+        pCmd.autoSelectInPipeForm(self)
+
+        self.show()
+        self.lastGasket = None
+
+    def reverse(self):
+        selGaskets = [
+            g
+            for g in FreeCADGui.Selection.getSelection()
+            if hasattr(g, "PType") and g.PType == "Gasket"
+        ]
+        target = selGaskets[0] if selGaskets else self.lastGasket
+        if not target:
+            return
+
+        # Pin Port[0] (the -Z face) in world space while flipping
+        initial_port_pos = target.Placement.multVec(target.Ports[0])
+        pCmd.rotateTheTubeAx(target, FreeCAD.Vector(1, 0, 0), 180)
+        final_port_pos = target.Placement.multVec(target.Ports[0])
+        target.Placement.move(initial_port_pos - final_port_pos)
+
+    def insert(self):
+        d = self.pipeDictList[self.sizeList.currentRow()]
+        propList = [
+            d["PSize"],
+            self.PRating,   # FClass comes from the selected rating
+            float(pq(d["IRID"])),
+            float(pq(d["SEID"])),
+            float(pq(d["SEOD"])),
+            float(pq(d["CROD"])),
+            float(pq(d["SEthk"])),
+            float(pq(d["Rthk"])),
+        ]
+        self.lastGasket = pCmd.doGaskets(
+            propList,
+            pypeline=FreeCAD.__activePypeLine__,
+        )
+
+    def apply(self):
+        """Apply the currently selected size to already-placed gaskets."""
+        d = self.pipeDictList[self.sizeList.currentRow()]
+        targets = [
+            g
+            for g in FreeCADGui.Selection.getSelection()
+            if hasattr(g, "PType") and g.PType == "Gasket"
+        ]
+        if not targets and self.lastGasket:
+            targets = [self.lastGasket]
+        for g in targets:
+            g.PSize   = d["PSize"]
+            #g.PRating = self.PRating
+            g.FClass  = self.PRating
+            g.IRID    = float(pq(d["IRID"]))
+            g.SEID    = float(pq(d["SEID"]))
+            g.SEOD    = float(pq(d["SEOD"]))
+            g.CROD    = float(pq(d["CROD"]))
+            g.SEthk   = float(pq(d["SEthk"]))
+            g.Rthk    = float(pq(d["Rthk"]))
+        FreeCAD.activeDocument().recompute()

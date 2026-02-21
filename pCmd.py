@@ -646,7 +646,7 @@ def makeElbow(propList=[], pos=None, Z=None):
 def makeElbowBetweenThings(thing1=None, thing2=None, propList=None):
     """
     makeElbowBetweenThings(thing1, thing2, propList=None):
-    Place one elbow at the intersection of thing1 and thing2.
+    Place one elbow at the intersection of thing1 and thing2
     Things can be any combination of intersecting beams, pipes or edges.
     If nothing is passed as argument, the function attempts to take the
     first two edges selected in the view.
@@ -1526,7 +1526,7 @@ def alignTwoPorts(obj2, port2, obj1, port1):
         # dot near +1 means anti-parallel, already aligned, skip rotation.
         pass
     elif abs(dot + 1.0) < 1e-6:
-        # Ports are parallel (same direction), need a 180° flip.
+        # Ports are parallel (same direction), need a 180ï¿½ flip.
         # Pick an arbitrary perpendicular axis that is not degenerate.
         perp = dir2.cross(FreeCAD.Vector(1, 0, 0))
         if perp.Length < 1e-6:
@@ -2260,3 +2260,83 @@ def makeRegularPolygon(n,r):
     from math import cos, sin, pi
     vecs = [FreeCAD.Vector(cos(2*pi*i/n)*r, sin(2*pi*i/n)*r) for i in range(n+1)]
     return Part.makePolygon(vecs)
+
+def makeGasket(propList=[], pos=None, Z=None):
+    """Add a Gasket object.
+    makeGasket(propList, pos, Z)
+      propList is one optional list with 8 elements:
+        DN (string): nominal diameter
+        FClass (string): flange class / pressure rating
+        IRID (float): inner ring inner diameter
+        SEID (float): sealing element inner diameter
+        SEOD (float): sealing element outer diameter
+        CROD (float): centering ring outer diameter
+        SEthk (float): sealing element thickness
+        Rthk (float): inner and centering ring thickness
+      pos (vector): position of insertion; defaul  t = 0,0,0
+      Z (vector): orientation; default = 0,0,1
+    
+    """
+    if pos is None:
+        pos = FreeCAD.Vector(0, 0, 0)
+    if Z is None:
+        Z = FreeCAD.Vector(0, 0, 1)
+    a = FreeCAD.ActiveDocument.addObject("Part::FeaturePython", "Gasket")
+    
+    if len(propList) == 8:
+        rating = propList[1]   # FClass / PRating is the second element
+        pFeatures.Gasket(a, rating, *propList)
+    else:
+        pFeatures.Gasket(a, "150lb")
+
+    ViewProvider(a.ViewObject, "Quetzal_InsertGasket") 
+    a.ViewObject.ShapeColor = (1.0, 1.0, 0.0)   # yellow
+    a.Placement.Base = pos
+    rot = FreeCAD.Rotation(FreeCAD.Vector(0, 0, 1), Z)
+    a.Placement.Rotation = rot.multiply(a.Placement.Rotation)
+    a.Label = translate("Objects", "Gasket")
+    return a
+
+
+def doGaskets(propList=[], pypeline=None):
+    """Insert one or more Gasket objects at the current selection.
+    propList = [
+      DN (string): nominal diameter
+      FClass (string): flange class / pressure rating
+      IRID (float): inner ring inner diameter
+      SEID (float): sealing element inner diameter
+      SEOD (float): sealing element outer diameter
+      CROD (float): centering ring outer diameter
+      SEthk (float): sealing element thickness
+      Rthk (float): inner and centering ring thickness ]
+    pypeline = string
+    """
+    FreeCAD.activeDocument().openTransaction(translate("Transaction", "Insert gasket"))
+    glist = []
+    connecting_port = 0  # gaskets connect via Port[0] (the -Z face) to the mating flange face
+    try:
+        selex = FreeCADGui.Selection.getSelectionEx()[0]
+        usablePorts = False
+        if hasattr(selex.Object, "Ports"):
+            if hasattr(selex.Object, "PType") and selex.Object.PType != "Any":
+                usablePorts = True
+
+        pos, Z, srcObj, srcPort = getAttachmentPoints()
+        if usablePorts:
+            gasket = makeGasket(propList, pos, Z)
+            glist.append(gasket)
+            FreeCAD.activeDocument().commitTransaction()
+            FreeCAD.activeDocument().recompute()
+            alignTwoPorts(gasket, connecting_port, srcObj, srcPort)
+        else:
+            glist.append(makeGasket(propList, pos, Z))
+    except:
+        # nothing selected -- insert at origin
+        glist.append(makeGasket(propList))
+
+    if pypeline:
+        for g in glist:
+            moveToPyLi(g, pypeline)
+    FreeCAD.activeDocument().commitTransaction()
+    FreeCAD.activeDocument().recompute()
+    return glist

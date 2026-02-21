@@ -620,8 +620,10 @@ class Flange(pypeType):
             fp.Ports = [FreeCAD.Vector(0, 0, -float(fp.trf)), FreeCAD.Vector(0, 0, float(fp.T1)-float(fp.trf))] #weld neck flanges mate with pipe at T1 - RF thickness, raised face is at 0,0,-RF thickness
         elif fp.FlangeType == "SW":
             fp.Ports = [FreeCAD.Vector(0, 0, -float(fp.trf)), FreeCAD.Vector(0, 0, float(fp.T1)-float(fp.Y)-float(fp.trf))] #Socket weld flanges mate with pipe at Y - RF thickness, raised face is at 0,0,-RF thickness
-        else: #slip on and lap joint
-            fp.Ports = [FreeCAD.Vector(), FreeCAD.Vector(0, 0, float(fp.trf))] #Slip on and lap joint flanges should be mated with pipe at 0,0,0. Raised face will be at 0,0,-RF thickness
+        elif fp.FlangeType == "SO":
+            fp.Ports = [FreeCAD.Vector(0, 0, -float(fp.trf)), FreeCAD.Vector(0, 0, float(fp.trf))] #slip on
+        else: #lap joint
+            fp.Ports = [FreeCAD.Vector(), FreeCAD.Vector(0, 0, float(fp.trf))] #lap joint flanges should be mated with pipe at 0,0,0. Raised face will be at 0,0,-RF thickness
         fp.PortDirections = [FreeCAD.Vector(0, 0, -1), FreeCAD.Vector(0, 0, 1)] #Flange face is toward -Z direction, flange weld end faces in +Z direction
         super(Flange, self).execute(fp)  # perform common operations
 
@@ -1559,3 +1561,133 @@ class PypeBranch2(pypeType):  # use AttachExtensionPython
             for name in fp.Curves:
                 FreeCAD.ActiveDocument.removeObject(name)
             fp.Curves = []
+
+class Gasket(pypeType):
+    """Class for object PType="Gasket"
+    Pipe(obj, rating, [PSize="DN50", FClass = "150lb", IRID = 55.6, SEID = 69.9, SEOD = 85.9,CROD = 104.9 ,SEthk=4.5, Rthk = 3.2])
+      obj: the "App::FeaturePython object"
+      PSize (string): nominal diameter
+      FClass (string): Flange class
+      IRID (float): Inner Ring inner diameter
+      SEID (float): Sealing element inner diameter
+      SEOD (float): Sealing element outer diameter
+      CROD (float): Centering ring outer diameter
+      SEthk (float): Sealing element thickness
+      Rthk (float): Inner and centering ring thickness
+      """
+
+    def __init__(self, obj, rating, DN="DN50", FClass = "150lb", IRID = 55.6, SEID = 69.9, SEOD = 85.9,CROD = 104.9 ,SEthk=4.5, Rthk = 3.2):
+        # initialize the parent class
+        super(Gasket, self).__init__(obj)
+        # define common properties
+        obj.PType = "Gasket"
+        obj.Proxy = self
+        obj.PRating = rating #note that gaskets do not have a typical pipe schedule, but we will use this to match the other pipe objects. rating will equal flange class
+        obj.PSize = DN
+        # define specific properties
+        obj.addProperty(
+            "App::PropertyString",
+            "FClass",
+            "Gasket",
+            QT_TRANSLATE_NOOP("App::Property", "Flange class / pressure rating"),
+        ).FClass = FClass
+        obj.addProperty(
+            "App::PropertyLength",
+            "IRID",
+            "Gasket",
+            QT_TRANSLATE_NOOP("App::Property", "Inner ring inner diameter"),
+        ).IRID = IRID
+        obj.addProperty(
+            "App::PropertyLength",
+            "SEID",
+            "Gasket",
+            QT_TRANSLATE_NOOP("App::Property", "Sealing element inner diameter"),
+        ).SEID = SEID
+        obj.addProperty(
+            "App::PropertyLength",
+            "SEOD",
+            "Gasket",
+            QT_TRANSLATE_NOOP("App::Property", "Sealing element outer diameter"),
+        ).SEOD = SEOD
+        obj.addProperty(
+            "App::PropertyLength",
+            "CROD",
+            "Gasket",
+            QT_TRANSLATE_NOOP("App::Property", "Centering ring outer diameter"),
+        ).CROD = CROD
+        obj.addProperty(
+            "App::PropertyLength",
+            "SEthk",
+            "Gasket",
+            QT_TRANSLATE_NOOP("App::Property", "Sealing element thickness"),
+        ).SEthk = SEthk
+        obj.addProperty(
+            "App::PropertyLength",
+            "Rthk",
+            "Gasket",
+            QT_TRANSLATE_NOOP("App::Property", "Inner and centering ring thickness"),
+        ).Rthk = Rthk
+
+    def onChanged(self, fp, prop):
+        # Sealing element must be thicker than or equal to the rings
+        if prop == "Rthk" and fp.Rthk > fp.SEthk:
+            FreeCAD.Console.PrintError(
+                "Gasket: Ring thickness (Rthk) must not exceed sealing element "
+                "thickness (SEthk)\n"
+            )
+        return None
+
+    def execute(self, fp):
+        # Validate dimensions before attempting geometry construction
+        if not (fp.IRID > 0 and fp.SEID > fp.IRID and fp.SEOD > fp.SEID
+                and fp.CROD > fp.SEOD and fp.SEthk > 0 and fp.Rthk > 0):
+            FreeCAD.Console.PrintError(
+                "Gasket: invalid dimensions -- shape not updated\n"
+            )
+            return
+
+        # Ring vertical offset so all three rings are centred on the mid-plane
+        # The sealing element spans 0 -> SEthk.
+        # The thinner rings are centred within that span.
+        ring_offset = (float(fp.SEthk) - float(fp.Rthk)) / 2.0
+
+        # Inner ring: IRID/2 -> SEID/2, height Rthk, centred vertically
+        inner_ring = Part.makeCylinder(
+            fp.SEID / 2, fp.Rthk, FreeCAD.Vector(0, 0, ring_offset), vZ
+        ).cut(
+            Part.makeCylinder(
+                fp.IRID / 2, fp.Rthk, FreeCAD.Vector(0, 0, ring_offset), vZ
+            )
+        )
+
+        # Sealing element: SEID/2 -> SEOD/2, full height SEthk
+        sealing_element = Part.makeCylinder(
+            fp.SEOD / 2, fp.SEthk, vO, vZ
+        ).cut(
+            Part.makeCylinder(fp.SEID / 2, fp.SEthk, vO, vZ)
+        )
+
+        # Centering ring: SEOD/2 -> CROD/2, height Rthk, centred vertically
+        centering_ring = Part.makeCylinder(
+            fp.CROD / 2, fp.Rthk, FreeCAD.Vector(0, 0, ring_offset), vZ
+        ).cut(
+            Part.makeCylinder(
+                fp.SEOD / 2, fp.Rthk, FreeCAD.Vector(0, 0, ring_offset), vZ
+            )
+        )
+
+        gasket = inner_ring.fuse(sealing_element).fuse(centering_ring)
+        gasket = gasket.removeSplitter()
+        fp.Shape = gasket
+
+        # Ports at each face of the sealing element, pointing outward
+        fp.Ports = [
+            FreeCAD.Vector(0, 0, 0),
+            FreeCAD.Vector(0, 0, float(fp.SEthk)),
+        ]
+        fp.PortDirections = [
+            FreeCAD.Vector(0, 0, -1),
+            FreeCAD.Vector(0, 0, 1),
+        ]
+
+        super(Gasket, self).execute(fp)  # perform common operations
