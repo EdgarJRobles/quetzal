@@ -1455,7 +1455,7 @@ class insertBranchForm(dodoDialogs.protoPypeForm):
         self.sizeList.setCurrentRow(0)
         self.ratingList.setCurrentRow(0)
         self.btn1.clicked.connect(self.insert)
-        self.combo.activated[str].connect(self.summary)
+        self.combo.activated.connect(self.summary)
         self.edit1 = QLineEdit()
         self.edit1.setPlaceholderText(translate("insertBranchForm", "<name>"))
         self.edit1.setAlignment(Qt.AlignHCenter)
