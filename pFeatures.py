@@ -58,6 +58,15 @@ class pypeType(object):
             ),
         )
         obj.addProperty(
+            "App::PropertyVectorList",
+            "PortDirections",
+            "PBase",
+            QT_TRANSLATE_NOOP(
+                "App::Property",
+                "Port direction vectors (unit vectors pointing outward from each port)",
+            ),
+        )
+        obj.addProperty(
             "App::PropertyFloat",
             "Kv",
             "PBase",
@@ -194,6 +203,7 @@ class Pipe(pypeType):
         else:
             fp.Shape = Part.makeCylinder(fp.OD / 2, fp.Height)
         fp.Ports = [FreeCAD.Vector(), FreeCAD.Vector(0, 0, float(fp.Height))]
+        fp.PortDirections = [FreeCAD.Vector(0, 0, -1), FreeCAD.Vector(0, 0, 1)] 
         super(Pipe, self).execute(fp)  # perform common operations
 
 
@@ -352,6 +362,10 @@ class Elbow(pypeType):
             R.translate(P)
             ## calculate Ports position ##
             fp.Ports = [R.valueAt(R.FirstParameter), R.valueAt(R.LastParameter)]
+            fp.PortDirections = [
+                R.tangentAt(R.FirstParameter) * -1,  #each port faces outward
+                R.tangentAt(R.LastParameter)          
+            ]
             ## make the shape of the elbow ##
             c = Part.makeCircle(fp.OD / 2, fp.Ports[0], R.tangentAt(R.FirstParameter) * -1)
             b = Part.makeSweepSurface(R, c)
@@ -480,7 +494,7 @@ class Flange(pypeType):
             "App::PropertyLength",
             "twn",
             "Flange2",
-            QT_TRANSLATE_NOOP("App::Property", "Length of welding neck"),
+            QT_TRANSLATE_NOOP("App::Property", "Length of welding neck"), #Thick part?
         ).twn = twn
         obj.addProperty(
             "App::PropertyLength",
@@ -504,7 +518,7 @@ class Flange(pypeType):
             "App::PropertyLength",
             "T1",
             "Flange",
-            QT_TRANSLATE_NOOP("App::Property", "Flange neck length"),
+            QT_TRANSLATE_NOOP("App::Property", "Flange neck length"), #neck same OD as pipe?
         ).T1 = T1
         obj.addProperty(
             "App::PropertyLength",
@@ -602,7 +616,15 @@ class Flange(pypeType):
                 )
                 flange = nn.removeSplitter()
         fp.Shape = flange
-        fp.Ports = [FreeCAD.Vector(), FreeCAD.Vector(0, 0, float(fp.t))]
+        if fp.FlangeType == "WN":
+            fp.Ports = [FreeCAD.Vector(0, 0, -float(fp.trf)), FreeCAD.Vector(0, 0, float(fp.T1)-float(fp.trf))] #weld neck flanges mate with pipe at T1 - RF thickness, raised face is at 0,0,-RF thickness
+        elif fp.FlangeType == "SW":
+            fp.Ports = [FreeCAD.Vector(0, 0, -float(fp.trf)), FreeCAD.Vector(0, 0, float(fp.T1)-float(fp.Y)-float(fp.trf))] #Socket weld flanges mate with pipe at Y - RF thickness, raised face is at 0,0,-RF thickness
+        elif fp.FlangeType == "SO":
+            fp.Ports = [FreeCAD.Vector(0, 0, -float(fp.trf)), FreeCAD.Vector(0, 0, float(fp.trf))] #slip on
+        else: #lap joint
+            fp.Ports = [FreeCAD.Vector(), FreeCAD.Vector(0, 0, float(fp.trf))] #lap joint flanges should be mated with pipe at 0,0,0. Raised face will be at 0,0,-RF thickness
+        fp.PortDirections = [FreeCAD.Vector(0, 0, -1), FreeCAD.Vector(0, 0, 1)] #Flange face is toward -Z direction, flange weld end faces in +Z direction
         super(Flange, self).execute(fp)  # perform common operations
 
     #!TODO:this method generate a PartDesign object with sketch nest, pending feature compatibility
@@ -785,6 +807,9 @@ class Tee(pypeType):
         """
         fp.Shape = Base
         fp.Ports = [FreeCAD.Vector(0, 0, -float(fp.C)), FreeCAD.Vector(0, 0, float(fp.C)), FreeCAD.Vector(0, float(fp.M), 0)]
+        fp.PortDirections = [FreeCAD.Vector(0, 0, -1), 
+                      FreeCAD.Vector(0, 0, 1), 
+                      FreeCAD.Vector(0, 1, 0)]
         super(Tee, self).execute(fp)  # perform common operations
 
 
@@ -888,6 +913,7 @@ class Reduct(pypeType):
                 else:
                     fp.Shape = sol
                 fp.Ports = [FreeCAD.Vector(), FreeCAD.Vector(0, 0, float(fp.Height))]
+
             else:
                 C = Part.makeCircle(fp.OD / 2, FreeCAD.Vector(0, 0, 0), FreeCAD.Vector(0, 0, 1))
                 c = Part.makeCircle(fp.OD2 / 2, FreeCAD.Vector(0, 0, 0), FreeCAD.Vector(0, 0, 1))
@@ -912,6 +938,7 @@ class Reduct(pypeType):
                     FreeCAD.Vector(),
                     FreeCAD.Vector((fp.OD - fp.OD2) / 2, 0, float(fp.Height)),
                 ]
+            fp.PortDirections = [FreeCAD.Vector(0, 0, -1), FreeCAD.Vector(0, 0, 1)] #in either case, ports face +Z and -Z
         super(Reduct, self).execute(fp)  # perform common operations
 
 
@@ -982,6 +1009,7 @@ class Cap(pypeType):
         cap = cut.makeThickness([f for f in cut.Faces if type(f.Surface) == Part.Plane], -s, 1.0e-3)
         fp.Shape = cap
         fp.Ports = [FreeCAD.Vector()]
+        fp.PortDirections = [FreeCAD.Vector(0, 0, -1)]
         super(Cap, self).execute(fp)  # perform common operations
 
 
@@ -1204,7 +1232,7 @@ class Ubolt:
         )
         path = Part.Wire([c, l1, l2])
         fp.Shape = path.makePipe(p)
-        fp.Ports = [FreeCAD.Vector(0, 0, 1)]
+        fp.Ports = [FreeCAD.Vector(0, 0, 1)] #not quite sure why a U-bolt has a port?
 
 
 class Shell:
@@ -1371,6 +1399,7 @@ class Valve(pypeType):
             v = v.fuse(Part.makeSphere(r, FreeCAD.Vector(0, 0, fp.Height / 2)))
         fp.Shape = v
         fp.Ports = [FreeCAD.Vector(), FreeCAD.Vector(0, 0, float(fp.Height))]
+        fp.PortDirections = [FreeCAD.Vector(0,0,-1), FreeCAD.Vector(0, 0, 1)]
         super(Valve, self).execute(fp)  # perform common operations
 
 
@@ -1532,3 +1561,133 @@ class PypeBranch2(pypeType):  # use AttachExtensionPython
             for name in fp.Curves:
                 FreeCAD.ActiveDocument.removeObject(name)
             fp.Curves = []
+
+class Gasket(pypeType):
+    """Class for object PType="Gasket"
+    Pipe(obj, rating, [PSize="DN50", FClass = "150lb", IRID = 55.6, SEID = 69.9, SEOD = 85.9,CROD = 104.9 ,SEthk=4.5, Rthk = 3.2])
+      obj: the "App::FeaturePython object"
+      PSize (string): nominal diameter
+      FClass (string): Flange class
+      IRID (float): Inner Ring inner diameter
+      SEID (float): Sealing element inner diameter
+      SEOD (float): Sealing element outer diameter
+      CROD (float): Centering ring outer diameter
+      SEthk (float): Sealing element thickness
+      Rthk (float): Inner and centering ring thickness
+      """
+
+    def __init__(self, obj, rating, DN="DN50", FClass = "150lb", IRID = 55.6, SEID = 69.9, SEOD = 85.9,CROD = 104.9 ,SEthk=4.5, Rthk = 3.2):
+        # initialize the parent class
+        super(Gasket, self).__init__(obj)
+        # define common properties
+        obj.PType = "Gasket"
+        obj.Proxy = self
+        obj.PRating = rating #note that gaskets do not have a typical pipe schedule, but we will use this to match the other pipe objects. rating will equal flange class
+        obj.PSize = DN
+        # define specific properties
+        obj.addProperty(
+            "App::PropertyString",
+            "FClass",
+            "Gasket",
+            QT_TRANSLATE_NOOP("App::Property", "Flange class / pressure rating"),
+        ).FClass = FClass
+        obj.addProperty(
+            "App::PropertyLength",
+            "IRID",
+            "Gasket",
+            QT_TRANSLATE_NOOP("App::Property", "Inner ring inner diameter"),
+        ).IRID = IRID
+        obj.addProperty(
+            "App::PropertyLength",
+            "SEID",
+            "Gasket",
+            QT_TRANSLATE_NOOP("App::Property", "Sealing element inner diameter"),
+        ).SEID = SEID
+        obj.addProperty(
+            "App::PropertyLength",
+            "SEOD",
+            "Gasket",
+            QT_TRANSLATE_NOOP("App::Property", "Sealing element outer diameter"),
+        ).SEOD = SEOD
+        obj.addProperty(
+            "App::PropertyLength",
+            "CROD",
+            "Gasket",
+            QT_TRANSLATE_NOOP("App::Property", "Centering ring outer diameter"),
+        ).CROD = CROD
+        obj.addProperty(
+            "App::PropertyLength",
+            "SEthk",
+            "Gasket",
+            QT_TRANSLATE_NOOP("App::Property", "Sealing element thickness"),
+        ).SEthk = SEthk
+        obj.addProperty(
+            "App::PropertyLength",
+            "Rthk",
+            "Gasket",
+            QT_TRANSLATE_NOOP("App::Property", "Inner and centering ring thickness"),
+        ).Rthk = Rthk
+
+    def onChanged(self, fp, prop):
+        # Sealing element must be thicker than or equal to the rings
+        if prop == "Rthk" and fp.Rthk > fp.SEthk:
+            FreeCAD.Console.PrintError(
+                "Gasket: Ring thickness (Rthk) must not exceed sealing element "
+                "thickness (SEthk)\n"
+            )
+        return None
+
+    def execute(self, fp):
+        # Validate dimensions before attempting geometry construction
+        if not (fp.IRID > 0 and fp.SEID > fp.IRID and fp.SEOD > fp.SEID
+                and fp.CROD > fp.SEOD and fp.SEthk > 0 and fp.Rthk > 0):
+            FreeCAD.Console.PrintError(
+                "Gasket: invalid dimensions -- shape not updated\n"
+            )
+            return
+
+        # Ring vertical offset so all three rings are centered on the mid-plane
+        # The sealing element spans 0 -> SEthk.
+        # The thinner rings are centered at SEthk/2.
+        ring_offset = (float(fp.SEthk) - float(fp.Rthk)) / 2.0
+
+        # Inner ring: IRID/2 -> SEID/2, height Rthk, centered vertically
+        inner_ring = Part.makeCylinder(
+            fp.SEID / 2, fp.Rthk, FreeCAD.Vector(0, 0, ring_offset), vZ
+        ).cut(
+            Part.makeCylinder(
+                fp.IRID / 2, fp.Rthk, FreeCAD.Vector(0, 0, ring_offset), vZ
+            )
+        )
+
+        # Sealing element: SEID/2 -> SEOD/2, height SEthk
+        sealing_element = Part.makeCylinder(
+            fp.SEOD / 2, fp.SEthk, vO, vZ
+        ).cut(
+            Part.makeCylinder(fp.SEID / 2, fp.SEthk, vO, vZ)
+        )
+
+        # Centering ring: SEOD/2 -> CROD/2, height Rthk, centered vertically
+        centering_ring = Part.makeCylinder(
+            fp.CROD / 2, fp.Rthk, FreeCAD.Vector(0, 0, ring_offset), vZ
+        ).cut(
+            Part.makeCylinder(
+                fp.SEOD / 2, fp.Rthk, FreeCAD.Vector(0, 0, ring_offset), vZ
+            )
+        )
+
+        gasket = inner_ring.fuse(sealing_element).fuse(centering_ring)
+        gasket = gasket.removeSplitter()
+        fp.Shape = gasket
+
+        # Ports at each face of the sealing element, pointing outward
+        fp.Ports = [
+            FreeCAD.Vector(0, 0, 0),
+            FreeCAD.Vector(0, 0, float(fp.SEthk)),
+        ]
+        fp.PortDirections = [
+            FreeCAD.Vector(0, 0, -1),
+            FreeCAD.Vector(0, 0, 1),
+        ]
+
+        super(Gasket, self).execute(fp)  # perform common operations

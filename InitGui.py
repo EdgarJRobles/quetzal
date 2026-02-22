@@ -99,6 +99,7 @@ class QuetzalWorkbench(Workbench):
             "Quetzal_InsertCap",
             "Quetzal_InsertValve",
             "Quetzal_InsertFlange",
+            "Quetzal_InsertGasket",
             "Quetzal_InsertUBolt",
             "Quetzal_InsertPypeLine",
             "Quetzal_InsertBranch",

@@ -134,6 +134,10 @@ class insertPipeForm(dodoDialogs.protoPypeForm):
         self.sli.setValue(100)
         self.mainHL.addWidget(self.sli)
         self.sli.valueChanged.connect(self.changeL)
+
+        #auto-select pipe size and rating if available
+        pCmd.autoSelectInPipeForm(self)
+
         self.show()
         self.lastPipe = None
         self.H = 200
@@ -158,6 +162,7 @@ class insertPipeForm(dodoDialogs.protoPypeForm):
             self.H = float(self.edit1.text())
         self.sli.setValue(100)
         # DEFINE PROPERTIES
+        """ Do not automatically choose rating, use only what is selected
         selex = FreeCADGui.Selection.getSelectionEx()
         if selex:
             for objex in selex:
@@ -186,13 +191,16 @@ class insertPipeForm(dodoDialogs.protoPypeForm):
                     ]  # props of the dialog
                     break
         else:
-            propList = [pipe_size_selected["PSize"], float(pq(pipe_size_selected["OD"])), float(pq(pipe_size_selected["thk"])), self.H]
+        """
+        propList = [pipe_size_selected["PSize"], float(pq(pipe_size_selected["OD"])), float(pq(pipe_size_selected["thk"])), self.H]
         # INSERT PIPES
         self.lastPipe = pCmd.doPipes(rating,propList, FreeCAD.__activePypeLine__)[-1]
         self.H = float(self.lastPipe.Height)
         self.edit1.setText(str(float(self.H)))
         # TODO: SET PRATING
         FreeCAD.activeDocument().recompute()
+        FreeCADGui.Selection.clearSelection()
+        FreeCADGui.Selection.addSelection(self.lastPipe)
 
     def apply(self):
         self.lastPipe = None
@@ -285,6 +293,10 @@ class insertElbowForm(dodoDialogs.protoPypeForm):
         self.dial.valueChanged.connect(self.rotatePort)
         self.screenDial.layout().addWidget(self.lab)
         self.firstCol.layout().addWidget(self.screenDial)
+        
+        #auto-select pipe size and rating if available
+        pCmd.autoSelectInPipeForm(self)
+        
         self.show()
         self.lastElbow = None
         self.lastAngle = 0
@@ -303,26 +315,7 @@ class insertElbowForm(dodoDialogs.protoPypeForm):
             ang = float(pq(d["BendAngle"]))
         selex = FreeCADGui.Selection.getSelectionEx()
         # DEFINE PROPERTIES
-        """ Do not override selected properties
-        for sx in selex:
-            if hasattr(sx.Object, "PType") and sx.Object.PType in [
-                "Pipe",
-                "Elbow",
-                "Cap",
-                "Reduct",
-            ]:
-                DN = sx.Object.PSize
-                OD = float(sx.Object.OD)
-                thk = float(sx.Object.thk)
-                BR = None
-                for prop in self.pipeDictList:
-                    if prop["PSize"] == DN:
-                        BR = float(pq(prop["BendRadius"]))
-                if BR == None:
-                    BR = 1.5 * OD / 2
-                propList = [DN, OD, thk, ang, BR]
-                break
-        """
+        
         if not propList:
             propList = [
                 d["PSize"],
@@ -377,11 +370,31 @@ class insertElbowForm(dodoDialogs.protoPypeForm):
                 FreeCAD.activeDocument().recompute()
 
     def reverse(self):
+        """
         if self.lastElbow:
             pCmd.rotateTheTubeAx(self.lastElbow, angle=180)
             self.lastElbow.Placement.move(
                 self.lastElbow.Placement.Rotation.multVec(self.lastElbow.Ports[0]) * -2
             )
+        """
+        port = 0
+
+        initial_port_pos = self.lastElbow.Placement.multVec(self.lastElbow.Ports[port])
+        crossVector1 = FreeCAD.Vector(0,0,1)
+        crossVector2 = self.lastElbow.Ports[port]
+        #if the port is at Vector(0,0,0) or Vector(1,0,0), it will cause problems, so catch those and assign different rotation axes.
+        if crossVector2 == FreeCAD.Vector(0,0,0):
+            crossVector2 = FreeCAD.Vector(0,1,0)
+        crossVector2.normalize()
+        if crossVector2 == crossVector1:
+            crossVector1 = FreeCAD.Vector(0,1,0)
+        
+        pCmd.rotateTheTubeAx(self.lastElbow,crossVector1.cross(crossVector2), angle=180)
+        final_port_pos = self.lastElbow.Placement.multVec(self.lastElbow.Ports[port])
+        
+        #recalculate the distance between the two and move object again
+        dist = initial_port_pos - final_port_pos
+        self.lastElbow.Placement.move(dist)
 
 
 class insertTeeForm(dodoDialogs.protoPypeForm):
@@ -410,6 +423,7 @@ class insertTeeForm(dodoDialogs.protoPypeForm):
         )
         self.sizeList.setCurrentRow(0)
         self.ratingList.setCurrentRow(0)
+        self.ratingList.itemClicked.connect(self.changeRating2)
         self.btn1.clicked.connect(self.insert)
        
         
@@ -451,6 +465,10 @@ class insertTeeForm(dodoDialogs.protoPypeForm):
         self.dial.valueChanged.connect(self.rotatePort)
         self.screenDial.layout().addWidget(self.lab)
         self.firstCol.layout().addWidget(self.screenDial)
+
+        #auto-select pipe size and rating if available
+        pCmd.autoSelectInPipeForm(self)
+
         self.show()
         self.lastTee = None
         self.lastAngle = 0
@@ -459,38 +477,13 @@ class insertTeeForm(dodoDialogs.protoPypeForm):
         self.lastAngle = 0
         self.dial.setValue(0)
         insertOnBranch = self.branchRadio.isChecked()
-        DN = OD = OD2 = thk = tdhk2 = PRating = C = M = None
+        DN = OD = OD2 = thk = thk2 = PRating = C = M = None
         propList = []
         d = self.pipeDictList[self.sizeList.currentRow()]
         
-        selex = FreeCADGui.Selection.getSelectionEx()
+        #selex = FreeCADGui.Selection.getSelectionEx()
         # DEFINE PROPERTIES
-        """ Do not override selection
-        for sx in selex:
-            if hasattr(sx.Object, "PType") and sx.Object.PType in [
-                "Pipe",
-                "Elbow",
-                "Cap",
-                "Reduct",
-                "Tee"
-            ]:
-                DN = sx.Object.PSize
-                OD = sx.Object.OD
-                thk = floatsx.Object.thk
-                BR = None
-                
-                propList = [
-                    DN,
-                    OD,
-                    OD if OD2 is None else OD2,
-                    thk,
-                    thk if thk2 is None else thk2,
-                    d["C"] if C is None else C,
-                    d["M"] if M is None else M,
-                ]
-                break
-        """
-
+        
         propList = [
             d["PSize"],
             float(pq(d["OD"])),
@@ -504,10 +497,8 @@ class insertTeeForm(dodoDialogs.protoPypeForm):
         # INSERT Tee
         self.lastTee = pCmd.doTees(propList,FreeCAD.__activePypeLine__,insertOnBranch)[-1]
         
-        
         FreeCAD.activeDocument().recompute()
         FreeCADGui.Selection.clearSelection()
-        #FreeCADGui.Selection.addSelection(FreeCAD.ActiveDocument, self.lastTee.Name)
         FreeCADGui.Selection.addSelection(self.lastTee)
 
     def trim(self):
@@ -548,26 +539,14 @@ class insertTeeForm(dodoDialogs.protoPypeForm):
                 
                 obj.PRating = self.PRating
                 FreeCAD.activeDocument().recompute()
-    """
+    
+                
+    def changeRating2(self, item):
+        self.PRating = item.text()
+        self.fillSizes()
+        self.sizeList.setCurrentRow(0)
+
     def reverse(self):
-        #need to rotate it 180 degrees and then offset it the appropriate amount depending on if its on the run or branch
-        #if self.lastTee:
-        insertOnBranch = self.branchRadio.isChecked()
-        
-    )
-        pCmd.rotateTheTubeAx(self.lastTee, angle=180)
-        if insertOnBranch:
-            self.lastTee.Placement.move(
-                self.lastTee.Placement.Rotation.multVec(self.lastTee.Ports[2]) * -2
-            )
-        else:
-            self.lastTee.Placement.move(
-                self.lastTee.Placement.Rotation.multVec(self.lastTee.Ports[0]) * -2
-            )
-    """
-    def reverse(self):
-        
-        
         
         if self.branchRadio.isChecked():
             port = 2
@@ -588,22 +567,7 @@ class insertTeeForm(dodoDialogs.protoPypeForm):
         #recalculate the distance between the two and move object again
         dist = initial_port_pos - final_port_pos
         self.lastTee.Placement.move(dist)
-    """
-    def reverse(self):
-
-        #if not self.lastTee:
-            #return
-
-        insertOnBranch = self.branchRadio.isChecked()
-
-        # determine active port
-        portIndex = 2 if insertOnBranch else 0
-        
-        oldPortPos = self.lastTee.Placement.multVec(tee.Ports[portIndex])
-        pCmd.rotateTheTubeAx(self.lastTee, angle=180)
-        newPortPos = self.lastTee.Placement.multVec(tee.Ports[portIndex])
-        self.lastTee = Placement.move(oldPortPos - newPortPos)
-    """
+   
 
 
 class insertTerminalAdapterForm(dodoDialogs.protoPypeForm):
@@ -780,6 +744,16 @@ class insertFlangeForm(dodoDialogs.protoPypeForm):
         self.sizeList.setCurrentRow(0)
         self.ratingList.setCurrentRow(0)
         self.btn1.clicked.connect(self.insert)
+        self.insertModeGroup = QButtonGroup()  
+        self.weldEndRadio = QRadioButton(translate("insertFlangeForm", "Connect on Weld End"))
+        self.faceEndRadio = QRadioButton(translate("insertFlangeForm", "Connect on Flange Face"))
+        self.weldEndRadio.setChecked(True)  # Default: weld end connects to pipe
+        self.insertModeGroup.addButton(self.weldEndRadio)
+        self.insertModeGroup.addButton(self.faceEndRadio)
+        self.secondCol.layout().addWidget(self.weldEndRadio)
+        self.secondCol.layout().addWidget(self.faceEndRadio)
+
+
         self.btn2 = QPushButton(translate("insertFlangeForm", "Reverse"))
         self.secondCol.layout().addWidget(self.btn2)
         self.btn2.clicked.connect(self.reverse)  # lambda: pCmd.rotateTheTubeAx(self.lastFlange,FreeCAD.Vector(1,0,0),180))
@@ -795,6 +769,8 @@ class insertFlangeForm(dodoDialogs.protoPypeForm):
         self.offsetoption=False
 
     def reverse(self):
+        port = 0 if self.faceEndRadio.isChecked() else 1  
+        """
         selFlanges = [
             f
             for f in FreeCADGui.Selection.getSelection()
@@ -805,9 +781,25 @@ class insertFlangeForm(dodoDialogs.protoPypeForm):
                 pCmd.rotateTheTubeAx(f, FreeCAD.Vector(1, 0, 0), 180)
         else:
             pCmd.rotateTheTubeAx(self.lastFlange, FreeCAD.Vector(1, 0, 0), 180)
+        """
+        initial_port_pos = self.lastFlange.Placement.multVec(self.lastFlange.Ports[port])
+        crossVector1 = FreeCAD.Vector(1,0,0)
+        crossVector2 = self.lastFlange.Ports[port].normalize()
+        #if the port is at Vector(0,0,0) or Vector(1,0,0), it will cause problems, so catch those and assign different rotation axes.
+        if crossVector2 == crossVector1:
+            crossVector1 = FreeCAD.Vector(0,1,0)
+        if crossVector2 == FreeCAD.Vector(0,0,0):
+            crossVector2 = FreeCAD.Vector(0,1,0)
+        pCmd.rotateTheTubeAx(self.lastFlange,crossVector1.cross(crossVector2), angle=180)
+        final_port_pos = self.lastFlange.Placement.multVec(self.lastFlange.Ports[port])
+        
+        #recalculate the distance between the two and move object again
+        dist = initial_port_pos - final_port_pos
+        self.lastFlange.Placement.move(dist)
 
     def insert(self):
         self.offsetoption=self.btn4.isChecked()
+        attachFace = self.faceEndRadio.isChecked()
         tubes = [t for t in fCmd.beams() if hasattr(t, "PSize")]
         if len(tubes) > 0 and tubes[0].PSize in [prop["PSize"] for prop in self.pipeDictList]:
             for prop in self.pipeDictList:
@@ -858,8 +850,16 @@ class insertFlangeForm(dodoDialogs.protoPypeForm):
             propList.append(float(d["Y"]))
         except:
             propList.append(0)
-        # FreeCAD.Console.PrintMessage(self.offsetoption)
-        self.lastFlange = pCmd.doFlanges(propList, pypeline=FreeCAD.__activePypeLine__, doOffset=self.offsetoption)
+        #FreeCAD.Console.PrintMessage(self.offsetoption)
+        self.lastFlange = self.lastFlange = pCmd.doFlanges(
+            propList,
+            pypeline=FreeCAD.__activePypeLine__,
+            doOffset=self.offsetoption,
+            attachFace=attachFace,
+        )[-1]
+        FreeCAD.activeDocument().recompute()
+        FreeCADGui.Selection.clearSelection()
+        FreeCADGui.Selection.addSelection(self.lastFlange)
 
     def apply(self):
         for obj in FreeCADGui.Selection.getSelection():
@@ -911,6 +911,16 @@ class insertReductForm(dodoDialogs.protoPypeForm):
         self.OD2list = QListWidget()
         self.OD2list.setMaximumHeight(80)
         self.secondCol.layout().addWidget(self.OD2list)
+        # Add radio buttons for insert mode selection
+        self.insertModeGroup = QButtonGroup()
+        self.largerEndRadio = QRadioButton(translate("insertReductForm", "Insert on Larger End"))
+        self.smallerEndRadio = QRadioButton(translate("insertReductForm", "Insert on Smaller End"))
+        self.largerEndRadio.setChecked(True)  # Default to larger end
+        self.insertModeGroup.addButton(self.largerEndRadio)
+        self.insertModeGroup.addButton(self.smallerEndRadio)
+        self.secondCol.layout().addWidget(self.largerEndRadio)
+        self.secondCol.layout().addWidget(self.smallerEndRadio)
+
         self.btn2 = QPushButton(translate("insertReductForm", "Reverse"))
         self.secondCol.layout().addWidget(self.btn2)
         self.btn3 = QPushButton(translate("insertReductForm", "Apply"))
@@ -923,6 +933,10 @@ class insertReductForm(dodoDialogs.protoPypeForm):
         self.cb1 = QCheckBox(translate("insertReductForm", "Eccentric"))
         self.secondCol.layout().addWidget(self.cb1)
         self.fillOD2()
+
+        #auto-select pipe size and rating if available
+        pCmd.autoSelectInPipeForm(self)
+
         self.show()
         self.lastReduct = None
 
@@ -967,6 +981,7 @@ class insertReductForm(dodoDialogs.protoPypeForm):
         self.OD2list.setCurrentRow(0)
 
     def reverse(self):
+        """
         selRed = [
             r
             for r in FreeCADGui.Selection.getSelection()
@@ -977,71 +992,65 @@ class insertReductForm(dodoDialogs.protoPypeForm):
                 pCmd.rotateTheTubeAx(r, FreeCAD.Vector(1, 0, 0), 180)
         elif self.lastReduct:
             pCmd.rotateTheTubeAx(self.lastReduct, FreeCAD.Vector(1, 0, 0), 180)
+        """
+        
+        if self.smallerEndRadio.isChecked(): #if inserted on smaller end, port = 1, if inserted on larger end, port = 0
+            port = 1
+        else:
+            port = 0
 
+        initial_port_pos = self.lastReduct.Placement.multVec(self.lastReduct.Ports[port])
+        crossVector1 = FreeCAD.Vector(0,0,1)
+        crossVector2 = self.lastReduct.Ports[port]
+        #if the port is at Vector(0,0,0) or Vector(1,0,0), it will cause problems, so catch those and assign different rotation axes.
+        if crossVector2 == FreeCAD.Vector(0,0,0):
+            crossVector2 = FreeCAD.Vector(0,1,0)
+        crossVector2.normalize()
+        if crossVector2 == crossVector1:
+            crossVector1 = FreeCAD.Vector(0,1,0)
+        
+        pCmd.rotateTheTubeAx(self.lastReduct,crossVector1.cross(crossVector2), angle=180)
+        final_port_pos = self.lastReduct.Placement.multVec(self.lastReduct.Ports[port])
+        
+        #recalculate the distance between the two and move object again
+        dist = initial_port_pos - final_port_pos
+        self.lastReduct.Placement.move(dist)
+   
+        
     def insert(self):
         r = self.pipeDictList[self.sizeList.currentRow()]
         pos = Z = H = None
         selex = FreeCADGui.Selection.getSelectionEx()
         pipes = [p.Object for p in selex if hasattr(p.Object, "PType") and p.Object.PType == "Pipe"]
-        if len(pipes) > 1 and fCmd.isParallel(
-            fCmd.beamAx(pipes[0]), fCmd.beamAx(pipes[1])
-        ):  # if at least 2 pipes are selected...
-            if pipes[0].OD >= pipes[1].OD:
-                p1, p2 = pipes[:2]
-            else:
-                p2, p1 = pipes[:2]
-            DN = p1.PSize
-            OD1 = float(p1.OD)
-            OD2 = float(p2.OD)
-            thk1 = float(p1.thk)
-            thk2 = float(p2.thk)
-            H = float(pq(self.findDN(DN)["H"]))
-            Z = p2.Shape.Solids[0].CenterOfMass - p1.Shape.Solids[0].CenterOfMass
-            Z.normalize()
-            pos = p1.Shape.Solids[0].CenterOfMass + Z * float(p1.Height / 2)
-        elif len(pipes) > 0:  # if 1 pipe is selected...
-            DN = pipes[0].PSize
-            OD1 = float(pipes[0].OD)
-            OD2 = float(pq(self.OD2list.currentItem().text()))
-            thk1 = float(pipes[0].thk)
+        DN = r["PSize"]
+        OD1 = float(pq(r["OD"]))
+        OD2 = float(pq(self.OD2list.currentItem().text()))
+        thk1 = float(pq(r["thk"]))
+        try:
             thk2 = float(pq(r["thk2"].split(">")[self.OD2list.currentRow()]))
-            H = float(pq(self.findDN(DN)["H"]))
-            curves = [e for e in fCmd.edges() if e.curvatureAt(0) > 0]
-            if len(curves):  # ...and 1 curve is selected...
-                pos = curves[0].centerOfCurvatureAt(0)
-            else:  # ...or no curve is selected...
-                pos = pipes[0].Placement.Base
-            Z = pos - pipes[0].Shape.Solids[0].CenterOfMass
-        else:  # if no pipe is selected...
-            DN = r["PSize"]
-            OD1 = float(pq(r["OD"]))
-            OD2 = float(pq(self.OD2list.currentItem().text()))
-            thk1 = float(pq(r["thk"]))
-            try:
-                thk2 = float(pq(r["thk2"].split(">")[self.OD2list.currentRow()]))
-            except:
-                thk2 = thk1
-            H = pq(r["H"])
-            if fCmd.edges():  # ...but 1 curve is selected...
-                edge = fCmd.edges()[0]
-                if edge.curvatureAt(0) > 0:
-                    pos = edge.centerOfCurvatureAt(0)
-                    Z = edge.tangentAt(0).cross(edge.normalAt(0))
-                else:
-                    pos = edge.valueAt(0)
-                    Z = edge.tangentAt(0)
-            elif selex and selex[0].SubObjects[0].ShapeType == "Vertex":  # ...or 1 vertex..
-                pos = selex[0].SubObjects[0].Point
+        except:
+            thk2 = thk1
+        H = pq(r["H"])
         if not H:  # calculate length if it's not defined
             H = float(3 * (OD1 - OD2))
+        # Determine if we should insert on smaller end (requires reversing)
+        insertOnSmallerEnd = self.smallerEndRadio.isChecked()
+
+
+        
         propList = [DN, OD1, OD2, thk1, thk2, H]
         FreeCAD.activeDocument().openTransaction(translate("Transaction", "Insert reduction"))
+
         if self.cb1.isChecked():
-            self.lastReduct = pCmd.makeReduct(propList, pos, Z, False)
+            self.lastReduct = pCmd.doReduct(propList, FreeCAD.__activePypeLine__, pos, Z, False, insertOnSmallerEnd)[-1]
         else:
-            self.lastReduct = pCmd.makeReduct(propList, pos, Z)
+            self.lastReduct = pCmd.doReduct(propList, FreeCAD.__activePypeLine__, pos, Z, True, insertOnSmallerEnd)[-1]
+
+        
         FreeCAD.activeDocument().commitTransaction()
         FreeCAD.activeDocument().recompute()
+        FreeCADGui.Selection.clearSelection()
+        FreeCADGui.Selection.addSelection(self.lastReduct)
         if self.combo.currentText() != "<none>":
             pCmd.moveToPyLi(self.lastReduct, self.combo.currentText())
 
@@ -1049,7 +1058,6 @@ class insertReductForm(dodoDialogs.protoPypeForm):
         self.PRating = item.text()
         self.fillSizes()
         self.sizeList.setCurrentRow(0)
-        self.fillOD2()
 
 
 class insertUboltForm(dodoDialogs.protoPypeForm):
@@ -1198,6 +1206,10 @@ class insertCapForm(dodoDialogs.protoPypeForm):
         self.btn3.clicked.connect(self.apply)
         self.btn1.setDefault(True)
         self.btn1.setFocus()
+
+        #auto-select pipe size and rating if available
+        pCmd.autoSelectInPipeForm(self)
+
         self.show()
         self.lastPipe = None
 
@@ -1214,18 +1226,15 @@ class insertCapForm(dodoDialogs.protoPypeForm):
             pCmd.rotateTheTubeAx(self.lastCap, FreeCAD.Vector(1, 0, 0), 180)
 
     def insert(self):
+        DN = OD = thk = PRating = None
         d = self.pipeDictList[self.sizeList.currentRow()]
-        objs = [
-            o
-            for o in FreeCADGui.Selection.getSelection()
-            if hasattr(o, "PSize") and hasattr(o, "OD") and hasattr(o, "thk")
-        ]
-        if objs:
-            propList = [objs[0].PSize, objs[0].OD, objs[0].thk]
-        else:
-            propList = [d["PSize"], float(pq(d["OD"])), float(pq(d["thk"]))]
-        self.lastCap = pCmd.doCaps(propList, FreeCAD.__activePypeLine__)
+        propList = [d["PSize"], float(pq(d["OD"])), float(pq(d["thk"]))]
 
+        self.lastCap = pCmd.doCaps(propList, FreeCAD.__activePypeLine__)[-1]
+        FreeCAD.activeDocument().recompute()
+        FreeCADGui.Selection.clearSelection()
+        FreeCADGui.Selection.addSelection(self.lastCap)
+        
     def apply(self):
         for obj in FreeCADGui.Selection.getSelection():
             d = self.pipeDictList[self.sizeList.currentRow()]
@@ -1283,6 +1292,10 @@ class insertPypeLineForm(dodoDialogs.protoPypeForm):
         self.btn1.setDefault(True)
         self.btn1.setFocus()
         self.lastPypeLine = None
+
+        #auto-select pipe size and rating if available
+        pCmd.autoSelectInPipeForm(self)
+
         self.show()
 
     def summary(self, pl=None):
@@ -2185,3 +2198,100 @@ class insertRouteForm(dodoDialogs.protoTypeDialog):
             self.obj = None
             self.edge = None
             self.form.lab2.setText(translate("insertRouteForm", "<select an edge>"))
+
+class insertGasketForm(dodoDialogs.protoPypeForm):
+    """
+    Dialog to insert spiral-wound gaskets.
+    For position and orientation you can select
+      - one circular edge (e.g. a flange face edge),
+      - one vertex,
+      - a ported object (e.g. a Flange) -- gasket snaps to the selected port,
+      - nothing (created at origin).
+    Available buttons to reverse the orientation of the last or selected
+    gaskets and to apply the current size to existing gaskets.
+    """
+
+    def __init__(self):
+        super(insertGasketForm, self).__init__(
+            translate("insertGasketForm", "Insert gaskets"),
+            "Gasket",
+            "150lb",
+            "gasket.svg",  
+            x,
+            y,
+        )
+        self.sizeList.setCurrentRow(0)
+        self.ratingList.setCurrentRow(0)
+        self.btn1.clicked.connect(self.insert)
+
+        self.btn2 = QPushButton(translate("insertGasketForm", "Reverse"))
+        self.secondCol.layout().addWidget(self.btn2)
+        self.btn2.clicked.connect(self.reverse)
+
+        self.btn3 = QPushButton(translate("insertGasketForm", "Apply"))
+        self.secondCol.layout().addWidget(self.btn3)
+        self.btn3.clicked.connect(self.apply)
+
+        self.btn1.setDefault(True)
+        self.btn1.setFocus()
+
+        # auto-select matching size from whatever is currently selected
+        pCmd.autoSelectInPipeForm(self)
+
+        self.show()
+        self.lastGasket = None
+
+    def reverse(self):
+        selGaskets = [
+            g
+            for g in FreeCADGui.Selection.getSelection()
+            if hasattr(g, "PType") and g.PType == "Gasket"
+        ]
+        target = selGaskets[0] if selGaskets else self.lastGasket
+        if not target:
+            return
+
+        # Pin Port[0] (the -Z face) in world space while flipping
+        initial_port_pos = target.Placement.multVec(target.Ports[0])
+        pCmd.rotateTheTubeAx(target, FreeCAD.Vector(1, 0, 0), 180)
+        final_port_pos = target.Placement.multVec(target.Ports[0])
+        target.Placement.move(initial_port_pos - final_port_pos)
+
+    def insert(self):
+        d = self.pipeDictList[self.sizeList.currentRow()]
+        propList = [
+            d["PSize"],
+            self.PRating,   # FClass comes from the selected rating
+            float(pq(d["IRID"])),
+            float(pq(d["SEID"])),
+            float(pq(d["SEOD"])),
+            float(pq(d["CROD"])),
+            float(pq(d["SEthk"])),
+            float(pq(d["Rthk"])),
+        ]
+        self.lastGasket = pCmd.doGaskets(
+            propList,
+            pypeline=FreeCAD.__activePypeLine__,
+        )
+
+    def apply(self):
+        """Apply the currently selected size to already-placed gaskets."""
+        d = self.pipeDictList[self.sizeList.currentRow()]
+        targets = [
+            g
+            for g in FreeCADGui.Selection.getSelection()
+            if hasattr(g, "PType") and g.PType == "Gasket"
+        ]
+        if not targets and self.lastGasket:
+            targets = [self.lastGasket]
+        for g in targets:
+            g.PSize   = d["PSize"]
+            #g.PRating = self.PRating
+            g.FClass  = self.PRating
+            g.IRID    = float(pq(d["IRID"]))
+            g.SEID    = float(pq(d["SEID"]))
+            g.SEOD    = float(pq(d["SEOD"]))
+            g.CROD    = float(pq(d["CROD"]))
+            g.SEthk   = float(pq(d["SEthk"]))
+            g.Rthk    = float(pq(d["Rthk"]))
+        FreeCAD.activeDocument().recompute()
