@@ -6,7 +6,7 @@ import os
 import FreeCAD
 import FreeCADGui
 
-__version__ = "1.5.6"
+__version__ = "1.8.9"
 
 _dir = os.path.dirname(__file__)
 ICONPATH = os.path.join(_dir, "iconz")

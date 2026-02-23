@@ -340,6 +340,8 @@ import DraftTools
 import Draft
 import uForms
 from PySide.QtGui import *
+from draftguitools import gui_tool_utils
+
 
 
 class hackedLine(DraftTools.Line):
@@ -400,11 +402,12 @@ class hackedLine(DraftTools.Line):
         elif arg["Type"] == "SoLocation2Event":
             # mouse movement detection
             self.point, ctrlPoint, info = DraftTools.getPoint(self, arg)
+            gui_tool_utils.redraw3DView()
         elif arg["Type"] == "SoMouseButtonEvent":
             # mouse button detection
             if (arg["State"] == "DOWN") and (arg["Button"] == "BUTTON1"):
                 if arg["Position"] == self.pos:
-                    self.finish(False, cont=True)
+                    self.finish(cont=True)
                 else:
                     if (not self.node) and (not self.support):
                         DraftTools.getSupport(arg)
@@ -413,15 +416,13 @@ class hackedLine(DraftTools.Line):
                         self.ui.redraw()
                         self.pos = arg["Position"]
                         self.node.append(self.point)
-                        self.drawSegment(self.point)
+                        self.drawUpdate(self.point)
                         if self.hackedUI.cb1.isChecked():
                             rot = FreeCAD.DraftWorkingPlane.getPlacement().Rotation
                             normal = rot.multVec(FreeCAD.Vector(0, 0, 1))
                             FreeCAD.DraftWorkingPlane.alignToPointAndAxis(self.point, normal)
                             FreeCADGui.Snapper.setGrid()
-                        if not self.isWire and len(self.node) == 2:
-                            self.finish(False, cont=True)
                         if len(self.node) > 2:
                             if (self.point - self.node[0]).Length < Draft.tolerance():
                                 self.undolast()
-                                self.finish(True, cont=True)
+                                self.finish(cont=True)
