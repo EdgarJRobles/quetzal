@@ -2405,9 +2405,9 @@ def _moveToFrameLine(obj, flName):
         pass
 
 
-def makeOutlet(propList=[], pos=None, rot=None):
+def makeOutlet(propList=[], pos=None, rot=None, carrierOD=0.0):
     """
-    makeOutlet(propList, pos, rot)
+    makeOutlet(propList, pos, rot, carrierOD=0.0)
 
     Creates and returns a single Outlet object.
 
@@ -2422,9 +2422,12 @@ def makeOutlet(propList=[], pos=None, rot=None):
       [7]  angle    int    0 (straight) | 45 (lateral)
       [8]  E        float  socket depth (SW only)
 
-    pos : FreeCAD.Vector    - world position of the fitting base
-    rot : FreeCAD.Rotation  - full world rotation (replaces the old Z-only arg)
-                              If None, identity rotation is used.
+    pos       : FreeCAD.Vector    - world position of the fitting base
+    rot       : FreeCAD.Rotation  - full world rotation (replaces the old Z-only arg)
+                                    If None, identity rotation is used.
+    carrierOD : float             - outer diameter of the carrier (run) pipe (mm).
+                                    When non-zero the fitting base is shaped to sit
+                                    flush on the pipe surface rather than cut flat.
     """
     if pos is None:
         pos = FreeCAD.Vector(0, 0, 0)
@@ -2433,11 +2436,11 @@ def makeOutlet(propList=[], pos=None, rot=None):
 
     a = FreeCAD.ActiveDocument.addObject("Part::FeaturePython", "Outlet")
     if len(propList) >= 9:
-        pFeatures.Outlet(a, *propList)
+        pFeatures.Outlet(a, *propList, carrierOD=carrierOD)
     elif len(propList) >= 8:
-        pFeatures.Outlet(a, *propList, E=0.0)
+        pFeatures.Outlet(a, *propList, E=0.0, carrierOD=carrierOD)
     else:
-        pFeatures.Outlet(a)
+        pFeatures.Outlet(a, carrierOD=carrierOD)
 
     ViewProvider(a.ViewObject, "Quetzal_InsertOutlet")
     a.Placement = FreeCAD.Placement(pos, rot)
@@ -2597,6 +2600,10 @@ def doOutlets(propList=None, pypeline=None,
     t        : float - axial position (mm).  None = default for object type.
     phi_deg  : float - circumferential angle (deg).  None = default.
     alpha_deg: float - spin around fitting axis (deg).  0 = branch along run axis.
+
+    The carrier pipe outer diameter is extracted automatically from srcObj and
+    passed to makeOutlet so that the fitting base is shaped to sit flush on the
+    pipe surface.  When srcObj is unavailable the flat-base fallback is used.
     """
     if propList is None:
         propList = ["Sch-STD", "DN50", 60.32, 3.91, 45.0, 70.0, "BW", 0, 0.0]
@@ -2606,11 +2613,20 @@ def doOutlets(propList=None, pypeline=None,
         if selex:
             srcObj = selex[0].Object
 
-    pos = None
-    rot = None
+    pos        = None
+    rot        = None
+    carrierOD  = 0.0
 
     if srcObj is not None and hasattr(srcObj, "PType"):
         ptype = srcObj.PType
+
+        # ── Extract the carrier pipe OD from the host object ──────────────
+        # Pipe and Elbow expose OD directly; Tee's run pipe OD is also OD.
+        if hasattr(srcObj, "OD"):
+            try:
+                carrierOD = float(srcObj.OD)
+            except Exception:
+                carrierOD = 0.0
 
         if ptype == "Pipe":
             H       = float(srcObj.Height)
@@ -2641,7 +2657,7 @@ def doOutlets(propList=None, pypeline=None,
 
     FreeCAD.activeDocument().openTransaction(
         translate("Transaction", "Insert outlet"))
-    obj = makeOutlet(propList, pos, rot)
+    obj = makeOutlet(propList, pos, rot, carrierOD=carrierOD)
     if pypeline:
         moveToPyLi(obj, pypeline)
     FreeCAD.activeDocument().commitTransaction()

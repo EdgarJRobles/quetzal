@@ -2109,15 +2109,16 @@ class Outlet(pypeType):
     def __init__(
         self,
         obj,
-        rating  = "Sch-STD",
-        DN      = "DN50",
-        OD      = 60.32,
-        thk     = 3.91,
-        A       = 45.0,
-        B       = 70.0,
-        endType = "ButtWeld",
-        angle   = 0,
-        E       = 0.0,
+        rating    = "Sch-STD",
+        DN        = "DN50",
+        OD        = 60.32,
+        thk       = 3.91,
+        A         = 45.0,
+        B         = 70.0,
+        endType   = "ButtWeld",
+        angle     = 0,
+        E         = 0.0,
+        carrierOD = 0.0,
     ):
         super(Outlet, self).__init__(obj)
 
@@ -2155,6 +2156,14 @@ class Outlet(pypeType):
                 "(SocketWeld only)"),
         ).E = E if E else 0.0
 
+        obj.addProperty(
+            "App::PropertyLength", "CarrierOD", "Outlet",
+            QT_TRANSLATE_NOOP("App::Property",
+                "Outer diameter of the carrier (run) pipe.  When non-zero the "
+                "base of the fitting is shaped to lie flush against the carrier "
+                "pipe surface rather than being cut flat."),
+        ).CarrierOD = carrierOD if carrierOD else 0.0
+
         # ── Type / style ──────────────────────────────────────────────────
         obj.addProperty(
             "App::PropertyString", "EndType", "Outlet",
@@ -2179,47 +2188,66 @@ class Outlet(pypeType):
         return None
 
     # ------------------------------------------------------------------
+    def onChanged(self, fp, prop):
+        return None
+
+    # ------------------------------------------------------------------
     def execute(self, fp):
         import math
 
-        OD      = float(fp.OD)
-        thk     = float(fp.thk)
-        A       = float(fp.A)
-        B       = float(fp.B)
-        E       = float(fp.E)
-        endType = str(fp.EndType)
-        angle   = int(fp.Angle)
+        OD        = float(fp.OD)
+        thk       = float(fp.thk)
+        A         = float(fp.A)
+        B         = float(fp.B)
+        E         = float(fp.E)
+        endType   = str(fp.EndType)
+        angle     = int(fp.Angle)
+        carrierOD = float(fp.CarrierOD) if hasattr(fp, "CarrierOD") else 0.0
 
-        ID = OD - 2.0 * thk          # inner diameter at the pipe end
+        ID   = OD - 2.0 * thk          # inner diameter at the pipe end
         r_id = ID / 2.0
         r_od = OD / 2.0
-        r_B  = B  / 2.0              # base radius
+        r_B  = B  / 2.0                # base radius
 
         fp.Profile = str(OD) + "x" + str(thk)
 
-        # ── 1. Build the body in the "straight" (upright) orientation ──
+        # ── 1. Build the body in the "straight" (upright) orientation ──────
         #
-        # For straight fittings the body spans z=0 (base) to z=A (top).
-        # For 45-degree lateral fittings we must extend the body BELOW z=0
-        # before rotating so that the clip plane z=0 slices through the full
-        # cylinder cross-section, producing a complete elliptical base.
+        # When carrierOD is provided we always extend the body below z=0 so
+        # that we have material to subtract the carrier-pipe cylinder from.
+        # The cylinder cutter has radius = carrierOD/2, its axis runs along
+        # local X, and its centre is placed at z = -(carrierOD/2).  Any
+        # material below the deepest point of that cylinder is trimmed away
+        # by keeping only the half-space z >= -(carrierOD/2) after the cut.
         #
-        # After rotating by angle_rad around X, the lowest edge of the base
-        # circle (radius r_B) reaches z = -r_B*sin(angle_rad).  For the entire
-        # base cap to be below the clip plane we need to start the cylinder at
-        # z = -h_ext where h_ext = r_B * tan(angle_rad).  The clip at z>=0 then
-        # cuts through the cylinder SIDE, giving a clean closed ellipse.
+        # For a 45-degree lateral the body must also extend downward so that
+        # rotating 45° around X and clipping at z=0 yields a full ellipse.
+
+        use_carrier_cut = (carrierOD > 0.0)
 
         if angle == 45:
-            h_ext = r_B * math.tan(math.radians(angle))
+            if use_carrier_cut:
+                # After rotating 45° around X the pre-rotation base cap at
+                # z = -h_ext maps to z_world = -h_ext * cos45.  We need that
+                # to lie at or below -(r_carrier) so the carrier-pipe cutter
+                # removes the entire protrusion:
+                #   h_ext * cos45  >=  r_carrier
+                #   h_ext          >=  r_carrier / cos45  =  r_carrier * sqrt2
+                # Add the original tan45 term (= r_B) on top so the elliptical
+                # base is also fully formed before the cut.
+                r_carrier_pre = (carrierOD / 2.0)
+                h_ext = r_B * math.tan(math.radians(45)) + r_carrier_pre * math.sqrt(2.0)
+            else:
+                h_ext = r_B * math.tan(math.radians(angle))
+        elif use_carrier_cut:
+            # Extend by the carrier radius so the cutter can reach through
+            h_ext = carrierOD / 2.0
         else:
             h_ext = 0.0
 
         if endType in ("ButtWeld", "BW"):
-            if angle == 45:
-                # For the lateral variant we build a plain cylinder for the
-                # extension below z=0 (constant radius r_B), then a cone from
-                # z=0 upward.  Join them before rotating.
+            if angle == 45 or use_carrier_cut:
+                # Constant-radius extension below z=0, then cone upward
                 ext_cyl = Part.makeCylinder(r_B, h_ext + 0.5,
                                             FreeCAD.Vector(0, 0, -(h_ext + 0.5)),
                                             FreeCAD.Vector(0, 0, 1))
@@ -2232,19 +2260,19 @@ class Outlet(pypeType):
                                       FreeCAD.Vector(0, 0, 0),
                                       FreeCAD.Vector(0, 0, 1), 360)
 
-            # Inner bore: constant ID, extends through the full height.
+            # Inner bore: constant ID through the full height
             inner = Part.makeCylinder(r_id, A + h_ext + 1.0,
                                       FreeCAD.Vector(0, 0, -(h_ext + 0.5)),
                                       FreeCAD.Vector(0, 0, 1))
             body = outer.cut(inner)
 
         else:  # SocketWeld / SW
-            # Outer shell: cylinder from -h_ext to A
+            # Outer shell: cylinder from -(h_ext) to A
             outer = Part.makeCylinder(r_B, A + h_ext,
                                       FreeCAD.Vector(0, 0, -h_ext),
                                       FreeCAD.Vector(0, 0, 1))
 
-            # Inner bore: narrow (ID) from -h_ext to E, then wide (r_od) from E to A.
+            # Inner bore: narrow (ID) from -h_ext to E, then wide (r_od) from E to A
             E_clamped = min(E, A - 0.5) if E > 0 else A * 0.3
             bore_narrow = Part.makeCylinder(r_id, E_clamped + h_ext + 0.5,
                                             FreeCAD.Vector(0, 0, -(h_ext + 0.5)),
@@ -2254,23 +2282,67 @@ class Outlet(pypeType):
                                             FreeCAD.Vector(0, 0, 1))
             body = outer.cut(bore_narrow).cut(bore_wide)
 
-        # ── 2. Handle the 45-degree lateral variant ─────────────────────
+        # ── 2. Handle the 45-degree lateral variant ─────────────────────────
         #
-        # Rotate the extended body 45° around X, then clip at z>=0.
-        # Because the body now extends to z=-h_ext, the clip plane passes
-        # through the cylinder side (not the base cap), giving a full ellipse.
+        # Rotate 45° around X, then clip at z >= 0 (flat base).
+        # If carrierOD is also set the flat clip is replaced by the carrier
+        # cylinder cut in step 3 below; we still rotate first.
 
         if angle == 45:
             body.rotate(FreeCAD.Vector(0, 0, 0),
                         FreeCAD.Vector(1, 0, 0), 45)
-            big  = max(B, A) * 4.0
-            clip = Part.makeBox(2 * big, 2 * big, big + 1.0,
-                                FreeCAD.Vector(-big, -big, 0))
-            body = body.common(clip)
+            if not use_carrier_cut:
+                # Standard flat clip at z=0
+                big  = max(B, A) * 4.0
+                clip = Part.makeBox(2 * big, 2 * big, big + 1.0,
+                                    FreeCAD.Vector(-big, -big, 0))
+                body = body.common(clip)
+
+        # ── 3. Carrier-pipe cylindrical base cut ─────────────────────────────
+        #
+        # When carrierOD is supplied we carve the fitting base so that it sits
+        # flush on the outside of the carrier pipe.
+        #
+        # The carrier pipe surface, in the outlet's local coordinate system, is
+        # a cylinder of radius r_carrier whose axis runs along local X and whose
+        # centre is at (x=0, y=0, z=-(r_carrier)).  We cut this cylinder through
+        # the body, then trim away anything below z = -(r_carrier) with a
+        # half-space keeper so the solid remains bounded.
+
+        if use_carrier_cut:
+            r_carrier = carrierOD / 2.0
+            big       = max(B, A, carrierOD) * 4.0
+
+            # Carrier-pipe cutter: a cylinder running along Y (the carrier pipe
+            # run axis in the outlet's local frame).
+            #
+            # For a straight fitting the body spans ±r_B in Y, so r_B*2 + 2
+            # is sufficient.  For the 45° lateral, after rotation the body
+            # extends in Y by up to (h_ext + A) * sin45 on each side, so the
+            # cutter must be long enough to span that full extent.
+            if angle == 45:
+                s2 = math.sqrt(2.0) / 2.0
+                y_span = (h_ext + A) * s2
+                cutter_len = y_span * 2.0 + 2.0
+            else:
+                cutter_len = r_B * 2.0 + 2.0
+
+            carrier_cyl = Part.makeCylinder(
+                r_carrier,
+                cutter_len,
+                FreeCAD.Vector(0, -cutter_len / 2.0, -r_carrier),
+                FreeCAD.Vector(0, 1, 0),   # axis along Y
+            )
+            body = body.cut(carrier_cyl)
+
+            # Trim the dangling material below the deepest cut point
+            keeper = Part.makeBox(2 * big, 2 * big, big,
+                                  FreeCAD.Vector(-big, -big, -r_carrier))
+            body = body.common(keeper)
 
         fp.Shape = body
 
-        # ── 3. Set port ──────────────────────────────────────────────────
+        # ── 4. Set port ──────────────────────────────────────────────────────
         #
         # The single port is at the open pipe-connection end (top).
         # Direction faces outward (away from the body).
