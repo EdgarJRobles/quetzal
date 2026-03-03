@@ -1946,165 +1946,133 @@ def join(obj1, port1, obj2, port2):
 
 
 def makeValve(propList=[], pos=None, Z=None):
-    """add a Valve object
-    makeValve(propList,pos,Z);
-    propList is one optional list with at least 4 elements:
-      DN (string): nominal diameter
-      VType (string): type of valve
-      OD (float): outside diameter
-      ID (float): inside diameter
-      H (float): length of pipe
-      Kv (float): valve's flow factor (optional)
-    Default is "DN50 ball valve ('ball')"
-    pos (vector): position of insertion; default = 0,0,0
-    Z (vector): orientation: default = 0,0,1
+    """Add a Valve object.
+
+    makeValve(propList, pos, Z)
+
+    propList elements for the basic double-cone valve rendering path:
+      DN      (string): nominal diameter
+      VType   (string): valve type
+      ODBody  (float) : body outer diameter
+      ID      (float) : bore inside diameter
+      H       (float) : body length
+      Kv      (float) : flow factor  [optional]
+
+    propList elements for the socket-weld / threaded path:
+      DN      (string): nominal diameter
+      VType   (string): valve type
+      OD      (float) : attachment pipe outer diameter
+      ODBody  (float) : hex body flat-to-flat
+      H       (float) : body length
+      E       (float) : socket / thread engagement depth
+      Conn    (string): "SW" or "TH"
+      Kv      (float) : flow factor  [optional]
+
+    pos (Vector): insertion point; default = origin
+    Z   (Vector): flow-axis direction; default = (0,0,1)
     """
-    if pos == None:
+    if pos is None:
         pos = FreeCAD.Vector(0, 0, 0)
-    if Z == None:
+    if Z is None:
         Z = FreeCAD.Vector(0, 0, 1)
+
     a = FreeCAD.ActiveDocument.addObject("Part::FeaturePython", "Valve")
-    if len(propList):
-        pFeatures.Valve(a, *propList)
+
+    if propList:
+        # Detect socket/threaded variant by the presence of a "Conn" field.
+        # Convention: propList for the SW/TH path carries Conn as element [6]
+        # (after DN, VType, OD, ODBody, H, E).
+        if len(propList) >= 7 and isinstance(propList[6], str) and \
+                propList[6] in ("SW", "TH"):
+            # [DN, VType, OD, ODBody, H, E, Conn, (Kv)]
+            DN, VType, OD, ODBody, H, E, Conn = propList[:7]
+            Kv = float(propList[7]) if len(propList) >= 8 else 0.0
+            pFeatures.Valve(a, DN=DN, VType=VType, ODBody=ODBody, H=H, Kv=Kv,
+                            OD=OD, E=E, Conn=Conn)
+        else:
+            # Legacy path: [DN, VType, ODBody, ID, H, (Kv)]
+            pFeatures.Valve(a, *propList)
     else:
         pFeatures.Valve(a)
+
     ViewProvider(a.ViewObject, "Quetzal_InsertValve")
-    a.Placement.Base = pos
-    rot = FreeCAD.Rotation(FreeCAD.Vector(0, 0, 1), Z)
+
+    # Orient port 0's local direction to face Z, then place origin so that
+    # port 0 lands at pos.  (Mirrors the pattern used by makeElbow / makePipe.)
+    port0_local_dir = a.PortDirections[0] if a.PortDirections else FreeCAD.Vector(0, 0, 1)
+    rot = FreeCAD.Rotation(port0_local_dir, Z)
     a.Placement.Rotation = rot.multiply(a.Placement.Rotation)
+    port0_world = a.Placement.multVec(a.Ports[0])
+    a.Placement.Base = pos - port0_world
+
     a.Label = translate("Objects", "Valve")
     return a
 
 
 def doValves(propList=["DN50", "ball", 72, 50, 40, 150], pypeline=None, pos=0):
+    """Insert one or more Valve objects.
+
+    propList  — see makeValve() for the two accepted formats.
+    pypeline  — optional pypeline label to add the valve to.
+    pos       — legacy: position along pipe (0–100 %).  Kept for back-compat.
+                When a pype-object with ports is selected the new attachment
+                method (getAttachmentPoints / alignTwoPorts) is used instead.
     """
-    propList = [
-      DN (string): nominal diameter
-      VType (string): type of valve
-      OD (float): outside diameter
-      ID (float): inside diameter
-      H (float): length of pipe
-      Kv (float): valve's flow factor (optional) ]
-    pypeline = string
-    pos (]0..100[) = position along pipe or edge
-    """
-    # self.lastValve=None
-    color = 0.05, 0.3, 0.75
-    vlist = []
-    # d=self.pipeDictList[self.sizeList.currentRow()]
+    color  = 0.05, 0.3, 0.75
+    vlist  = []
     FreeCAD.activeDocument().openTransaction(translate("Transaction", "Insert valve"))
-    # propList=[d['PSize'],d['VType'],float(pq(d['OD'])),float(pq(d['ID'])),float(pq(d['H'])),float(pq(d['Kv']))]
-    if 0 < pos < 100:  # ..place the valve in the middle of pipe(s)
+
+    if 0 < pos < 100:
+        # ── legacy: split a pipe and insert valve in the gap ──────────────────
         pipes = [p for p in FreeCADGui.Selection.getSelection() if isPipe(p)]
         if pipes:
             for p1 in pipes:
-                vlist.append(makeValve(propList))
+                valve = makeValve(propList)
+                vlist.append(valve)
                 p2 = breakTheTubes(
                     float(p1.Height) * pos / 100,
                     pipes=[p1],
                     gap=float(vlist[-1].Height),
-                )[0]
+                )
                 if p2 and pypeline:
-                    moveToPyLi(p2, pypeline)
+                    moveToPyLi(p2[0], pypeline)
                 vlist[-1].Placement = p1.Placement
                 vlist[-1].Placement.move(portsDir(p1)[1] * float(p1.Height))
                 vlist[-1].ViewObject.ShapeColor = color
-                # if self.combo.currentText()!='<none>':
-                # pCmd.moveToPyLi(self.lastValve,self.combo.currentText())
-            # FreeCAD.ActiveDocument.recompute()
-    elif len(fCmd.edges()) == 0:  # ..no edges selected
-        vs = [
-            v
-            for sx in FreeCADGui.Selection.getSelectionEx()
-            for so in sx.SubObjects
-            for v in so.Vertexes
-        ]
-        if len(vs) == 0:  # ...no vertexes selected
-            vlist.append(makeValve(propList))
-            vlist[-1].ViewObject.ShapeColor = color
-            # if self.combo.currentText()!='<none>':
-            # pCmd.moveToPyLi(self.lastValve,self.combo.currentText())
-        else:
-            for v in vs:  # ... one or more vertexes
-                vlist.append(makeValve(propList, v.Point))
-                vlist[-1].ViewObject.ShapeColor = color
-                # if self.combo.currentText()!='<none>':
-                # pCmd.moveToPyLi(self.lastValve,self.combo.currentText())
     else:
-        selex = FreeCADGui.Selection.getSelectionEx()
-        for objex in selex:
-            o = objex.Object
-            for edge in fCmd.edges([objex]):  # ...one or more edges...
-                if edge.curvatureAt(0) == 0:  # ...straight edges
-                    vlist.append(
-                        makeValve(
-                            propList,
-                            edge.valueAt(edge.LastParameter / 2 - propList[4] / 2),
-                            edge.tangentAt(0),
-                        )
-                    )
-                    # if self.combo.currentText()!='<none>':
-                    # pCmd.moveToPyLi(self.lastValve,self.combo.currentText())
-                else:  # ...curved edges
-                    pos = edge.centerOfCurvatureAt(
-                        0
-                    )  # SNIPPET TO ALIGN WITH THE PORTS OF Pype SELECTED: BEGIN...
-                    if hasattr(o, "PType") and len(o.Ports) == 2:
-                        p0, p1 = portsPos(o)
-                        if (p0 - pos).Length < (p1 - pos).Length:
-                            Z = portsDir(o)[0]
-                        else:
-                            Z = portsDir(o)[1]
-                    else:
-                        Z = edge.tangentAt(0).cross(edge.normalAt(0))  # ...END
-                    vlist.append(makeValve(propList, pos, Z))
-                    # if self.combo.currentText()!='<none>':
-                    # pCmd.moveToPyLi(self.lastValve,self.combo.currentText())
-                vlist[-1].ViewObject.ShapeColor = color
+        try:
+            selex = FreeCADGui.Selection.getSelectionEx()[0]
+            usablePorts = (
+                hasattr(selex.Object, "Ports")
+                and hasattr(selex.Object, "PType")
+                and selex.Object.PType != "Any"
+            )
+            pos_vec, Z_vec, srcObj, srcPort = getAttachmentPoints()
+
+            if usablePorts:
+                valve = makeValve(propList, pos_vec, Z_vec)
+                vlist.append(valve)
+                valve.ViewObject.ShapeColor = color
+                FreeCAD.activeDocument().commitTransaction()
+                FreeCAD.activeDocument().recompute()
+                alignTwoPorts(valve, 0, srcObj, srcPort)
+            else:
+                valve = makeValve(propList, pos_vec, Z_vec)
+                vlist.append(valve)
+                valve.ViewObject.ShapeColor = color
+        except Exception:
+            # Nothing selected — insert at origin
+            valve = makeValve(propList)
+            vlist.append(valve)
+            valve.ViewObject.ShapeColor = color
+
     if pypeline:
         for v in vlist:
             moveToPyLi(v, pypeline)
+
     FreeCAD.activeDocument().commitTransaction()
     FreeCAD.activeDocument().recompute()
     return vlist
-
-
-def attachToTube(port=None):
-    pypes = [p for p in FreeCADGui.Selection.getSelection() if hasattr(p, "PType")]
-    tube = None
-    try:
-        tubes = [t for t in pypes if t.PType == "Pipe"]
-        if tubes:
-            tube = tubes[0]
-            pypes.pop(pypes.index(tube))
-            for p in pypes:
-                p.MapMode = "Concentric"
-                if not port:
-                    port = tube.Proxy.nearestPort(p.Shape.Solids[0].CenterOfMass)[0]
-                if port == 0:
-                    if p.PType != "Flange":
-                        p.MapReversed = True
-                    else:
-                        p.MapReversed = False
-                    p.Support = [(tube, "Edge3")]
-                elif port == 1:
-                    if p.PType != "Flange":
-                        p.MapReversed = False
-                    else:
-                        p.MapReversed = True
-                    p.Support = [(tube, "Edge1")]
-                if p.PType == "Elbow":
-                    p.AttachmentOffset = FreeCAD.Placement(
-                        FreeCAD.Vector(0, 0, p.Ports[0].Length),
-                        FreeCAD.Rotation(p.Ports[1], FreeCAD.Vector(0, 0, 1).negative()),
-                    )
-                FreeCAD.Console.PrintMessage("%s attached to %s\n" % (p.Label, tube.Label))
-        else:
-            for p in pypes:
-                p.MapMode = "Deactivated"
-                FreeCAD.Console.PrintMessage("Object Detached\n")
-    except:
-        FreeCAD.Console.PrintError("Nothing attached\n")
 
 
 def makeNozzle(DN="DN50", H=200, OD=60.3, thk=3, D=160, d=62, df=132, f=14, t=15, n=4):

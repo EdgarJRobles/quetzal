@@ -2222,22 +2222,38 @@ class joinForm(dodoDialogs.protoTypeDialog):
         po.pCmd.arrows2 = []
 
 
+
+
 class insertValveForm(dodoDialogs.protoPypeForm):
     """
     Dialog to insert Valves.
-    For position and orientation you can select
-      - one or more straight edges (centerlines)
-      - one or more curved edges (axis and origin across the center)
-      - one or more vertexes
-      - nothing
-    Default valve = DN50 ball valve.
-    Available one button to reverse the orientation of the last or selected valves.
+
+    Two modes selected automatically from the loaded CSV:
+
+    Legacy / butt-weld  (CSV has no Conn column, or Conn not SW/TH)
+    ----------------------------------------------------------------
+      CSV columns : PSize ; VType ; ODBody ; ID ; H ; Kv
+      sizeList    : PSize   ODBody x ID
+      propList    : [DN, VType, ODBody, ID, H, Kv]
+      "Insert in pipe" checkbox + slider are shown.
+
+    Socket-weld / Threaded  (CSV has Conn == "SW" or "TH")
+    -------------------------------------------------------
+      CSV columns : Psize ; OD ; Vtype ; ODBody ; H ; E ; Conn  [; Kv]
+      sizeList    : PSize   OD
+      propList    : [DN, VType, OD, ODBody, H, E, Conn, Kv]
+      "Insert in pipe" checkbox + slider are hidden.
+
+    A rotation dial lets the last-inserted valve be spun around its
+    flow axis (Z) in 15-degree increments, identical to insertElbowForm.
     """
 
     def __init__(self):
-        self.PType = "Valve"
-        self.PRating = ""
-        # super(insertValveForm,self).__init__("valves.ui")
+        self.PType     = "Valve"
+        self.PRating   = ""
+        self.lastValve = None
+        self.lastAngle = 0
+
         super(insertValveForm, self).__init__(
             translate("insertValveForm", "Insert valves"),
             "Valve",
@@ -2246,76 +2262,250 @@ class insertValveForm(dodoDialogs.protoPypeForm):
             x,
             y,
         )
+        # NOTE: protoPypeForm.__init__ calls self.fillSizes() above.
+        # self.sli / self.cb1 do NOT exist yet at that point, so
+        # fillSizes() must guard against their absence (see _refreshLayout).
+
         self.move(QPoint(75, 225))
         self.sizeList.setCurrentRow(0)
         self.ratingList.setCurrentRow(0)
+
+        # Reconnect rating signal so _changeRating (not base changeRating) fires
+        try:
+            self.ratingList.itemClicked.disconnect(self.changeRating)
+        except Exception:
+            pass
+        self.ratingList.itemClicked.connect(self._changeRating)
+
         self.btn1.clicked.connect(self.insert)
+
         self.btn2 = QPushButton(translate("insertValveForm", "Reverse"))
         self.secondCol.layout().addWidget(self.btn2)
         self.btn2.clicked.connect(self.reverse)
+
         self.btn3 = QPushButton(translate("insertValveForm", "Apply"))
         self.secondCol.layout().addWidget(self.btn3)
         self.btn3.clicked.connect(self.apply)
+
         self.btn1.setDefault(True)
         self.btn1.setFocus()
+
+        # Rotation dial (Z-axis spin) -- mirrors insertElbowForm layout
+        self.screenDial = QWidget()
+        self.screenDial.setLayout(QHBoxLayout())
+        self.dial = QDial()
+        self.dial.setWrapping(True)
+        self.dial.setMaximum(180)
+        self.dial.setMinimum(-180)
+        self.dial.setNotchTarget(15)
+        self.dial.setNotchesVisible(True)
+        self.dial.setMaximumSize(70, 70)
+        self.screenDial.layout().addWidget(self.dial)
+        self.dialLab = QLabel(translate("insertValveForm", "0 deg"))
+        self.dialLab.setAlignment(Qt.AlignCenter)
+        self.dial.valueChanged.connect(self.rotateDial)
+        self.screenDial.layout().addWidget(self.dialLab)
+        self.firstCol.layout().addWidget(self.screenDial)
+
+        # "Insert in pipe" controls (legacy only; hidden for SW/TH)
         self.sli = QSlider(Qt.Vertical)
         self.sli.setMaximum(100)
         self.sli.setMinimum(1)
         self.sli.setValue(50)
         self.mainHL.addWidget(self.sli)
+
         self.cb1 = QCheckBox(translate("insertValveForm", " Insert in pipe"))
         self.secondCol.layout().addWidget(self.cb1)
-        # self.sli.valueChanged.connect(self.changeL)
+
+        # Now that sli and cb1 exist, apply the correct visibility
+        self._refreshLayout()
         self.show()
-        #########
-        self.lastValve = None
+
+    # ── helper: detect SW/TH rating ──────────────────────────────────────────
+
+    def _isSocketConn(self):
+        """Return True when the loaded CSV is a SW or TH (socket/threaded) table."""
+        for row in self.pipeDictList:
+            if row.get("Conn", "").strip().upper() in ("SW", "TH"):
+                return True
+        return False
+
+    # ── normalise a CSV row so keys are always capitalised consistently ────────
+
+    @staticmethod
+    def _normRow(row):
+        """Return a copy of row with every key title-cased for safe lookup.
+
+        The Ball-Threaded CSV uses 'Psize' and 'Vtype'; the legacy CSV uses
+        'PSize' and 'VType'.  Normalising to lower-case avoids KeyErrors.
+        """
+        return {k.strip().lower(): v.strip() for k, v in row.items()}
+
+    # ── show/hide controls depending on mode ─────────────────────────────────
+
+    def _refreshLayout(self):
+        """Show legacy-only controls for BW valves; hide them for SW/TH.
+
+        Called from fillSizes() which runs during __init__ (via super().__init__),
+        so sli/cb1 may not exist yet -- guard with hasattr.
+        """
+        is_socket = self._isSocketConn()
+        if hasattr(self, "sli"):
+            self.sli.setVisible(not is_socket)
+        if hasattr(self, "cb1"):
+            self.cb1.setVisible(not is_socket)
+
+    # ── fillSizes override ───────────────────────────────────────────────────
+
+    def fillSizes(self):
+        """Load Valve_<PRating>.csv and populate sizeList.
+
+        Legacy (BW) : label = PSize   ODBody x ID
+        SW / TH     : label = PSize   OD
+        """
+        self.sizeList.clear()
+        self.pipeDictList = []
+        fname = "Valve_" + self.PRating + ".csv"
+        fpath = join(dirname(abspath(__file__)), "tablez", fname)
+        try:
+            with open(fpath, "r") as fh:
+                self.pipeDictList = list(csv.DictReader(fh, delimiter=";"))
+        except Exception:
+            return
+
+        for row in self.pipeDictList:
+            r = self._normRow(row)
+            if self._isSocketConn():
+                # SW/TH: show PSize + OD (no ID column in these tables)
+                if qu:
+                    label = qu.format_psize(r["psize"]) + "  " + qu.format_dim(r["od"])
+                else:
+                    label = r.get("psize", "") + "  " + r.get("od", "")
+            else:
+                # Legacy BW: show PSize + ODBody x ID
+                if qu:
+                    label = (qu.format_psize(r["psize"]) + "  "
+                             + qu.format_dim(r.get("odbody", r.get("od", "")))
+                             + "x" + qu.format_dim(r.get("id", "")))
+                else:
+                    label = (r.get("psize", "") + "  "
+                             + r.get("odbody", r.get("od", ""))
+                             + "x" + r.get("id", ""))
+            self.sizeList.addItem(label)
+
+        self._refreshLayout()
+
+    # ── rating-change handler ─────────────────────────────────────────────────
+
+    def _changeRating(self, item):
+        self.PRating = item.text()
+        self.currentRatingLab.setText(
+            translate("protoPypeForm", "Rating: ") + self.PRating)
+        self.fillSizes()
+        self.sizeList.setCurrentRow(0)
+
+    # ── rotation dial ─────────────────────────────────────────────────────────
+
+    def rotateDial(self):
+        """Spin the last-inserted valve around its flow axis (Z) by dial delta."""
+        if self.lastValve:
+            # Undo previous dial position, then apply new one
+            pCmd.rotateTheTubeAx(self.lastValve, FreeCAD.Vector(0, 0, 1),
+                                  self.lastAngle * -1)
+            self.lastAngle = self.dial.value()
+            pCmd.rotateTheTubeAx(self.lastValve, FreeCAD.Vector(0, 0, 1),
+                                  self.lastAngle)
+            self.dialLab.setText(
+                str(self.dial.value()) + translate("insertValveForm", " deg"))
+
+    # ── reverse ──────────────────────────────────────────────────────────────
 
     def reverse(self):
         selValves = [
-            p
-            for p in FreeCADGui.Selection.getSelection()
+            p for p in FreeCADGui.Selection.getSelection()
             if hasattr(p, "PType") and p.PType == "Valve"
         ]
-        if len(selValves):
+        if selValves:
             for p in selValves:
                 pCmd.rotateTheTubeAx(p, FreeCAD.Vector(1, 0, 0), 180)
-        else:
+        elif self.lastValve:
             pCmd.rotateTheTubeAx(self.lastValve, FreeCAD.Vector(1, 0, 0), 180)
 
+    # ── insert ────────────────────────────────────────────────────────────────
+
     def insert(self):
-        d = self.pipeDictList[self.sizeList.currentRow()]
-        propList = [
-            d["PSize"],
-            d["VType"],
-            float(pq(d["OD"])),
-            float(pq(d["ID"])),
-            float(pq(d["H"])),
-            float(pq(d["Kv"])),
-        ]
-        if self.cb1.isChecked():  # ..place the valve in the middle of pipe(s)
-            pipes = [
-                p
-                for p in FreeCADGui.Selection.getSelection()
-                if hasattr(p, "PType") and p.PType == "Pipe"
+        self.lastAngle = 0
+        self.dial.setValue(0)
+        d  = self.pipeDictList[self.sizeList.currentRow()]
+        r  = self._normRow(d)
+
+        if self._isSocketConn():
+            # [DN, VType, OD, ODBody, H, E, Conn, Kv]
+            propList = [
+                r["psize"],
+                r.get("vtype", self.PRating),
+                float(pq(r["od"])),
+                float(pq(r["odbody"])),
+                float(pq(r["h"])),
+                float(pq(r["e"])),
+                r["conn"],
+                float(pq(r.get("kv", "0"))),
             ]
-            if pipes:
-                pos = self.sli.value()
-                self.lastValve = pCmd.doValves(propList, FreeCAD.__activePypeLine__, pos)[-1]
+            self.lastValve = pCmd.doValves(propList, FreeCAD.__activePypeLine__)[-1]
         else:
+            # [DN, VType, ODBody, ID, H, Kv]
+            propList = [
+                r["psize"],
+                r.get("vtype", self.PRating),
+                float(pq(r.get("odbody", r.get("od", "0")))),
+                float(pq(r.get("id", "0"))),
+                float(pq(r["h"])),
+                float(pq(r.get("kv", "0"))),
+            ]
+            if self.cb1.isChecked():
+                pipes = [
+                    p for p in FreeCADGui.Selection.getSelection()
+                    if hasattr(p, "PType") and p.PType == "Pipe"
+                ]
+                if pipes:
+                    self.lastValve = pCmd.doValves(
+                        propList, FreeCAD.__activePypeLine__,
+                        self.sli.value())[-1]
+                    return
             self.lastValve = pCmd.doValves(propList, FreeCAD.__activePypeLine__)[-1]
 
+    # ── apply ─────────────────────────────────────────────────────────────────
+
     def apply(self):
+        """Push the currently selected size onto all selected Valve objects."""
+        d = self.pipeDictList[self.sizeList.currentRow()]
+        r = self._normRow(d)
+
         for obj in FreeCADGui.Selection.getSelection():
-            d = self.pipeDictList[self.sizeList.currentRow()]
-            if hasattr(obj, "PType") and obj.PType == self.PType:
-                obj.PSize = d["PSize"]
-                obj.PRating = self.PRating
-                obj.OD = pq(d["OD"])
-                obj.ID = pq(d["ID"])
-                obj.Height = pq(d["H"])
-                obj.Kv = float(d["Kv"])
+            if not (hasattr(obj, "PType") and obj.PType == "Valve"):
+                continue
+
+            if self._isSocketConn() and hasattr(obj, "Conn"):
+                # Socket-weld / Threaded valve
+                obj.PSize   = r["psize"]
+                obj.PRating = r.get("vtype", self.PRating)
+                obj.OD      = pq(r["od"])
+                obj.ODBody  = pq(r["odbody"])
+                obj.Height  = pq(r["h"])
+                obj.E       = pq(r["e"])
+                obj.Conn    = r["conn"]
+                obj.Kv      = float(pq(r.get("kv", "0")))
                 FreeCAD.activeDocument().recompute()
 
+            elif not self._isSocketConn() and hasattr(obj, "ID"):
+                # Legacy / butt-weld valve
+                obj.PSize   = r["psize"]
+                obj.PRating = r.get("vtype", self.PRating)
+                obj.ODBody  = pq(r.get("odbody", r.get("od", "0")))
+                obj.ID      = pq(r.get("id", "0"))
+                obj.Height  = pq(r["h"])
+                obj.Kv      = float(pq(r.get("kv", "0")))
+                FreeCAD.activeDocument().recompute()
 
 import DraftTools
 import Draft
