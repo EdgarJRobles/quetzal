@@ -261,7 +261,7 @@ class _InsertCouplingUnionCmd:
         # Re-use the generic fitting icon; replace with a dedicated one if available.
         from quetzal_config import ICONPATH
         return {
-            "Pixmap":  "fitting.svg",
+            "Pixmap":  "Quetzal_CouplingUnion.svg",
             "MenuText": QT_TRANSLATE_NOOP("Quetzal", "Insert Coupling / Union"),
             "ToolTip":  QT_TRANSLATE_NOOP(
                 "Quetzal",

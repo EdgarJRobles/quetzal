@@ -421,8 +421,9 @@ class insertElbowForm(dodoDialogs.protoPypeForm):
                 float(pq(d["G"])),
                 d.get("Conn", "SW"),
             ]
+            rating = self.ratingList.currentItem().text()
             self.lastElbow = pCmd.doSocketElbow(
-                propList, FreeCAD.__activePypeLine__)[-1]
+                rating, propList, FreeCAD.__activePypeLine__)[-1]
         else:
             propList = [
                 d["PSize"],
@@ -433,8 +434,9 @@ class insertElbowForm(dodoDialogs.protoPypeForm):
             ]
             if self.edit2.text():
                 propList[-1] = float(pq(self.edit2.text()))
+            rating = self.ratingList.currentItem().text()
             self.lastElbow = pCmd.doElbow(
-                propList, FreeCAD.__activePypeLine__)[-1]
+                rating, propList, FreeCAD.__activePypeLine__)[-1]
 
         FreeCAD.activeDocument().recompute()
 
@@ -729,8 +731,9 @@ class insertTeeForm(dodoDialogs.protoPypeForm):
                 float(pq(d["G"])),
                 d.get("Conn", "SW"),
             ]
+            rating = self.ratingList.currentItem().text()
             self.lastTee = pCmd.doSocketTee(
-                propList, FreeCAD.__activePypeLine__, insertOnBranch)[-1]
+                rating, propList, FreeCAD.__activePypeLine__, insertOnBranch)[-1]
         else:
             # ── Butt-weld tee ────────────────────────────────────────────
             propList = [
@@ -742,8 +745,9 @@ class insertTeeForm(dodoDialogs.protoPypeForm):
                 float(pq(d["C"])),
                 float(pq(d["M"])),
             ]
+            rating = self.ratingList.currentItem().text()
             self.lastTee = pCmd.doTees(
-                propList, FreeCAD.__activePypeLine__, insertOnBranch)[-1]
+                rating, propList, FreeCAD.__activePypeLine__, insertOnBranch)[-1]
 
         FreeCAD.activeDocument().recompute()
         FreeCADGui.Selection.clearSelection()
@@ -1112,7 +1116,9 @@ class insertFlangeForm(dodoDialogs.protoPypeForm):
         except:
             propList.append(0)
         #FreeCAD.Console.PrintMessage(self.offsetoption)
+        rating = self.ratingList.currentItem().text()
         self.lastFlange = self.lastFlange = pCmd.doFlanges(
+            rating,
             propList,
             pypeline=FreeCAD.__activePypeLine__,
             doOffset=self.offsetoption,
@@ -1406,10 +1412,11 @@ class insertReductForm(dodoDialogs.protoPypeForm):
         propList = [DN, OD1, OD2, thk1, thk2, H]
         FreeCAD.activeDocument().openTransaction(translate("Transaction", "Insert reduction"))
 
+        rating = self.ratingList.currentItem().text()
         if self.cb1.isChecked():
-            self.lastReduct = pCmd.doReduct(propList, FreeCAD.__activePypeLine__, pos, Z, False, insertOnSmallerEnd)[-1]
+            self.lastReduct = pCmd.doReduct(rating, propList, FreeCAD.__activePypeLine__, pos, Z, False, insertOnSmallerEnd)[-1]
         else:
-            self.lastReduct = pCmd.doReduct(propList, FreeCAD.__activePypeLine__, pos, Z, True, insertOnSmallerEnd)[-1]
+            self.lastReduct = pCmd.doReduct(rating, propList, FreeCAD.__activePypeLine__, pos, Z, True, insertOnSmallerEnd)[-1]
 
         
         FreeCAD.activeDocument().commitTransaction()
@@ -1669,7 +1676,8 @@ class insertCapForm(dodoDialogs.protoPypeForm):
         else:
             # ── Butt-weld cap ────────────────────────────────────────────
             propList = [d["PSize"], float(pq(d["OD"])), float(pq(d["thk"]))]
-            self.lastCap = pCmd.doCaps(propList, FreeCAD.__activePypeLine__)[-1]
+            rating = self.ratingList.currentItem().text()
+            self.lastCap = pCmd.doCaps(rating, propList, FreeCAD.__activePypeLine__)[-1]
 
         FreeCAD.activeDocument().recompute()
         FreeCADGui.Selection.clearSelection()
@@ -3408,7 +3416,7 @@ class insertCouplingUnionForm(dodoDialogs.protoPypeForm):
             translate("insertCouplingUnionForm", "Insert coupling / union"),
             "Coupling",
             "3000lb_SW",
-            "fitting.svg",
+            "Quetzal_CouplingUnion.svg",
             x,
             y,
         )
@@ -3491,73 +3499,73 @@ class insertCouplingUnionForm(dodoDialogs.protoPypeForm):
         self.sizeList.setCurrentRow(0)
 
     # ── fillSizes override ────────────────────────────────────────────────────
-def fillSizes(self):
-    """Load the appropriate CSV and populate sizeList (and port-2 list for couplings)."""
-    self.sizeList.clear()
-    self.pipeDictList = []
+    def fillSizes(self):
+        """Load the appropriate CSV and populate sizeList (and port-2 list for couplings)."""
+        self.sizeList.clear()
+        self.pipeDictList = []
 
-    fname = self.PType + "_" + self.PRating + ".csv"
-    fpath = join(dirname(abspath(__file__)), "tablez", fname)
-    try:
-        with open(fpath, "r", encoding="utf-8-sig") as fh:
-            if self._isCoupling():
-                self.pipeDictList = list(csv.DictReader(fh, delimiter=";"))
-            else:
-                self.pipeDictList = list(
-                    csv.DictReader(fh, fieldnames=self._UNION_FIELDS, delimiter=";"))
-    except Exception:
-        return
+        fname = self.PType + "_" + self.PRating + ".csv"
+        fpath = join(dirname(abspath(__file__)), "tablez", fname)
+        try:
+            with open(fpath, "r", encoding="utf-8-sig") as fh:
+                if self._isCoupling():
+                    self.pipeDictList = list(csv.DictReader(fh, delimiter=";"))
+                else:
+                    self.pipeDictList = list(
+                        csv.DictReader(fh, fieldnames=self._UNION_FIELDS, delimiter=";"))
+        except Exception:
+            return
 
-    if self._isCoupling():
+        if self._isCoupling():
+            seen = []
+            for row in self.pipeDictList:
+                ps = row["PSize"]
+                if ps not in seen:
+                    seen.append(ps)
+                    if qu:
+                        label = qu.format_psize(ps) + "  " + qu.format_dim(row.get("OD", ""))
+                    else:
+                        label = ps + "  " + row.get("OD", "")
+                    self.sizeList.addItem(label)
+        else:
+            for row in self.pipeDictList:
+                if qu:
+                    label = qu.format_psize(row["PSize"]) + "  " + qu.format_dim(row.get("OD", ""))
+                else:
+                    label = row["PSize"] + "  " + row.get("OD", "")
+                self.sizeList.addItem(label)
+
+        self._fillPort2()
+
+    def _fillPort2(self):
+        """Populate _port2List with PSize2 options for the selected PSize."""
+        self._port2List.clear()
+        self._port2DictList = []
+
+        if not self._isCoupling() or not self.pipeDictList:
+            return
+
         seen = []
         for row in self.pipeDictList:
-            ps = row["PSize"]
-            if ps not in seen:
-                seen.append(ps)
-                if qu:
-                    label = qu.format_psize(ps) + "  " + qu.format_dim(row.get("OD", ""))
-                else:
-                    label = ps + "  " + row.get("OD", "")
-                self.sizeList.addItem(label)
-    else:
+            if row["PSize"] not in seen:
+                seen.append(row["PSize"])
+
+        idx = self.sizeList.currentRow()
+        if idx < 0 or idx >= len(seen):
+            return
+        run_psize = seen[idx]
+
         for row in self.pipeDictList:
+            if row["PSize"] != run_psize:
+                continue
+            self._port2DictList.append(row)
             if qu:
-                label = qu.format_psize(row["PSize"]) + "  " + qu.format_dim(row.get("OD", ""))
+                label = qu.format_psize(row.get("PSize2", "")) + "  " + qu.format_dim(row.get("OD2", ""))
             else:
-                label = row["PSize"] + "  " + row.get("OD", "")
-            self.sizeList.addItem(label)
+                label = row.get("PSize2", "") + "  " + row.get("OD2", "")
+            self._port2List.addItem(label)
 
-    self._fillPort2()
-
-def _fillPort2(self):
-    """Populate _port2List with PSize2 options for the selected PSize."""
-    self._port2List.clear()
-    self._port2DictList = []
-
-    if not self._isCoupling() or not self.pipeDictList:
-        return
-
-    seen = []
-    for row in self.pipeDictList:
-        if row["PSize"] not in seen:
-            seen.append(row["PSize"])
-
-    idx = self.sizeList.currentRow()
-    if idx < 0 or idx >= len(seen):
-        return
-    run_psize = seen[idx]
-
-    for row in self.pipeDictList:
-        if row["PSize"] != run_psize:
-            continue
-        self._port2DictList.append(row)
-        if qu:
-            label = qu.format_psize(row.get("PSize2", "")) + "  " + qu.format_dim(row.get("OD2", ""))
-        else:
-            label = row.get("PSize2", "") + "  " + row.get("OD2", "")
-        self._port2List.addItem(label)
-
-    self._port2List.setCurrentRow(0)
+        self._port2List.setCurrentRow(0)
 
     # ── insert ────────────────────────────────────────────────────────────────
 

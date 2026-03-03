@@ -611,7 +611,7 @@ def makeTerminalAdapter(rating,propList=[],pos=None,Z=None):
     a.Placement.Rotation = rot.multiply(a.Placement.Rotation)
 
 
-def makeElbow(propList=[], pos=None, Z=None):
+def makeElbow(propList=[], pos=None, Z=None, rating="SCH-STD"):
     """Adds an Elbow object
     makeElbow(propList,pos,Z);
       propList is one optional list with 5 elements:
@@ -631,9 +631,9 @@ def makeElbow(propList=[], pos=None, Z=None):
         Z = FreeCAD.Vector(0, 0, 1)
     a = FreeCAD.ActiveDocument.addObject("Part::FeaturePython", "Elbow")
     if len(propList) == 5:
-        pFeatures.Elbow(a, *propList)
+        pFeatures.Elbow(a, rating, *propList)
     else:
-        pFeatures.Elbow(a)
+        pFeatures.Elbow(a, rating)
     ViewProvider(a.ViewObject, "Quetzal_InsertElbow")
    
     # Rotate so port[0]'s local direction faces Z.
@@ -711,7 +711,7 @@ def makeElbowBetweenThings(thing1=None, thing2=None, propList=None):
     return elb
 
 
-def doElbow(propList=["DN50", 60.3, 3, 90, 45.225], pypeline=None):
+def doElbow(rating="SCH-STD", propList=["DN50", 60.3, 3, 90, 45.225], pypeline=None):
     """
     propList = [
       DN (string): nominal diameter
@@ -725,7 +725,7 @@ def doElbow(propList=["DN50", 60.3, 3, 90, 45.225], pypeline=None):
     FreeCAD.activeDocument().openTransaction(translate("Transaction", "Insert elbow"))
     selex = FreeCADGui.Selection.getSelectionEx()
     if len(selex) == 0:  # no selection -> insert one elbow at origin
-        elist.append(makeElbow(propList))
+        elist.append(makeElbow(propList, rating=rating))
     elif len(selex) == 1 and len(selex[0].SubObjects) == 1:  # one selection -> ...
                
         #first, if a an object with ports is selected and edges, faces, or vertices are selected, insert the component at the closest port to the 
@@ -740,13 +740,13 @@ def doElbow(propList=["DN50", 60.3, 3, 90, 45.225], pypeline=None):
         
         pos, Z, srcObj, srcPort = getAttachmentPoints()
         if usablePorts:
-            elb = makeElbow(propList, pos, Z)
+            elb = makeElbow(propList, pos, Z, rating=rating)
             elist.append(elb)
             FreeCAD.activeDocument().commitTransaction()
             FreeCAD.activeDocument().recompute()
             alignTwoPorts(elb, 0, srcObj, srcPort)
         else:
-            elist.append(makeElbow(propList, pos, Z))
+            elist.append(makeElbow(propList, pos, Z, rating=rating))
 
     else:  # multiple selection -> insert one elbow at intersection of two edges or beams or pipes ##
         things = []
@@ -772,7 +772,7 @@ def doElbow(propList=["DN50", 60.3, 3, 90, 45.225], pypeline=None):
     return elist
 
 
-def makeFlange(propList=[], pos=None, Z=None,doOffset=None):
+def makeFlange(propList=[], pos=None, Z=None, doOffset=None, rating="DIN-PN16"):
     """Adds a Flange object
     makeFlange(propList,pos,Z);
       propList is one optional list with 8 elements:
@@ -804,9 +804,9 @@ def makeFlange(propList=[], pos=None, Z=None,doOffset=None):
         Z = FreeCAD.Vector(0, 0, 1)
     a = FreeCAD.ActiveDocument.addObject("Part::FeaturePython", "Flange")
     if len(propList) >= 8:
-        pFeatures.Flange(a, *propList)
+        pFeatures.Flange(a, rating, *propList)
     else:
-        pFeatures.Flange(a)
+        pFeatures.Flange(a, rating)
     ViewProvider(a.ViewObject, "Quetzal_InsertFlange")
     a.Placement.Base = pos
     rot = FreeCAD.Rotation(FreeCAD.Vector(0, 0, 1), Z)
@@ -829,9 +829,10 @@ def makeFlange(propList=[], pos=None, Z=None,doOffset=None):
 
 
 def doFlanges(
+    rating="DIN-PN16",
     propList=["DN50", "SO", 160, 60.3, 132, 14, 15, 4, 0, 0, 0, 0, 0, 0, 0],
     pypeline=None,
-    doOffset=None, 
+    doOffset=None,
     attachFace=None #TODO add radio buttons to flange insertion form for whether to attach flange at face or neck
 ):
     """
@@ -876,7 +877,7 @@ def doFlanges(
         pos, Z, srcObj, srcPort = getAttachmentPoints()
 
         if usablePorts:
-            flange = makeFlange(propList, pos, Z, doOffset)
+            flange = makeFlange(propList, pos, Z, doOffset, rating=rating)
             flist.append(flange)
             
             #if we need to remove pipe equivalent length
@@ -902,7 +903,7 @@ def doFlanges(
 
 
         else:
-            flist.append(makeFlange(propList, pos, Z, doOffset))
+            flist.append(makeFlange(propList, pos, Z, doOffset, rating=rating))
     except:
         #nothing selected, insert at origin
         flist.append(makeFlange(propList))
@@ -969,7 +970,7 @@ def doFlanges(
     return flist
 
 
-def makeReduct(propList=[], pos=None, Z=None, conc=True, smallerEnd = False):
+def makeReduct(propList=[], pos=None, Z=None, conc=True, smallerEnd=False, rating="SCH-STD"):
     """Adds a Reduct object
     makeReduct(propList=[], pos=None, Z=None, conc=True)
       propList is one optional list with 6 elements:
@@ -990,7 +991,7 @@ def makeReduct(propList=[], pos=None, Z=None, conc=True, smallerEnd = False):
         Z = FreeCAD.Vector(0, 0, 1)
     a = FreeCAD.ActiveDocument.addObject("Part::FeaturePython", "Reduction")
     propList.append(conc)
-    pFeatures.Reduct(a, *propList)
+    pFeatures.Reduct(a, rating, *propList)
     ViewProvider(a.ViewObject, "Quetzal_InsertReduct")
     a.Placement.Base = pos
     rot = FreeCAD.Rotation(FreeCAD.Vector(0, 0, 1), Z)
@@ -1005,7 +1006,7 @@ def makeReduct(propList=[], pos=None, Z=None, conc=True, smallerEnd = False):
     a.Label = translate("Objects", "Reduct")
     return a
 
-def doReduct(propList=[], pypeline=None,  pos=None, Z=None, conc=True, smallerEnd = False):
+def doReduct(rating="SCH-STD", propList=[], pypeline=None, pos=None, Z=None, conc=True, smallerEnd=False):
     """propList[] = 
       PSize (string): nominal diameter
         OD (float): major diameter
@@ -1037,16 +1038,16 @@ def doReduct(propList=[], pypeline=None,  pos=None, Z=None, conc=True, smallerEn
         
         pos, Z, srcObj, srcPort = getAttachmentPoints()
         if usablePorts:
-            reduct = makeReduct(propList, pos, Z, conc, smallerEnd)
+            reduct = makeReduct(propList, pos, Z, conc, smallerEnd, rating=rating)
             plist.append(reduct)
             FreeCAD.activeDocument().commitTransaction()
             FreeCAD.activeDocument().recompute()
             alignTwoPorts(reduct, connecting_port, srcObj, srcPort)
         else:
-            plist.append(makeReduct(propList, pos, Z, conc, smallerEnd))
+            plist.append(makeReduct(propList, pos, Z, conc, smallerEnd, rating=rating))
     except:
         #nothing selected, insert at origin
-        plist.append(makeReduct(propList, pos, Z, conc, smallerEnd))
+        plist.append(makeReduct(propList, pos, Z, conc, smallerEnd, rating=rating))
         
     if pypeline:
         for p in plist:
@@ -1106,7 +1107,7 @@ def makeShell(L=1000, W=1500, H=1500, thk1=6, thk2=8):
     return a
 
 
-def makeCap(propList=[], pos=None, Z=None):
+def makeCap(propList=[], pos=None, Z=None, rating="SCH-STD"):
     """add a Cap object
     makeCap(propList,pos,Z);
     propList is one optional list with 3 elements:
@@ -1125,9 +1126,9 @@ def makeCap(propList=[], pos=None, Z=None):
         Z = FreeCAD.Vector(0, 0, 1)
     a = FreeCAD.ActiveDocument.addObject("Part::FeaturePython", "Cap")
     if len(propList) == 3:
-        pFeatures.Cap(a, *propList)
+        pFeatures.Cap(a, rating, *propList)
     else:
-        pFeatures.Cap(a)
+        pFeatures.Cap(a, rating)
     ViewProvider(a.ViewObject, "Quetzal_InsertCap")
     a.Placement.Base = pos
     rot = FreeCAD.Rotation(FreeCAD.Vector(0, 0, 1), Z)
@@ -1137,7 +1138,7 @@ def makeCap(propList=[], pos=None, Z=None):
     
     
 
-def doCaps(propList=["DN50", 60.3, 3], pypeline=None):
+def doCaps(rating="SCH-STD", propList=["DN50", 60.3, 3], pypeline=None):
     """
     propList = [
       DN (string): nominal diameter
@@ -1160,16 +1161,16 @@ def doCaps(propList=["DN50", 60.3, 3], pypeline=None):
         
         pos, Z, srcObj, srcPort = getAttachmentPoints()
         if usablePorts:
-            cap = makeCap(propList, pos, Z)
+            cap = makeCap(propList, pos, Z, rating=rating)
             plist.append(cap)
             FreeCAD.activeDocument().commitTransaction()
             FreeCAD.activeDocument().recompute()
             alignTwoPorts(cap, 0, srcObj, srcPort)
         else:
-            plist.append(makeCap(propList, pos, Z))
+            plist.append(makeCap(propList, pos, Z, rating=rating))
     except:
         #nothing selected, insert at origin
-        plist.append(makeCap(propList))
+        plist.append(makeCap(propList, rating=rating))
         
     if pypeline:
         for p in plist:
@@ -1179,7 +1180,7 @@ def doCaps(propList=["DN50", 60.3, 3], pypeline=None):
     return plist
     
     
-def makeTee(propList=[], pos=None, Z=None, insertOnBranch = False):
+def makeTee(propList=[], pos=None, Z=None, insertOnBranch=False, rating="SCH-STD"):
     """add a Tee object
     makeTee(propList,pos,Z);
     propList is one optional list with 7 elements:
@@ -1193,8 +1194,7 @@ def makeTee(propList=[], pos=None, Z=None, insertOnBranch = False):
     Default is "DN50 (SCH-STD)"
     pos (vector): position of insertion; default = 0,0,0
     Z (vector): orientation: default = 0,0,1
-    insertOnBranch = Boolean 
-    Remember: property PRating must be defined afterwards
+    insertOnBranch = Boolean
     """
     if pos == None:
         pos = FreeCAD.Vector(0, 0, 0)
@@ -1202,9 +1202,9 @@ def makeTee(propList=[], pos=None, Z=None, insertOnBranch = False):
         Z = FreeCAD.Vector(0, 0, 1)
     a = FreeCAD.ActiveDocument.addObject("Part::FeaturePython", "Tee")
     if len(propList) == 7:
-        pFeatures.Tee(a, *propList)
+        pFeatures.Tee(a, rating, *propList)
     else:
-        pFeatures.Tee(a)
+        pFeatures.Tee(a, rating)
     ViewProvider(a.ViewObject, "Quetzal_InsertTee")
 
     a.Placement.Base = pos
@@ -1230,7 +1230,7 @@ def makeTee(propList=[], pos=None, Z=None, insertOnBranch = False):
     return a
 
 
-def doTees(propList=["DN150", 168.27, 114.3,7.11,6.02,178,156], pypeline=None, insertOnBranch=False):
+def doTees(rating="SCH-STD", propList=["DN150", 168.27, 114.3,7.11,6.02,178,156], pypeline=None, insertOnBranch=False):
     """
     propList = [
        DN (string): nominal diameter
@@ -1264,13 +1264,13 @@ def doTees(propList=["DN150", 168.27, 114.3,7.11,6.02,178,156], pypeline=None, i
         
         pos, Z, srcObj, srcPort = getAttachmentPoints()
         if usablePorts:
-            tee = makeTee(propList, pos, Z, insertOnBranch)
+            tee = makeTee(propList, pos, Z, insertOnBranch, rating=rating)
             plist.append(tee)
             FreeCAD.activeDocument().commitTransaction()
             FreeCAD.activeDocument().recompute()
             alignTwoPorts(tee, insertion_port, srcObj, srcPort)
         else:
-            plist.append(makeTee(propList, pos, Z, insertOnBranch))
+            plist.append(makeTee(propList, pos, Z, insertOnBranch, rating=rating))
     except:
         #nothing selected, insert at origin
         plist.append(makeTee(propList, None, None, insertOnBranch))
@@ -2664,9 +2664,9 @@ def doOutlets(propList=None, pypeline=None,
     FreeCAD.activeDocument().recompute()
     return [obj]
 
-def makeSocketElbow(propList=[], pos=None, Z=None):
+def makeSocketElbow(propList=[], pos=None, Z=None, rating="3000lb"):
     """Adds a SocketEll object.
-    makeSocketElbow(propList, pos, Z)
+    makeSocketElbow(propList, pos, Z, rating=rating)
       propList is one optional list with 8 elements:
         PSize     (string): nominal diameter
         OD        (float):  connecting pipe outside diameter
@@ -2688,9 +2688,9 @@ def makeSocketElbow(propList=[], pos=None, Z=None):
         Z = FreeCAD.Vector(0, 0, 1)
     a = FreeCAD.ActiveDocument.addObject("Part::FeaturePython", "SocketElbow")
     if len(propList) == 9:
-        pFeatures.SocketEll(a, *propList)
+        pFeatures.SocketEll(a, rating, *propList)
     else:
-        pFeatures.SocketEll(a)
+        pFeatures.SocketEll(a, rating)
     ViewProvider(a.ViewObject, "Quetzal_InsertElbow")
     # Rotate so port[0]'s local direction faces Z.
     # SocketEll port[0] direction is (1,0,0) — local +X, not +Z — so the
@@ -2706,7 +2706,7 @@ def makeSocketElbow(propList=[], pos=None, Z=None):
     return a
 
 
-def doSocketElbow(propList=["DN25", 33.4, 90, 35.0, 5.0, 25.4, 22.0, 5.455, "SW"], pypeline=None):
+def doSocketElbow(rating="3000lb", propList=["DN25", 33.4, 90, 35.0, 5.0, 25.4, 22.0, 5.455, "SW"], pypeline=None):
     """
     Insert a SocketEll fitting, aligning it to the selected port when possible.
 
@@ -2742,16 +2742,16 @@ def doSocketElbow(propList=["DN25", 33.4, 90, 35.0, 5.0, 25.4, 22.0, 5.455, "SW"
         
         pos, Z, srcObj, srcPort = getAttachmentPoints()
         if usablePorts:
-            socketEll = makeSocketElbow(propList, pos, Z)
+            socketEll = makeSocketElbow(propList, pos, Z, rating=rating)
             elist.append(socketEll)
             FreeCAD.activeDocument().commitTransaction()
             FreeCAD.activeDocument().recompute()
             alignTwoPorts(socketEll, 0, srcObj, srcPort)
         else:
-            elist.append(makeSocketElbow(propList, pos, Z))
+            elist.append(makeSocketElbow(propList, pos, Z, rating=rating))
     except:
         #nothing selected, insert at origin
-        elist.append(makeSocketElbow(propList))
+        elist.append(makeSocketElbow(propList, rating=rating))
         
     if pypeline:
         for e in elist:
@@ -2761,9 +2761,9 @@ def doSocketElbow(propList=["DN25", 33.4, 90, 35.0, 5.0, 25.4, 22.0, 5.455, "SW"
     return elist
 
 
-def makeSocketTee(propList=[], pos=None, Z=None, insertOnBranch=False):
+def makeSocketTee(propList=[], pos=None, Z=None, insertOnBranch=False, rating="3000lb"):
     """Adds a SocketTee object.
-    makeSocketTee(propList, pos, Z, insertOnBranch)
+    makeSocketTee(propList, pos, Z, insertOnBranch, rating=rating)
       propList is one optional list with 10 elements:
         PSize       (string): nominal diameter of run
         PSizeBranch (string): nominal diameter of branch
@@ -2787,9 +2787,9 @@ def makeSocketTee(propList=[], pos=None, Z=None, insertOnBranch=False):
         Z = FreeCAD.Vector(0, 0, 1)
     a = FreeCAD.ActiveDocument.addObject("Part::FeaturePython", "SocketTee")
     if len(propList) == 10:
-        pFeatures.SocketTee(a, *propList)
+        pFeatures.SocketTee(a, rating, *propList)
     else:
-        pFeatures.SocketTee(a)
+        pFeatures.SocketTee(a, rating)
     ViewProvider(a.ViewObject, "Quetzal_InsertTee")
 
     # Choose the insertion port and read its local direction from the object.
@@ -2810,7 +2810,7 @@ def makeSocketTee(propList=[], pos=None, Z=None, insertOnBranch=False):
     return a
 
 
-def doSocketTee(propList=["DN25", "DN25", 33.4, 33.4, 35.0, 5.0, 25.4, 22.0, 5.455, "SW"],
+def doSocketTee(rating="3000lb", propList=["DN25", "DN25", 33.4, 33.4, 35.0, 5.0, 25.4, 22.0, 5.455, "SW"],
                 pypeline=None, insertOnBranch=False):
     """
     Insert a SocketTee fitting, aligning it to the selected port when possible.
@@ -2849,13 +2849,13 @@ def doSocketTee(propList=["DN25", "DN25", 33.4, 33.4, 35.0, 5.0, 25.4, 22.0, 5.4
 
         pos, Z, srcObj, srcPort = getAttachmentPoints()
         if usablePorts:
-            tee = makeSocketTee(propList, pos, Z, insertOnBranch)
+            tee = makeSocketTee(propList, pos, Z, insertOnBranch, rating=rating)
             plist.append(tee)
             FreeCAD.activeDocument().commitTransaction()
             FreeCAD.activeDocument().recompute()
             alignTwoPorts(tee, insertion_port, srcObj, srcPort)
         else:
-            plist.append(makeSocketTee(propList, pos, Z, insertOnBranch))
+            plist.append(makeSocketTee(propList, pos, Z, insertOnBranch, rating=rating))
     except Exception:
         # Nothing selected — insert at origin.
         plist.append(makeSocketTee(propList, insertOnBranch=insertOnBranch))

@@ -278,12 +278,12 @@ class Elbow(pypeType):
       BA (float): bend angle
       BR (float): bend radius"""
 
-    def __init__(self, obj, DN="DN50", OD=60.3, thk=3, BA=90, BR=45.225):
+    def __init__(self, obj, rating="SCH-STD", DN="DN50", OD=60.3, thk=3, BA=90, BR=45.225):
         # initialize the parent class
         super(Elbow, self).__init__(obj)
         # define common properties
         obj.PType = "Elbow"
-        obj.PRating = "SCH-STD"
+        obj.PRating = rating
         obj.PSize = DN
         # define specific properties
         obj.addProperty(
@@ -409,6 +409,7 @@ class Flange(pypeType):
     def __init__(
         self,
         obj,
+        rating="DIN-PN16",
         DN="DN50",
         FlangeType="SO",
         D=160,
@@ -433,7 +434,7 @@ class Flange(pypeType):
         self.Type = "Flange"
         obj.Proxy = self
         obj.PType = "Flange"
-        obj.PRating = "DIN-PN16"
+        obj.PRating = rating
         obj.PSize = DN
         # define specific properties
         obj.addProperty(
@@ -704,13 +705,13 @@ class SocketEll(pypeType):
       Conn (string): Connection type (SW=Socket Weld, TH=Threaded)
 
     """
-    def __init__(self, obj, PSize="DN25", OD=33.4, BendAngle=90, A=35.0, C=5.0, D=25.4, E=22.0, G=5.455, Conn="SW"):
+    def __init__(self, obj, rating="3000lb", PSize="DN25", OD=33.4, BendAngle=90, A=35.0, C=5.0, D=25.4, E=22.0, G=5.455, Conn="SW"):
         # initialize the parent class
         super(SocketEll, self).__init__(obj)
         # define common properties
         obj.Proxy = self
         obj.PType = "SocketEll"
-        obj.PRating = "3000lb"
+        obj.PRating = rating
         obj.PSize = PSize
         # define specific properties
         obj.addProperty(
@@ -827,13 +828,13 @@ class Tee(pypeType):
       C (float): Length from branch centerline to run edge
       M (float): Length from run centerline to branch edge. If None, assumes same length as run
     """
-    def __init__(self, obj, DN="DN150", OD=168.27, OD2=168.27,thk=7.11,thk2=7.11,C=178.0,M=178.0):
+    def __init__(self, obj, rating="SCH-STD", DN="DN150", OD=168.27, OD2=168.27,thk=7.11,thk2=7.11,C=178.0,M=178.0):
          # initialize the parent class
         super(Tee, self).__init__(obj)
          # define common properties
         obj.Proxy = self
         obj.PType = "Tee"
-        obj.PRating = "SCH-STD"
+        obj.PRating = rating
         obj.PSize = DN
         # define specific properties
         obj.addProperty(
@@ -1024,7 +1025,7 @@ class SocketTee(pypeType):
       Origin     : centre of the tee body
     """
 
-    def __init__(self, obj,
+    def __init__(self, obj, rating="3000lb",
                  PSize="DN25", PSizeBranch="DN25",
                  OD=33.4, OD2=33.4,
                  A=35.0, C=5.0, D=25.4, E=22.0, G=4.55,
@@ -1035,7 +1036,7 @@ class SocketTee(pypeType):
         # ── common pype properties ────────────────────────────────────────────
         obj.Proxy   = self
         obj.PType   = "SocketTee"
-        obj.PRating = "3000lb"
+        obj.PRating = rating
         obj.PSize   = PSize
 
         # ── specific properties ───────────────────────────────────────────────
@@ -1206,13 +1207,13 @@ class Reduct(pypeType):
     If H is None or 0, the length of the reduction is calculated as 3x(OD-OD2).
     """
 
-    def __init__(self, obj, DN="DN50", OD=60.3, OD2=48.3, thk=3, thk2=None, H=None, conc=True):
+    def __init__(self, obj, rating="SCH-STD", DN="DN50", OD=60.3, OD2=48.3, thk=3, thk2=None, H=None, conc=True):
         # initialize the parent class
         super(Reduct, self).__init__(obj)
         # define common properties
         obj.Proxy = self
         obj.PType = "Reduct"
-        obj.PRating = "SCH-STD"
+        obj.PRating = rating
         obj.PSize = DN
         # define specific properties
         obj.addProperty(
@@ -1328,13 +1329,13 @@ class Cap(pypeType):
       OD (float): outside diameter
       thk (float): shell thickness"""
 
-    def __init__(self, obj, DN="DN50", OD=60.3, thk=3):
+    def __init__(self, obj, rating="SCH-STD", DN="DN50", OD=60.3, thk=3):
         # initialize the parent class
         super(Cap, self).__init__(obj)
         # define common properties
         obj.PType = "Cap"
         obj.Proxy = self
-        obj.PRating = "SCH-STD"
+        obj.PRating = rating
         obj.PSize = DN
         # define specific properties
         obj.addProperty(
