@@ -66,6 +66,54 @@ Read our [CHANGELOG] file to know about the latest changes.
 
 Read our [CONTRIBUTING] file to know about ways how to help on the workbench.
 
+## Roadmap
+Here are some of the planned developments for this Workbench:
+
+- [ ] Icrease valve design detail
+- [ ] Add HVAC duct support.
+  - [ ] Elbow
+  - [ ] Reduction
+  - [ ] Branch
+  - [ ] Round duct
+  - [ ] Square duct
+  - [ ] Oval duct
+- [ ] Support, if possible, fitting & frame profiles types:
+  - [X] Pipe
+  - [X] Elbow
+  - [X] Cap
+  - [X] Gasket
+  - [X] Reduction
+  - [X] Coupling
+  - [X] Flange
+  - [ ] Valve
+    - [ ] Gate Valve
+    - [ ] Plug Valve
+    - [X] Ball Valve
+    - [ ] Check Valve
+    - [ ] Globe Valve
+    - [X] Butterfly Valve
+    - [ ] Needle Valve
+    - [ ] Knife gate Valve
+    - [ ] Pinch Valve
+  - [ ] Pipe Clamping
+    - [X] U-bolt clamp
+    - [ ] Beam clamp
+  - [ ] Beam joins
+- [ ] Support, if possible, International design standarts:
+  - [ ] ASME B16.5 (NPS 1/2 to 24")
+  - [ ] ASME B16.47 (NPS 26 to 60")
+  - [ ] ASME B16.36 (orifice flange)
+  - [ ] DIN 2527 (Blink flange)
+  - [ ] DIN 2543 PN16 (Flat face for welding slip on flange)
+  - [ ] DIN 2544 PN25 (Flat face for welding slip on flange)
+  - [ ] DIN 2545 PN40 (Flat face for welding slip on flange)
+  - [ ] ISO 7005-1 PN10 Raise Face(EN 1092-1 equivalent)
+  - [ ] ISO 7005-1 PN16 Raise Face(EN 1092-1 equivalent)
+  - [ ] ISO 7005-1 PN25 Raise Face(EN 1092-1 equivalent)
+  - [ ] ISO 7005-1 PN40 Raise Face(EN 1092-1 equivalent)
+  - [ ] ISO 7005-1 PN64 Raise Face(EN 1092-1 equivalent)
+  - [ ] ISO 7005-1 PN100 Raise Face(EN 1092-1 equivalent)
+
 ## Links
 
 - [FreeCAD Site main page](https://www.freecad.org/)

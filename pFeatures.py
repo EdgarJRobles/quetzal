@@ -115,7 +115,6 @@ class pypeType(object):
                             nearest = i
                 return nearest, pos, Z
 
-
 class Pipe(pypeType):
     """Class for object PType="Pipe"
     Pipe(obj,[PSize="DN50",OD=60.3,thk=3, H=100])
@@ -206,7 +205,6 @@ class Pipe(pypeType):
         fp.PortDirections = [FreeCAD.Vector(0, 0, -1), FreeCAD.Vector(0, 0, 1)] 
         super(Pipe, self).execute(fp)  # perform common operations
 
-
 class TerminalAdapter(pypeType):
     """Class for objet Ptype="TerminalAdapter"
       obj: the "App::FeaturePython" object
@@ -267,7 +265,6 @@ class TerminalAdapter(pypeType):
         fp.Shape = cutres2
         super(TerminalAdapter, self).execute(fp)  # perform common operations
 
-
 class Elbow(pypeType):
     """Class for object PType="Elbow"
       Elbow(obj,[PSize="DN50",OD=60.3,thk=3,BA=90,BR=45.225])
@@ -282,6 +279,7 @@ class Elbow(pypeType):
         # initialize the parent class
         super(Elbow, self).__init__(obj)
         # define common properties
+        obj.Proxy=self
         obj.PType = "Elbow"
         obj.PRating = rating
         obj.PSize = DN
@@ -385,7 +383,6 @@ class Elbow(pypeType):
                 super(Elbow, self).execute(fp)  # perform common operations
             except Part.OCCError as occer:
                 FreeCAD.Console.PrintWarning(str(occer) + "\n")
-
 
 class Flange(pypeType):
     """Class for object PType="Flange"
@@ -1320,7 +1317,6 @@ class Reduct(pypeType):
             fp.PortDirections = [FreeCAD.Vector(0, 0, -1), FreeCAD.Vector(0, 0, 1)] #in either case, ports face +Z and -Z
         super(Reduct, self).execute(fp)  # perform common operations
 
-
 class Cap(pypeType):
     """Class for object PType="Cap"
     Cap(obj,[PSize="DN50",OD=60.3,thk=3])
@@ -1390,7 +1386,6 @@ class Cap(pypeType):
         fp.Ports = [FreeCAD.Vector()]
         fp.PortDirections = [FreeCAD.Vector(0, 0, -1)]
         super(Cap, self).execute(fp)  # perform common operations
-
 
 class PypeLine2(pypeType):
     """Class for object PType="PypeLine2"
@@ -1504,7 +1499,6 @@ class PypeLine2(pypeType):
     def execute(self, fp):
         return None
 
-
 class ViewProviderPypeLine:
     def __getstate__(self):
         return None
@@ -1530,7 +1524,6 @@ class ViewProviderPypeLine:
         def attach(self, vobj):
             self.ViewObject = vobj
             self.Object = vobj.Object
-
 
 class Ubolt:
     """Class for object PType="Clamp"
@@ -1613,7 +1606,6 @@ class Ubolt:
         fp.Shape = path.makePipe(p)
         fp.Ports = [FreeCAD.Vector(0, 0, 1)] #not quite sure why a U-bolt has a port?
 
-
 class Shell:
     """
     Class for a lateral-shell-of-tank object
@@ -1686,7 +1678,6 @@ class Shell:
         )
         fp.Shape = Part.makeCompound([tank, top])
 
-
 class ViewProviderPypeBranch:
     def __init__(self, vobj):
         vobj.Proxy = self
@@ -1730,7 +1721,6 @@ class ViewProviderPypeBranch:
 
     def onDelete(self, feature, subelements):  # subelements is a tuple of strings
         return True
-
 
 class Valve(pypeType):
     """Class for object PType="Valve"
@@ -1780,7 +1770,6 @@ class Valve(pypeType):
         fp.Ports = [FreeCAD.Vector(), FreeCAD.Vector(0, 0, float(fp.Height))]
         fp.PortDirections = [FreeCAD.Vector(0,0,-1), FreeCAD.Vector(0, 0, 1)]
         super(Valve, self).execute(fp)  # perform common operations
-
 
 class PypeBranch2(pypeType):  # use AttachExtensionPython
     """Class for object PType="PypeBranch2"
