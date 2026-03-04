@@ -335,7 +335,8 @@ class DialogQM(QtGui.QDialog):
         self.PRating = self.QM.comboRating.currentText()
         for fileName in self.files:  # adds sizes in list
             if fileName == self.PType + "_" + self.PRating + ".csv":
-                f = open(join(dirname(abspath(__file__)), "tablez", fileName), "r")
+                f = open(join(dirname(abspath(__file__)), "tablez", fileName), "r",
+                         encoding="utf-8-sig")
                 reader = csv.DictReader(f, delimiter=";")
                 self.dictList = [DNx for DNx in reader]
                 f.close()
@@ -493,8 +494,17 @@ class cQM(DialogQM):
 
     def go(self):
         d = self.dictList[self.QM.listSize.currentRow()]
-        proplist = []
-        pCmd.doCaps([d["PSize"], float(d["OD"]), float(d["thk"])], FreeCAD.__activePypeLine__)
+        if d.get("Conn", "").strip().upper() in ("SW", "TH"):
+            # Socket-weld / threaded cap
+            pCmd.doSocketCap(
+                [d["PSize"], float(d["OD"]), float(d["A"]),
+                 float(d["C"]), float(d["E"]), d["Conn"]],
+                FreeCAD.__activePypeLine__)
+        else:
+            # Butt-weld cap
+            pCmd.doCaps(
+                [d["PSize"], float(d["OD"]), float(d["thk"])],
+                FreeCAD.__activePypeLine__)
         super(cQM, self).go()
 
 class tQM(DialogQM):
@@ -503,9 +513,23 @@ class tQM(DialogQM):
 
     def go(self):
         d = self.dictList[self.QM.listSize.currentRow()]
-        proplist = []
-        pCmd.doCaps([d["PSize"], float(d["OD"]), float(d["OD2"]), float(d["thk"]), float(d["thk2"])],float(d["C"]),  float(d["M"]), FreeCAD.__activePypeLine__)
-        super(cQM, self).go()
+        if d.get("Conn", "").strip().upper() in ("SW", "TH"):
+            # Socket-weld / threaded tee
+            pCmd.doSocketTee(
+                [d["PSize"], d.get("PSizeBranch", d["PSize"]),
+                 float(d["OD"]), float(d["OD2"]),
+                 float(d["A"]), float(d["C"]),
+                 float(d["D"]), float(d["E"]),
+                 float(d["G"]), d["Conn"]],
+                FreeCAD.__activePypeLine__)
+        else:
+            # Butt-weld tee
+            pCmd.doTees(
+                [d["PSize"], float(d["OD"]), float(d["OD2"]),
+                 float(d["thk"]), float(d["thk2"]),
+                 float(d["C"]), float(d["M"])],
+                FreeCAD.__activePypeLine__)
+        super(tQM, self).go()
 
 # create instances of qkMenu dialogs
 pqm = pQM()

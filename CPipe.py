@@ -254,6 +254,30 @@ class insertBranch:
             "ToolTip": QT_TRANSLATE_NOOP("Quetzal_InsertBranch", "Insert a PypeBranch"),
         }
 
+class _InsertCouplingUnionCmd:
+    """FreeCAD Gui command — opens the coupling/union insertion dialog."""
+
+    def GetResources(self):
+        # Re-use the generic fitting icon; replace with a dedicated one if available.
+        from quetzal_config import ICONPATH
+        return {
+            "Pixmap":  "Quetzal_CouplingUnion.svg",
+            "MenuText": QT_TRANSLATE_NOOP("Quetzal", "Insert Coupling / Union"),
+            "ToolTip":  QT_TRANSLATE_NOOP(
+                "Quetzal",
+                "Insert a socket-weld or threaded coupling or union fitting"),
+            "Accel":    "",
+        }
+
+    def IsActive(self):
+        return FreeCAD.activeDocument() is not None
+
+    def Activated(self):
+        import pForms
+        pForms.insertCouplingUnionForm()
+
+
+
 
 class breakPipe:
     def IsActive(self):
@@ -644,7 +668,44 @@ class makeHeader:
             ),
         }
 
+class insertBeam:
+    def IsActive(self):
+        return FreeCAD.ActiveDocument is not None
 
+    def Activated(self):
+        import pForms
+        pForms.insertBeamForm()
+
+    def GetResources(self):
+        return {
+            "Pixmap": "Quetzal_InsertSection",
+            "MenuText": QT_TRANSLATE_NOOP("Quetzal_InsertBeam", "Insert beam section"),
+            "ToolTip":  QT_TRANSLATE_NOOP("Quetzal_InsertBeam",
+                "Insert a structural beam section. Select a port, edge, vertex, "
+                "or nothing to place at origin."),
+        }
+
+class insertOutlet:
+    """FreeCAD command: open the Insert Outlet dialog."""
+
+    def Activated(self):
+        import pForms
+        outletForm = pForms.insertOutletForm()
+
+    def IsActive(self):
+        return FreeCAD.activeDocument() is not None
+
+    def GetResources(self):
+        return {
+            "Pixmap":   "Quetzal_InsertOutlet",
+            "MenuText": QT_TRANSLATE_NOOP("Quetzal_InsertOutlet",
+                                          "Insert outlet"),
+            "ToolTip":  QT_TRANSLATE_NOOP("Quetzal_InsertOutlet",
+                        "Insert a branch-connection outlet fitting "
+                        "(Butt weld/socket weld|Straight/45 lateral)"),
+        }
+
+addCommand("Quetzal_InsertOutlet", insertOutlet())
 # ---------------------------------------------------------------------------
 # Adds the commands to the FreeCAD command manager
 # ---------------------------------------------------------------------------
@@ -656,6 +717,7 @@ addCommand("Quetzal_InsertTee", insertTee())
 addCommand("Quetzal_InsertValve", insertValve())
 addCommand("Quetzal_InsertFlange", insertFlange())
 addCommand("Quetzal_InsertGasket", insertGasket())
+addCommand("Quetzal_InsertCoupling", _InsertCouplingUnionCmd())
 addCommand("Quetzal_InsertUBolt", insertUbolt())
 addCommand("Quetzal_InsertPypeLine", insertPypeLine())
 addCommand("Quetzal_InsertBranch", insertBranch())
@@ -674,7 +736,7 @@ addCommand("Quetzal_Point2Point", point2point())
 addCommand("Quetzal_InsertAnyShape", insertAnyz())
 addCommand("Quetzal_MakeHeader", makeHeader())
 addCommand("Quetzal_InsertTerminalAdapter", insertTerminalAdapter())
-
+addCommand("Quetzal_InsertBeam", insertBeam())
 
 ### QkMenus ###
 class pipeQM:

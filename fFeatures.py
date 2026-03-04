@@ -2191,3 +2191,263 @@ class _ProfileU(_Profile):
             obj.t3.Value,
         )
         obj.Shape = drawAndCenter(pointsU(H, W, D, t1, t2, t3))
+# ─────────────────────────────────────────────────────────────
+# Beam — a structural section object modelled after pypeType
+# ─────────────────────────────────────────────────────────────
+
+class beamType(object):
+    """Base class shared by all Beam objects."""
+
+    def __init__(self, obj):
+        obj.addProperty(
+            "App::PropertyString", "FType", "BBase",
+            QT_TRANSLATE_NOOP("App::Property", "Type of frameFeature"),
+        )
+        obj.addProperty(
+            "App::PropertyString", "FRating", "BBase",
+            QT_TRANSLATE_NOOP("App::Property", "Section standard / rating"),
+        )
+        obj.addProperty(
+            "App::PropertyString", "SSize", "BBase",
+            QT_TRANSLATE_NOOP("App::Property", "Section designation"),
+        )
+        obj.addProperty(
+            "App::PropertyVectorList", "Ports", "BBase",
+            QT_TRANSLATE_NOOP("App::Property", "Port positions in local coordinates"),
+        )
+        obj.addProperty(
+            "App::PropertyVectorList", "PortDirections", "BBase",
+            QT_TRANSLATE_NOOP("App::Property", "Port outward direction vectors"),
+        )
+        if FREECADVERSION > 0.19:
+            obj.addExtension("Part::AttachExtensionPython")
+        else:
+            obj.addExtension("Part::AttachExtensionPython", obj)
+        self.Name = obj.Name
+
+    def execute(self, fp):
+        fp.positionBySupport()
+
+
+class Beam(beamType):
+    """
+    Beam(obj, rating, SSize, stype, H, W, ta, tf)
+      obj    : App::FeaturePython object
+      rating : section standard string, e.g. "HEA", "IPE", "SHS"
+      SSize  : section designation string, e.g. "HEA200"
+      stype  : profile type code: "H", "R", "RH", "U", "L", "T", "circle"
+      H      : overall height (mm)
+      W      : overall width (mm)
+      ta     : web thickness (mm)   -- 0 for solid rectangular / circular
+      tf     : flange thickness (mm)-- 0 for solid rectangular / circular
+      Height : beam length (mm)
+    """
+
+    def __init__(
+        self,
+        obj,
+        rating="HEA",
+        SSize="HEA200",
+        stype="H",
+        H=190.0,
+        W=200.0,
+        ta=6.5,
+        tf=10.0,
+        Height=1000.0,
+    ):
+        super(Beam, self).__init__(obj)
+        obj.FType = "Beam"
+        obj.Proxy = self
+        obj.FRating = rating
+        obj.SSize = SSize
+
+        obj.addProperty(
+            "App::PropertyString", "stype", "Beam",
+            QT_TRANSLATE_NOOP("App::Property", "Profile type code"),
+        ).stype = stype
+        obj.addProperty(
+            "App::PropertyLength", "H", "Beam",
+            QT_TRANSLATE_NOOP("App::Property", "Section height"),
+        ).H = H
+        obj.addProperty(
+            "App::PropertyLength", "W", "Beam",
+            QT_TRANSLATE_NOOP("App::Property", "Section width"),
+        ).W = W
+        obj.addProperty(
+            "App::PropertyLength", "ta", "Beam",
+            QT_TRANSLATE_NOOP("App::Property", "Web / wall thickness"),
+        ).ta = ta
+        obj.addProperty(
+            "App::PropertyLength", "tf", "Beam",
+            QT_TRANSLATE_NOOP("App::Property", "Flange thickness"),
+        ).tf = tf
+        obj.addProperty(
+            "App::PropertyLength", "Height", "Beam",
+            QT_TRANSLATE_NOOP("App::Property", "Beam length"),
+        ).Height = Height
+
+    def _makeProfile(self, fp):
+        """Build a Part.Face cross-section from stored dimensions."""
+        stype = fp.stype
+        H = float(fp.H)
+        W = float(fp.W)
+        ta = float(fp.ta)
+        tf = float(fp.tf)
+
+        def face(pts):
+            wire = Part.makePolygon(pts)
+            return Part.Face(wire)
+
+        if stype == "circle":
+            # Solid circular bar -- H stores the diameter
+            return Part.Face(Part.Wire(Part.makeCircle(H / 2)))
+
+        elif stype == "R":
+            # Solid rectangle
+            pts = [
+                FreeCAD.Vector(-W / 2, -H / 2, 0),
+                FreeCAD.Vector( W / 2, -H / 2, 0),
+                FreeCAD.Vector( W / 2,  H / 2, 0),
+                FreeCAD.Vector(-W / 2,  H / 2, 0),
+                FreeCAD.Vector(-W / 2, -H / 2, 0),
+            ]
+            return face(pts)
+
+        elif stype == "RH":
+            # Hollow rectangular / square hollow section
+            outer = Part.makePolygon([
+                FreeCAD.Vector(-W / 2, -H / 2, 0),
+                FreeCAD.Vector( W / 2, -H / 2, 0),
+                FreeCAD.Vector( W / 2,  H / 2, 0),
+                FreeCAD.Vector(-W / 2,  H / 2, 0),
+                FreeCAD.Vector(-W / 2, -H / 2, 0),
+            ])
+            inner = Part.makePolygon([
+                FreeCAD.Vector(-(W / 2 - ta), -(H / 2 - ta), 0),
+                FreeCAD.Vector( (W / 2 - ta), -(H / 2 - ta), 0),
+                FreeCAD.Vector( (W / 2 - ta),  (H / 2 - ta), 0),
+                FreeCAD.Vector(-(W / 2 - ta),  (H / 2 - ta), 0),
+                FreeCAD.Vector(-(W / 2 - ta), -(H / 2 - ta), 0),
+            ])
+            return Part.Face([outer, inner])
+
+        elif stype == "H":
+            # I / H section (symmetric double-T)
+            # Centred on origin
+            hw = H / 2
+            ww = W / 2
+            pts = [
+                FreeCAD.Vector(-ww,       -hw,       0),
+                FreeCAD.Vector( ww,       -hw,       0),
+                FreeCAD.Vector( ww,       -hw + tf,  0),
+                FreeCAD.Vector( ta / 2,   -hw + tf,  0),
+                FreeCAD.Vector( ta / 2,    hw - tf,  0),
+                FreeCAD.Vector( ww,        hw - tf,  0),
+                FreeCAD.Vector( ww,        hw,       0),
+                FreeCAD.Vector(-ww,        hw,       0),
+                FreeCAD.Vector(-ww,        hw - tf,  0),
+                FreeCAD.Vector(-ta / 2,    hw - tf,  0),
+                FreeCAD.Vector(-ta / 2,   -hw + tf,  0),
+                FreeCAD.Vector(-ww,       -hw + tf,  0),
+                FreeCAD.Vector(-ww,       -hw,       0),
+            ]
+            return face(pts)
+
+        elif stype == "U":
+            # Channel / C section (open to +X side), centred on centroid approx
+            pts = [
+                FreeCAD.Vector(-W / 2, -H / 2, 0),
+                FreeCAD.Vector( W / 2, -H / 2, 0),
+                FreeCAD.Vector( W / 2, -H / 2 + tf, 0),
+                FreeCAD.Vector(-W / 2 + ta, -H / 2 + tf, 0),
+                FreeCAD.Vector(-W / 2 + ta,  H / 2 - tf, 0),
+                FreeCAD.Vector( W / 2,       H / 2 - tf, 0),
+                FreeCAD.Vector( W / 2,       H / 2,      0),
+                FreeCAD.Vector(-W / 2,       H / 2,      0),
+                FreeCAD.Vector(-W / 2,      -H / 2,      0),
+            ]
+            return face(pts)
+
+        elif stype == "L":
+            # Angle section, corner at origin
+            pts = [
+                FreeCAD.Vector(0,    0,   0),
+                FreeCAD.Vector(W,    0,   0),
+                FreeCAD.Vector(W,    tf,  0),
+                FreeCAD.Vector(ta,   tf,  0),
+                FreeCAD.Vector(ta,   H,   0),
+                FreeCAD.Vector(0,    H,   0),
+                FreeCAD.Vector(0,    0,   0),
+            ]
+            return face(pts)
+
+        elif stype == "T":
+            # T section, centred on flange
+            pts = [
+                FreeCAD.Vector(-W / 2,  0,      0),
+                FreeCAD.Vector( W / 2,  0,      0),
+                FreeCAD.Vector( W / 2,  tf,     0),
+                FreeCAD.Vector( ta / 2, tf,     0),
+                FreeCAD.Vector( ta / 2, H,      0),
+                FreeCAD.Vector(-ta / 2, H,      0),
+                FreeCAD.Vector(-ta / 2, tf,     0),
+                FreeCAD.Vector(-W / 2,  tf,     0),
+                FreeCAD.Vector(-W / 2,  0,      0),
+            ]
+            return face(pts)
+
+        else:
+            # Fallback: solid rectangle
+            FreeCAD.Console.PrintWarning(
+                "Beam: unknown stype '{}', using solid rectangle\n".format(stype)
+            )
+            pts = [
+                FreeCAD.Vector(-W / 2, -H / 2, 0),
+                FreeCAD.Vector( W / 2, -H / 2, 0),
+                FreeCAD.Vector( W / 2,  H / 2, 0),
+                FreeCAD.Vector(-W / 2,  H / 2, 0),
+                FreeCAD.Vector(-W / 2, -H / 2, 0),
+            ]
+            return face(pts)
+
+    def execute(self, fp):
+        try:
+            profile = self._makeProfile(fp)
+            fp.Shape = profile.extrude(FreeCAD.Vector(0, 0, float(fp.Height)))
+        except Exception as e:
+            FreeCAD.Console.PrintError("Beam execute error: {}\n".format(e))
+            return
+        fp.Ports = [
+            FreeCAD.Vector(0, 0, 0),
+            FreeCAD.Vector(0, 0, float(fp.Height)),
+        ]
+        fp.PortDirections = [
+            FreeCAD.Vector(0, 0, -1),
+            FreeCAD.Vector(0, 0,  1),
+        ]
+        super(Beam, self).execute(fp)
+
+
+class ViewProviderBeam:
+    def __init__(self, vobj, icon_fn="Quetzal_InsertSection"):
+        vobj.Proxy = self
+        self.icon_fn = get_icon_path(icon_fn)
+
+    def getIcon(self):
+        return self.icon_fn
+
+    def attach(self, vobj):
+        self.ViewObject = vobj
+        self.Object = vobj.Object
+    """
+    def setEdit(self, vobj, mode):
+        return False
+
+    def unsetEdit(self, vobj, mode):
+        return
+    """
+    def dumps(self):
+        return None
+
+    def loads(self, state):
+        return None

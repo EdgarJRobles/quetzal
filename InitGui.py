@@ -90,6 +90,15 @@ class QuetzalWorkbench(Workbench):
 
         import CPipe  # noqa: F401
 
+        # Register Quetzal preference page (Edit > Preferences > Quetzal)
+        try:
+            import quetzal_units
+            FreeCADGui.addPreferencePage(
+                quetzal_units.QuetzalPreferencePage, "Quetzal")
+        except Exception as e:
+            FreeCAD.Console.PrintWarning(
+                "Quetzal: could not register preference page: " + str(e) + "\n")
+
         self.pypeList = [
             "Quetzal_InsertPipe",
             "Quetzal_InsertElbow",
@@ -97,9 +106,11 @@ class QuetzalWorkbench(Workbench):
             "Quetzal_InsertTerminalAdapter",
             "Quetzal_InsertReduct",
             "Quetzal_InsertCap",
+            "Quetzal_InsertCoupling",
             "Quetzal_InsertValve",
             "Quetzal_InsertFlange",
             "Quetzal_InsertGasket",
+            "Quetzal_InsertOutlet",
             "Quetzal_InsertUBolt",
             "Quetzal_InsertPypeLine",
             "Quetzal_InsertBranch",
@@ -116,6 +127,7 @@ class QuetzalWorkbench(Workbench):
             "Quetzal_Attach2Tube",
             "Quetzal_Point2Point",
             "Quetzal_InsertAnyShape",
+            "Quetzal_InsertBeam",
         ]
         from dodoPM import toolList
 

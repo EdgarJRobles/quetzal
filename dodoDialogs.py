@@ -12,6 +12,11 @@ from pFeatures import Flange
 
 translate = FreeCAD.Qt.translate
 
+try:
+    import quetzal_units as qu
+except Exception:
+    qu = None  # graceful fallback if module not yet present
+
 
 class protoTypeDialog(object):
     "prototype for dialogs.ui with callback function"
@@ -140,6 +145,37 @@ class protoPypeForm(QDialog):
         self.mainHL.addWidget(self.firstCol)
         self.currentRatingLab = QLabel(translate("protoPypeForm", "Rating: ") + self.PRating)
         self.firstCol.layout().addWidget(self.currentRatingLab)
+        # DN / NPS toggle row
+        self._sizeSystemRow = QWidget()
+        self._sizeSystemRow.setLayout(QHBoxLayout())
+        self._sizeSystemRow.layout().setContentsMargins(0, 0, 0, 0)
+        self._sizeSystemRow.layout().setSpacing(4)
+        self._sizeSystemRow.layout().addWidget(
+            QLabel(translate("protoPypeForm", "Size:")))
+        self._btnDN  = QPushButton("DN")
+        self._btnNPS = QPushButton("NPS")
+        self._btnDN.setCheckable(True)
+        self._btnNPS.setCheckable(True)
+        self._btnDN.setFlat(True)
+        self._btnNPS.setFlat(True)
+        _ss_active   = "font-weight:bold; text-decoration:underline;"
+        _ss_inactive = ""
+        if qu and qu.get_size_system() == 1:
+            self._btnDN.setChecked(False)
+            self._btnNPS.setChecked(True)
+            self._btnDN.setStyleSheet(_ss_inactive)
+            self._btnNPS.setStyleSheet(_ss_active)
+        else:
+            self._btnDN.setChecked(True)
+            self._btnNPS.setChecked(False)
+            self._btnDN.setStyleSheet(_ss_active)
+            self._btnNPS.setStyleSheet(_ss_inactive)
+        self._sizeSystemRow.layout().addWidget(self._btnDN)
+        self._sizeSystemRow.layout().addWidget(self._btnNPS)
+        self._sizeSystemRow.layout().addStretch()
+        self.firstCol.layout().addWidget(self._sizeSystemRow)
+        self._btnDN.clicked.connect(lambda: self._setSizeSystem(0))
+        self._btnNPS.clicked.connect(lambda: self._setSizeSystem(1))
         self.sizeList = QListWidget()
         self.firstCol.layout().addWidget(self.sizeList)
         self.pipeDictList = []
@@ -227,17 +263,39 @@ class protoPypeForm(QDialog):
                 self.pipeDictList = [DNx for DNx in reader]
                 f.close()
                 for row in self.pipeDictList:
-                    s = row["PSize"]
-                    if "OD" in row.keys():
-                        s += " - " + row["OD"]
-                    if "thk" in row.keys():
-                        s += "x" + row["thk"]
+                    if qu:
+                        s = qu.format_size_label(row)
+                    else:
+                        s = row["PSize"]
+                        if "OD" in row.keys():
+                            s += " - " + row["OD"]
+                        if "thk" in row.keys():
+                            s += "x" + row["thk"]
                     self.sizeList.addItem(s)
                 break
 
     def changeRating(self, item):
         self.PRating = item.text()
         self.currentRatingLab.setText(translate("protoPypeForm", "Rating: ") + self.PRating)
+        self.fillSizes()
+
+    def _setSizeSystem(self, system):
+        """Toggle the DN/NPS display on the size list without saving to prefs."""
+        _ss_active   = "font-weight:bold; text-decoration:underline;"
+        _ss_inactive = ""
+        if system == 1:
+            self._btnDN.setChecked(False)
+            self._btnNPS.setChecked(True)
+            self._btnDN.setStyleSheet(_ss_inactive)
+            self._btnNPS.setStyleSheet(_ss_active)
+        else:
+            self._btnDN.setChecked(True)
+            self._btnNPS.setChecked(False)
+            self._btnDN.setStyleSheet(_ss_active)
+            self._btnNPS.setStyleSheet(_ss_inactive)
+        if qu:
+            # Temporarily override the preference for this session
+            qu.set_size_system(system)
         self.fillSizes()
 
     def findDN(self, DN):
