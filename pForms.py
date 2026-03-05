@@ -2230,7 +2230,7 @@ class insertValveForm(dodoDialogs.protoPypeForm):
 
     Two modes selected automatically from the loaded CSV:
 
-    Legacy / butt-weld  (CSV has no Conn column, or Conn not SW/TH)
+    Generic double-cone construction  (CSV has no Conn column, or Conn not SW/TH)
     ----------------------------------------------------------------
       CSV columns : PSize ; VType ; ODBody ; ID ; H ; Kv
       sizeList    : PSize   ODBody x ID
@@ -2307,7 +2307,7 @@ class insertValveForm(dodoDialogs.protoPypeForm):
         self.screenDial.layout().addWidget(self.dialLab)
         self.firstCol.layout().addWidget(self.screenDial)
 
-        # "Insert in pipe" controls (legacy only; hidden for SW/TH)
+        # "Insert in pipe" controls (generic only; hidden for SW/TH)
         self.sli = QSlider(Qt.Vertical)
         self.sli.setMaximum(100)
         self.sli.setMinimum(1)
@@ -2317,11 +2317,60 @@ class insertValveForm(dodoDialogs.protoPypeForm):
         self.cb1 = QCheckBox(translate("insertValveForm", " Insert in pipe"))
         self.secondCol.layout().addWidget(self.cb1)
 
-        # Now that sli and cb1 exist, apply the correct visibility
+        # Actuator selection radio buttons (flanged valves only)
+        self.actuatorGroup = QWidget()
+        self.actuatorGroup.setLayout(QHBoxLayout())
+        self.actuatorGroup.layout().setContentsMargins(0, 0, 0, 0)
+        self.rbHandle   = QRadioButton(translate("insertValveForm", "Handle"))
+        self.rbGearbox  = QRadioButton(translate("insertValveForm", "Gearbox"))
+        self.rbHandle.setChecked(True)
+        self.actuatorGroup.layout().addWidget(self.rbHandle)
+        self.actuatorGroup.layout().addWidget(self.rbGearbox)
+        self.secondCol.layout().addWidget(self.actuatorGroup)
+
+        # Now that sli, cb1, and actuator controls exist, apply the correct visibility
         self._refreshLayout()
         self.show()
 
     # ── helper: detect SW/TH rating ──────────────────────────────────────────
+
+    # Pressure-class strings that indicate a flanged valve connection
+    _FLANGE_CONNS = ("150lb", "300lb", "600lb", "900lb", "1500lb", "2500lb")
+
+    def _isFlangedConn(self):
+        """Return True when the loaded CSV is a flanged (pressure-class) table."""
+        for row in self.pipeDictList:
+            if row.get("Conn", "").strip() in self._FLANGE_CONNS:
+                return True
+        return False
+
+    def _loadFlangePropList(self, conn, psize):
+        """Load the matching blind-flange CSV and return the property row for psize.
+
+        File name convention: Flange_ASME-BL-RF-<conn>.csv
+        Returns [PSize, FlangeType, D, t, f, n, df, drf, trf] or None.
+        """
+        fname = "Flange_ASME-BL-RF-" + conn + ".csv"
+        fpath = join(dirname(abspath(__file__)), "tablez", fname)
+        try:
+            with open(fpath, "r") as fh:
+                reader = csv.DictReader(fh, delimiter=";")
+                for row in reader:
+                    if row.get("PSize", "").strip() == psize:
+                        return [
+                            row.get("PSize",      "").strip(),
+                            row.get("FlangeType", "BL").strip(),
+                            float(row.get("D",    "0")),
+                            float(row.get("t",    "0")),
+                            float(row.get("f",    "0")),
+                            int(float(row.get("n", "0"))),
+                            float(row.get("df",   "0")),
+                            float(row.get("drf",  "0")),
+                            float(row.get("trf",  "0")),
+                        ]
+        except Exception:
+            pass
+        return None
 
     def _isSocketConn(self):
         """Return True when the loaded CSV is a SW or TH (socket/threaded) table."""
@@ -2344,24 +2393,31 @@ class insertValveForm(dodoDialogs.protoPypeForm):
     # ── show/hide controls depending on mode ─────────────────────────────────
 
     def _refreshLayout(self):
-        """Show legacy-only controls for BW valves; hide them for SW/TH.
+        """Show/hide controls depending on valve connection type.
+
+        - "Insert in pipe" slider/checkbox: shown for legacy BW valves only.
+        - Actuator radio buttons (Handle / Gearbox): shown for flanged valves only.
 
         Called from fillSizes() which runs during __init__ (via super().__init__),
-        so sli/cb1 may not exist yet -- guard with hasattr.
+        so controls may not exist yet -- guard with hasattr throughout.
         """
-        is_socket = self._isSocketConn()
+        is_flanged         = self._isFlangedConn()
+        is_socket_or_flanged = self._isSocketConn() or is_flanged
         if hasattr(self, "sli"):
-            self.sli.setVisible(not is_socket)
+            self.sli.setVisible(not is_socket_or_flanged)
         if hasattr(self, "cb1"):
-            self.cb1.setVisible(not is_socket)
+            self.cb1.setVisible(not is_socket_or_flanged)
+        if hasattr(self, "actuatorGroup"):
+            self.actuatorGroup.setVisible(is_flanged)
 
     # ── fillSizes override ───────────────────────────────────────────────────
 
     def fillSizes(self):
         """Load Valve_<PRating>.csv and populate sizeList.
 
-        Legacy (BW) : label = PSize   ODBody x ID
-        SW / TH     : label = PSize   OD
+        Legacy (BW)  : label = PSize   ODBody x ID
+        SW / TH      : label = PSize   OD
+        Flanged      : label = PSize   H
         """
         self.sizeList.clear()
         self.pipeDictList = []
@@ -2375,7 +2431,13 @@ class insertValveForm(dodoDialogs.protoPypeForm):
 
         for row in self.pipeDictList:
             r = self._normRow(row)
-            if self._isSocketConn():
+            if self._isFlangedConn():
+                # Flanged: show PSize + H (face-to-face length)
+                if qu:
+                    label = qu.format_psize(r["psize"]) + "  " + qu.format_dim(r["h"])
+                else:
+                    label = r.get("psize", "") + "  " + r.get("h", "")
+            elif self._isSocketConn():
                 # SW/TH: show PSize + OD (no ID column in these tables)
                 if qu:
                     label = qu.format_psize(r["psize"]) + "  " + qu.format_dim(r["od"])
@@ -2439,7 +2501,26 @@ class insertValveForm(dodoDialogs.protoPypeForm):
         d  = self.pipeDictList[self.sizeList.currentRow()]
         r  = self._normRow(d)
 
-        if self._isSocketConn():
+        if self._isFlangedConn():
+            # Flanged Trunnion Ball valve
+            # propList: [DN, VType, H, Kv, Conn]
+            psize = r["psize"]
+            conn  = r["conn"]
+            propList = [
+                psize,
+                r.get("vtype", self.PRating),
+                float(pq(r["h"])),
+                float(pq(r.get("kv", "0"))),
+                conn,
+            ]
+            flgPropList = self._loadFlangePropList(conn, psize)
+            # Read actuator choice from radio buttons (default to "Handle")
+            actuator = "Gearbox" if (hasattr(self, "rbGearbox") and
+                                     self.rbGearbox.isChecked()) else "Handle"
+            self.lastValve = pCmd.doValves(
+                propList, FreeCAD.__activePypeLine__,
+                flgPropList=flgPropList, actuator=actuator)[-1]
+        elif self._isSocketConn():
             # [DN, VType, OD, ODBody, H, E, Conn, Kv]
             propList = [
                 r["psize"],

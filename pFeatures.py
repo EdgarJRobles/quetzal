@@ -24,6 +24,32 @@ vO = FreeCAD.Vector(0, 0, 0)
 vX = FreeCAD.Vector(1, 0, 0)
 vY = FreeCAD.Vector(0, 1, 0)
 vZ = FreeCAD.Vector(0, 0, 1)
+pipe_OD = {
+    "DN6" : 10.29,
+    "DN8" : 13.72,
+    "DN10" : 17.14,
+    "DN15" : 21.34,
+    "DN20" : 26.67,
+    "DN25" : 33.4,
+    "DN32" : 42.16,
+    "DN40" : 48.26,
+    "DN50" : 60.32,
+    "DN65" : 73.02,
+    "DN80" : 88.9,
+    "DN90" : 101.6,
+    "DN100" : 114.3,
+    "DN125" : 141.3,
+    "DN150" : 168.27,
+    "DN200" : 219.07,
+    "DN250" : 273.05,
+    "DN300" : 323.85,
+    "DN350" : 355.6,
+    "DN400" : 406.4,
+    "DN450" : 457.2,
+    "DN500" : 508,
+    "DN550" : 558.8,
+    "DN600" : 609.6
+}
 
 ################ CLASSES ###########################
 
@@ -1725,30 +1751,49 @@ class ViewProviderPypeBranch:
 class Valve(pypeType):
     """Class for object PType="Valve"
 
-    Two construction modes selected automatically by presence of ``Conn``:
+    Three construction modes selected automatically by the Conn property:
 
-    Generic valve (two-cone construction)  (no Conn)
-    ──────────────────────────────────────
+    Generic valve (two-cone construction as found on P&IDs)  (no Conn)
+    ------------------------------------------------------------------
     Valve(obj, DN="DN50", VType="ball", ODBody=72, ID=50, H=40, Kv=150)
 
-    Socket-weld / Threaded  (Conn present)
-    ────────────────────────────────────────
+    Socket-weld / Threaded hex-body valve  (Conn == "SW" or "TH")
+    ------------------------------------------------------------------
       OD      (float) : attachment pipe outer diameter
       ODBody  (float) : hex body flat-to-flat dimension
-      H       (float) : total body length (symmetric +/-H/2 from centre)
+      H       (float) : total body length (symmetric +/-H/2 from center)
       E       (float) : socket / thread engagement depth
       Conn    (string): "SW" or "TH"
 
-    Local coordinate system (both variants)
+    Flanged Trunnion Ball valve  (Conn == "150lb", "300lb", "600lb",
+                                  "900lb", "1500lb", or "2500lb")
+    ------------------------------------------------------------------
+      H       (float) : body length, flange face to flange face
+      Conn    (string): one of the pressure class strings above
+      flgD    (float) : flange outer diameter  (from blind flange table)
+      flgt    (float) : flange thickness       (from blind flange table)
+      flgdrf  (float) : raised-face diameter   (from blind flange table)
+      flgtrf  (float) : raised-face thickness  (from blind flange table)
+      flgdf   (float) : bolt-circle diameter   (from blind flange table)
+      flgf    (float) : bolt-hole diameter     (from blind flange table)
+      flgn    (int)   : number of bolt holes   (from blind flange table)
+
+    Local coordinate system (all variants)
     ----------------------------------------
       Axis  : Z  (flow direction)
-      Origin: geometric centre of the valve body
-      Port 0: (0, 0,  H/2-E)   direction (0, 0,  1)
-      Port 1: (0, 0, -H/2+E)   direction (0, 0, -1)
+      Origin: geometric center of the valve body
+      Port 0: (0, 0,  H/2)   direction (0, 0,  1)
+      Port 1: (0, 0, -H/2)   direction (0, 0, -1)
     """
 
+    # Pressure-class strings that indicate a flanged connection
+    FLANGE_CONNS = ("150lb", "300lb", "600lb", "900lb", "1500lb", "2500lb")
+
     def __init__(self, obj, DN="DN50", VType="ball", ODBody=72, ID=50, H=40, Kv=150,
-                 OD=None, E=None, Conn=None):
+                 OD=None, E=None, Conn=None,
+                 flgD=0, flgt=0, flgdrf=0, flgtrf=0,
+                 flgdf=0, flgf=0, flgn=0,
+                 actuator="Handle"):
         super(Valve, self).__init__(obj)
         obj.Proxy   = self
         obj.PType   = "Valve"
@@ -1767,7 +1812,50 @@ class Valve(pypeType):
             QT_TRANSLATE_NOOP("App::Property", "Overall body length"),
         ).Height = H
 
-        if Conn is not None:
+        _flanged = ("150lb", "300lb", "600lb", "900lb", "1500lb", "2500lb")
+        if Conn is not None and Conn.strip() in _flanged:
+            # -- Flanged valve properties ------------------------------------
+            obj.addProperty(
+                "App::PropertyString", "Conn", "Valve",
+                QT_TRANSLATE_NOOP("App::Property",
+                                  "Connection type / pressure class (e.g. 150lb)"),
+            ).Conn = Conn
+            obj.addProperty(
+                "App::PropertyLength", "FlgD", "ValveFlange",
+                QT_TRANSLATE_NOOP("App::Property", "Flange outer diameter"),
+            ).FlgD = flgD
+            obj.addProperty(
+                "App::PropertyLength", "Flgt", "ValveFlange",
+                QT_TRANSLATE_NOOP("App::Property", "Flange thickness"),
+            ).Flgt = flgt
+            obj.addProperty(
+                "App::PropertyLength", "FlgDrf", "ValveFlange",
+                QT_TRANSLATE_NOOP("App::Property", "Raised-face diameter"),
+            ).FlgDrf = flgdrf
+            obj.addProperty(
+                "App::PropertyLength", "FlgTrf", "ValveFlange",
+                QT_TRANSLATE_NOOP("App::Property", "Raised-face thickness"),
+            ).FlgTrf = flgtrf
+            obj.addProperty(
+                "App::PropertyLength", "FlgDf", "ValveFlange",
+                QT_TRANSLATE_NOOP("App::Property", "Bolt-circle diameter"),
+            ).FlgDf = flgdf
+            obj.addProperty(
+                "App::PropertyLength", "FlgF", "ValveFlange",
+                QT_TRANSLATE_NOOP("App::Property", "Bolt-hole diameter"),
+            ).FlgF = flgf
+            obj.addProperty(
+                "App::PropertyInteger", "FlgN", "ValveFlange",
+                QT_TRANSLATE_NOOP("App::Property", "Number of bolt holes"),
+            ).FlgN = int(flgn)
+            obj.addProperty(
+                "App::PropertyString", "Actuator", "Valve",
+                QT_TRANSLATE_NOOP("App::Property",
+                                  "Actuator type: Handle or Gearbox"),
+            ).Actuator = actuator
+
+        elif Conn is not None:
+            # -- Socket-weld / Threaded valve properties ---------------------
             if OD is None:
                 OD = ODBody * 0.7
             if E is None:
@@ -1786,6 +1874,7 @@ class Valve(pypeType):
                                   "Connection type: SW = Socket Weld, TH = Threaded"),
             ).Conn = Conn
         else:
+            # -- Generic (legacy) valve properties --------------------------
             obj.addProperty(
                 "App::PropertyLength", "ID", "Valve",
                 QT_TRANSLATE_NOOP("App::Property", "Inside diameter"),
@@ -1798,11 +1887,297 @@ class Valve(pypeType):
 
     def execute(self, fp):
         H = float(fp.Height)
-        if hasattr(fp, "Conn"):
+        conn = getattr(fp, "Conn", None)
+        # Check for flanged pressure-class connection.
+        # The tuple is inlined here rather than referenced via self.FLANGE_CONNS
+        # to ensure correct dispatch when the proxy is reconstructed on reload.
+        _flanged = ("150lb", "300lb", "600lb", "900lb", "1500lb", "2500lb")
+        if conn is not None and conn.strip() in _flanged:
+            self._execute_flanged(fp, H)
+        elif conn is not None:
             self._execute_sw_th(fp, H)
         else:
             self._execute_legacy(fp, H)
         super(Valve, self).execute(fp)
+
+    def _execute_flanged(self, fp, H):
+        """Build a Trunnion Ball valve body with raised-face flanges.
+
+        Geometry (all dimensions in mm, local Z is the flow axis):
+
+          - Two raised-face blind flanges (BL style):
+              bottom flange face at z = -H/2  (raised face projects toward -Z)
+              top    flange face at z = +H/2  (raised face projects toward +Z)
+
+          - Connecting (outer) cylinder:
+              diameter = flgDrf (same diameter as raised face)
+              from z = -H/2+flgTrf to z = +H/2-flgTrf
+
+          - Center body cylinder:
+              diameter = connecting_cylinderOD  (same outer shell)
+              from z = -H/2 + flange_t*3  to  z = +H/2 - flange_t*3
+              (height = H - 6*flange_t)
+
+          - Handle stem + paddle attached at the outer equator of the center body.
+
+        Ports are at (0,0,-H/2) and (0,0,+H/2).
+        """
+        import math
+
+        flgD   = float(fp.FlgD)    # flange outer diameter
+        flgt   = float(fp.Flgt)    # flange thickness (t in the table)
+        flgDrf = float(fp.FlgDrf)  # raised-face diameter
+        flgTrf = float(fp.FlgTrf)  # raised-face thickness
+        flgDf  = float(fp.FlgDf)   # bolt-circle diameter
+        flgF   = float(fp.FlgF)    # bolt-hole diameter
+        flgN   = int(fp.FlgN)      # number of bolt holes
+
+        # Pipe OD for the nominal size from the module-level dictionary
+        pipe_od = pipe_OD.get(fp.PSize, float(fp.ODBody))
+
+        # Connecting cylinder OD (average of pipe OD and flange OD)
+        conn_cyl_OD = flgDrf
+
+        # Center body height = H - 6 * flange_t
+        body_h = H - 6.0 * flgt
+        if body_h < 1.0:
+            body_h = 1.0  # safety floor
+
+        # ── build one blind flange (BL style) ──────────────────────────────
+        # The Flange.execute() path for "BL" builds from z=0 upward for
+        # thickness (t ), with raised face going downward (toward -Z).
+        # Here we replicate that geometry directly as Part solids so we can
+        # position each flange independently.
+
+        def make_bl_flange(z_face, face_up):
+            """Return a solid blind flange positioned so that its mating
+            face (raised-face surface) lies at z = z_face.
+            face_up=True  -> flange body extends in +Z, raised face in -Z
+            face_up=False -> flange body extends in -Z, raised face in +Z
+            """
+            sign = 1.0 if face_up else -1.0
+
+            # Annular disc (flange body, no bore for BL)
+            base = Part.Face(Part.Wire(Part.makeCircle(flgD / 2)))
+            # Cut bolt holes, rotated to match standard Flange class offset
+            if flgN > 0:
+                hole = Part.Face(
+                    Part.Wire(
+                        Part.makeCircle(
+                            flgF / 2,
+                            FreeCAD.Vector(flgDf / 2, 0, 0),
+                            FreeCAD.Vector(0, 0, 1),
+                        )
+                    )
+                )
+                hole.rotate(FreeCAD.Vector(0, 0, 0),
+                            FreeCAD.Vector(0, 0, 1), 360.0 / flgN / 2)
+                for i in range(flgN):
+                    base = base.cut(hole)
+                    hole.rotate(FreeCAD.Vector(0, 0, 0),
+                                FreeCAD.Vector(0, 0, 1), 360.0 / flgN)
+
+            # Extrude disc body away from the face
+            body_thickness = flgt
+            flange = base.extrude(FreeCAD.Vector(0, 0, sign * body_thickness))
+
+            # Raised face (solid disc, no bore for BL) toward the mating side
+            if flgTrf > 0 and flgDrf > 0:
+                rf = Part.makeCylinder(
+                    flgDrf / 2, flgTrf,
+                    FreeCAD.Vector(0, 0, 0),
+                    FreeCAD.Vector(0, 0, -sign),
+                )
+                flange = flange.fuse(rf)
+
+            # Translate so the mating face lands at z_face
+            flange.translate(FreeCAD.Vector(0, 0, z_face + flgTrf * sign))
+            return flange
+
+        flange_bot = make_bl_flange(-H / 2.0, face_up=True)   # mating face at -H/2
+        flange_top = make_bl_flange( H / 2.0, face_up=False)  # mating face at +H/2
+
+        # ── connecting (outer) cylinder ────────────────────────────────────
+        conn_cyl = Part.makeCylinder(
+            conn_cyl_OD / 2.0, H,
+            FreeCAD.Vector(0, 0, -(H/2.0)),
+            FreeCAD.Vector(0, 0, 1),
+        )
+
+        # ── center body cylinder (diameter = flgD) ────────────────────────
+        body_z0 = -H / 2.0 + flgt * 3.0
+        center_body = Part.makeCylinder(
+            flgD / 2.0, body_h,
+            FreeCAD.Vector(0, 0, body_z0),
+            FreeCAD.Vector(0, 0, 1),
+        )
+
+        #bore hole along Z axis (diameter = 95% of pipe_OD, length = 2 mm longer than valve to ensure clean cut)
+        bore_r = pipe_od * 0.95 / 2.0
+        bore = Part.makeCylinder(
+            bore_r, H + 2.0,
+            FreeCAD.Vector(0, 0, -H / 2.0 - 1.0),
+            FreeCAD.Vector(0, 0, 1),
+        )
+
+        # ── fuse main shapes
+        valve = flange_bot.fuse(flange_top)
+        valve = valve.fuse(conn_cyl)
+        valve = valve.fuse(center_body)
+        
+
+        # ── actuator (handle or gearbox) ──────────────────────────────────
+        actuator = getattr(fp, "Actuator", "Handle")
+
+        if actuator == "Gearbox":
+            # -- Gearbox cylinder ---------------------------------------
+            # Rises from (0,0,0) in the +Y direction, diameter = pipe_od
+            gearbox_h = pipe_od + 100.0
+            gearbox = Part.makeCylinder(
+                pipe_od / 2.0, gearbox_h,
+                FreeCAD.Vector(0, 0, 0),
+                FreeCAD.Vector(0, 1, 0),
+            )
+
+            # -- Handwheel axle -----------------------------------------
+            # Cylinder based at (0, pipe_od+100, -pipe_od/2)
+            # diameter = min(25.4, pipe_od), length = pipe_od/2, direction +X
+            axle_r  = min(25.4, pipe_od) / 2.0
+            axle_len = pipe_od/2
+            axle_base = FreeCAD.Vector(0, pipe_od + 100.0, -pipe_od / 2.0)
+            axle = Part.makeCylinder(
+                axle_r, axle_len,
+                axle_base,
+                FreeCAD.Vector(1, 0, 0),
+            )
+
+            # -- Four spokes around the axle ----------------------------
+            # Spokes originate at the far end of the axle:
+            #   spoke_origin = axle_base + (pipe_od, 0, 0)
+            # They are extruded at 60 deg from the X axis in the four
+            # +/-Y and +/-Z quadrants, each of length spoke_len, radius 10 mm.
+            spoke_len    = (pipe_od + 75.0) / math.cos(math.radians(30.0))
+            spoke_r      = 10.0
+            spoke_origin = FreeCAD.Vector(
+                axle_base.x + axle_len,
+                axle_base.y,
+                axle_base.z,
+            )
+            # The four spoke directions are at 60 deg from X toward +Y, -Y, +Z, -Z
+            spoke_angle = 60 #degrees
+            cos60 = math.cos(math.radians(spoke_angle))
+            sin60 = math.sin(math.radians(spoke_angle))
+            spoke_dirs = [
+                FreeCAD.Vector(cos60,  sin60, 0),   # +Y quadrant
+                FreeCAD.Vector(cos60, -sin60, 0),   # -Y quadrant
+                FreeCAD.Vector(cos60, 0,  sin60),   # +Z quadrant
+                FreeCAD.Vector(cos60, 0, -sin60),   # -Z quadrant
+            ]
+            spokes = None
+            for sd in spoke_dirs:
+                spoke = Part.makeCylinder(
+                    spoke_r, spoke_len,
+                    spoke_origin,
+                    sd,
+                )
+                spokes = spoke if spokes is None else spokes.fuse(spoke)
+
+            # -- Handwheel torus ----------------------------------------
+            # Center of the torus is at:
+            #   x = spoke_origin.x + (pipe_od + 75) * sin(30 deg)
+            #   y = spoke_origin.y, z = spoke_origin.z
+            # Torus axis = X axis (same as axle)
+            # Radius1 = pipe_od + 75, Radius2 = 12
+            torus_cx = spoke_origin.x + spoke_len * math.sin(math.radians(90-spoke_angle))
+            torus_center = FreeCAD.Vector(torus_cx, spoke_origin.y, spoke_origin.z)
+            torus = Part.makeTorus(
+                pipe_od + 75.0, 12.0,
+                torus_center,
+                FreeCAD.Vector(1, 0, 0),
+            )
+
+            valve = valve.fuse(gearbox)
+            valve = valve.fuse(axle)
+            if spokes is not None:
+                valve = valve.fuse(spokes)
+            valve = valve.fuse(torus)
+            valve = valve.cut(bore)
+            valve = valve.removeSplitter()
+            fp.Shape = valve
+
+        else:
+            # -- Handle (stem + paddle) ---------------------------------
+            # Stem extends the lesser of 25 mm or the pipe outer diameter above the valve body
+            stem_y0     = 0
+            stem_height = min(25.0, pipe_od) + flgD/2.0 
+            stem = Part.makeCylinder(
+                5.0, stem_height,
+                FreeCAD.Vector(0, stem_y0, 0),
+                FreeCAD.Vector(0, 1, 0),
+            )
+
+            hw            = min(25.0, pipe_od) / 2.0
+            ht            = 1.5
+            paddle_base_y = stem_y0 + stem_height - 5.0
+            py0           = paddle_base_y
+            py1           = paddle_base_y + 15.0
+            pz_end        = max(50.0, H)
+
+            P0 = FreeCAD.Vector(0, py0, -15.0)
+            P1 = FreeCAD.Vector(0, py0,  15.0)
+            P2 = FreeCAD.Vector(0, py1,  30.0)
+            P3 = FreeCAD.Vector(0, py1,  pz_end)
+
+            def _seg_prism(start, end):
+                """Rectangular prism from start to end with cross-section 2*hw x 2*ht."""
+                seg = end - start
+                length = seg.Length
+                if length < 1e-6:
+                    return None
+                d = FreeCAD.Vector(seg).normalize()
+                up = FreeCAD.Vector(0, 0, 1)
+                if abs(d.dot(up)) > 0.99:
+                    up = FreeCAD.Vector(0, 1, 0)
+                ax1 = d.cross(up).normalize()
+                ax2 = d.cross(ax1).normalize()
+                c0 = start + ax1 * hw + ax2 * ht
+                c1 = start - ax1 * hw + ax2 * ht
+                c2 = start - ax1 * hw - ax2 * ht
+                c3 = start + ax1 * hw - ax2 * ht
+                wire = Part.Wire([
+                    Part.makeLine(c0, c1),
+                    Part.makeLine(c1, c2),
+                    Part.makeLine(c2, c3),
+                    Part.makeLine(c3, c0),
+                ])
+                face = Part.Face(wire)
+                return face.extrude(d * length)
+
+            prism0 = _seg_prism(P0, P1)
+            prism1 = _seg_prism(P1, P2)
+            prism2 = _seg_prism(P2, P3)
+
+            handle = prism0
+            if prism1:
+                handle = handle.fuse(prism1)
+            if prism2:
+                handle = handle.fuse(prism2)
+
+            valve = valve.fuse(stem)
+            valve = valve.fuse(handle)
+            valve = valve.cut(bore)
+            valve = valve.removeSplitter()
+            fp.Shape = valve
+
+        # ── ports at flange faces ─────────────────────────────────────────
+        fp.Ports = [
+            FreeCAD.Vector(0, 0,  H / 2.0),
+            FreeCAD.Vector(0, 0, -H / 2.0),
+        ]
+        fp.PortDirections = [
+            FreeCAD.Vector(0, 0,  1),
+            FreeCAD.Vector(0, 0, -1),
+        ]
 
     def _execute_sw_th(self, fp, H):
         import math
@@ -1858,6 +2233,7 @@ class Valve(pypeType):
         #
         # Each segment is extruded as a rectangular prism with cross-section
         # (2*hw) x (2*ht) perpendicular to the segment direction, then fused.
+        # It ain't perfect, as it has gaps at the bends in the handle, so maybe fix that when you get a chance
         hw            = min(25.0, OD) / 2.0
         ht            = 1.5                        # half-thickness = 1.5 mm (3 mm total)
         paddle_base_y = stem_y0 + stem_height - 5.0
@@ -1872,7 +2248,7 @@ class Valve(pypeType):
 
         def _seg_prism(start, end):
             """Solid rectangular prism from start to end with cross-section 2*hw x 2*ht.
-            The cross-section is centred on start, in the plane perpendicular to
+            The cross-section is centered on start, in the plane perpendicular to
             (end - start).  Width (2*hw) lies along the global X axis; thickness
             (2*ht) lies in the perpendicular-to-X direction within that plane.
             """
@@ -1891,7 +2267,7 @@ class Valve(pypeType):
             ax1 = d.cross(up).normalize()   # lies in plane perp to d
             ax2 = d.cross(ax1).normalize()  # lies in plane perp to d, perp to ax1
 
-            # Rectangle corners at `start`
+            # Rectangle corners at start
             c0 = start + ax1 * hw + ax2 * ht
             c1 = start - ax1 * hw + ax2 * ht
             c2 = start - ax1 * hw - ax2 * ht

@@ -1945,10 +1945,10 @@ def join(obj1, port1, obj2, port2):
         FreeCAD.Console.PrintError("Object(s) are not pypes\n")
 
 
-def makeValve(propList=[], pos=None, Z=None):
+def makeValve(propList=[], pos=None, Z=None, flgPropList=None, actuator="Handle"):
     """Add a Valve object.
 
-    makeValve(propList, pos, Z)
+    makeValve(propList, pos, Z, flgPropList, actuator)
 
     propList elements for the basic double-cone valve rendering path:
       DN      (string): nominal diameter
@@ -1968,6 +1968,21 @@ def makeValve(propList=[], pos=None, Z=None):
       Conn    (string): "SW" or "TH"
       Kv      (float) : flow factor  [optional]
 
+    propList elements for the flanged (Trunnion Ball) path:
+      DN      (string): nominal diameter
+      VType   (string): valve type (e.g. "Ball_LongPatternRF")
+      H       (float) : body length, flange face to flange face
+      Kv      (float) : flow factor  [optional]
+      Conn    (string): pressure class, e.g. "150lb"
+
+    flgPropList — list of blind-flange properties read from the matching
+      Flange_ASME-BL-RF-<Conn>.csv table.  Elements in order:
+      [PSize, FlangeType, D, t, f, n, df, drf, trf]
+      (Same column order as the CSV, matching the Flange __init__ signature.)
+      When provided the flanged construction path is used automatically.
+
+    actuator -- "Handle" (default) or "Gearbox".  Applies to flanged valves only.
+
     pos (Vector): insertion point; default = origin
     Z   (Vector): flow-axis direction; default = (0,0,1)
     """
@@ -1978,7 +1993,27 @@ def makeValve(propList=[], pos=None, Z=None):
 
     a = FreeCAD.ActiveDocument.addObject("Part::FeaturePython", "Valve")
 
-    if propList:
+    if flgPropList is not None:
+        # Flanged valve path.
+        # propList: [DN, VType, H, (Kv), Conn]
+        DN    = propList[0] if len(propList) > 0 else "DN50"
+        VType = propList[1] if len(propList) > 1 else "Ball_LongPatternRF"
+        H     = float(propList[2]) if len(propList) > 2 else 200.0
+        Kv    = float(propList[3]) if len(propList) > 3 else 0.0
+        Conn  = str(propList[4]) if len(propList) > 4 else "150lb"
+        # flgPropList: [PSize, FlangeType, D, t, f, n, df, drf, trf]
+        flgD   = float(flgPropList[2]) if len(flgPropList) > 2 else 0.0
+        flgt   = float(flgPropList[3]) if len(flgPropList) > 3 else 0.0
+        flgf   = float(flgPropList[4]) if len(flgPropList) > 4 else 0.0
+        flgn   = int(float(flgPropList[5])) if len(flgPropList) > 5 else 0
+        flgdf  = float(flgPropList[6]) if len(flgPropList) > 6 else 0.0
+        flgdrf = float(flgPropList[7]) if len(flgPropList) > 7 else 0.0
+        flgtrf = float(flgPropList[8]) if len(flgPropList) > 8 else 0.0
+        pFeatures.Valve(a, DN=DN, VType=VType, H=H, Kv=Kv, Conn=Conn,
+                        flgD=flgD, flgt=flgt, flgdrf=flgdrf, flgtrf=flgtrf,
+                        flgdf=flgdf, flgf=flgf, flgn=flgn,
+                        actuator=actuator)
+    elif propList:
         # Detect socket/threaded variant by the presence of a "Conn" field.
         # Convention: propList for the SW/TH path carries Conn as element [6]
         # (after DN, VType, OD, ODBody, H, E).
@@ -2009,25 +2044,30 @@ def makeValve(propList=[], pos=None, Z=None):
     return a
 
 
-def doValves(propList=["DN50", "ball", 72, 50, 40, 150], pypeline=None, pos=0):
+def doValves(propList=["DN50", "ball", 72, 50, 40, 150], pypeline=None, pos=0,
+             flgPropList=None, actuator="Handle"):
     """Insert one or more Valve objects.
 
-    propList  — see makeValve() for the two accepted formats.
-    pypeline  — optional pypeline label to add the valve to.
-    pos       — legacy: position along pipe (0–100 %).  Kept for back-compat.
-                When a pype-object with ports is selected the new attachment
-                method (getAttachmentPoints / alignTwoPorts) is used instead.
+    propList  -- see makeValve() for the accepted formats.
+    pypeline  -- optional pypeline label to add the valve to.
+    pos       -- legacy: position along pipe (0-100 %).  Kept for back-compat.
+                 When a pype-object with ports is selected the new attachment
+                 method (getAttachmentPoints / alignTwoPorts) is used instead.
+    flgPropList -- optional list of blind-flange properties for flanged valves.
+                   When supplied the flanged construction path is used.
+                   Elements: [PSize, FlangeType, D, t, f, n, df, drf, trf]
+    actuator    -- "Handle" (default) or "Gearbox".  Flanged valves only.
     """
     color  = 0.05, 0.3, 0.75
     vlist  = []
     FreeCAD.activeDocument().openTransaction(translate("Transaction", "Insert valve"))
 
     if 0 < pos < 100:
-        # ── legacy: split a pipe and insert valve in the gap ──────────────────
+        # -- legacy: split a pipe and insert valve in the gap ----------------
         pipes = [p for p in FreeCADGui.Selection.getSelection() if isPipe(p)]
         if pipes:
             for p1 in pipes:
-                valve = makeValve(propList)
+                valve = makeValve(propList, flgPropList=flgPropList, actuator=actuator)
                 vlist.append(valve)
                 p2 = breakTheTubes(
                     float(p1.Height) * pos / 100,
@@ -2050,19 +2090,19 @@ def doValves(propList=["DN50", "ball", 72, 50, 40, 150], pypeline=None, pos=0):
             pos_vec, Z_vec, srcObj, srcPort = getAttachmentPoints()
 
             if usablePorts:
-                valve = makeValve(propList, pos_vec, Z_vec)
+                valve = makeValve(propList, pos_vec, Z_vec, flgPropList=flgPropList, actuator=actuator)
                 vlist.append(valve)
                 valve.ViewObject.ShapeColor = color
                 FreeCAD.activeDocument().commitTransaction()
                 FreeCAD.activeDocument().recompute()
                 alignTwoPorts(valve, 0, srcObj, srcPort)
             else:
-                valve = makeValve(propList, pos_vec, Z_vec)
+                valve = makeValve(propList, pos_vec, Z_vec, flgPropList=flgPropList, actuator=actuator)
                 vlist.append(valve)
                 valve.ViewObject.ShapeColor = color
         except Exception:
-            # Nothing selected — insert at origin
-            valve = makeValve(propList)
+            # Nothing selected -- insert at origin
+            valve = makeValve(propList, flgPropList=flgPropList, actuator=actuator)
             vlist.append(valve)
             valve.ViewObject.ShapeColor = color
 
