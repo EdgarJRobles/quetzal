@@ -821,7 +821,7 @@ def makeFlange(propList=[], pos=None, Z=None, doOffset=None, rating="DIN-PN16"):
         else:
             zpos = 0
         a.Placement = a.Placement.multiply(
-            FreeCAD.Placement(FreeCAD.Vector(0, 0, zpos), FreeCAD.Rotation(1, 0, 0))
+            FreeCAD.Placement(FreeCAD.Vector(0, 0, zpos), FreeCAD.Rotation())
         )
     FreeCAD.ActiveDocument.recompute()
     a.Label = translate("Objects", "Flange")
@@ -894,7 +894,7 @@ def doFlanges(
                     zpos = a.trf
                 pipe = fCmd.beams()[0]
                 #respos=a.Placement.multiply(FreeCAD.Placement(FreeCAD.Vector(0,0,-zpos), FreeCAD.Rotation(1, 0, 0)))
-                respos=a.Placement.multiply(FreeCAD.Placement(FreeCAD.Vector(0,0,zpos), FreeCAD.Rotation(1, 0, 0)))
+                respos=a.Placement.multiply(FreeCAD.Placement(FreeCAD.Vector(0,0,zpos), FreeCAD.Rotation()))
                 fCmd.extendTheBeam(pipe,respos.Base)
             FreeCAD.activeDocument().commitTransaction()
             FreeCAD.activeDocument().recompute()
@@ -908,60 +908,6 @@ def doFlanges(
         #nothing selected, insert at origin
         flist.append(makeFlange(propList))
 
-    ###OLD METHOD
-    """
-    if len(fCmd.edges()) == 0:
-        vs = [
-            v
-            for sx in FreeCADGui.Selection.getSelectionEx()
-            for so in sx.SubObjects
-            for v in so.Vertexes
-        ]
-        if len(vs) == 0:
-            flist.append(makeFlange(propList))
-        else:
-            for v in vs:
-                flist.append(makeFlange(propList, v.Point))
-    elif tubes:
-        selex = FreeCADGui.Selection.getSelectionEx()
-        for sx in selex:
-            if isPipe(sx.Object) and fCmd.edges([sx]):
-                for edge in fCmd.edges([sx]):
-                    if edge.curvatureAt(0) != 0:
-                        flist.append(
-                            makeFlange(
-                                propList,
-                                edge.centerOfCurvatureAt(0),
-                                sx.Object.Shape.Solids[0].CenterOfMass
-                                - edge.centerOfCurvatureAt(0),
-                                doOffset
-                            )
-                        )
-                        if doOffset:
-                            a=flist.pop()
-                            if a.FlangeType == "WN":
-                                zpos = -a.T1 + a.trf
-                            elif a.FlangeType == "SW":
-                                zpos = -a.T1 + a.Y + a.trf
-                            elif a.FlangeType == "LJ":
-                                zpos = 0
-                            else:
-                                zpos = 0
-                            pipe = fCmd.beams()[0]
-                            respos=a.Placement.multiply(FreeCAD.Placement(FreeCAD.Vector(0,0,-zpos), FreeCAD.Rotation(1, 0, 0)))
-                            fCmd.extendTheBeam(pipe,respos.Base)
-    else:
-        for edge in fCmd.edges():
-            if edge.curvatureAt(0) != 0:
-                flist.append(
-                    makeFlange(
-                        propList,
-                        edge.centerOfCurvatureAt(0),
-                        edge.tangentAt(0).cross(edge.normalAt(0)),
-                        doOffset
-                    )
-                )
-    """
     if pypeline:
         for f in flist:
             moveToPyLi(f, pypeline)
@@ -2313,6 +2259,91 @@ def doGaskets(propList=[], pypeline=None):
     FreeCAD.activeDocument().commitTransaction()
     FreeCAD.activeDocument().recompute()
     return glist
+
+
+def makeBolts_Nuts(propList=[], pos=None, Z=None):
+    """Add a Bolts_Nuts object.
+    makeBolts_Nuts(propList, pos, Z)
+      propList is one optional list with 9 elements:
+        DN (string)   : nominal diameter
+        FClass (string): flange class / pressure rating
+        dBolt (float) : stud bolt cylinder outer diameter
+        dNut (float)  : hex nut circumscribed circle outer diameter
+        tNut (float)  : hex nut extruded length
+        df (float)    : bolt center distance from flange centerline
+        n (int)       : number of bolts per flange
+        lBolt (float) : bolt length
+        SEthk (float) : sealing element thickness from matching gasket
+      pos (vector)    : position of insertion; default = 0,0,0
+      Z (vector)      : orientation; default = 0,0,1
+    """
+    if pos is None:
+        pos = FreeCAD.Vector(0, 0, 0)
+    if Z is None:
+        Z = FreeCAD.Vector(0, 0, 1)
+    a = FreeCAD.ActiveDocument.addObject("Part::FeaturePython", "Bolts_Nuts")
+
+    if len(propList) == 9:
+        rating = propList[1]  # FClass is the second element
+        pFeatures.Bolts_Nuts(a, rating, *propList)
+    else:
+        pFeatures.Bolts_Nuts(a, "150lb")
+
+    ViewProvider(a.ViewObject, "Quetzal_InsertGasket")
+    a.ViewObject.ShapeColor = (0.7, 0.7, 0.7)   # light gray for metal
+    a.Placement.Base = pos
+    rot = FreeCAD.Rotation(FreeCAD.Vector(0, 0, 1), Z)
+    a.Placement.Rotation = rot.multiply(a.Placement.Rotation)
+    a.Label = translate("Objects", "Bolts_Nuts")
+    return a
+
+
+def doBolts_Nuts(propList=[], pypeline=None):
+    """Insert one or more Bolts_Nuts objects at the current selection.
+    propList = [
+      DN (string)   : nominal diameter
+      FClass (string): flange class / pressure rating
+      dBolt (float) : stud bolt cylinder outer diameter
+      dNut (float)  : hex nut circumscribed circle outer diameter
+      tNut (float)  : hex nut extruded length
+      df (float)    : bolt center distance from flange centerline
+      n (int)       : number of bolts per flange
+      lBolt (float) : bolt length
+      SEthk (float) : sealing element thickness from matching gasket ]
+    pypeline = string
+    """
+    FreeCAD.activeDocument().openTransaction(
+        translate("Transaction", "Insert bolts and nuts")
+    )
+    blist = []
+    connecting_port = 0  # bolts connect via Port[0] (the -Z face) to the mating flange face
+    try:
+        selex = FreeCADGui.Selection.getSelectionEx()[0]
+        usablePorts = False
+        if hasattr(selex.Object, "Ports"):
+            if hasattr(selex.Object, "PType") and selex.Object.PType != "Any":
+                usablePorts = True
+
+        pos, Z, srcObj, srcPort = getAttachmentPoints()
+        if usablePorts:
+            bn = makeBolts_Nuts(propList, pos, Z)
+            blist.append(bn)
+            FreeCAD.activeDocument().commitTransaction()
+            FreeCAD.activeDocument().recompute()
+            alignTwoPorts(bn, connecting_port, srcObj, srcPort)
+        else:
+            blist.append(makeBolts_Nuts(propList, pos, Z))
+    except:
+        # nothing selected -- insert at origin
+        blist.append(makeBolts_Nuts(propList))
+
+    if pypeline:
+        for b in blist:
+            moveToPyLi(b, pypeline)
+    FreeCAD.activeDocument().commitTransaction()
+    FreeCAD.activeDocument().recompute()
+    return blist
+
 
 def makeBeam(propList=[], pos=None, Z=None):
     """Add a Beam structural section object.

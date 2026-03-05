@@ -2953,28 +2953,80 @@ class insertRouteForm(dodoDialogs.protoTypeDialog):
 
 class insertGasketForm(dodoDialogs.protoPypeForm):
     """
-    Dialog to insert spiral-wound gaskets.
+    Dialog to insert spiral-wound gaskets and/or stud bolt sets.
     For position and orientation you can select
       - one circular edge (e.g. a flange face edge),
       - one vertex,
-      - a ported object (e.g. a Flange) -- gasket snaps to the selected port,
+      - a ported object (e.g. a Flange) -- gasket/bolts snap to the selected port,
       - nothing (created at origin).
+
+    Two check boxes control what is inserted:
+      Insert Gasket  -- inserts a Gasket object (default: checked)
+      Insert Bolts   -- inserts a Bolts_Nuts object (default: unchecked)
+
+    Either or both check boxes may be checked.  If both are checked the gasket
+    and the bolt set are inserted as separate objects at the same location.
+
     Available buttons to reverse the orientation of the last or selected
     gaskets and to apply the current size to existing gaskets.
     """
+
+    # ---------------------------------------------------------------
+    # Helper: find the bolt CSV file for the current rating and return
+    # the row matching the currently selected PSize.
+    # Returns a dict of bolt properties or None if not found.
+    # ---------------------------------------------------------------
+    def _getBoltRow(self):
+        """Load Bolt_<PRating>.csv and return the row for the selected PSize."""
+        # Resolve the CSV directory the same way protoPypeForm does.
+        csv_dir = join(dirname(abspath(__file__)), "tablez")
+        fname = "Bolt_" + self.PRating + ".csv"
+        fpath = join(csv_dir, fname)
+        try:
+            with open(fpath, "r") as fh:
+                bolt_list = list(csv.DictReader(fh, delimiter=";"))
+        except Exception:
+            FreeCAD.Console.PrintError(
+                "insertGasketForm: cannot open %s\n" % fpath
+            )
+            return None
+
+        # Match on PSize from the currently selected gasket row
+        d_gasket = self.pipeDictList[self.sizeList.currentRow()]
+        psize = d_gasket.get("PSize", "")
+        for row in bolt_list:
+            if row.get("PSize", "").strip() == psize.strip():
+                return row
+        FreeCAD.Console.PrintError(
+            "insertGasketForm: PSize %s not found in %s\n" % (psize, fname)
+        )
+        return None
 
     def __init__(self):
         super(insertGasketForm, self).__init__(
             translate("insertGasketForm", "Insert gaskets"),
             "Gasket",
             "150lb",
-            "gasket.svg",  
+            "gasket.svg",
             x,
             y,
         )
         self.sizeList.setCurrentRow(0)
         self.ratingList.setCurrentRow(0)
         self.btn1.clicked.connect(self.insert)
+
+        # --- check boxes for what to insert ---
+        self.chkGasket = QCheckBox(
+            translate("insertGasketForm", "Insert Gasket")
+        )
+        self.chkGasket.setChecked(True)
+        self.secondCol.layout().addWidget(self.chkGasket)
+
+        self.chkBolts = QCheckBox(
+            translate("insertGasketForm", "Insert Bolts")
+        )
+        self.chkBolts.setChecked(False)
+        self.secondCol.layout().addWidget(self.chkBolts)
 
         self.btn2 = QPushButton(translate("insertGasketForm", "Reverse"))
         self.secondCol.layout().addWidget(self.btn2)
@@ -2992,6 +3044,7 @@ class insertGasketForm(dodoDialogs.protoPypeForm):
 
         self.show()
         self.lastGasket = None
+        self.lastBolts  = None
 
     def reverse(self):
         selGaskets = [
@@ -3010,21 +3063,53 @@ class insertGasketForm(dodoDialogs.protoPypeForm):
         target.Placement.move(initial_port_pos - final_port_pos)
 
     def insert(self):
+        insert_gasket = self.chkGasket.isChecked()
+        insert_bolts  = self.chkBolts.isChecked()
+
+        if not insert_gasket and not insert_bolts:
+            FreeCAD.Console.PrintWarning(
+                "insertGasketForm: nothing to insert -- check at least one box\n"
+            )
+            return
+
         d = self.pipeDictList[self.sizeList.currentRow()]
-        propList = [
-            d["PSize"],
-            self.PRating,   # FClass comes from the selected rating
-            float(pq(d["IRID"])),
-            float(pq(d["SEID"])),
-            float(pq(d["SEOD"])),
-            float(pq(d["CROD"])),
-            float(pq(d["SEthk"])),
-            float(pq(d["Rthk"])),
-        ]
-        self.lastGasket = pCmd.doGaskets(
-            propList,
-            pypeline=FreeCAD.__activePypeLine__,
-        )
+
+        if insert_gasket:
+            propList = [
+                d["PSize"],
+                self.PRating,   # FClass comes from the selected rating
+                float(pq(d["IRID"])),
+                float(pq(d["SEID"])),
+                float(pq(d["SEOD"])),
+                float(pq(d["CROD"])),
+                float(pq(d["SEthk"])),
+                float(pq(d["Rthk"])),
+            ]
+            self.lastGasket = pCmd.doGaskets(
+                propList,
+                pypeline=FreeCAD.__activePypeLine__,
+            )
+
+        if insert_bolts:
+            bolt_row = self._getBoltRow()
+            if bolt_row is not None:
+                # SEthk is taken from the gasket data for the same PSize/rating
+                sethk = float(pq(d["SEthk"]))
+                bolt_propList = [
+                    bolt_row["PSize"],
+                    self.PRating,
+                    float(pq(bolt_row["dBolt"])),
+                    float(pq(bolt_row["dNut"])),
+                    float(pq(bolt_row["tNut"])),
+                    float(pq(bolt_row["df"])),
+                    int(float(bolt_row["n"])),
+                    float(pq(bolt_row["lBolt"])),
+                    sethk,
+                ]
+                self.lastBolts = pCmd.doBolts_Nuts(
+                    bolt_propList,
+                    pypeline=FreeCAD.__activePypeLine__,
+                )
 
     def apply(self):
         """Apply the currently selected size to already-placed gaskets."""
@@ -3038,7 +3123,6 @@ class insertGasketForm(dodoDialogs.protoPypeForm):
             targets = [self.lastGasket]
         for g in targets:
             g.PSize   = d["PSize"]
-            #g.PRating = self.PRating
             g.FClass  = self.PRating
             g.IRID    = float(pq(d["IRID"]))
             g.SEID    = float(pq(d["SEID"]))

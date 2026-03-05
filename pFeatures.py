@@ -567,7 +567,7 @@ class Flange(pypeType):
         return None
 
     def execute(self, fp):
-        """ """
+       
         base = Part.Face(Part.Wire(Part.makeCircle(fp.D / 2)))
         if fp.d > 0:
             base = base.cut(Part.Face(Part.Wire(Part.makeCircle(fp.d / 2))))
@@ -587,7 +587,7 @@ class Flange(pypeType):
                 base = base.cut(hole)
                 hole.rotate(FreeCAD.Vector(0, 0, 0), FreeCAD.Vector(0, 0, 1), 360.0 / fp.n)
         # creates flange thickness
-        flange = base.extrude(FreeCAD.Vector(0, 0, fp.t - fp.trf))
+        flange = base.extrude(FreeCAD.Vector(0, 0, fp.t)) 
         fp.ViewObject.Deviation = 0.10
         if (
             fp.FlangeType == "SW"
@@ -595,9 +595,9 @@ class Flange(pypeType):
             or fp.FlangeType == "LJ"
             or fp.FlangeType == "SO"
         ):
-            # creates flange neck
-            nn = Part.makeCylinder(fp.ODp / 2, fp.T1 - fp.trf, vO, vZ).cut(
-                Part.makeCylinder(fp.d / 2, fp.T1 - fp.trf, vO, vZ)
+            # creates flange neck (corrected for raised face addition)
+            nn = Part.makeCylinder(fp.ODp / 2, fp.T1, vO, vZ).cut(
+                Part.makeCylinder(fp.d / 2, fp.T1, vO, vZ)
             )
             flange = flange.fuse(nn)
             if fp.trf > 0 and fp.drf < fp.D:
@@ -608,14 +608,21 @@ class Flange(pypeType):
 
         if fp.FlangeType == "WN":
             try:  # Flange2:welding-neck
+                
                 if fp.dwn > 0 and fp.twn > 0 and fp.ODp > 0:
                     wn = Part.makeCone(
-                        fp.dwn / 2, fp.ODp / 2, fp.twn, vZ * float(fp.t - fp.trf)
-                    ).cut(Part.makeCylinder(fp.d / 2, fp.twn, vZ * float(fp.t - fp.trf)))
+                        fp.dwn / 2, fp.ODp / 2, fp.twn, vZ * float(fp.t)
+                    ).cut(Part.makeCylinder(fp.d / 2, fp.twn, vZ * float(fp.t)))
                     flange = flange.fuse(wn)
                     flange = flange.removeSplitter()
+                    
                     flange = flange.makeFillet(fp.R, [flange.Edges[2]])
-                    flange = flange.makeChamfer((fp.ODp - fp.d) / 2 * 0.90, [flange.Edges[6]])
+                    """ Seems to be an issue with making weld neck fillet after correcting flange thickness. 
+                    Was previously edge 6 but now appears to not be consistent. Is there a better way to reliably find this edge rather than hard coding an edge number? 
+                    Perhaps create the chamfer before merging with the rest of the flange object"""
+                    #flange = flange.makeChamfer((fp.ODp - fp.d) / 2 * 0.90, [flange.Edges[7]])
+                    
+                    
             except:
                 pass
         elif fp.FlangeType == "LJ":
@@ -647,13 +654,15 @@ class Flange(pypeType):
                 flange = flange.fuse(rf)
         fp.Shape = flange
         if fp.FlangeType == "WN":
-            fp.Ports = [FreeCAD.Vector(0, 0, -float(fp.trf)), FreeCAD.Vector(0, 0, float(fp.T1)-float(fp.trf))] #weld neck flanges mate with pipe at T1 - RF thickness, raised face is at 0,0,-RF thickness
+            fp.Ports = [FreeCAD.Vector(0, 0, -float(fp.trf)), FreeCAD.Vector(0, 0, float(fp.T1))] #weld neck flanges mate with pipe at T1, raised face is at 0,0,-RF thickness
         elif fp.FlangeType == "SW":
             fp.Ports = [FreeCAD.Vector(0, 0, -float(fp.trf)), FreeCAD.Vector(0, 0, float(fp.T1)-float(fp.Y)-float(fp.trf))] #Socket weld flanges mate with pipe at Y - RF thickness, raised face is at 0,0,-RF thickness
         elif fp.FlangeType == "BL": #blind flange
             fp.Ports = [FreeCAD.Vector(0, 0, -float(fp.trf)), FreeCAD.Vector(0, 0, float(fp.t))] #Blind flange: port 0 at raised face, fictitious port 1 at outer back face
-        else: #slip on and lap joint
-            fp.Ports = [FreeCAD.Vector(), FreeCAD.Vector(0, 0, float(fp.trf))] #Slip on and lap joint flanges should be mated with pipe at 0,0,0. Raised face will be at 0,0,-RF thickness
+        elif fp.FlangeType == "SO":
+            fp.Ports = [FreeCAD.Vector(0, 0, -float(fp.trf)), FreeCAD.Vector(0, 0, float(fp.trf))] #slip on flange: port 0 at raised face, port 1 mated to pipe back RF thickness from edge of flange hub (2 * trf back from raised face edge)
+        else: #lap joint
+            fp.Ports = [FreeCAD.Vector(0, 0, 0), FreeCAD.Vector(0, 0, float(fp.trf))] #lap joint flanges should be mated with pipe at 0,0,0. Raised face will be at 0,0,-RF thickness
         fp.PortDirections = [FreeCAD.Vector(0, 0, -1), FreeCAD.Vector(0, 0, 1)] #Flange face is toward -Z direction, flange weld end faces in +Z direction
         super(Flange, self).execute(fp)  # perform common operations
 
@@ -2612,6 +2621,209 @@ class Gasket(pypeType):
         ]
 
         super(Gasket, self).execute(fp)  # perform common operations
+
+
+class Bolts_Nuts(pypeType):
+    """Class for object PType="Bolts_Nuts"
+    Bolts_Nuts(obj, rating, [PSize="DN50", FClass="150lb",
+               dBolt=15.875, dNut=31.1658, tNut=16.0274,
+               df=120.65, n=4, lBolt=76.9548, SEthk=4.5])
+      obj    : the "App::FeaturePython" object
+      rating : flange class string (e.g. "150lb" or "300lb")
+      PSize  : nominal diameter string (e.g. "DN50")
+      FClass : flange class / pressure rating
+      dBolt  : stud bolt cylinder outer diameter (mm)
+      dNut   : hex nut circumscribed circle outer diameter (mm)
+      tNut   : hex nut extruded length (mm)
+      df     : bolt center distance from flange centerline (mm)
+      n      : number of bolts per flange
+      lBolt  : bolt length (mm)
+      SEthk  : sealing element thickness from the matching gasket (mm)
+    """
+
+    def __init__(self, obj, rating, DN="DN50", FClass="150lb",
+                 dBolt=15.875, dNut=31.1658, tNut=16.0274,
+                 df=120.65, n=4, lBolt=76.9548, SEthk=4.5):
+        # initialize the parent class
+        super(Bolts_Nuts, self).__init__(obj)
+        # define common properties
+        obj.PType = "Bolts_Nuts"
+        obj.Proxy = self
+        # PRating stores the flange class so port-alignment helpers work
+        obj.PRating = rating
+        obj.PSize = DN
+        # define specific properties
+        obj.addProperty(
+            "App::PropertyString",
+            "FClass",
+            "Bolts_Nuts",
+            QT_TRANSLATE_NOOP("App::Property", "Flange class / pressure rating"),
+        ).FClass = FClass
+        obj.addProperty(
+            "App::PropertyLength",
+            "dBolt",
+            "Bolts_Nuts",
+            QT_TRANSLATE_NOOP("App::Property", "Stud bolt outer diameter"),
+        ).dBolt = dBolt
+        obj.addProperty(
+            "App::PropertyLength",
+            "dNut",
+            "Bolts_Nuts",
+            QT_TRANSLATE_NOOP("App::Property",
+                              "Hex nut circumscribed circle outer diameter"),
+        ).dNut = dNut
+        obj.addProperty(
+            "App::PropertyLength",
+            "tNut",
+            "Bolts_Nuts",
+            QT_TRANSLATE_NOOP("App::Property", "Hex nut extruded length"),
+        ).tNut = tNut
+        obj.addProperty(
+            "App::PropertyLength",
+            "df",
+            "Bolts_Nuts",
+            QT_TRANSLATE_NOOP("App::Property",
+                              "Bolt center distance from flange centerline"),
+        ).df = df
+        obj.addProperty(
+            "App::PropertyInteger",
+            "n",
+            "Bolts_Nuts",
+            QT_TRANSLATE_NOOP("App::Property", "Number of bolts per flange"),
+        ).n = n
+        obj.addProperty(
+            "App::PropertyLength",
+            "lBolt",
+            "Bolts_Nuts",
+            QT_TRANSLATE_NOOP("App::Property", "Bolt length"),
+        ).lBolt = lBolt
+        obj.addProperty(
+            "App::PropertyLength",
+            "SEthk",
+            "Bolts_Nuts",
+            QT_TRANSLATE_NOOP("App::Property",
+                              "Sealing element thickness of the matching gasket"),
+        ).SEthk = SEthk
+
+    def onChanged(self, fp, prop):
+        return None
+
+    def execute(self, fp):
+        from math import cos, sin, pi
+
+        # Retrieve scalar values from FreeCAD property quantities
+        dBolt  = float(fp.dBolt)
+        dNut   = float(fp.dNut)
+        tNut   = float(fp.tNut)
+        df     = float(fp.df)
+        n      = int(fp.n)
+        lBolt  = float(fp.lBolt)
+        SEthk  = float(fp.SEthk)
+
+        # Validate dimensions
+        if not (dBolt > 0 and dNut > 0 and tNut > 0 and df > 0
+                and n > 0 and lBolt > 0 and SEthk > 0):
+            FreeCAD.Console.PrintError(
+                "Bolts_Nuts: invalid dimensions -- shape not updated\n"
+            )
+            return
+
+        # Bolts are centered axially on the gasket mid-plane (0, 0, SEthk/2).
+        # The bolt cylinder spans from z = SEthk/2 - lBolt/2
+        #                           to z = SEthk/2 + lBolt/2.
+        bolt_z_center = 0.0 #SEthk / 2.0
+        bolt_z_base   = bolt_z_center - lBolt / 2.0  # bottom of bolt cylinder
+
+        # Bolt angular pitch: first bolt is aligned with flange hole convention.
+        # The flange execute() starts the first hole at angle (360/n/2) degrees
+        # and then steps by (360/n) degrees.  We replicate that pattern so bolts
+        # sit at the same angular positions as the flange holes.
+        start_angle = (2.0 * pi / n) / 2.0        # half-step offset, radians
+        step_angle  = 2.0 * pi / n                 # radians between bolts
+
+        # Nut geometry: a regular hexagon with circumscribed circle radius dNut/2.
+        # Build one hexagon wire centered at origin in the XY plane.
+        def make_hex_wire(center, r):
+            """Return a closed hexagonal Part.Wire centered at 'center'
+               with circumscribed radius r in the XY plane."""
+            pts = [
+                FreeCAD.Vector(
+                    center.x + r * cos(2.0 * pi * k / 6),
+                    center.y + r * sin(2.0 * pi * k / 6),
+                    center.z,
+                )
+                for k in range(6)
+            ]
+            pts.append(pts[0])  # close the polygon
+            return Part.makePolygon(pts)
+
+        bolt_solids = []
+
+        for i in range(n):
+            angle = start_angle + i * step_angle
+
+            # Center of this bolt in the XY plane
+            cx = (df / 2.0) * cos(angle)
+            cy = (df / 2.0) * sin(angle)
+
+            # --- Bolt cylinder ---
+            bolt_base_pt = FreeCAD.Vector(cx, cy, bolt_z_base)
+            bolt_cyl = Part.makeCylinder(
+                dBolt / 2.0,
+                lBolt,
+                bolt_base_pt,
+                vZ,
+            )
+
+            # --- Bottom nut ---
+            # Outer face sits 1 mm inward from the bolt bottom (at bolt_z_base + 1.0).
+            # The nut body extends inward (toward +Z) by tNut, overlapping the bolt.
+            # Extrusion base is at the outer face; extrude in +Z direction.
+            nut_bot_outer = bolt_z_base + 1.0
+            hex_wire_bot = make_hex_wire(
+                FreeCAD.Vector(cx, cy, nut_bot_outer), dNut / 2.0
+            )
+            hex_face_bot = Part.Face(Part.Wire(hex_wire_bot))
+            nut_bot = hex_face_bot.extrude(FreeCAD.Vector(0, 0, tNut))
+
+            # --- Top nut ---
+            # Outer face sits 1 mm inward from the bolt top (at bolt_z_base + lBolt - 1.0).
+            # The nut body extends inward (toward -Z) by tNut, overlapping the bolt.
+            # Extrusion base is tNut below the outer face; extrude in +Z direction.
+            nut_top_outer = bolt_z_base + lBolt - 1.0
+            nut_top_base  = nut_top_outer - tNut
+            hex_wire_top = make_hex_wire(
+                FreeCAD.Vector(cx, cy, nut_top_base), dNut / 2.0
+            )
+            hex_face_top = Part.Face(Part.Wire(hex_wire_top))
+            nut_top = hex_face_top.extrude(FreeCAD.Vector(0, 0, tNut))
+
+            # Fuse this bolt's three solids together
+            bolt_assembly = bolt_cyl.fuse(nut_bot).fuse(nut_top)
+            bolt_solids.append(bolt_assembly)
+
+        # Fuse all bolts into one compound shape
+        if len(bolt_solids) == 1:
+            shape = bolt_solids[0]
+        else:
+            shape = bolt_solids[0]
+            for s in bolt_solids[1:]:
+                shape = shape.fuse(s)
+        #shape = shape.removeSplitter()
+        fp.Shape = shape
+
+        # Ports at the gasket faces (same convention as Gasket class)
+        fp.Ports = [
+            FreeCAD.Vector(0, 0, -float(fp.SEthk) / 2),
+            FreeCAD.Vector(0, 0,  float(fp.SEthk) / 2),
+        ]
+        fp.PortDirections = [
+            FreeCAD.Vector(0, 0, -1),
+            FreeCAD.Vector(0, 0,  1),
+        ]
+
+        super(Bolts_Nuts, self).execute(fp)  # perform common operations
+
 
 class Outlet(pypeType):
     """
