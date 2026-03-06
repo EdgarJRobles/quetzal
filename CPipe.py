@@ -170,8 +170,8 @@ class insertGasket:
     def GetResources(self):
         return {
             "Pixmap": "Quetzal_InsertGasket",
-            "MenuText": QT_TRANSLATE_NOOP("Quetzal_InsertGasket", "Insert a gasket"),
-            "ToolTip": QT_TRANSLATE_NOOP("Quetzal_InsertGasket", "Insert a gasket"),
+            "MenuText": QT_TRANSLATE_NOOP("Quetzal_InsertGasket", "Insert a gasket and/or flange bolts & nuts"),
+            "ToolTip": QT_TRANSLATE_NOOP("Quetzal_InsertGasket", "Insert a gasket and/or flange bolts & nuts"),
         }
 
 class insertFlange:

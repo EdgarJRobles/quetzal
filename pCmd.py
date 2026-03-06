@@ -772,7 +772,7 @@ def doElbow(rating="SCH-STD", propList=["DN50", 60.3, 3, 90, 45.225], pypeline=N
     return elist
 
 
-def makeFlange(propList=[], pos=None, Z=None, doOffset=None, rating="DIN-PN16"):
+def makeFlange(propList=[], pos=None, Z=None, doOffset=None, rating="DIN-PN16", fclass=""):
     """Adds a Flange object
     makeFlange(propList,pos,Z);
       propList is one optional list with 8 elements:
@@ -804,9 +804,9 @@ def makeFlange(propList=[], pos=None, Z=None, doOffset=None, rating="DIN-PN16"):
         Z = FreeCAD.Vector(0, 0, 1)
     a = FreeCAD.ActiveDocument.addObject("Part::FeaturePython", "Flange")
     if len(propList) >= 8:
-        pFeatures.Flange(a, rating, *propList)
+        pFeatures.Flange(a, rating, *propList, FClass=fclass)
     else:
-        pFeatures.Flange(a, rating)
+        pFeatures.Flange(a, rating, FClass=fclass)
     ViewProvider(a.ViewObject, "Quetzal_InsertFlange")
     a.Placement.Base = pos
     rot = FreeCAD.Rotation(FreeCAD.Vector(0, 0, 1), Z)
@@ -833,7 +833,8 @@ def doFlanges(
     propList=["DN50", "SO", 160, 60.3, 132, 14, 15, 4, 0, 0, 0, 0, 0, 0, 0],
     pypeline=None,
     doOffset=None,
-    attachFace=None #TODO add radio buttons to flange insertion form for whether to attach flange at face or neck
+    attachFace=None, 
+    fclass="",
 ):
     """
     propList = [
@@ -877,7 +878,7 @@ def doFlanges(
         pos, Z, srcObj, srcPort = getAttachmentPoints()
 
         if usablePorts:
-            flange = makeFlange(propList, pos, Z, doOffset, rating=rating)
+            flange = makeFlange(propList, pos, Z, doOffset, rating=rating, fclass=fclass)
             flist.append(flange)
             
             #if we need to remove pipe equivalent length
@@ -903,10 +904,10 @@ def doFlanges(
 
 
         else:
-            flist.append(makeFlange(propList, pos, Z, doOffset, rating=rating))
+            flist.append(makeFlange(propList, pos, Z, doOffset, rating=rating, fclass=fclass))
     except:
         #nothing selected, insert at origin
-        flist.append(makeFlange(propList))
+        flist.append(makeFlange(propList, fclass=fclass))
 
     if pypeline:
         for f in flist:

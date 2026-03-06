@@ -450,6 +450,7 @@ class Flange(pypeType):
         T1=0,
         B2=0,
         Y=0,
+        FClass="",
     ):
         # initialize the parent class
         super(Flange, self).__init__(obj)
@@ -458,6 +459,12 @@ class Flange(pypeType):
         obj.Proxy = self
         obj.PType = "Flange"
         obj.PRating = rating
+        obj.addProperty(
+            "App::PropertyString",
+            "FClass",
+            "Flange",
+            QT_TRANSLATE_NOOP("App::Property", "Flange pressure class"),
+        ).FClass = FClass
         obj.PSize = DN
         # define specific properties
         obj.addProperty(
@@ -617,9 +624,9 @@ class Flange(pypeType):
                     flange = flange.removeSplitter()
                     
                     flange = flange.makeFillet(fp.R, [flange.Edges[2]])
-                    """ Seems to be an issue with making weld neck fillet after correcting flange thickness. 
+                    """ TODO Seems to be an issue with making weld neck chamfer after correcting flange thickness. 
                     Was previously edge 6 but now appears to not be consistent. Is there a better way to reliably find this edge rather than hard coding an edge number? 
-                    Perhaps create the chamfer before merging with the rest of the flange object"""
+                    Perhaps create the chamfer before merging with the rest of the flange object. Maybe it just doesn't need to be chamfered - none of the other components are"""
                     #flange = flange.makeChamfer((fp.ODp - fp.d) / 2 * 0.90, [flange.Edges[7]])
                     
                     

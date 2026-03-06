@@ -31,6 +31,33 @@ mw = FreeCADGui.getMainWindow()
 x = mw.x() + int(mw.width() / 20)  # 100
 y = max(300, int(mw.height() / 3))  # 350
 
+pipe_OD = {
+    "DN6" : 10.29,
+    "DN8" : 13.72,
+    "DN10" : 17.14,
+    "DN15" : 21.34,
+    "DN20" : 26.67,
+    "DN25" : 33.4,
+    "DN32" : 42.16,
+    "DN40" : 48.26,
+    "DN50" : 60.32,
+    "DN65" : 73.02,
+    "DN80" : 88.9,
+    "DN90" : 101.6,
+    "DN100" : 114.3,
+    "DN125" : 141.3,
+    "DN150" : 168.27,
+    "DN200" : 219.07,
+    "DN250" : 273.05,
+    "DN300" : 323.85,
+    "DN350" : 355.6,
+    "DN400" : 406.4,
+    "DN450" : 457.2,
+    "DN500" : 508,
+    "DN550" : 558.8,
+    "DN600" : 609.6
+}
+
 
 class redrawDialog(QDialog):
     def __init__(self):
@@ -990,7 +1017,6 @@ class insertFlangeForm(dodoDialogs.protoPypeForm):
       - one or more circular edges,
       - one or more vertexes,
       - nothing.
-    In case one pipe is selected, its properties are applied to the flange.
     Available one button to reverse the orientation of the last or selected
     flanges.
     """
@@ -1016,10 +1042,23 @@ class insertFlangeForm(dodoDialogs.protoPypeForm):
         self.secondCol.layout().addWidget(self.weldEndRadio)
         self.secondCol.layout().addWidget(self.faceEndRadio)
 
+        # Pipe schedule list box (shown only for WN flanges)
+        self.schedLabel = QLabel(translate("insertFlangeForm", "Pipe Schedule:"))
+        self.secondCol.layout().addWidget(self.schedLabel)
+        self.schedList = QListWidget()
+        self.schedList.setMaximumHeight(100)
+        self.secondCol.layout().addWidget(self.schedList)
+        self._fillSchedList()
+        # Show or hide schedule widgets based on current flange type
+        self._updateSchedVisibility()
+        # Refresh schedule list and visibility whenever the flange rating changes
+        self.ratingList.itemClicked.connect(self._onRatingChanged)
+        # Refresh schedule visibility whenever the size selection changes
+        self.sizeList.currentRowChanged.connect(self._onSizeChanged)
 
         self.btn2 = QPushButton(translate("insertFlangeForm", "Reverse"))
         self.secondCol.layout().addWidget(self.btn2)
-        self.btn2.clicked.connect(self.reverse)  # lambda: pCmd.rotateTheTubeAx(self.lastFlange,FreeCAD.Vector(1,0,0),180))
+        self.btn2.clicked.connect(self.reverse)
         self.btn3 = QPushButton(translate("insertFlangeForm", "Apply"))
         self.secondCol.layout().addWidget(self.btn3)
         self.btn4 = QCheckBox(translate("insertFlangeForm", "Remove pipe equivalent length"))
@@ -1031,20 +1070,101 @@ class insertFlangeForm(dodoDialogs.protoPypeForm):
         self.lastFlange = None
         self.offsetoption=False
 
+    def _fillSchedList(self):
+        """Populate schedList with all Pipe_SCH-* schedules found in the tablez folder.
+        Attempt to pre-select a schedule matching a selected fitting's PRating, or
+        fall back to SCH-STD.
+        """
+        self.schedList.clear()
+        tablez_dir = join(dirname(abspath(__file__)), "tablez")
+        sched_files = sorted(
+            f for f in listdir(tablez_dir)
+            if f.startswith("Pipe_SCH-") and f.endswith(".csv")
+        )
+        # Build display names by stripping "Pipe_" prefix and ".csv" suffix
+        # e.g. "Pipe_SCH-STD.csv" -> "SCH-STD"
+        self._schedNames = [
+            f[len("Pipe_"):f.rfind(".csv")] for f in sched_files
+        ]
+        self.schedList.addItems(self._schedNames)
+
+        # Determine the default selection
+        default_sched = "SCH-STD"
+        try:
+            sel = FreeCADGui.Selection.getSelection()
+            if sel and hasattr(sel[0], "PRating"):
+                candidate = sel[0].PRating
+                if candidate in self._schedNames:
+                    default_sched = candidate
+        except Exception:
+            pass
+
+        if default_sched in self._schedNames:
+            self.schedList.setCurrentRow(self._schedNames.index(default_sched))
+        elif self._schedNames:
+            self.schedList.setCurrentRow(0)
+
+    def _currentFlangeType(self):
+        """Return the FlangeType string for the currently selected size row, or ''."""
+        try:
+            d = self.pipeDictList[self.sizeList.currentRow()]
+            return d.get("FlangeType", "")
+        except Exception:
+            return ""
+
+    def _updateSchedVisibility(self):
+        """Show the schedule list only when the selected flange is WN."""
+        is_wn = self._currentFlangeType() == "WN"
+        self.schedLabel.setVisible(is_wn)
+        self.schedList.setVisible(is_wn)
+
+    def _onRatingChanged(self, item):
+        """Called when the user clicks a different flange rating."""
+        # Let the base class handler update PRating and reload sizes first
+        self.changeRating(item)
+        self._updateSchedVisibility()
+
+    def _onSizeChanged(self, _row):
+        """Called when the selected flange size changes."""
+        self._updateSchedVisibility()
+
+    def _getSchedThk(self, psize):
+        """Return wall thickness (mm float) for psize from the selected Pipe_SCH-* file.
+        Returns 0.0 if not found.
+        """
+        if not self._schedNames:
+            return 0.0
+        row = self.schedList.currentRow()
+        if row < 0:
+            return 0.0
+        sched_name = self._schedNames[row]
+        fname = "Pipe_" + sched_name + ".csv"
+        fpath = join(dirname(abspath(__file__)), "tablez", fname)
+        try:
+            with open(fpath, "r") as fh:
+                reader = csv.DictReader(fh, delimiter=";")
+                for rec in reader:
+                    if rec.get("PSize", "").strip() == psize.strip():
+                        return float(rec["thk"])
+        except Exception:
+            pass
+        return 0.0
+
+    def _getFClass(self):
+        """Derive FClass from the selected flange rating file name.
+        FClass is the substring after the last underscore in the base name.
+        e.g. 'Flange_ASME-WN-RF-150lb.csv' -> rating 'ASME-WN-RF-150lb' -> FClass '150lb'
+        For ratings without an underscore the full rating string is used.
+        """
+        rating = self.PRating
+        idx = rating.rfind("_")
+        if idx >= 0:
+            return rating[idx + 1:]
+        return rating
+
     def reverse(self):
         port = 0 if self.faceEndRadio.isChecked() else 1  
-        """
-        selFlanges = [
-            f
-            for f in FreeCADGui.Selection.getSelection()
-            if hasattr(f, "PType") and f.PType == "Flange"
-        ]
-        if len(selFlanges):
-            for f in selFlanges:
-                pCmd.rotateTheTubeAx(f, FreeCAD.Vector(1, 0, 0), 180)
-        else:
-            pCmd.rotateTheTubeAx(self.lastFlange, FreeCAD.Vector(1, 0, 0), 180)
-        """
+
         initial_port_pos = self.lastFlange.Placement.multVec(self.lastFlange.Ports[port])
         crossVector1 = FreeCAD.Vector(1,0,0)
         crossVector2 = self.lastFlange.Ports[port].normalize()
@@ -1073,11 +1193,19 @@ class insertFlangeForm(dodoDialogs.protoPypeForm):
         else:
         """
         d = self.pipeDictList[self.sizeList.currentRow()]
+
+        # Determine bore diameter: WN flanges use pipe schedule wall thickness
+        if d["FlangeType"] == "WN":
+            thk = self._getSchedThk(d["PSize"])
+            flgBore = pipe_OD.get(d["PSize"]) - 2.0 * thk
+        else:
+            flgBore = float(pq(d.get("d", "0")))
+
         propList = [
             d["PSize"],
             d["FlangeType"],
             float(pq(d["D"])),
-            float(pq(d.get("d", "0"))),      # blind flanges have no bore
+            flgBore,
             float(pq(d["df"])),
             float(pq(d["f"])),
             float(pq(d["t"])),
@@ -1117,12 +1245,14 @@ class insertFlangeForm(dodoDialogs.protoPypeForm):
             propList.append(0)
         #FreeCAD.Console.PrintMessage(self.offsetoption)
         rating = self.ratingList.currentItem().text()
+        fclass = self._getFClass()
         self.lastFlange = self.lastFlange = pCmd.doFlanges(
             rating,
             propList,
             pypeline=FreeCAD.__activePypeLine__,
             doOffset=self.offsetoption,
             attachFace=attachFace,
+            fclass=fclass,
         )[-1]
         FreeCAD.activeDocument().recompute()
         FreeCADGui.Selection.clearSelection()
