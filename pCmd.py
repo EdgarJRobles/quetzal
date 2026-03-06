@@ -798,6 +798,7 @@ def makeFlange(propList=[], pos=None, Z=None, doOffset=None, rating="DIN-PN16", 
 
     Remember: property PRating must be defined afterwards
     """
+
     if pos == None:
         pos = FreeCAD.Vector(0, 0, 0)
     if Z == None:
@@ -860,6 +861,7 @@ def doFlanges(
     flist = []
     tubes = [t for t in fCmd.beams() if hasattr(t, "PSize")]
     FreeCAD.activeDocument().openTransaction(translate("Transaction", "Insert flange"))
+
     if attachFace:
         connecting_port = 0
     else:
@@ -907,7 +909,7 @@ def doFlanges(
             flist.append(makeFlange(propList, pos, Z, doOffset, rating=rating, fclass=fclass))
     except:
         #nothing selected, insert at origin
-        flist.append(makeFlange(propList, fclass=fclass))
+        flist.append(makeFlange(propList, rating=rating, fclass=fclass))
 
     if pypeline:
         for f in flist:

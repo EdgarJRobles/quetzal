@@ -1152,12 +1152,12 @@ class insertFlangeForm(dodoDialogs.protoPypeForm):
 
     def _getFClass(self):
         """Derive FClass from the selected flange rating file name.
-        FClass is the substring after the last underscore in the base name.
+        FClass is the substring after the last dash in the base name.
         e.g. 'Flange_ASME-WN-RF-150lb.csv' -> rating 'ASME-WN-RF-150lb' -> FClass '150lb'
-        For ratings without an underscore the full rating string is used.
+        For ratings without a dash the full rating string is used.
         """
         rating = self.PRating
-        idx = rating.rfind("_")
+        idx = rating.rfind("-")
         if idx >= 0:
             return rating[idx + 1:]
         return rating
@@ -1244,8 +1244,17 @@ class insertFlangeForm(dodoDialogs.protoPypeForm):
         except:
             propList.append(0)
         #FreeCAD.Console.PrintMessage(self.offsetoption)
-        rating = self.ratingList.currentItem().text()
+        
         fclass = self._getFClass()
+        # For WN flanges, PRating tracks the pipe schedule so that bore
+        # calculations and port-matching helpers work correctly.  The flange
+        # pressure class is carried separately in FClass.
+        # For all other flange types the PRating is meaningless, so pass No Rating
+        if d["FlangeType"] == "WN":
+            sched_row = self.schedList.currentRow()
+            rating = self._schedNames[sched_row] if sched_row >= 0 and self._schedNames else "SCH-STD"
+        else:
+            rating = "No rating"
         self.lastFlange = self.lastFlange = pCmd.doFlanges(
             rating,
             propList,
