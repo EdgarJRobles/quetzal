@@ -181,10 +181,16 @@ class protoPypeForm(QDialog):
         self.pipeDictList = []
         self.fileList = listdir(join(dirname(abspath(__file__)), "tablez"))
         self.fillSizes()
+        # Use slice-based prefix/suffix removal instead of lstrip/rstrip.
+        # lstrip and rstrip strip individual characters from a set, not a
+        # literal substring, so they corrupt ratings like "generic" by also
+        # removing the trailing 'c' (which appears in the ".csv" character set).
+        _prefix = PType + "_"
+        _suffix = ".csv"
         self.PRatingsList = [
-            s.lstrip(PType + "_").rstrip(".csv")
+            s[len(_prefix) : len(s) - len(_suffix)]
             for s in self.fileList
-            if s.startswith(PType) and s.endswith(".csv")
+            if s.startswith(_prefix) and s.endswith(_suffix)
         ]
         self.secondCol = QWidget()
         self.secondCol.setLayout(QVBoxLayout())
