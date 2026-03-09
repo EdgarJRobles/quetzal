@@ -53,6 +53,9 @@ If you are updating the code, restarting FreeCAD is advised.
 ## Usage
 
 Check the documentation on the FreeCAD Wiki article:
+<https://wiki.freecad.org/Quetzal_Workbench>
+
+Wiki for older Dodo and Flamingo versions of the workbench
 <https://wiki.freecad.org/Dodo_Workbench>
 
 Discussion in the FreeCAD Forum:

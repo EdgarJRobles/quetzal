@@ -689,14 +689,21 @@ def makeElbowBetweenThings(thing1=None, thing2=None, propList=None):
         propList = ["DN50", 60.3, 3.91, ang, 45.24]
     else:
         propList[3] = ang
-    elb = makeElbow(propList, P, directions[0].negative().cross(directions[1].negative()))
-    # mate the elbow ends with the pipes or edges
-    b = fCmd.bisect(directions[0], directions[1])
-    elbBisect = rounded(
-        fCmd.beamAx(elb, FreeCAD.Vector(1, 1, 0))
-    )  # if not rounded, fail in plane xz
-    rot = FreeCAD.Rotation(elbBisect, b)
-    elb.Placement.Rotation = rot.multiply(elb.Placement.Rotation)
+    # Create the elbow in its default rest orientation (no pos/Z args).
+    # Then use placeoTherElbow to set the full orientation and position in one step.
+    # This avoids the old approach which tried to find the current bisect via beamAx(elb,(1,1,0))
+    # after makeElbow had already applied a Z-alignment rotation -- that assumption was only
+    # valid when the elbow was still in its default rest pose, causing misalignment on any
+    # pipe path not lying in the world XY plane.
+    # placeoTherElbow computes its rotations from the elbow's local Ports vectors, which
+    # are always in shape space regardless of any prior rotation, so it is safe to call
+    # even after the elbow has been created with a non-identity placement.
+    # Convention: v1 is the incoming tangent (path direction entering the corner) and
+    # v2 is the outgoing tangent. directions[0] points away from P along thing1 (= outgoing
+    # of thing1, which is the incoming approach direction reversed), and directions[1] points
+    # away from P along thing2 (= outgoing tangent). So v1 = -directions[1], v2 = directions[0].
+    elb = makeElbow(propList)
+    placeoTherElbow(elb, directions[0].negative(), directions[1], P)
     # trim the adjacent tubes
     # FreeCAD.activeDocument().recompute() # may delete this row?
     portA = elb.Placement.multVec(elb.Ports[0])
