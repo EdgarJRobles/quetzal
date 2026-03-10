@@ -113,7 +113,7 @@ class insertReduct:
         return {
             "Pixmap": "Quetzal_InsertReduct",
             "MenuText": QT_TRANSLATE_NOOP("Quetzal_InsertReduct", "Insert a reduction"),
-            "ToolTip": QT_TRANSLATE_NOOP("Quetzal_InsertReduct", "Insert a reduction"),
+            "ToolTip": QT_TRANSLATE_NOOP("Quetzal_InsertReduct", Quetzal_tooltips.reduct_tooltip),
         }
 
 
@@ -133,7 +133,7 @@ class insertCap:
         return {
             "Pixmap": "Quetzal_InsertCap",
             "MenuText": QT_TRANSLATE_NOOP("Quetzal_InsertCap", "Insert a cap"),
-            "ToolTip": QT_TRANSLATE_NOOP("Quetzal_InsertCap", "Insert a cap"),
+            "ToolTip": QT_TRANSLATE_NOOP("Quetzal_InsertCap", Quetzal_tooltips.cap_tooltip),
         }
 
 class insertTee:
@@ -152,7 +152,7 @@ class insertTee:
         return {
             "Pixmap": "Quetzal_InsertTee",
             "MenuText": QT_TRANSLATE_NOOP("Quetzal_InsertTee", "Insert a tee"),
-            "ToolTip": QT_TRANSLATE_NOOP("Quetzal_InsertTee", "Insert a tee"),
+            "ToolTip": QT_TRANSLATE_NOOP("Quetzal_InsertTee", Quetzal_tooltips.tee_tooltip),
         }
 
 class insertGasket:
@@ -171,7 +171,7 @@ class insertGasket:
         return {
             "Pixmap": "Quetzal_InsertGasket",
             "MenuText": QT_TRANSLATE_NOOP("Quetzal_InsertGasket", "Insert a gasket and/or flange bolts & nuts"),
-            "ToolTip": QT_TRANSLATE_NOOP("Quetzal_InsertGasket", "Insert a gasket and/or flange bolts & nuts"),
+            "ToolTip": QT_TRANSLATE_NOOP("Quetzal_InsertGasket", Quetzal_tooltips.gasket_tooltip),
         }
 
 class insertFlange:
@@ -190,7 +190,7 @@ class insertFlange:
         return {
             "Pixmap": "Quetzal_InsertFlange",
             "MenuText": QT_TRANSLATE_NOOP("Quetzal_InsertFlange", "Insert a flange"),
-            "ToolTip": QT_TRANSLATE_NOOP("Quetzal_InsertFlange", "Insert a flange"),
+            "ToolTip": QT_TRANSLATE_NOOP("Quetzal_InsertFlange", Quetzal_tooltips.flange_tooltip),
         }
 
 
@@ -210,7 +210,7 @@ class insertUbolt:
         return {
             "Pixmap": "Quetzal_InsertUBolt",
             "MenuText": QT_TRANSLATE_NOOP("Quetzal_InsertUbolt", "Insert a U-bolt"),
-            "ToolTip": QT_TRANSLATE_NOOP("Quetzal_InsertUbolt", "Insert a U-bolt"),
+            "ToolTip": QT_TRANSLATE_NOOP("Quetzal_InsertUbolt", Quetzal_tooltips.ubolt_tooltip),
         }
 
 
@@ -265,7 +265,7 @@ class _InsertCouplingUnionCmd:
             "MenuText": QT_TRANSLATE_NOOP("Quetzal", "Insert Coupling / Union"),
             "ToolTip":  QT_TRANSLATE_NOOP(
                 "Quetzal",
-                "Insert a socket-weld or threaded coupling or union fitting"),
+                Quetzal_tooltips.coupling_union_tooltip),
             "Accel":    "",
         }
 
@@ -346,7 +346,7 @@ class flat:
             "Pixmap": "Quetzal_Flat",
             "MenuText": QT_TRANSLATE_NOOP("Quetzal_Flat", "Fit one elbow"),
             "ToolTip": QT_TRANSLATE_NOOP(
-                "Quetzal_Flat", "Place a existing elbow between two pipes adjusting lenght pipes"
+                "Quetzal_Flat", "Place a existing elbow between two pipes adjusting pipe length"
             ),
         }
 
