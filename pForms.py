@@ -2215,10 +2215,13 @@ class breakForm(QDialog):
         self.edit2 = QLineEdit("0")
         self.edit2.setAlignment(Qt.AlignCenter)
         self.edit2.editingFinished.connect(self.calcGapPercent)
-        rx = QRegExp("[0-9,.%]*")
-        val = QRegExpValidator(rx)
-        self.edit1.setValidator(val)
-        self.edit2.setValidator(val)
+        # No restrictive validator: allow unit suffixes (e.g. "150 mm", "6 in")
+        # as well as plain numbers and percentage strings (e.g. "50%").
+        _unit_hint = qu.get_length_unit() if qu else "mm"
+        self.edit1.setPlaceholderText(
+            translate("breakForm", "<length or %>") + " (" + _unit_hint + ")")
+        self.edit2.setPlaceholderText(
+            translate("breakForm", "<gap length>") + " (" + _unit_hint + ")")
         self.lab2 = QLabel("Point:")
         self.btn1 = QPushButton("Break")
         self.btn1.clicked.connect(self.breakPipe)
@@ -2243,6 +2246,21 @@ class breakForm(QDialog):
         self.grid.addWidget(self.slider, 5, 0, 1, 2)
         self.show()
 
+    def _parse_length(self, text):
+        """
+        Parse a length string that may carry a unit suffix (e.g. "150 mm",
+        "6 in", "3.5") using FreeCAD's quantity parser.  Returns the value
+        in internal mm as a float.  Plain numbers are treated as mm.
+        """
+        t = text.strip()
+        try:
+            return float(pq(t))
+        except Exception:
+            try:
+                return float(t)
+            except Exception:
+                return 0.0
+
     def setCurrentPL(self, PLName=None):
         if self.combo.currentText() not in [
             translate("breakForm", "<none>"),
@@ -2258,7 +2276,12 @@ class breakForm(QDialog):
             refL = min(l)
             self.lab0.setText(str(refL))
             self.refL = float(refL)
-            self.edit1.setText("%.2f" % (self.refL * self.slider.value() / 100.0))
+            # Display point position in the preferred length unit when possible.
+            point_mm = self.refL * self.slider.value() / 100.0
+            if qu:
+                self.edit1.setText(qu.format_dim("%.6g" % point_mm))
+            else:
+                self.edit1.setText("%.2f" % point_mm)
         else:
             self.lab0.setText("<reference>")
             self.refL = 0.0
@@ -2266,7 +2289,11 @@ class breakForm(QDialog):
 
     def changePoint(self):
         if self.refL:
-            self.edit1.setText("%.2f" % (self.refL * self.slider.value() / 100.0))
+            point_mm = self.refL * self.slider.value() / 100.0
+            if qu:
+                self.edit1.setText(qu.format_dim("%.6g" % point_mm))
+            else:
+                self.edit1.setText("%.2f" % point_mm)
         else:
             self.edit1.setText(str(self.slider.value()) + "%")
 
@@ -2288,20 +2315,32 @@ class breakForm(QDialog):
             gapL = shapes[0].distToShape(shapes[1])[0]
         else:
             gapL = 0
-        self.edit2.setText("%.2f" % gapL)
+        # Display gap in the preferred length unit when possible.
+        if qu:
+            self.edit2.setText(qu.format_dim("%.6g" % gapL))
+        else:
+            self.edit2.setText("%.2f" % gapL)
 
     def updateSlider(self):
-        if self.edit1.text() and self.edit1.text()[-1] == "%":
-            self.slider.setValue(int(float(self.edit1.text().rstrip("%").strip())))
-        elif self.edit1.text() and float(self.edit1.text().strip()) < self.refL:
-            self.slider.setValue(int(float(self.edit1.text().strip()) / self.refL * 100))
+        txt = self.edit1.text().strip()
+        if txt and txt[-1] == "%":
+            self.slider.setValue(int(float(txt.rstrip("%").strip())))
+        elif txt and self.refL:
+            # Parse the value via pq so unit suffixes (e.g. "6 in") work.
+            val_mm = self._parse_length(txt)
+            if val_mm < self.refL:
+                self.slider.setValue(int(val_mm / self.refL * 100))
 
     def calcGapPercent(self):
-        if self.edit2.text() and self.edit2.text()[-1] == "%":
+        txt = self.edit2.text().strip()
+        if txt and txt[-1] == "%":
             if self.refL:
-                self.edit2.setText(
-                    "%.2f" % (float(self.edit2.text().rstrip("%").strip()) / 100 * self.refL)
-                )
+                pct = float(txt.rstrip("%").strip())
+                gap_mm = pct / 100.0 * self.refL
+                if qu:
+                    self.edit2.setText(qu.format_dim("%.6g" % gap_mm))
+                else:
+                    self.edit2.setText("%.2f" % gap_mm)
             else:
                 self.edit2.setText("0")
                 FreeCAD.Console.PrintError("No reference length defined yet\n")
@@ -2309,19 +2348,26 @@ class breakForm(QDialog):
     def breakPipe(self):
         p2nd = None
         FreeCAD.activeDocument().openTransaction(translate("Transaction", "Break pipes"))
-        if self.edit1.text()[-1] == "%":
+        txt1 = self.edit1.text().strip()
+        txt2 = self.edit2.text().strip()
+        # Parse the gap; supports plain numbers and unit-suffixed strings.
+        gap_mm = self._parse_length(txt2) if txt2 and txt2[-1] != "%" else 0.0
+        if txt1 and txt1[-1] == "%":
+            pct = float(txt1.rstrip("%").strip())
             pipes = [p for p in fCmd.beams() if pCmd.isPipe(p)]
             for p in pipes:
                 p2nd = pCmd.breakTheTubes(
-                    float(p.Height) * float(self.edit1.text().rstrip("%").strip()) / 100,
+                    float(p.Height) * pct / 100,
                     pipes=[p],
-                    gap=float(self.edit2.text()),
+                    gap=gap_mm,
                 )
                 if p2nd and self.combo.currentText() != translate("breakForm","<none>"):
                     for p in p2nd:
                         pCmd.moveToPyLi(p, self.combo.currentText())
         else:
-            p2nd = pCmd.breakTheTubes(float(self.edit1.text()), gap=float(self.edit2.text()))
+            # Parse point position; supports plain numbers and unit-suffixed strings.
+            point_mm = self._parse_length(txt1)
+            p2nd = pCmd.breakTheTubes(point_mm, gap=gap_mm)
             if p2nd and self.combo.currentText() != translate("breakForm","<none>"):
                 for p in p2nd:
                     pCmd.moveToPyLi(p, self.combo.currentText())

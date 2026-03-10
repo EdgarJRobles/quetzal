@@ -179,6 +179,7 @@ class QuetzalPreferencePage(QWidget):
     """
 
     # Icon shown in the preference category list (reuse workbench icon)
+    #TODO: Something is wrong, this doesn't seem to work. Need to figure out why.
     from os.path import join, dirname, abspath
     try:
         _iconPath = join(dirname(abspath(__file__)), 'iconz', 'quetzal.svg')
