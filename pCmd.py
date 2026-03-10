@@ -704,7 +704,7 @@ def makeElbowBetweenThings(thing1=None, thing2=None, propList=None):
     # away from P along thing2 (= outgoing tangent). So v1 = -directions[1], v2 = directions[0].
     elb = makeElbow(propList)
     placeoTherElbow(elb, directions[0].negative(), directions[1], P)
-    # trim the adjacent tubes
+    # trim the adjacent tubes    
     # FreeCAD.activeDocument().recompute() # may delete this row?
     portA = elb.Placement.multVec(elb.Ports[0])
     portB = elb.Placement.multVec(elb.Ports[1])
@@ -1379,6 +1379,80 @@ def updatePLColor(sel=None, color=None):
     else:
         FreeCAD.Console.PrintError("Select first one pype line\n")
 
+
+
+def mateEdgesCmd():
+    """
+    Implements the Mate Edges command.
+    Requires exactly 2 distinct objects and exactly 2 sub-selections (edges/faces/vertices).
+    If both objects have usable Quetzal ports, uses port-based alignment via
+    getSelectionPortAttachment and alignTwoPorts (obj1 stationary, obj2 moves).
+    Falls back to alignTheTube for objects without ports.
+    """
+    selex = FreeCADGui.Selection.getSelectionEx()
+
+    # Collect unique objects while preserving selection order.
+    seen = []
+    for sx in selex:
+        if sx.Object not in seen:
+            seen.append(sx.Object)
+    unique_objects = seen
+
+    total_subs = sum(len(sx.SubObjects) for sx in selex)
+
+    if len(unique_objects) != 2:
+        FreeCAD.Console.PrintError(
+            "Mate Edges: exactly 2 objects must be selected (got %d).\n"
+            % len(unique_objects)
+        )
+        return None
+
+    if total_subs != 2:
+        FreeCAD.Console.PrintError(
+            "Mate Edges: exactly 2 edges/faces/vertices must be selected (got %d).\n"
+            % total_subs
+        )
+        return None
+
+    if len(selex) != 2:
+        FreeCAD.Console.PrintError(
+            "Mate Edges: could not resolve two distinct object selections.\n"
+        )
+        return None
+
+    sel1 = selex[0]
+    sel2 = selex[1]
+    obj1 = sel1.Object
+    obj2 = sel2.Object
+
+    obj1HasPorts = (
+        hasattr(obj1, "Ports")
+        and hasattr(obj1, "PType")
+        and obj1.PType != "Any"
+    )
+    obj2HasPorts = (
+        hasattr(obj2, "Ports")
+        and hasattr(obj2, "PType")
+        and obj2.PType != "Any"
+    )
+
+    if obj1HasPorts and obj2HasPorts:
+        # Port-based alignment: find the closest port on each object to its
+        # respective selection point, then align those two ports.
+        # obj1 is stationary; obj2 moves.
+        pos1, Z1, srcObj1, srcPort1 = getSelectionPortAttachment([sel1])
+        pos2, Z2, srcObj2, srcPort2 = getSelectionPortAttachment([sel2])
+        if srcObj1 is None or srcObj2 is None:
+            FreeCAD.Console.PrintError(
+                "Mate Edges: could not determine attachment ports for both objects.\n"
+            )
+            return None
+        alignTwoPorts(obj2, srcPort2, obj1, srcPort1)
+    else:
+        # Fallback: use edge-based alignment for objects without ports.
+        alignTheTube()
+
+    return True
 
 def alignTheTube():
     """

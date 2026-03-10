@@ -311,9 +311,9 @@ class mateEdges:
 
     def Activated(self):
         import pCmd
-        result=pCmd.translate("Transaction", "Mate")
+        result = pCmd.translate("Transaction", "Mate")
         FreeCAD.activeDocument().openTransaction(result)
-        pCmd.alignTheTube()
+        pCmd.mateEdgesCmd()
         FreeCAD.activeDocument().commitTransaction()
         FreeCAD.activeDocument().recompute()
 
