@@ -1257,16 +1257,7 @@ def doTees(rating="SCH-STD", propList=["DN150", 168.27, 114.3,7.11,6.02,178,156]
             plist.append(tee)
             # If requested, shorten a selected pipe by the port-to-base offset
             # before aligning the tee.
-            #
-            # makeTee() places the tee so the insertion port face lands at pos,
-            # then shifts the whole object forward by C (run) or M (branch) so
-            # tee.Placement.Base ends up C/M *beyond* the pipe end -- not inside
-            # it.  Passing that point to extendTheBeam would extend the pipe.
-            #
-            # The correct trim target is the tee center projected back onto the
-            # pipe axis: pos minus one port-length along the pipe direction.
-            # For run insertion the port half-length is C; for branch it is M.
-            # Both values are available from the tee object after makeTee().
+            
             if doOffset:
                 pipes = [t for t in fCmd.beams() if hasattr(t, "PType") and t.PType == "Pipe"]
                 if pipes:
