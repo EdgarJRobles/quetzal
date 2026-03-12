@@ -1233,20 +1233,21 @@ class SocketTee(pypeType):
     
 class Reduct(pypeType):
     """Class for object PType="Reduct"
-    Reduct(obj,[PSize="DN50",OD=60.3, OD2= 48.3, thk=3, thk2=None, H=None, conc=True])
+    Reduct(obj,[PSize="DN50",OD=60.3, OD2= 48.3, thk=3, thk2=None, H=None, conc=True, DN2=""])
       obj: the "App::FeaturePython object"
-      PSize (string): nominal diameter (major)
+      PSize (string): nominal diameter (major end)
       OD (float): major outside diameter
       OD2 (float): minor outside diameter
       thk (float): major shell thickness
       thk2 (float): minor shell thickness
       H (float): length of reduction
       conc (bool): True for a concentric reduction, False for eccentric
+      DN2 (string): nominal diameter (minor end); read from PSize2 column in CSV
     If thk2 is None or 0, the same thickness is used at both ends.
     If H is None or 0, the length of the reduction is calculated as 3x(OD-OD2).
     """
 
-    def __init__(self, obj, rating="SCH-STD", DN="DN50", OD=60.3, OD2=48.3, thk=3, thk2=None, H=None, conc=True):
+    def __init__(self, obj, rating="SCH-STD", DN="DN50", OD=60.3, OD2=48.3, thk=3, thk2=None, H=None, conc=True, DN2=""):
         # initialize the parent class
         super(Reduct, self).__init__(obj)
         # define common properties
@@ -1255,6 +1256,12 @@ class Reduct(pypeType):
         obj.PRating = rating
         obj.PSize = DN
         # define specific properties
+        obj.addProperty(
+            "App::PropertyString",
+            "PSize2",
+            "Reduct",
+            QT_TRANSLATE_NOOP("App::Property", "Nominal diameter (minor end)"),
+        ).PSize2 = DN2
         obj.addProperty(
             "App::PropertyLength",
             "OD",

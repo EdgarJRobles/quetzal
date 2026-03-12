@@ -956,13 +956,14 @@ def doFlanges(
 def makeReduct(propList=[], pos=None, Z=None, conc=True, smallerEnd=False, rating="SCH-STD"):
     """Adds a Reduct object
     makeReduct(propList=[], pos=None, Z=None, conc=True)
-      propList is one optional list with 6 elements:
-        PSize (string): nominal diameter
+      propList is one optional list with 6 or 7 elements:
+        PSize (string): nominal diameter (major end)
         OD (float): major diameter
         OD2 (float): minor diameter
         thk (float): major thickness
         thk2 (float): minor thickness
         H (float): length of reduction
+        PSize2 (string, optional): nominal diameter (minor end)
       pos (vector): position of insertion; default = 0,0,0
       Z (vector): orientation: default = 0,0,1
       conc (bool): True for concentric or False for eccentric reduction
@@ -973,7 +974,14 @@ def makeReduct(propList=[], pos=None, Z=None, conc=True, smallerEnd=False, ratin
     if Z == None:
         Z = FreeCAD.Vector(0, 0, 1)
     a = FreeCAD.ActiveDocument.addObject("Part::FeaturePython", "Reduction")
-    propList.append(conc)
+    # propList layout from the form:
+    #   [PSize, OD, OD2, thk, thk2, H]        (6 elements, no PSize2)
+    #   [PSize, OD, OD2, thk, thk2, H, PSize2] (7 elements, with PSize2)
+    # Reduct.__init__ positional order after (obj, rating):
+    #   DN, OD, OD2, thk, thk2, H, conc, DN2
+    # So insert conc at index 6 (after H, before optional PSize2).
+    propList = list(propList)
+    propList.insert(6, conc)
     pFeatures.Reduct(a, rating, *propList)
     ViewProvider(a.ViewObject, "Quetzal_InsertReduct")
     a.Placement.Base = pos
@@ -991,12 +999,13 @@ def makeReduct(propList=[], pos=None, Z=None, conc=True, smallerEnd=False, ratin
 
 def doReduct(rating="SCH-STD", propList=[], pypeline=None, pos=None, Z=None, conc=True, smallerEnd=False):
     """propList[] = 
-      PSize (string): nominal diameter
+      PSize (string): nominal diameter (major end)
         OD (float): major diameter
         OD2 (float): minor diameter
         thk (float): major thickness
         thk2 (float): minor thickness
         H (float): length of reduction
+        PSize2 (string, optional): nominal diameter (minor end)
       pos (vector): position of insertion; default = 0,0,0
       Z (vector): orientation: default = 0,0,1
       conc (bool): True for concentric or False for eccentric reduction
@@ -1256,21 +1265,18 @@ def doTees(rating="SCH-STD", propList=["DN150", 168.27, 114.3,7.11,6.02,178,156]
             tee = makeTee(propList, pos, Z, insertOnBranch, rating=rating)
             plist.append(tee)
             # If requested, shorten a selected pipe by the port-to-base offset
-            # before aligning the tee.
-            
+            # before aligning the tee.  The insertion port vector (Ports[insertion_port])
+            # points from the tee base to the port in local space.  The world
+            # position of the tee base after alignment will be at pos offset by
+            # the inverse of that port vector rotated into world space.
             if doOffset:
                 pipes = [t for t in fCmd.beams() if hasattr(t, "PType") and t.PType == "Pipe"]
                 if pipes:
                     pipe = pipes[0]
-                    if insertOnBranch:
-                        port_length = float(tee.M)
-                    else:
-                        port_length = float(tee.C)
-                    # Z is the pipe-end outward direction; step back by port_length
-                    # to get the point at the tee center projected onto the pipe.
-                    pipe_ax = FreeCAD.Vector(Z).normalize()
-                    trim_target = pos - pipe_ax * port_length
-                    fCmd.extendTheBeam(pipe, trim_target)
+                    port_vec = tee.Ports[insertion_port]
+                    rot = tee.Placement.Rotation
+                    base_world = pos - rot.multVec(port_vec)
+                    fCmd.extendTheBeam(pipe, base_world)
             FreeCAD.activeDocument().commitTransaction()
             FreeCAD.activeDocument().recompute()
             alignTwoPorts(tee, insertion_port, srcObj, srcPort)

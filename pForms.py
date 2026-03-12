@@ -1449,10 +1449,12 @@ class insertReductForm(dodoDialogs.protoPypeForm):
         r = self.pipeDictList[self.sizeList.currentRow()]
         DN = r["PSize"]
         OD1 = float(pq(r["OD"]))
-        OD2 = float(pq(self.OD2list.currentItem().text()))
+        idx2 = self.OD2list.currentRow()
+        OD2 = float(pq(self.OD2list.currentItem().text().split()[0])) if not (hasattr(self, "_od2_raw") and idx2 < len(self._od2_raw)) else float(pq(self._od2_raw[idx2]))
+        DN2 = self._psize2_raw[idx2] if hasattr(self, "_psize2_raw") and idx2 < len(self._psize2_raw) else ""
         thk1 = float(pq(r["thk"]))
         try:
-            thk2 = float(pq(r["thk2"].split(">")[self.OD2list.currentRow()]))
+            thk2 = float(pq(r["thk2"].split(">")[idx2]))
         except:
             thk2 = thk1
         H = pq(r["H"])
@@ -1470,6 +1472,8 @@ class insertReductForm(dodoDialogs.protoPypeForm):
                 reduct.thk = thk1
                 reduct.thk2 = thk2
                 reduct.Height = H
+                if hasattr(reduct, "PSize2"):
+                    reduct.PSize2 = DN2
         elif self.lastReduct:
             self.lastReduct.PSize = DN
             self.lastReduct.PRating = self.PRating
@@ -1478,31 +1482,42 @@ class insertReductForm(dodoDialogs.protoPypeForm):
             self.lastReduct.thk = thk1
             self.lastReduct.thk2 = thk2
             self.lastReduct.Height = H
+            if hasattr(self.lastReduct, "PSize2"):
+                self.lastReduct.PSize2 = DN2
         FreeCAD.activeDocument().recompute()
 
     def fillOD2(self):
         self.OD2list.clear()
         # Keep parallel raw-value lists so insert/applyProp read by index
-        self._od2_raw  = []
-        self._thk2_raw = []
+        self._od2_raw    = []
+        self._thk2_raw   = []
+        self._psize2_raw = []
         if not self.pipeDictList:
             return
         row_idx = self.sizeList.currentRow()
         if row_idx < 0:
             row_idx = 0
         r = self.pipeDictList[row_idx]
-        od2_vals  = r["OD2"].split(">")
-        thk2_vals = r.get("thk2", "").split(">")
+        od2_vals    = r["OD2"].split(">")
+        thk2_vals   = r.get("thk2", "").split(">")
+        psize2_vals = r.get("PSize2", "").split(">")
         for i, od2 in enumerate(od2_vals):
-            thk2 = thk2_vals[i] if i < len(thk2_vals) else ""
+            thk2   = thk2_vals[i]   if i < len(thk2_vals)   else ""
+            psize2 = psize2_vals[i] if i < len(psize2_vals) else ""
             self._od2_raw.append(od2.strip())
             self._thk2_raw.append(thk2.strip())
-            if qu:
-                label = qu.format_secondary_label(
+            self._psize2_raw.append(psize2.strip())
+            # Use PSize2 as the primary label when available, otherwise fall
+            # back to the OD2 dimension label.
+            if psize2.strip():
+                psize2_display = qu.format_psize(psize2.strip()) if qu else psize2.strip()
+                od2_label = psize2_display + "  " + od2.strip()
+            elif qu:
+                od2_label = qu.format_secondary_label(
                     od2.strip(), thk2.strip(), self.pipeDictList)
             else:
-                label = od2.strip() + ("x" + thk2.strip() if thk2.strip() else "")
-            self.OD2list.addItem(label)
+                od2_label = od2.strip() + ("x" + thk2.strip() if thk2.strip() else "")
+            self.OD2list.addItem(od2_label)
         self.OD2list.setCurrentRow(0)
 
     def reverse(self):
@@ -1551,6 +1566,7 @@ class insertReductForm(dodoDialogs.protoPypeForm):
         OD1 = float(pq(r["OD"]))
         idx2 = self.OD2list.currentRow()
         OD2 = float(pq(self._od2_raw[idx2])) if hasattr(self, "_od2_raw") and idx2 < len(self._od2_raw) else float(pq(self.OD2list.currentItem().text()))
+        DN2 = self._psize2_raw[idx2] if hasattr(self, "_psize2_raw") and idx2 < len(self._psize2_raw) else ""
         thk1 = float(pq(r["thk"]))
         try:
             thk2 = float(pq(self._thk2_raw[idx2])) if hasattr(self, "_thk2_raw") and idx2 < len(self._thk2_raw) else float(pq(r["thk2"].split(">")[idx2]))
@@ -1562,9 +1578,7 @@ class insertReductForm(dodoDialogs.protoPypeForm):
         # Determine if we should insert on smaller end (requires reversing)
         insertOnSmallerEnd = self.smallerEndRadio.isChecked()
 
-
-        
-        propList = [DN, OD1, OD2, thk1, thk2, H]
+        propList = [DN, OD1, OD2, thk1, thk2, H, DN2]
         FreeCAD.activeDocument().openTransaction(translate("Transaction", "Insert reduction"))
 
         rating = self.ratingList.currentItem().text()
