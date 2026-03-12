@@ -321,6 +321,11 @@ class insertElbowForm(dodoDialogs.protoPypeForm):
         self.btn4 = QPushButton(translate("insertElbowForm", "Apply"))
         self.secondCol.layout().addWidget(self.btn4)
         self.btn4.clicked.connect(self.apply)
+        # Checkbox: shorten a selected pipe by the distance from its end to the
+        # elbow base position before inserting the elbow.
+        self.chkRemovePipeEqLen = QCheckBox(
+            translate("insertElbowForm", "Remove pipe equivalent length"))
+        self.secondCol.layout().addWidget(self.chkRemovePipeEqLen)
         self.btn1.setDefault(True)
         self.btn1.setFocus()
 
@@ -426,6 +431,7 @@ class insertElbowForm(dodoDialogs.protoPypeForm):
     def insert(self):
         self.lastAngle = 0
         self.dial.setValue(0)
+        doOffset = self.chkRemovePipeEqLen.isChecked()
         d = self.pipeDictList[self.sizeList.currentRow()]
 
         try:
@@ -450,7 +456,8 @@ class insertElbowForm(dodoDialogs.protoPypeForm):
             ]
             rating = self.ratingList.currentItem().text()
             self.lastElbow = pCmd.doSocketElbow(
-                rating, propList, FreeCAD.__activePypeLine__)[-1]
+                rating, propList, FreeCAD.__activePypeLine__,
+                doOffset=doOffset)[-1]
         else:
             propList = [
                 d["PSize"],
@@ -463,7 +470,8 @@ class insertElbowForm(dodoDialogs.protoPypeForm):
                 propList[-1] = float(pq(self.edit2.text()))
             rating = self.ratingList.currentItem().text()
             self.lastElbow = pCmd.doElbow(
-                rating, propList, FreeCAD.__activePypeLine__)[-1]
+                rating, propList, FreeCAD.__activePypeLine__,
+                doOffset=doOffset)[-1]
 
         FreeCAD.activeDocument().recompute()
 
@@ -604,6 +612,11 @@ class insertTeeForm(dodoDialogs.protoPypeForm):
         self.btn4 = QPushButton(translate("insertTeeForm", "Apply"))
         self.secondCol.layout().addWidget(self.btn4)
         self.btn4.clicked.connect(self.apply)
+        # Checkbox: shorten a selected pipe by the distance from its end to the
+        # tee base position before inserting the tee.
+        self.chkRemovePipeEqLen = QCheckBox(
+            translate("insertTeeForm", "Remove pipe equivalent length"))
+        self.secondCol.layout().addWidget(self.chkRemovePipeEqLen)
         self.btn1.setDefault(True)
         self.btn1.setFocus()
 
@@ -737,6 +750,7 @@ class insertTeeForm(dodoDialogs.protoPypeForm):
         self.lastAngle = 0
         self.dial.setValue(0)
         insertOnBranch = self.branchRadio.isChecked()
+        doOffset = self.chkRemovePipeEqLen.isChecked()
 
         branch_idx = self._branchList.currentRow()
         if branch_idx < 0 or branch_idx >= len(self._branchDictList):
@@ -760,7 +774,8 @@ class insertTeeForm(dodoDialogs.protoPypeForm):
             ]
             rating = self.ratingList.currentItem().text()
             self.lastTee = pCmd.doSocketTee(
-                rating, propList, FreeCAD.__activePypeLine__, insertOnBranch)[-1]
+                rating, propList, FreeCAD.__activePypeLine__,
+                insertOnBranch, doOffset=doOffset)[-1]
         else:
             # ── Butt-weld tee ────────────────────────────────────────────
             propList = [
@@ -774,7 +789,8 @@ class insertTeeForm(dodoDialogs.protoPypeForm):
             ]
             rating = self.ratingList.currentItem().text()
             self.lastTee = pCmd.doTees(
-                rating, propList, FreeCAD.__activePypeLine__, insertOnBranch)[-1]
+                rating, propList, FreeCAD.__activePypeLine__,
+                insertOnBranch, doOffset=doOffset)[-1]
 
         FreeCAD.activeDocument().recompute()
         FreeCADGui.Selection.clearSelection()

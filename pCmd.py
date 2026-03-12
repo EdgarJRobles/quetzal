@@ -718,7 +718,7 @@ def makeElbowBetweenThings(thing1=None, thing2=None, propList=None):
     return elb
 
 
-def doElbow(rating="SCH-STD", propList=["DN50", 60.3, 3, 90, 45.225], pypeline=None):
+def doElbow(rating="SCH-STD", propList=["DN50", 60.3, 3, 90, 45.225], pypeline=None, doOffset=False):
     """
     propList = [
       DN (string): nominal diameter
@@ -727,6 +727,12 @@ def doElbow(rating="SCH-STD", propList=["DN50", 60.3, 3, 90, 45.225], pypeline=N
       BA (float): bend angle
       BR (float): bend radius ]
     pypeline = string
+    doOffset (bool): when True and a pipe is the selected insertion object,
+      shorten the pipe by the distance from its end to the elbow base position
+      before inserting the elbow.  The offset distance equals the length of the
+      insertion port vector (Ports[0]) measured from the elbow base, which for
+      a butt-weld elbow is R.valueAt(R.FirstParameter) as computed in
+      pFeatures.Elbow.execute().
     """
     elist = []
     FreeCAD.activeDocument().openTransaction(translate("Transaction", "Insert elbow"))
@@ -749,6 +755,27 @@ def doElbow(rating="SCH-STD", propList=["DN50", 60.3, 3, 90, 45.225], pypeline=N
         if usablePorts:
             elb = makeElbow(propList, pos, Z, rating=rating)
             elist.append(elb)
+            # If requested, shorten a selected pipe by the port-to-base offset
+            # before aligning the elbow.  Port 0 of an Elbow is the insertion
+            # port; the elbow base sits at the center of the bend, so the pipe
+            # must be shortened by the distance from port 0 to the base
+            # (i.e. the length of the Ports[0] vector in local space).
+            if doOffset:
+                pipes = [t for t in fCmd.beams() if hasattr(t, "PType") and t.PType == "Pipe"]
+                if pipes:
+                    pipe = pipes[0]
+                    # respos: the world position of the elbow base after port
+                    # alignment will be at the elbow Placement base offset by
+                    # the inverse of the insertion port vector.  Before
+                    # alignTwoPorts moves the elbow, the base is already at
+                    # pos (the attachment point), so the target for trimming is
+                    # the elbow base: Ports[0] points from base to the port,
+                    # so base = port_world_pos - Ports[0] in local orientation.
+                    # Use a local-frame displacement of -Ports[0] from pos.
+                    port_vec = elb.Ports[0]
+                    rot = elb.Placement.Rotation
+                    base_world = pos - rot.multVec(port_vec)
+                    fCmd.extendTheBeam(pipe, base_world)
             FreeCAD.activeDocument().commitTransaction()
             FreeCAD.activeDocument().recompute()
             alignTwoPorts(elb, 0, srcObj, srcPort)
@@ -1186,7 +1213,7 @@ def makeTee(propList=[], pos=None, Z=None, insertOnBranch=False, rating="SCH-STD
     return a
 
 
-def doTees(rating="SCH-STD", propList=["DN150", 168.27, 114.3,7.11,6.02,178,156], pypeline=None, insertOnBranch=False):
+def doTees(rating="SCH-STD", propList=["DN150", 168.27, 114.3,7.11,6.02,178,156], pypeline=None, insertOnBranch=False, doOffset=False):
     """
     propList = [
        DN (string): nominal diameter
@@ -1199,7 +1226,13 @@ def doTees(rating="SCH-STD", propList=["DN150", 168.27, 114.3,7.11,6.02,178,156]
       Default is "DN50 (SCH-STD)"
 
       pypeline = string
-      insertOnBranch = Boolean 
+      insertOnBranch = Boolean
+      doOffset (bool): when True and a pipe is the selected insertion object,
+        shorten the pipe by the distance from its end to the tee base position
+        before inserting the tee.  For a butt-weld Tee the insertion port is
+        Ports[0] (run, -Z, at -C from base) when inserting on the run, or
+        Ports[2] (branch, +Y, at M from base) when inserting on the branch.
+        For a SocketTee the equivalent port vectors are identical in structure.
     """
     if insertOnBranch:
         insertion_port = 2
@@ -1222,6 +1255,31 @@ def doTees(rating="SCH-STD", propList=["DN150", 168.27, 114.3,7.11,6.02,178,156]
         if usablePorts:
             tee = makeTee(propList, pos, Z, insertOnBranch, rating=rating)
             plist.append(tee)
+            # If requested, shorten a selected pipe by the port-to-base offset
+            # before aligning the tee.
+            #
+            # makeTee() places the tee so the insertion port face lands at pos,
+            # then shifts the whole object forward by C (run) or M (branch) so
+            # tee.Placement.Base ends up C/M *beyond* the pipe end -- not inside
+            # it.  Passing that point to extendTheBeam would extend the pipe.
+            #
+            # The correct trim target is the tee center projected back onto the
+            # pipe axis: pos minus one port-length along the pipe direction.
+            # For run insertion the port half-length is C; for branch it is M.
+            # Both values are available from the tee object after makeTee().
+            if doOffset:
+                pipes = [t for t in fCmd.beams() if hasattr(t, "PType") and t.PType == "Pipe"]
+                if pipes:
+                    pipe = pipes[0]
+                    if insertOnBranch:
+                        port_length = float(tee.M)
+                    else:
+                        port_length = float(tee.C)
+                    # Z is the pipe-end outward direction; step back by port_length
+                    # to get the point at the tee center projected onto the pipe.
+                    pipe_ax = FreeCAD.Vector(Z).normalize()
+                    trim_target = pos - pipe_ax * port_length
+                    fCmd.extendTheBeam(pipe, trim_target)
             FreeCAD.activeDocument().commitTransaction()
             FreeCAD.activeDocument().recompute()
             alignTwoPorts(tee, insertion_port, srcObj, srcPort)
@@ -2756,7 +2814,7 @@ def makeSocketElbow(propList=[], pos=None, Z=None, rating="3000lb"):
     return a
 
 
-def doSocketElbow(rating="3000lb", propList=["DN25", 33.4, 90, 35.0, 5.0, 25.4, 22.0, 5.455, "SW"], pypeline=None):
+def doSocketElbow(rating="3000lb", propList=["DN25", 33.4, 90, 35.0, 5.0, 25.4, 22.0, 5.455, "SW"], pypeline=None, doOffset=False):
     """
     Insert a SocketEll fitting, aligning it to the selected port when possible.
 
@@ -2771,6 +2829,11 @@ def doSocketElbow(rating="3000lb", propList=["DN25", 33.4, 90, 35.0, 5.0, 25.4, 
       G         (float):  inner body wall thickness
       Conn      (string): connection type ("SW" or "TH") ]
     pypeline = string (optional PypeLine label)
+    doOffset (bool): when True and a pipe is the selected insertion object,
+      shorten the pipe by the distance from its end to the elbow base position
+      before inserting the elbow.  For a SocketEll the insertion port (Ports[0])
+      is at (E, 0, 0) in local space, so the base sits E mm behind the port
+      along the port direction (pFeatures.SocketEll.execute()).
 
       - No selection         -> insert one SocketEll at the origin.
       - One or more sub-object-> insert at the closest port of the first selected
@@ -2794,6 +2857,18 @@ def doSocketElbow(rating="3000lb", propList=["DN25", 33.4, 90, 35.0, 5.0, 25.4, 
         if usablePorts:
             socketEll = makeSocketElbow(propList, pos, Z, rating=rating)
             elist.append(socketEll)
+            # If requested, shorten a selected pipe by the port-to-base offset.
+            # For SocketEll, Ports[0] = (E,0,0) in local space; the base is at
+            # the origin, so the pipe must be trimmed to the world position of
+            # the elbow base (i.e. pos minus the rotated port vector).
+            if doOffset:
+                pipes = [t for t in fCmd.beams() if hasattr(t, "PType") and t.PType == "Pipe"]
+                if pipes:
+                    pipe = pipes[0]
+                    port_vec = socketEll.Ports[0]
+                    rot = socketEll.Placement.Rotation
+                    base_world = pos - rot.multVec(port_vec)
+                    fCmd.extendTheBeam(pipe, base_world)
             FreeCAD.activeDocument().commitTransaction()
             FreeCAD.activeDocument().recompute()
             alignTwoPorts(socketEll, 0, srcObj, srcPort)
@@ -2861,7 +2936,7 @@ def makeSocketTee(propList=[], pos=None, Z=None, insertOnBranch=False, rating="3
 
 
 def doSocketTee(rating="3000lb", propList=["DN25", "DN25", 33.4, 33.4, 35.0, 5.0, 25.4, 22.0, 5.455, "SW"],
-                pypeline=None, insertOnBranch=False):
+                pypeline=None, insertOnBranch=False, doOffset=False):
     """
     Insert a SocketTee fitting, aligning it to the selected port when possible.
 
@@ -2877,13 +2952,18 @@ def doSocketTee(rating="3000lb", propList=["DN25", "DN25", 33.4, 33.4, 35.0, 5.0
       G           (float):  inner body wall thickness
       Conn        (string): connection type ("SW" or "TH") ]
     pypeline       = string (optional PypeLine label)
-    insertOnBranch = bool   (True → insert/align on the branch port)
+    insertOnBranch = bool   (True -> insert/align on the branch port)
+    doOffset (bool): when True and a pipe is the selected insertion object,
+      shorten the pipe by the distance from its end to the tee base position
+      before inserting the tee.  For a SocketTee the run ports are at +/-E
+      along Z and the branch port is at +E along Y in local space
+      (pFeatures.SocketTee.execute()), so the base sits E mm behind the port.
 
     Behaviour:
-      - No selection          → insert at origin.
-      - Ported object selected → align the insertion port to the selected port
+      - No selection          -> insert at origin.
+      - Ported object selected -> align the insertion port to the selected port
                                   via alignTwoPorts.
-      - Non-ported geometry   → insert with insertion port direction matching
+      - Non-ported geometry   -> insert with insertion port direction matching
                                   the selected face normal / edge tangent.
     """
     insertion_port = 2 if insertOnBranch else 0
@@ -2901,13 +2981,25 @@ def doSocketTee(rating="3000lb", propList=["DN25", "DN25", 33.4, 33.4, 35.0, 5.0
         if usablePorts:
             tee = makeSocketTee(propList, pos, Z, insertOnBranch, rating=rating)
             plist.append(tee)
+            # If requested, shorten a selected pipe by the port-to-base offset.
+            # For SocketTee, Ports[0] = (0,0,-E) and Ports[2] = (0,E,0) in
+            # local space; the base is at the origin, so the pipe is trimmed
+            # to the world position of the tee base (pos minus rotated port vec).
+            if doOffset:
+                pipes = [t for t in fCmd.beams() if hasattr(t, "PType") and t.PType == "Pipe"]
+                if pipes:
+                    pipe = pipes[0]
+                    port_vec = tee.Ports[insertion_port]
+                    rot = tee.Placement.Rotation
+                    base_world = pos - rot.multVec(port_vec)
+                    fCmd.extendTheBeam(pipe, base_world)
             FreeCAD.activeDocument().commitTransaction()
             FreeCAD.activeDocument().recompute()
             alignTwoPorts(tee, insertion_port, srcObj, srcPort)
         else:
             plist.append(makeSocketTee(propList, pos, Z, insertOnBranch, rating=rating))
     except Exception:
-        # Nothing selected — insert at origin.
+        # Nothing selected -- insert at origin.
         plist.append(makeSocketTee(propList, insertOnBranch=insertOnBranch))
 
     if pypeline:
