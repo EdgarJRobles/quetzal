@@ -360,10 +360,17 @@ class insertElbowForm(dodoDialogs.protoPypeForm):
         self.dial.setNotchesVisible(True)
         self.dial.setMaximumSize(70, 70)
         self.screenDial.layout().addWidget(self.dial)
-        self.lab = QLabel(translate("insertElbowForm", "0 deg"))
-        self.lab.setAlignment(Qt.AlignCenter)
-        self.dial.valueChanged.connect(self.rotatePort)
-        self.screenDial.layout().addWidget(self.lab)
+        self._elbowRotSpin = QDoubleSpinBox()
+        self._elbowRotSpin.setDecimals(1)
+        self._elbowRotSpin.setMinimum(-180.0)
+        self._elbowRotSpin.setMaximum(180.0)
+        self._elbowRotSpin.setSuffix(" deg")
+        self._elbowRotSpin.setWrapping(True)
+        self._elbowRotSpin.setFixedWidth(78)
+        self._elbowRotUpdating = False
+        self.dial.valueChanged.connect(self._elbowDialChanged)
+        self._elbowRotSpin.valueChanged.connect(self._elbowSpinChanged)
+        self.screenDial.layout().addWidget(self._elbowRotSpin)
         self.firstCol.layout().addWidget(self.screenDial)
 
         # Leave initial selection blank; matching happens when a rating is selected.
@@ -466,7 +473,10 @@ class insertElbowForm(dodoDialogs.protoPypeForm):
 
     def insert(self):
         self.lastAngle = 0
+        self._elbowRotUpdating = True
         self.dial.setValue(0)
+        self._elbowRotSpin.setValue(0.0)
+        self._elbowRotUpdating = False
         doOffset = self.chkRemovePipeEqLen.isChecked()
         d = self.pipeDictList[self.sizeList.currentRow()]
 
@@ -526,14 +536,32 @@ class insertElbowForm(dodoDialogs.protoPypeForm):
         else:
             FreeCAD.Console.PrintError(translate("insertElbowForm", "Wrong selection\n"))
 
-    # ── rotatePort ───────────────────────────────────────────────────────────
+    def _elbowDialChanged(self, val):
+        if self._elbowRotUpdating:
+            return
+        self._elbowRotUpdating = True
+        self._elbowRotSpin.setValue(float(val))
+        self._elbowRotUpdating = False
+        self.rotatePort(val)
 
-    def rotatePort(self):
+    def _elbowSpinChanged(self, val):
+        if self._elbowRotUpdating:
+            return
+        self._elbowRotUpdating = True
+        # QDial only accepts integers; clamp to its range
+        self.dial.setValue(int(round(val)))
+        self._elbowRotUpdating = False
+        self.rotatePort(int(round(val)))
+
+    # -- rotatePort -----------------------------------------------------------
+
+    def rotatePort(self, new_val=None):
+        if new_val is None:
+            new_val = self.dial.value()
         if self.lastElbow:
             pCmd.rotateTheElbowPort(self.lastElbow, 0, self.lastAngle * -1)
-            self.lastAngle = self.dial.value()
+            self.lastAngle = new_val
             pCmd.rotateTheElbowPort(self.lastElbow, 0, self.lastAngle)
-            self.lab.setText(str(self.dial.value()) + translate("insertElbowForm", " deg"))
 
     # ── apply ────────────────────────────────────────────────────────────────
 
@@ -670,10 +698,17 @@ class insertTeeForm(dodoDialogs.protoPypeForm):
         self.dial.setNotchesVisible(True)
         self.dial.setMaximumSize(70, 70)
         self.screenDial.layout().addWidget(self.dial)
-        self.lab = QLabel(translate("insertTeeForm", "0 deg"))
-        self.lab.setAlignment(Qt.AlignCenter)
-        self.dial.valueChanged.connect(self.rotatePort)
-        self.screenDial.layout().addWidget(self.lab)
+        self._teeRotSpin = QDoubleSpinBox()
+        self._teeRotSpin.setDecimals(1)
+        self._teeRotSpin.setMinimum(-180.0)
+        self._teeRotSpin.setMaximum(180.0)
+        self._teeRotSpin.setSuffix(" deg")
+        self._teeRotSpin.setWrapping(True)
+        self._teeRotSpin.setFixedWidth(78)
+        self._teeRotUpdating = False
+        self.dial.valueChanged.connect(self._teeDialChanged)
+        self._teeRotSpin.valueChanged.connect(self._teeSpinChanged)
+        self.screenDial.layout().addWidget(self._teeRotSpin)
         self.firstCol.layout().addWidget(self.screenDial)
 
         self.sizeList.currentItemChanged.connect(self.fillBranch)
@@ -819,7 +854,10 @@ class insertTeeForm(dodoDialogs.protoPypeForm):
 
     def insert(self):
         self.lastAngle = 0
+        self._teeRotUpdating = True
         self.dial.setValue(0)
+        self._teeRotSpin.setValue(0.0)
+        self._teeRotUpdating = False
         insertOnBranch = self.branchRadio.isChecked()
         doOffset = self.chkRemovePipeEqLen.isChecked()
 
@@ -885,16 +923,33 @@ class insertTeeForm(dodoDialogs.protoPypeForm):
             FreeCAD.Console.PrintError(
                 translate("insertTeeForm", "Wrong selection\n"))
 
-    # ── rotatePort ───────────────────────────────────────────────────────────
+    def _teeDialChanged(self, val):
+        if self._teeRotUpdating:
+            return
+        self._teeRotUpdating = True
+        self._teeRotSpin.setValue(float(val))
+        self._teeRotUpdating = False
+        self.rotatePort(val)
 
-    def rotatePort(self):
+    def _teeSpinChanged(self, val):
+        if self._teeRotUpdating:
+            return
+        self._teeRotUpdating = True
+        self.dial.setValue(int(round(val)))
+        self._teeRotUpdating = False
+        self.rotatePort(int(round(val)))
+
+    # -- rotatePort -----------------------------------------------------------
+
+    def rotatePort(self, new_val=None):
         if self.lastTee is None:
             return
+        if new_val is None:
+            new_val = self.dial.value()
         port = 2 if self.branchRadio.isChecked() else 0
         pCmd.rotateTheTeePort(self.lastTee, port, self.lastAngle * -1)
-        self.lastAngle = self.dial.value()
+        self.lastAngle = new_val
         pCmd.rotateTheTeePort(self.lastTee, port, self.lastAngle)
-        self.lab.setText(str(self.dial.value()) + translate("insertTeeForm", " deg"))
 
     # ── apply ────────────────────────────────────────────────────────────────
 
@@ -1485,7 +1540,7 @@ class insertReductForm(dodoDialogs.protoPypeForm):
         self.secondCol.layout().addWidget(self.cb1)
         self.fillOD2()
 
-        # Rotation dial – shown only for eccentric reducers (in firstCol)
+        # Rotation dial -- shown only for eccentric reducers (in firstCol)
         self.screenDial = QWidget()
         self.screenDial.setLayout(QHBoxLayout())
         self.dial = QDial()
@@ -1496,10 +1551,17 @@ class insertReductForm(dodoDialogs.protoPypeForm):
         self.dial.setNotchesVisible(True)
         self.dial.setMaximumSize(70, 70)
         self.screenDial.layout().addWidget(self.dial)
-        self.dialLab = QLabel(translate("insertReductForm", "0 deg"))
-        self.dialLab.setAlignment(Qt.AlignCenter)
-        self.dial.valueChanged.connect(self.rotateEccentric)
-        self.screenDial.layout().addWidget(self.dialLab)
+        self._reductRotSpin = QDoubleSpinBox()
+        self._reductRotSpin.setDecimals(1)
+        self._reductRotSpin.setMinimum(-180.0)
+        self._reductRotSpin.setMaximum(180.0)
+        self._reductRotSpin.setSuffix(" deg")
+        self._reductRotSpin.setWrapping(True)
+        self._reductRotSpin.setFixedWidth(78)
+        self._reductRotUpdating = False
+        self.dial.valueChanged.connect(self._reductDialChanged)
+        self._reductRotSpin.valueChanged.connect(self._reductSpinChanged)
+        self.screenDial.layout().addWidget(self._reductRotSpin)
         self.firstCol.layout().addWidget(self.screenDial)
         self.screenDial.hide()   # only visible when Eccentric is checked
         self.lastAngle = 0
@@ -1558,18 +1620,40 @@ class insertReductForm(dodoDialogs.protoPypeForm):
                     self.lastReduct, self._insertPort(), -self.lastAngle)
                 FreeCAD.activeDocument().recompute()
             self.lastAngle = 0
+            self._reductRotUpdating = True
             self.dial.setValue(0)
+            self._reductRotSpin.setValue(0.0)
+            self._reductRotUpdating = False
 
-    def rotateEccentric(self):
-        """Rotate the last eccentric reducer around its insertion-port axis."""
-        if not self.lastReduct:
-            self.lastAngle = self.dial.value()
+    def _reductDialChanged(self, val):
+        if self._reductRotUpdating:
             return
-        delta = self.dial.value() - self.lastAngle
-        self.lastAngle = self.dial.value()
+        self._reductRotUpdating = True
+        self._reductRotSpin.setValue(float(val))
+        self._reductRotUpdating = False
+        self.rotateEccentric(val)
+
+    def _reductSpinChanged(self, val):
+        if self._reductRotUpdating:
+            return
+        self._reductRotUpdating = True
+        self.dial.setValue(int(round(val)))
+        self._reductRotUpdating = False
+        self.rotateEccentric(int(round(val)))
+
+    def rotateEccentric(self, new_val=None):
+        """Rotate the last eccentric reducer around its insertion-port axis."""
+        if new_val is None:
+            new_val = self.dial.value()
+        if not self.lastReduct:
+            self.lastAngle = new_val
+            return
+        delta = new_val - self.lastAngle
+        self.lastAngle = new_val
         self._rotateAboutPort(self.lastReduct, self._insertPort(), delta)
-        self.dialLab.setText(
-            str(self.dial.value()) + translate("insertReductForm", " deg"))
+        self._reductRotSpin.blockSignals(True)
+        self._reductRotSpin.setValue(float(new_val))
+        self._reductRotSpin.blockSignals(False)
         FreeCAD.activeDocument().recompute()
 
 
@@ -1724,7 +1808,10 @@ class insertReductForm(dodoDialogs.protoPypeForm):
             pCmd.moveToPyLi(self.lastReduct, self.combo.currentText())
         # Reset dial so the next insert starts from 0
         self.lastAngle = 0
+        self._reductRotUpdating = True
         self.dial.setValue(0)
+        self._reductRotSpin.setValue(0.0)
+        self._reductRotUpdating = False
 
     def fillSizes(self):
         """Override to also refresh the OD2 list when DN/NPS is toggled."""
@@ -2657,10 +2744,17 @@ class insertValveForm(dodoDialogs.protoPypeForm):
         self.dial.setNotchesVisible(True)
         self.dial.setMaximumSize(70, 70)
         self.screenDial.layout().addWidget(self.dial)
-        self.dialLab = QLabel(translate("insertValveForm", "0 deg"))
-        self.dialLab.setAlignment(Qt.AlignCenter)
-        self.dial.valueChanged.connect(self.rotateDial)
-        self.screenDial.layout().addWidget(self.dialLab)
+        self._valveRotSpin = QDoubleSpinBox()
+        self._valveRotSpin.setDecimals(1)
+        self._valveRotSpin.setMinimum(-180.0)
+        self._valveRotSpin.setMaximum(180.0)
+        self._valveRotSpin.setSuffix(" deg")
+        self._valveRotSpin.setWrapping(True)
+        self._valveRotSpin.setFixedWidth(78)
+        self._valveRotUpdating = False
+        self.dial.valueChanged.connect(self._valveDialChanged)
+        self._valveRotSpin.valueChanged.connect(self._valveSpinChanged)
+        self.screenDial.layout().addWidget(self._valveRotSpin)
         self.firstCol.layout().addWidget(self.screenDial)
 
         # "Insert in pipe" controls (generic only; hidden for SW/TH)
@@ -2838,19 +2932,35 @@ class insertValveForm(dodoDialogs.protoPypeForm):
             self.sizeList.clearSelection()
             self.sizeList.setCurrentRow(-1)
 
-    # ── rotation dial ─────────────────────────────────────────────────────────
+    def _valveDialChanged(self, val):
+        if self._valveRotUpdating:
+            return
+        self._valveRotUpdating = True
+        self._valveRotSpin.setValue(float(val))
+        self._valveRotUpdating = False
+        self.rotateDial(val)
 
-    def rotateDial(self):
+    def _valveSpinChanged(self, val):
+        if self._valveRotUpdating:
+            return
+        self._valveRotUpdating = True
+        self.dial.setValue(int(round(val)))
+        self._valveRotUpdating = False
+        self.rotateDial(int(round(val)))
+
+    # -- rotation dial --------------------------------------------------------
+
+    def rotateDial(self, new_val=None):
         """Spin the last-inserted valve around its flow axis (Z) by dial delta."""
+        if new_val is None:
+            new_val = self.dial.value()
         if self.lastValve:
             # Undo previous dial position, then apply new one
             pCmd.rotateTheTubeAx(self.lastValve, FreeCAD.Vector(0, 0, 1),
                                   self.lastAngle * -1)
-            self.lastAngle = self.dial.value()
+            self.lastAngle = new_val
             pCmd.rotateTheTubeAx(self.lastValve, FreeCAD.Vector(0, 0, 1),
                                   self.lastAngle)
-            self.dialLab.setText(
-                str(self.dial.value()) + translate("insertValveForm", " deg"))
 
     # ── reverse ──────────────────────────────────────────────────────────────
 
@@ -2869,7 +2979,10 @@ class insertValveForm(dodoDialogs.protoPypeForm):
 
     def insert(self):
         self.lastAngle = 0
+        self._valveRotUpdating = True
         self.dial.setValue(0)
+        self._valveRotSpin.setValue(0.0)
+        self._valveRotUpdating = False
         d  = self.pipeDictList[self.sizeList.currentRow()]
         r  = self._normRow(d)
 
