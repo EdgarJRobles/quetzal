@@ -145,6 +145,13 @@ class insertPipeForm(dodoDialogs.protoPypeForm):
         )
         self.sizeList.setCurrentRow(0)
         self.ratingList.setCurrentRow(0)
+        # Override the base changeRating so the PSize selection is preserved
+        # when the user switches ratings.
+        try:
+            self.ratingList.itemClicked.disconnect(self.changeRating)
+        except Exception:
+            pass
+        self.ratingList.itemClicked.connect(self._changeRating)
         self.btn1.clicked.connect(self.insert)
         self.edit1 = QLineEdit()
         _unit_hint = qu.get_length_unit() if qu else "mm"
@@ -174,6 +181,18 @@ class insertPipeForm(dodoDialogs.protoPypeForm):
         self.show()
         self.lastPipe = None
         self.H = 200
+
+    def _changeRating(self, item):
+        """Override base changeRating to preserve the selected PSize."""
+        cur_row = self.sizeList.currentRow()
+        cur_psize = None
+        if 0 <= cur_row < len(self.pipeDictList):
+            cur_psize = self.pipeDictList[cur_row].get("PSize")
+        self.PRating = item.text()
+        self.currentRatingLab.setText(
+            translate("protoPypeForm", "Rating: ") + self.PRating)
+        self.fillSizes()
+        pCmd.preserveSelectSizeByPSize(self, cur_psize)
 
     def reverse(self):  # revert orientation of selected or last inserted pipe
         selPipes = [
@@ -278,6 +297,7 @@ class insertElbowForm(dodoDialogs.protoPypeForm):
     """
 
     def __init__(self):
+        self._ready = False   # Suppress fillSizes during super().__init__
         super(insertElbowForm, self).__init__(
             translate("insertElbowForm", "Insert elbows"),
             "Elbow",
@@ -346,7 +366,10 @@ class insertElbowForm(dodoDialogs.protoPypeForm):
         self.screenDial.layout().addWidget(self.lab)
         self.firstCol.layout().addWidget(self.screenDial)
 
-        pCmd.autoSelectInPipeForm(self)
+        # Leave initial selection blank; matching happens when a rating is selected.
+        self._ready = True    # Now allow fillSizes to populate the list
+        self.sizeList.clearSelection()
+        self.sizeList.setCurrentRow(-1)
         self._refreshLayout()
 
         self.show()
@@ -374,6 +397,8 @@ class insertElbowForm(dodoDialogs.protoPypeForm):
             label = PSize  <BendAngle>°   (angle shown because multiple rows
                                            per PSize are common, e.g. 90° / 45°)
         """
+        if not getattr(self, "_ready", False):
+            return
         self.sizeList.clear()
         self.pipeDictList = []
         fname = "Elbow_" + self.PRating + ".csv"
@@ -407,13 +432,24 @@ class insertElbowForm(dodoDialogs.protoPypeForm):
     # ── rating-change handler ────────────────────────────────────────────────
 
     def _changeRating(self, item):
+        # Capture PSize: prefer the current sizeList selection; fall back to
+        # the selected object in the viewport (first rating pick has no selection).
+        cur_row = self.sizeList.currentRow()
+        cur_psize = None
+        if 0 <= cur_row < len(self.pipeDictList):
+            cur_psize = self.pipeDictList[cur_row].get("PSize")
+        if cur_psize is None:
+            _, _, _, cur_psize = pCmd.getSelectedPortDimensions()
         self.PRating = item.text()
         self.currentRatingLab.setText(
             translate("protoPypeForm", "Rating: ") + self.PRating)
         self.fillSizes()
-        self.sizeList.setCurrentRow(0)
-
-    # ── layout refresh ───────────────────────────────────────────────────────
+        # Match the PSize in the new list; clear selection if not found.
+        if cur_psize and pCmd._selectSizeByPSize(self, cur_psize):
+            pass  # Selection was set by helper
+        else:
+            self.sizeList.clearSelection()
+            self.sizeList.setCurrentRow(-1)
 
     def _refreshLayout(self):
         """Show/hide edit2 (bend radius) based on whether the CSV is SW/TH."""
@@ -569,6 +605,12 @@ class insertTeeForm(dodoDialogs.protoPypeForm):
     """
 
     def __init__(self):
+        # Initialise the unique-size tracking lists BEFORE super().__init__()
+        # because the parent calls fillSizes(), which populates them.
+        self._uniqueRunPSizes = []
+        self._uniqueSizeList  = []  # Same list, exposed for _selectSizeByPSize
+        self._branchDictList  = []
+
         super(insertTeeForm, self).__init__(
             translate("insertTeeForm", "Insert tee"),
             "Tee",
@@ -577,8 +619,6 @@ class insertTeeForm(dodoDialogs.protoPypeForm):
             x,
             y,
         )
-        self.sizeList.setCurrentRow(0)
-        self.ratingList.setCurrentRow(0)
 
         # Disconnect base changeRating and reconnect to our handler so the
         # branch list format is refreshed when the rating type changes.
@@ -589,7 +629,6 @@ class insertTeeForm(dodoDialogs.protoPypeForm):
         self.ratingList.itemClicked.connect(self._changeRating)
 
         # Branch size list
-        self._branchDictList = []
         self._branchList = QListWidget()
         self._branchList.setMaximumHeight(100)
         branchLabel = QLabel(translate("insertTeeForm", "Branch size:"))
@@ -639,7 +678,13 @@ class insertTeeForm(dodoDialogs.protoPypeForm):
 
         self.sizeList.currentItemChanged.connect(self.fillBranch)
 
-        pCmd.autoSelectInPipeForm(self)
+        # Leave initial selection blank; matching happens when a rating is selected.
+        self._ready = True    # Now allow fillSizes to populate the list
+        self.sizeList.clearSelection()
+        self.sizeList.setCurrentRow(-1)
+        if hasattr(self, "_branchList"):
+            self._branchList.clearSelection()
+            self._branchList.setCurrentRow(-1)
 
         self.show()
         self.lastTee   = None
@@ -662,8 +707,12 @@ class insertTeeForm(dodoDialogs.protoPypeForm):
         BW : label = PSize  OD x thk  (deduplicated by PSize)
         SW/TH: label = PSize  OD       (no thk column; deduplicated by PSize)
         """
+        if not getattr(self, "_ready", False):
+            return
         self.sizeList.clear()
         self.pipeDictList = []
+        self._uniqueRunPSizes = []  # Parallel list of unique run PSize values
+        self._uniqueSizeList  = []  # Same, exposed for _selectSizeByPSize
         fname = "Tee_" + self.PRating + ".csv"
         fpath = join(dirname(abspath(__file__)), "tablez", fname)
         try:
@@ -677,6 +726,8 @@ class insertTeeForm(dodoDialogs.protoPypeForm):
             ps = row["PSize"]
             if ps not in seen_psize:
                 seen_psize.append(ps)
+                self._uniqueRunPSizes.append(ps)
+                self._uniqueSizeList.append(ps)
                 if self._isSocketConn():
                     # SW/TH: no thk column
                     if qu:
@@ -738,11 +789,31 @@ class insertTeeForm(dodoDialogs.protoPypeForm):
     # ── rating-change handler ────────────────────────────────────────────────
 
     def _changeRating(self, item):
+        # Capture the currently selected run PSize so we can restore it.
+        # If the sizeList had no selection (-1), use the selected object's PSize.
+        cur_row = self.sizeList.currentRow()
+        cur_psize = None
+        if hasattr(self, "_uniqueSizeList") and 0 <= cur_row < len(self._uniqueSizeList):
+            cur_psize = self._uniqueSizeList[cur_row]
+        if cur_psize is None:
+            _, _, _, cur_psize = pCmd.getSelectedPortDimensions()
         self.PRating = item.text()
         self.currentRatingLab.setText(
             translate("protoPypeForm", "Rating: ") + self.PRating)
         self.fillSizes()
-        self.sizeList.setCurrentRow(0)
+        # Match the run PSize.  If no match, clear the selection.
+        if cur_psize and pCmd._selectSizeByPSize(self, cur_psize):
+            # Default branch to equal-size (straight tee) when possible.
+            if hasattr(self, "_branchDictList"):
+                for bi, brow in enumerate(self._branchDictList):
+                    if brow.get("PSizeBranch", brow.get("PSize", "")) == cur_psize:
+                        self._branchList.setCurrentRow(bi)
+                        break
+        else:
+            self.sizeList.clearSelection()
+            self.sizeList.setCurrentRow(-1)
+            self._branchList.clearSelection()
+            self._branchList.setCurrentRow(-1)
 
     # ── insert ───────────────────────────────────────────────────────────────
 
@@ -786,6 +857,7 @@ class insertTeeForm(dodoDialogs.protoPypeForm):
                 float(pq(d["thk2"])),
                 float(pq(d["C"])),
                 float(pq(d["M"])),
+                d.get("PSizeBranch", ""),
             ]
             rating = self.ratingList.currentItem().text()
             self.lastTee = pCmd.doTees(
@@ -855,6 +927,8 @@ class insertTeeForm(dodoDialogs.protoPypeForm):
                 obj.thk     = pq(d["thk"])
                 obj.thk2    = pq(d["thk2"])
                 obj.PRating = self.PRating
+                if hasattr(obj, "PSizeBranch"):
+                    obj.PSizeBranch = d.get("PSizeBranch", "")
                 FreeCAD.activeDocument().recompute()
 
     # ── reverse ──────────────────────────────────────────────────────────────
@@ -1038,6 +1112,7 @@ class insertFlangeForm(dodoDialogs.protoPypeForm):
     """
 
     def __init__(self):
+        self._ready = False   # Suppress fillSizes during super().__init__
         super(insertFlangeForm, self).__init__(
             translate("insertFlangeForm", "Insert flanges"),
             "Flange",
@@ -1082,9 +1157,28 @@ class insertFlangeForm(dodoDialogs.protoPypeForm):
         self.btn3.clicked.connect(self.apply)
         self.btn1.setDefault(True)
         self.btn1.setFocus()
+
+        self._ready = True    # Now allow fillSizes to populate the list
+        # When a Gasket object is selected, default to "Connect on Flange Face".
+        try:
+            sel = FreeCADGui.Selection.getSelection()
+            if sel and hasattr(sel[0], "PType") and sel[0].PType == "Gasket":
+                self.faceEndRadio.setChecked(True)
+        except Exception:
+            pass
+        # Leave initial selection blank; matching happens when a rating is selected.
+        self.sizeList.clearSelection()
+        self.sizeList.setCurrentRow(-1)
+
         self.show()
         self.lastFlange = None
         self.offsetoption=False
+
+    def fillSizes(self):
+        """Delegate to the base class fillSizes, but only once _ready is set."""
+        if not getattr(self, "_ready", False):
+            return
+        super(insertFlangeForm, self).fillSizes()
 
     def _fillSchedList(self):
         """Populate schedList with all Pipe_SCH-* schedules found in the tablez folder.
@@ -1136,13 +1230,47 @@ class insertFlangeForm(dodoDialogs.protoPypeForm):
 
     def _onRatingChanged(self, item):
         """Called when the user clicks a different flange rating."""
-        # Let the base class handler update PRating and reload sizes first
+        # Capture PSize: prefer current selection, fall back to selected object.
+        cur_row = self.sizeList.currentRow()
+        cur_psize = None
+        if 0 <= cur_row < len(self.pipeDictList):
+            cur_psize = self.pipeDictList[cur_row].get("PSize", "").strip()
+        if not cur_psize:
+            _, _, _, cur_psize = pCmd.getSelectedPortDimensions()
+        # Let base class update PRating and reload sizeList.
         self.changeRating(item)
         self._updateSchedVisibility()
+        # Match PSize in the new size list.
+        if cur_psize and pCmd._selectSizeByPSize(self, cur_psize):
+            # For WN flanges, also pre-select the matching pipe schedule.
+            if self._currentFlangeType() == "WN":
+                self._matchSchedFromSelection()
+        else:
+            self.sizeList.clearSelection()
+            self.sizeList.setCurrentRow(-1)
 
     def _onSizeChanged(self, _row):
         """Called when the selected flange size changes."""
         self._updateSchedVisibility()
+
+    def _matchSchedFromSelection(self):
+        """For WN flanges, pre-select the schedList entry matching the selected object's PRating.
+        Uses equivalence lookup so SCH-40 matches SCH-STD where applicable.
+        """
+        if not hasattr(self, "_schedNames") or not self._schedNames:
+            return
+        _, _, sel_rating, sel_psize = pCmd.getSelectedPortDimensions()
+        if not sel_rating:
+            return
+        # Try exact match first
+        if sel_rating in self._schedNames:
+            self.schedList.setCurrentRow(self._schedNames.index(sel_rating))
+            return
+        # Try equivalence lookup
+        if sel_psize:
+            equiv = pCmd.findEquivRating(sel_psize, sel_rating, self._schedNames)
+            if equiv:
+                self.schedList.setCurrentRow(self._schedNames.index(equiv))
 
     def _getSchedThk(self, psize):
         """Return wall thickness (mm float) for psize from the selected Pipe_SCH-* file.
@@ -1605,11 +1733,15 @@ class insertReductForm(dodoDialogs.protoPypeForm):
             self.fillOD2()
 
     def changeRating2(self, item):
+        cur_row = self.sizeList.currentRow()
+        cur_psize = None
+        if 0 <= cur_row < len(self.pipeDictList):
+            cur_psize = self.pipeDictList[cur_row].get("PSize")
         self.PRating = item.text()
         self.currentRatingLab.setText(
             translate("protoPypeForm", "Rating: ") + self.PRating)
         self.fillSizes()
-        self.sizeList.setCurrentRow(0)
+        pCmd.preserveSelectSizeByPSize(self, cur_psize)
 
 class insertUboltForm(dodoDialogs.protoPypeForm):
     """
@@ -1746,6 +1878,7 @@ class insertCapForm(dodoDialogs.protoPypeForm):
     """
 
     def __init__(self):
+        self._ready = False   # Suppress fillSizes during super().__init__
         super(insertCapForm, self).__init__(
             translate("insertCapForm", "Insert caps"), "Cap", "SCH-STD", "cap.svg", x, y
         )
@@ -1770,6 +1903,7 @@ class insertCapForm(dodoDialogs.protoPypeForm):
         self.btn1.setDefault(True)
         self.btn1.setFocus()
 
+        self._ready = True    # Now allow fillSizes to populate the list
         pCmd.autoSelectInPipeForm(self)
 
         self.show()
@@ -1792,6 +1926,8 @@ class insertCapForm(dodoDialogs.protoPypeForm):
         BW  : label = PSize  OD x thk
         SW/TH: label = PSize  OD   (no thk column)
         """
+        if not getattr(self, "_ready", False):
+            return
         self.sizeList.clear()
         self.pipeDictList = []
         fname = "Cap_" + self.PRating + ".csv"
@@ -1820,11 +1956,15 @@ class insertCapForm(dodoDialogs.protoPypeForm):
     # ── rating-change handler ────────────────────────────────────────────────
 
     def _changeRating(self, item):
+        cur_row = self.sizeList.currentRow()
+        cur_psize = None
+        if 0 <= cur_row < len(self.pipeDictList):
+            cur_psize = self.pipeDictList[cur_row].get("PSize")
         self.PRating = item.text()
         self.currentRatingLab.setText(
             translate("protoPypeForm", "Rating: ") + self.PRating)
         self.fillSizes()
-        self.sizeList.setCurrentRow(0)
+        pCmd.preserveSelectSizeByPSize(self, cur_psize)
 
     # ── insert ───────────────────────────────────────────────────────────────
 
@@ -2468,6 +2608,7 @@ class insertValveForm(dodoDialogs.protoPypeForm):
         self.PRating   = ""
         self.lastValve = None
         self.lastAngle = 0
+        self._ready    = False   # Suppress fillSizes during super().__init__
 
         super(insertValveForm, self).__init__(
             translate("insertValveForm", "Insert valves"),
@@ -2544,7 +2685,12 @@ class insertValveForm(dodoDialogs.protoPypeForm):
         self.secondCol.layout().addWidget(self.actuatorGroup)
 
         # Now that sli, cb1, and actuator controls exist, apply the correct visibility
+        self._ready = True    # Now allow fillSizes to populate the list
         self._refreshLayout()
+        # Leave initial sizeList selection blank -- the user selects a rating
+        # first, which triggers _changeRating to auto-select the size.
+        self.sizeList.clearSelection()
+        self.sizeList.setCurrentRow(-1)
         self.show()
 
     # ── helper: detect SW/TH rating ──────────────────────────────────────────
@@ -2634,6 +2780,8 @@ class insertValveForm(dodoDialogs.protoPypeForm):
         SW / TH      : label = PSize   OD
         Flanged      : label = PSize   H
         """
+        if not getattr(self, "_ready", False):
+            return
         self.sizeList.clear()
         self.pipeDictList = []
         fname = "Valve_" + self.PRating + ".csv"
@@ -2675,11 +2823,20 @@ class insertValveForm(dodoDialogs.protoPypeForm):
     # ── rating-change handler ─────────────────────────────────────────────────
 
     def _changeRating(self, item):
+        """On rating change: reload sizeList then match selected object's PSize."""
         self.PRating = item.text()
         self.currentRatingLab.setText(
             translate("protoPypeForm", "Rating: ") + self.PRating)
         self.fillSizes()
-        self.sizeList.setCurrentRow(0)
+        # Try to match the selected object's PSize in the new list.
+        _, _, _, psize = pCmd.getSelectedPortDimensions()
+        if psize:
+            if not pCmd._selectSizeByPSize(self, psize):
+                self.sizeList.clearSelection()
+                self.sizeList.setCurrentRow(-1)
+        else:
+            self.sizeList.clearSelection()
+            self.sizeList.setCurrentRow(-1)
 
     # ── rotation dial ─────────────────────────────────────────────────────────
 
@@ -3240,7 +3397,7 @@ class insertGasketForm(dodoDialogs.protoPypeForm):
         self.chkBolts = QCheckBox(
             translate("insertGasketForm", "Insert Bolts")
         )
-        self.chkBolts.setChecked(False)
+        self.chkBolts.setChecked(True)
         self.secondCol.layout().addWidget(self.chkBolts)
 
         self.btn2 = QPushButton(translate("insertGasketForm", "Reverse"))
@@ -3254,8 +3411,8 @@ class insertGasketForm(dodoDialogs.protoPypeForm):
         self.btn1.setDefault(True)
         self.btn1.setFocus()
 
-        # auto-select matching size from whatever is currently selected
-        pCmd.autoSelectInPipeForm(self)
+        # Auto-select FClass and PSize only when a Flange is selected.
+        pCmd.autoSelectGasketForm(self)
 
         self.show()
         self.lastGasket = None
@@ -3503,6 +3660,7 @@ class insertOutletForm(dodoDialogs.protoPypeForm):
         self._t_max       = 1000.0
         self._updating_ui = False
         self.lastOutlet   = None
+        self._ready       = False  # Suppress fillSizes during super().__init__
 
         super(insertOutletForm, self).__init__(
             translate("insertOutletForm", "Insert Outlet"),
@@ -3639,13 +3797,11 @@ class insertOutletForm(dodoDialogs.protoPypeForm):
         self.btn1.setDefault(True)
         self.btn1.setFocus()
 
-        # -- Initial fill --------------------------------------------------
-        for _i in range(self.ratingList.count()):
-            if self.ratingList.item(_i).text() == self.PRating:
-                self.ratingList.setCurrentRow(_i)
-                break
-        self.fillSizes()
-        self.sizeList.setCurrentRow(0)
+        # Leave all lists with no default selection.
+        self.ratingList.clearSelection()
+        self.ratingList.setCurrentRow(-1)
+        self.sizeList.clearSelection()
+        self.sizeList.setCurrentRow(-1)
         self._detectHostObject()
 
         self.show()
@@ -3656,6 +3812,8 @@ class insertOutletForm(dodoDialogs.protoPypeForm):
     # =======================================================================
 
     def fillSizes(self):
+        if not getattr(self, "_ready", False):
+            return
         self.sizeList.clear()
         self.pipeDictList = []
         fname = "Outlet_" + self.PRating + ".csv"
@@ -3684,11 +3842,13 @@ class insertOutletForm(dodoDialogs.protoPypeForm):
     # =======================================================================
 
     def _changeRating(self, item):
+        self._ready = True    # Enable fillSizes on first rating click
         self.PRating = item.text()
         self.currentRatingLab.setText(
             translate("protoPypeForm", "Rating: ") + self.PRating)
         self.fillSizes()
-        self.sizeList.setCurrentRow(0)
+        self.sizeList.clearSelection()
+        self.sizeList.setCurrentRow(-1)
 
     def _onAngChanged(self):
         self._angFilter = 45 if self._radioLat.isChecked() else 0
@@ -3700,7 +3860,8 @@ class insertOutletForm(dodoDialogs.protoPypeForm):
             self._alpha = 0.0
         self.adjustSize()
         self.fillSizes()
-        self.sizeList.setCurrentRow(0)
+        self.sizeList.clearSelection()
+        self.sizeList.setCurrentRow(-1)
 
     # =======================================================================
     # Host-object detection
@@ -4038,7 +4199,17 @@ class insertCouplingUnionForm(dodoDialogs.protoPypeForm):
         # Keep port-2 list in sync when primary selection changes.
         self.sizeList.currentItemChanged.connect(self._fillPort2)
 
-        pCmd.autoSelectInPipeForm(self)
+        # Rating never matches the selected component, so select the first
+        # available rating and match size from the selection.
+        self.ratingList.setCurrentRow(0)
+        if self.ratingList.currentItem():
+            self.PRating = self.ratingList.currentItem().text()
+        self.fillSizes()
+        _, _, _, psize = pCmd.getSelectedPortDimensions()
+        if psize:
+            pCmd._selectSizeByPSize(self, psize)
+        else:
+            self.sizeList.setCurrentRow(0)
 
         self.show()
         self.lastFitting = None
@@ -4057,22 +4228,35 @@ class insertCouplingUnionForm(dodoDialogs.protoPypeForm):
         self._port2Label.setVisible(is_coupling)
         self._port2List.setVisible(is_coupling)
         self.fillSizes()
-        self.sizeList.setCurrentRow(0)
+        # Re-run size matching for the selected object in the new mode.
+        _, _, _, psize = pCmd.getSelectedPortDimensions()
+        if psize and pCmd._selectSizeByPSize(self, psize):
+            pass  # Selection set by helper
+        else:
+            self.sizeList.clearSelection()
+            self.sizeList.setCurrentRow(-1)
 
     # ── rating-change handler ─────────────────────────────────────────────────
 
     def _changeRating(self, item):
+        cur_row = self.sizeList.currentRow()
+        cur_psize = None
+        if hasattr(self, "_uniqueSizeList") and 0 <= cur_row < len(self._uniqueSizeList):
+            cur_psize = self._uniqueSizeList[cur_row]
+        elif 0 <= cur_row < len(self.pipeDictList):
+            cur_psize = self.pipeDictList[cur_row].get("PSize")
         self.PRating = item.text()
         self.currentRatingLab.setText(
             translate("protoPypeForm", "Rating: ") + self.PRating)
         self.fillSizes()
-        self.sizeList.setCurrentRow(0)
+        pCmd.preserveSelectSizeByPSize(self, cur_psize)
 
     # ── fillSizes override ────────────────────────────────────────────────────
     def fillSizes(self):
         """Load the appropriate CSV and populate sizeList (and port-2 list for couplings)."""
         self.sizeList.clear()
         self.pipeDictList = []
+        self._uniqueSizeList = []  # Deduplicated PSize list aligned with sizeList rows
 
         fname = self.PType + "_" + self.PRating + ".csv"
         fpath = join(dirname(abspath(__file__)), "tablez", fname)
@@ -4092,6 +4276,7 @@ class insertCouplingUnionForm(dodoDialogs.protoPypeForm):
                 ps = row["PSize"]
                 if ps not in seen:
                     seen.append(ps)
+                    self._uniqueSizeList.append(ps)
                     if qu:
                         label = qu.format_psize(ps) + "  " + qu.format_dim(row.get("OD", ""))
                     else:
@@ -4099,6 +4284,7 @@ class insertCouplingUnionForm(dodoDialogs.protoPypeForm):
                     self.sizeList.addItem(label)
         else:
             for row in self.pipeDictList:
+                self._uniqueSizeList.append(row["PSize"])
                 if qu:
                     label = qu.format_psize(row["PSize"]) + "  " + qu.format_dim(row.get("OD", ""))
                 else:

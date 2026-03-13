@@ -161,205 +161,406 @@ def portsDir(o):
 
 def getSelectedPortDimensions():
     """
-    Determine the OD and thickness of the selected port.
-    Returns (OD, thk, PRating, PSize) or (None, None, None, None) if cannot determine.
-    
-    For objects with multiple port sizes (Tee, Reduct), determines which port
-    is closest to the selected edge/vertex to get the correct dimensions.
-    
-    This is a helper function for form auto-selection features.
+    Determine the port dimensions of the selected object.
+    Returns (OD, thk, PRating, PSize).
+
+    OD and thk are set to None for objects whose connection type is SW or TH
+    (socket-weld or threaded), because their OD does not correspond to the
+    connecting pipe OD and OD-based matching would produce wrong results.
+    The affected types are:
+      - Outlet with EndType "SocketWeld" or "ThreadedEnd"
+      - SocketCap, SocketEll, SocketTee, SocketCoupling, SocketUnion
+        (Conn property is always SW or TH)
+      - Valve with Conn SW or TH
+      - Flange with FlangeType BL, SW, SO, or LJ
+
+    For objects with multiple port sizes (Tee, Reduct), the port closest to
+    the selected sub-object is used.
+
+    Returns (None, None, None, None) when no suitable object is selected.
     """
+    # Flange types that have no pipe-matching OD
+    _NO_OD_FLANGE_TYPES = {"BL", "SW", "SO", "LJ"}
+    # EndType strings for Outlet SW/TH variants
+    _SW_TH_END_TYPES = {"SocketWeld", "ThreadedEnd", "SW", "TH"}
+
+    def _closest_port(obj, sx):
+        """Return the index of the port closest to the selected sub-object,
+        or None when the port cannot be determined."""
+        if not (hasattr(obj, "Ports") and obj.Ports):
+            return None
+        if not sx.SubObjects:
+            return None
+        sub = sx.SubObjects[0]
+        if hasattr(sub, "CenterOfMass"):
+            pt = sub.CenterOfMass
+        elif hasattr(sub, "Point"):
+            pt = sub.Point
+        else:
+            return None
+        best_i, best_d = 0, float("inf")
+        for i, port in enumerate(obj.Ports):
+            d = (obj.Placement.multVec(port) - pt).Length
+            if d < best_d:
+                best_d = d
+                best_i = i
+        return best_i
+
     selex = FreeCADGui.Selection.getSelectionEx()
     if not selex:
         return None, None, None, None
-    
+
     for sx in selex:
         obj = sx.Object
         if not hasattr(obj, "PType"):
             continue
-        
-        # Get object properties
-        ptype = obj.PType
-        
-        # For objects with uniform port sizes (Pipe, Elbow, Flange, Cap, Valve)
-        if ptype in ["Pipe", "Elbow", "Flange", "Cap", "Valve"]:
-            if hasattr(obj, "OD") and hasattr(obj, "thk") and hasattr(obj, "PRating") and hasattr(obj, "PSize"):
-                return float(obj.OD), float(obj.thk), obj.PRating, obj.PSize
-        
-        # For Tee: has run and branch with potentially different sizes
-        elif ptype == "Tee":
+        ptype  = obj.PType
+        psize  = obj.PSize  if hasattr(obj, "PSize")   else None
+        rating = obj.PRating if hasattr(obj, "PRating") else None
+
+        # ── Outlet ────────────────────────────────────────────────────────
+        if ptype == "Outlet":
+            end_type = obj.EndType if hasattr(obj, "EndType") else "ButtWeld"
+            if end_type in _SW_TH_END_TYPES:
+                # SW/TH outlet: PRating won't match pipe ratings; only PSize
+                # is useful (for PSize matching after a rating is selected).
+                return None, None, None, psize
+            # BW outlet: full match -- OD, thk, PRating, and PSize all valid
+            od  = float(obj.OD)  if hasattr(obj, "OD")  else None
+            thk = float(obj.thk) if hasattr(obj, "thk") else None
+            return od, thk, rating, psize
+
+        # ── Socket/threaded fittings: Conn is always SW or TH ─────────────
+        if ptype in ("SocketCap", "SocketEll", "SocketTee",
+                     "SocketCoupling", "SocketUnion"):
+            return None, None, None, psize
+
+        # ── Valve: suppress OD when SW or TH ──────────────────────────────
+        if ptype == "Valve":
+            conn = obj.Conn if hasattr(obj, "Conn") else ""
+            if conn.upper() in ("SW", "TH"):
+                return None, None, rating, psize
+            od  = float(obj.OD)  if hasattr(obj, "OD")  else None
+            thk = float(obj.thk) if hasattr(obj, "thk") else None
+            return od, thk, rating, psize
+
+        # ── Flange: suppress OD for non-pipe-neck types ────────────────────
+        if ptype == "Flange":
+            ftype = obj.FlangeType if hasattr(obj, "FlangeType") else ""
+            if ftype in _NO_OD_FLANGE_TYPES:
+                return None, None, rating, psize
+            od  = float(obj.OD)  if hasattr(obj, "OD")  else None
+            thk = float(obj.thk) if hasattr(obj, "thk") else None
+            return od, thk, rating, psize
+
+        # ── Pipe, Elbow, Cap: single uniform port size ─────────────────────
+        if ptype in ("Pipe", "Elbow", "Cap"):
+            od  = float(obj.OD)  if hasattr(obj, "OD")  else None
+            thk = float(obj.thk) if hasattr(obj, "thk") else None
+            return od, thk, rating, psize
+
+        # ── Tee: run ports share OD/thk; branch port uses OD2/thk2 ─────────
+        if ptype == "Tee":
             if not (hasattr(obj, "Ports") and len(obj.Ports) >= 3):
                 continue
-            
-            # Determine which port is selected based on proximity
-            selectedPort = None
-            if sx.SubObjects:
-                subObj = sx.SubObjects[0]
-                if hasattr(subObj, "CenterOfMass"):
-                    selectionPoint = subObj.CenterOfMass
-                elif hasattr(subObj, "Point"):
-                    selectionPoint = subObj.Point
-                else:
-                    selectionPoint = None
-                
-                if selectionPoint:
-                    # Find closest port
-                    minDist = float('inf')
-                    for i, port in enumerate(obj.Ports):
-                        portWorldPos = obj.Placement.multVec(port)
-                        dist = (portWorldPos - selectionPoint).Length
-                        if dist < minDist:
-                            minDist = dist
-                            selectedPort = i
-            
-            # Port 2 is the branch, ports 0 and 1 are the run
-            if selectedPort == 2:
+            port_i = _closest_port(obj, sx)
+            if port_i == 2:
                 # Branch port
-                if hasattr(obj, "OD2") and hasattr(obj, "thk2"):
-                    return float(obj.OD2), float(obj.thk2), obj.PRating if hasattr(obj, "PRating") else None, obj.PSize if hasattr(obj, "PSize") else None
-            else:
-                # Run port (0 or 1, or default if couldn't determine)
-                if hasattr(obj, "OD") and hasattr(obj, "thk"):
-                    return float(obj.OD), float(obj.thk), obj.PRating if hasattr(obj, "PRating") else None, obj.PSize if hasattr(obj, "PSize") else None
-        
-        # For Reduct: port 0 is larger end, port 1 is smaller end
-        elif ptype == "Reduct":
+                branch_psize = (obj.PSizeBranch if hasattr(obj, "PSizeBranch")
+                                else psize)
+                od  = float(obj.OD2) if hasattr(obj, "OD2") else None
+                thk = float(obj.thk2) if hasattr(obj, "thk2") else None
+                return od, thk, rating, branch_psize
+            # Run port (0, 1, or undetermined)
+            od  = float(obj.OD)  if hasattr(obj, "OD")  else None
+            thk = float(obj.thk) if hasattr(obj, "thk") else None
+            return od, thk, rating, psize
+
+        # ── Reduct: port 0 = large end (OD/PSize), port 1 = small end ───────
+        if ptype == "Reduct":
             if not (hasattr(obj, "Ports") and len(obj.Ports) >= 2):
                 continue
-            
-            # Determine which port is selected
-            selectedPort = None
-            if sx.SubObjects:
-                subObj = sx.SubObjects[0]
-                if hasattr(subObj, "CenterOfMass"):
-                    selectionPoint = subObj.CenterOfMass
-                elif hasattr(subObj, "Point"):
-                    selectionPoint = subObj.Point
-                else:
-                    selectionPoint = None
-                
-                if selectionPoint:
-                    # Find closest port
-                    minDist = float('inf')
-                    for i, port in enumerate(obj.Ports):
-                        portWorldPos = obj.Placement.multVec(port)
-                        dist = (portWorldPos - selectionPoint).Length
-                        if dist < minDist:
-                            minDist = dist
-                            selectedPort = i
-            
-            # Port 0 is larger end (OD), port 1 is smaller end (OD2)
-            if selectedPort == 1:
-                # Smaller end
-                if hasattr(obj, "OD2") and hasattr(obj, "thk2"):
-                    return float(obj.OD2), float(obj.thk2), obj.PRating if hasattr(obj, "PRating") else None, obj.PSize if hasattr(obj, "PSize") else None
-            else:
-                # Larger end (0 or default)
-                if hasattr(obj, "OD") and hasattr(obj, "thk"):
-                    return float(obj.OD), float(obj.thk), obj.PRating if hasattr(obj, "PRating") else None, obj.PSize if hasattr(obj, "PSize") else None
-    
+            port_i = _closest_port(obj, sx)
+            if port_i == 1:
+                psize2 = (obj.PSize2 if hasattr(obj, "PSize2") else psize)
+                od  = float(obj.OD2) if hasattr(obj, "OD2") else None
+                thk = float(obj.thk2) if hasattr(obj, "thk2") else None
+                return od, thk, rating, psize2
+            od  = float(obj.OD)  if hasattr(obj, "OD")  else None
+            thk = float(obj.thk) if hasattr(obj, "thk") else None
+            return od, thk, rating, psize
+
     return None, None, None, None
+
+
+# ---------------------------------------------------------------------------
+# Equivalent schedule table.
+# Maps PSize -> {numbered_schedule: suffix_string} where suffix_string is
+# "STD", "XS", or "XXS" when that numbered schedule is identical to the
+# named schedule for that pipe size.  A missing entry means no equivalence.
+# ---------------------------------------------------------------------------
+EQUIV_SCHEDULE = {
+    "DN6":   {40: "STD", 80: "XS"},
+    "DN8":   {40: "STD", 80: "XS"},
+    "DN10":  {40: "STD", 80: "XS"},
+    "DN15":  {40: "STD", 80: "XS"},
+    "DN20":  {40: "STD", 80: "XS"},
+    "DN25":  {40: "STD", 80: "XS"},
+    "DN32":  {40: "STD", 80: "XS"},
+    "DN40":  {40: "STD", 80: "XS"},
+    "DN50":  {40: "STD", 80: "XS"},
+    "DN65":  {40: "STD", 80: "XS"},
+    "DN80":  {40: "STD", 80: "XS"},
+    "DN90":  {40: "STD", 80: "XS"},
+    "DN100": {40: "STD", 80: "XS"},
+    "DN125": {40: "STD", 80: "XS"},
+    "DN150": {40: "STD", 80: "XS"},
+    "DN200": {40: "STD", 80: "XS"},
+    "DN250": {30: "STD", 60: "XS", 140: "XXS"},
+    "DN300": {120: "XXS"},
+    "DN350": {30: "STD"},
+    "DN400": {30: "STD", 40: "XS"},
+    "DN500": {20: "STD", 30: "XS"},
+    "DN550": {20: "STD", 30: "XS"},
+    "DN600": {20: "STD"},
+}
+
+
+def findEquivRating(psize, rating, availRatings):
+    """
+    Given a pipe size and a rating string not found in availRatings, check
+    whether an equivalent named schedule (SCH-STD, SCH-XS, SCH-XXS) is
+    available, or vice versa.
+
+    psize      : string, e.g. "DN50"
+    rating     : string, e.g. "SCH-40" or "SCH-STD"
+    availRatings: list of rating strings present in the form's ratingList
+
+    Returns the matching rating string from availRatings, or None.
+    """
+    if rating in availRatings:
+        return rating  # Already available -- no lookup needed
+
+    size_map = EQUIV_SCHEDULE.get(psize, {})
+
+    # Case 1: rating is a numbered schedule (e.g. "SCH-40")
+    # Check if it maps to a named schedule in availRatings.
+    if rating.startswith("SCH-"):
+        suffix = rating[4:]  # e.g. "40"
+        try:
+            num = int(suffix)
+            named = size_map.get(num)  # e.g. "STD"
+            if named:
+                candidate = "SCH-" + named
+                if candidate in availRatings:
+                    return candidate
+        except ValueError:
+            pass
+
+        # Case 2: rating is a named schedule (e.g. "SCH-STD")
+        # Check if its equivalent numbered schedule is in availRatings.
+        named_upper = suffix.upper()  # "STD", "XS", or "XXS"
+        for num, equiv_named in size_map.items():
+            if equiv_named == named_upper:
+                candidate = "SCH-" + str(num)
+                if candidate in availRatings:
+                    return candidate
+
+    return None
+
+
+def _selectSizeByPSize(form, psize):
+    """
+    Select the row in form.sizeList whose PSize == psize.
+
+    Some forms (Tee, Coupling) show a DEDUPLICATED sizeList: the list widget
+    has fewer rows than pipeDictList because multiple CSV rows share the same
+    PSize.  Those forms must expose a list attribute named _uniqueSizeList
+    containing the PSize string for each sizeList row in order.  When that
+    attribute is present it is used directly; otherwise pipeDictList is
+    scanned and its row index is used (valid only when sizeList rows == pipeDictList rows).
+
+    Returns True if a match was found and selected.
+    """
+    if not psize or not hasattr(form, "sizeList"):
+        return False
+
+    # Prefer the explicit unique-index list when available
+    if hasattr(form, "_uniqueSizeList"):
+        try:
+            idx = form._uniqueSizeList.index(psize)
+            form.sizeList.setCurrentRow(idx)
+            if hasattr(form, "fillOD2"):
+                form.fillOD2()
+            if hasattr(form, "fillBranch"):
+                form.fillBranch()
+            if hasattr(form, "_fillPort2"):
+                form._fillPort2()
+            return True
+        except ValueError:
+            return False
+
+    # Fallback: pipeDictList rows correspond 1-to-1 with sizeList rows
+    if not hasattr(form, "pipeDictList"):
+        return False
+    for i, row in enumerate(form.pipeDictList):
+        if row.get("PSize", "") == psize:
+            form.sizeList.setCurrentRow(i)
+            if hasattr(form, "fillOD2"):
+                form.fillOD2()
+            if hasattr(form, "fillBranch"):
+                form.fillBranch()
+            return True
+    return False
+
+
+def _selectSizeByOD(form, OD, thk):
+    """
+    Select the sizeList row whose OD matches within 0.1 mm of OD.
+    Returns True immediately on the first near-exact match found.
+    Returns False if no row is within the tolerance.
+
+    For forms with a deduplicated sizeList (_uniqueSizeList), only the first
+    pipeDictList row for each unique PSize is examined, and the correct sizeList
+    index is obtained from _uniqueSizeList.
+    """
+    from FreeCAD import Units
+    pq = Units.parseQuantity
+    OD_TOL = 0.1   # mm -- near-exact tolerance
+    if OD is None or not hasattr(form, "pipeDictList") or not hasattr(form, "sizeList"):
+        return False
+
+    def _apply(idx):
+        form.sizeList.setCurrentRow(idx)
+        if hasattr(form, "fillOD2"):
+            form.fillOD2()
+        if hasattr(form, "fillBranch"):
+            form.fillBranch()
+        if hasattr(form, "_fillPort2"):
+            form._fillPort2()
+
+    if hasattr(form, "_uniqueSizeList"):
+        for uniq_idx, upsize in enumerate(form._uniqueSizeList):
+            for row in form.pipeDictList:
+                if row.get("PSize", "") == upsize:
+                    try:
+                        if abs(float(pq(row["OD"])) - OD) < OD_TOL:
+                            _apply(uniq_idx)
+                            return True
+                    except Exception:
+                        pass
+                    break   # Only check the first row for this PSize
+        return False
+
+    # Standard case: sizeList rows correspond 1-to-1 with pipeDictList rows
+    for i, row in enumerate(form.pipeDictList):
+        try:
+            if abs(float(pq(row["OD"])) - OD) < OD_TOL:
+                _apply(i)
+                return True
+        except Exception:
+            continue
+    return False
+
+
+def preserveSelectSizeByPSize(form, psize):
+    """
+    After a rating change has reloaded sizeList, try to reselect the row
+    whose PSize matches psize.  If not found, clear the selection.
+    Returns True if a match was found.
+    """
+    if not psize or not hasattr(form, "pipeDictList") or not hasattr(form, "sizeList"):
+        form.sizeList.clearSelection()
+        form.sizeList.setCurrentRow(-1)
+        return False
+    found = _selectSizeByPSize(form, psize)
+    if not found:
+        form.sizeList.clearSelection()
+        form.sizeList.setCurrentRow(-1)
+    return found
 
 
 def autoSelectInPipeForm(form):
     """
-    Auto-select the size and rating in form lists based on selected object's port.
-    
-    Args:
-        form: The form object (must have ratingList, sizeList, pipeDictList, PRating, fillSizes())
-    
-    This is a helper function for form auto-selection features.
+    Auto-select the rating and size in form lists based on the selected
+    object's port dimensions.
+
+    Matching order:
+      1. Exact rating match in ratingList.
+      2. Equivalent schedule lookup via EQUIV_SCHEDULE when no exact match.
+      3. Exact PSize match in sizeList after rating is set.
+      4. OD/thk fallback match in sizeList.
+
     Works with any form that has the standard protoPypeForm structure.
     """
-    from FreeCAD import Units
-    pq = Units.parseQuantity
-
     OD, thk, PRating, PSize = getSelectedPortDimensions()
-    
-    if OD is None:
-        return  # No valid selection, keep defaults
-    
-    # Try to select matching rating first
-    if PRating and hasattr(form, 'ratingList'):
-        for i in range(form.ratingList.count()):
-            if form.ratingList.item(i).text() == PRating:
-                form.ratingList.setCurrentRow(i)
-                form.PRating = PRating
-                if hasattr(form, 'fillSizes'):
-                    form.fillSizes()
-                break
-    
-    # Try to find matching size by OD and thk
-    if not hasattr(form, 'pipeDictList') or not hasattr(form, 'sizeList'):
+
+    if OD is None and PSize is None:
+        return  # No valid selection -- keep defaults
+
+    # ---- Resolve rating -------------------------------------------------
+    if PRating and hasattr(form, "ratingList"):
+        availRatings = [form.ratingList.item(i).text()
+                        for i in range(form.ratingList.count())]
+        # Try exact match first
+        matched_rating = PRating if PRating in availRatings else None
+        # Try equivalence lookup when PSize is known
+        if matched_rating is None and PSize:
+            matched_rating = findEquivRating(PSize, PRating, availRatings)
+        if matched_rating:
+            for i in range(form.ratingList.count()):
+                if form.ratingList.item(i).text() == matched_rating:
+                    form.ratingList.setCurrentRow(i)
+                    form.PRating = matched_rating
+                    if hasattr(form, "fillSizes"):
+                        form.fillSizes()
+                    break
+
+    # ---- Resolve size ----------------------------------------------------
+    if not hasattr(form, "pipeDictList") or not hasattr(form, "sizeList"):
         return
 
-    # If we have PSize from selection, try exact PSize match first
-    if PSize:
-        for i, pipeDict in enumerate(form.pipeDictList):
-            # For Tees: prefer equal run/branch sizes (e.g., "DN50xDN50" over "DN50xDN40")
-            # Check if PSize contains "x" (indicating Tee or Reduct with two sizes)
-            dictPSize = pipeDict.get("PSize", "")
-            if "x" in dictPSize:
-                # Split to get run and branch sizes
-                parts = dictPSize.split("x")
-                if len(parts) == 2:
-                    runSize = parts[0]
-                    branchSize = parts[1]
-                    # Prefer straight tees: if detected PSize matches run, i.e. prefer DN50xDN50 over DN50xDN40. This won't find a match here for reducers, but it should find a match later by checking OD's
-                    if runSize == branchSize and runSize == PSize:
-                        form.sizeList.setCurrentRow(i)
-                        if hasattr(form, 'fillOD2'):
-                            form.fillOD2()
-                        return  # Found equal run/branch
-            
-            # Also check for exact PSize match (including non-Tee items)
-            if dictPSize == PSize:
-                form.sizeList.setCurrentRow(i)
-                if hasattr(form, 'fillOD2'):
-                    form.fillOD2()
-                return  # Found exact PSize match
-    
-    # Fallback: If no PSize match, try OD/thk matching with preference for equal OD/OD2
-    if OD is not None:
-        bestMatch = None
-        bestMatchScore = float('inf')
-        
-        for i, pipeDict in enumerate(form.pipeDictList):
-            try:
-                dictOD = float(pq(pipeDict["OD"]))
-                dictThk = float(pq(pipeDict["thk"]))
-                
-                # Check if this is a Tee/Reducer with OD2
-                hasOD2 = "OD2" in pipeDict
-                if hasOD2:
-                    dictOD2 = float(pq(pipeDict["OD2"]))
-                    # Prefer equal-size Tees: if OD matches and OD==OD2
-                    if abs(dictOD - OD) < 0.1 and abs(dictOD - dictOD2) < 0.1:
-                        # Straight tee
-                        score = 0.0  # Perfect match score
-                    else:
-                        # Calculate normal match score
-                        odDiff = abs(dictOD - OD)
-                        thkDiff = abs(dictThk - thk)
-                        score = odDiff * 10 + thkDiff
-                else:
-                    # other fittings - calculate match score
-                    odDiff = abs(dictOD - OD)
-                    thkDiff = abs(dictThk - thk)
-                    score = odDiff * 10 + thkDiff
-                
-                if score < bestMatchScore:
-                    bestMatchScore = score
-                    bestMatch = i
-            except:
-                continue
-        
-        # Select the best match if found
-        if bestMatch is not None and bestMatchScore < 5.0:  # Reasonable tolerance
-            form.sizeList.setCurrentRow(bestMatch)
-            # Call form-specific update if it exists
-            if hasattr(form, 'fillOD2'):
-                form.fillOD2()
+    # Exact PSize match takes priority
+    if PSize and _selectSizeByPSize(form, PSize):
+        return
+
+    # OD/thk fallback
+    _selectSizeByOD(form, OD, thk)
+
+
+def autoSelectGasketForm(form):
+    """
+    Auto-select FClass (rating) and PSize for insertGasketForm.
+    Matches only when a Flange object is selected.
+    If no Flange is selected, make no default selection.
+    """
+    selex = FreeCADGui.Selection.getSelectionEx()
+    if not selex:
+        return
+
+    for sx in selex:
+        obj = sx.Object
+        if not hasattr(obj, "PType"):
+            continue
+        if obj.PType != "Flange":
+            # Non-Flange object selected -- make no default selection
+            return
+        # Flange found -- match on FClass and PSize
+        fclass = obj.FClass if hasattr(obj, "FClass") else None
+        psize  = obj.PSize  if hasattr(obj, "PSize")  else None
+
+        if fclass and hasattr(form, "ratingList"):
+            for i in range(form.ratingList.count()):
+                if form.ratingList.item(i).text() == fclass:
+                    form.ratingList.setCurrentRow(i)
+                    form.PRating = fclass
+                    if hasattr(form, "fillSizes"):
+                        form.fillSizes()
+                    break
+
+        if psize and hasattr(form, "pipeDictList") and hasattr(form, "sizeList"):
+            _selectSizeByPSize(form, psize)
+        return  # Only process the first ported object
 
 def getSelectionPortAttachment(selex=None):
     """
@@ -1175,14 +1376,15 @@ def doCaps(rating="SCH-STD", propList=["DN50", 60.3, 3], pypeline=None):
 def makeTee(propList=[], pos=None, Z=None, insertOnBranch=False, rating="SCH-STD"):
     """add a Tee object
     makeTee(propList,pos,Z);
-    propList is one optional list with 7 elements:
-      DN (string): nominal diameter
+    propList is one optional list with 7 or 8 elements:
+      DN (string): nominal diameter (run)
       OD (float): outside diameter of run
       OD2 (float): outside diameter of branch
       thk (float): shell thickness of run
-      thk (float): shell thickness of branch
+      thk2 (float): shell thickness of branch
       C (float): Length of run from centerline
       M (float): Length of branch from centerline
+      DN2 (string, optional): nominal diameter of branch end (stored as PSizeBranch)
     Default is "DN50 (SCH-STD)"
     pos (vector): position of insertion; default = 0,0,0
     Z (vector): orientation: default = 0,0,1
@@ -1193,7 +1395,7 @@ def makeTee(propList=[], pos=None, Z=None, insertOnBranch=False, rating="SCH-STD
     if Z == None:
         Z = FreeCAD.Vector(0, 0, 1)
     a = FreeCAD.ActiveDocument.addObject("Part::FeaturePython", "Tee")
-    if len(propList) == 7:
+    if len(propList) in (7, 8):
         pFeatures.Tee(a, rating, *propList)
     else:
         pFeatures.Tee(a, rating)
@@ -1225,13 +1427,14 @@ def makeTee(propList=[], pos=None, Z=None, insertOnBranch=False, rating="SCH-STD
 def doTees(rating="SCH-STD", propList=["DN150", 168.27, 114.3,7.11,6.02,178,156], pypeline=None, insertOnBranch=False, doOffset=False):
     """
     propList = [
-       DN (string): nominal diameter
+       DN (string): nominal diameter (run)
       OD (float): outside diameter of run
       OD2 (float): outside diameter of branch
       thk (float): shell thickness of run
-      thk (float): shell thickness of branch
+      thk2 (float): shell thickness of branch
       C (float): Length of run from centerline
       M (float): Length of branch from centerline
+      DN2 (string, optional): nominal diameter of branch end (stored as PSizeBranch)
       Default is "DN50 (SCH-STD)"
 
       pypeline = string

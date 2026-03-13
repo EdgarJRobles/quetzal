@@ -857,7 +857,7 @@ class SocketEll(pypeType):
 
 class Tee(pypeType):
     """  
-    Tee(obj, [PSize="DN150", OD=168.27, OD2=114.3,thk=7.11,thk2=6.02,C=178,M=156])
+    Tee(obj, [PSize="DN150", OD=168.27, OD2=114.3,thk=7.11,thk2=6.02,C=178,M=156,DN2=""])
       obj: the "App::FeaturePython object"
       PSize (string): nominal diameter (run)
       OD (float): Run outside diameter
@@ -866,8 +866,9 @@ class Tee(pypeType):
       thk2 (float): Branch shell thickness. If None, assumes same thickness as run
       C (float): Length from branch centerline to run edge
       M (float): Length from run centerline to branch edge. If None, assumes same length as run
+      DN2 (string): nominal diameter of branch end; stored as PSizeBranch property
     """
-    def __init__(self, obj, rating="SCH-STD", DN="DN150", OD=168.27, OD2=168.27,thk=7.11,thk2=7.11,C=178.0,M=178.0):
+    def __init__(self, obj, rating="SCH-STD", DN="DN150", OD=168.27, OD2=168.27,thk=7.11,thk2=7.11,C=178.0,M=178.0,DN2=""):
          # initialize the parent class
         super(Tee, self).__init__(obj)
          # define common properties
@@ -876,6 +877,12 @@ class Tee(pypeType):
         obj.PRating = rating
         obj.PSize = DN
         # define specific properties
+        obj.addProperty(
+            "App::PropertyString",
+            "PSizeBranch",
+            "Tee",
+            QT_TRANSLATE_NOOP("App::Property", "Nominal diameter of branch end"),
+        ).PSizeBranch = DN2
         obj.addProperty(
             "App::PropertyLength",
             "OD",
