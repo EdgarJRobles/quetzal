@@ -1212,7 +1212,6 @@ class FrameLine(object):
     def execute(self, fp):
         return None
 
-
 class FrameBranch(object):
     def __init__(self, obj, base=None, profile=None):
         obj.Proxy = self
@@ -1262,11 +1261,16 @@ class FrameBranch(object):
                     beam.AttachmentOffset = FreeCAD.Placement(offset, spin)
                     angle = degrees(fCmd.beamAx(beam, X).getAngle(n))
                     beam.AttachmentOffset.Rotation = FreeCAD.Rotation(Z, angle + beam.spin)
+                    # beam.MapReversed = True
 
     def redraw(self, obj):
+        temp_beam_config=list()
         # clear all
-        for o in obj.Beams:
-            FreeCAD.ActiveDocument.removeObject(o)
+        if obj.Beams:
+            for o in obj.Beams:
+                maprev=FreeCAD.ActiveDocument.getObject(o).MapReversed
+                temp_beam_config.append(maprev)
+                FreeCAD.ActiveDocument.removeObject(o)
         # create new beams
         i = 0
         beamsList = []
@@ -1300,7 +1304,11 @@ class FrameBranch(object):
                 else:
                     beam.Support = [(obj.Base, "Edge" + str(i + 1))]
                 beam.MapMode = "NormalToEdge"
-                beam.MapReversed = False
+                if temp_beam_config:
+                    beam.MapReversed = temp_beam_config.pop()
+                    # FreeCAD.Console.PrintMessage(beam.MapReversed)
+                else:
+                    beam.MapReversed = True
                 beamsList.append(str(beam.Name))
                 i += 1
         obj.Beams = beamsList
@@ -1311,7 +1319,6 @@ class FrameBranch(object):
         b = [str(n) for n in obj.Beams]
         b[i] = ""
         obj.Beams = b
-
 
 class ViewProviderFrameBranch:
     def __init__(self, vobj):

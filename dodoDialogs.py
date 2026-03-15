@@ -1,8 +1,8 @@
 # SPDX-License-Identifier: LGPL-3.0-or-later
 
 import csv
-from os import listdir
-from os.path import abspath, dirname, join
+from os import listdir, mkdir
+from os.path import abspath, dirname, join, exists
 
 import FreeCAD
 import FreeCADGui
@@ -104,7 +104,6 @@ class protoTypeDialog(object):
 
 class protoPypeForm(QDialog):
     "prototype dialog for insert pFeatures"
-
     def __init__(
         self,
         winTitle="Title",
@@ -139,11 +138,16 @@ class protoPypeForm(QDialog):
         Icon.addFile(iconPath)
         self.setWindowIcon(Icon)
         self.mainHL = QHBoxLayout()
+        self.setMaximumSize(350,230)
         self.setLayout(self.mainHL)
         self.firstCol = QWidget()
         self.firstCol.setLayout(QVBoxLayout())
         self.mainHL.addWidget(self.firstCol)
         self.currentRatingLab = QLabel(translate("protoPypeForm", "Rating: ") + self.PRating)
+        self.previewSectionsPath = FreeCAD.getUserAppDataDir() + "Mod/quetzal/iconz/PreviewSections/"
+        self.gradeimagepath = str()
+        self.labImage = QLabel()
+        self.fullimagepath = str()
         self.firstCol.layout().addWidget(self.currentRatingLab)
         # DN / NPS toggle row
         self._sizeSystemRow = QWidget()
@@ -176,8 +180,9 @@ class protoPypeForm(QDialog):
         self.firstCol.layout().addWidget(self._sizeSystemRow)
         self._btnDN.clicked.connect(lambda: self._setSizeSystem(0))
         self._btnNPS.clicked.connect(lambda: self._setSizeSystem(1))
-        self.sizeList = QListWidget()
+        self.sizeList = QComboBox()
         self.firstCol.layout().addWidget(self.sizeList)
+        self.firstCol.layout().addWidget(self.labImage)
         self.pipeDictList = []
         self.fileList = listdir(join(dirname(abspath(__file__)), "tablez"))
         self.fillSizes()
@@ -187,11 +192,11 @@ class protoPypeForm(QDialog):
             if s.startswith(PType) and s.endswith(".csv")
         ]
         self.secondCol = QWidget()
-        self.secondCol.setLayout(QVBoxLayout())
-        self.combo = QComboBox()
-        self.combo.addItem(translate("protoPypeForm","<none>"))
+        self.secondCol.setLayout(QFormLayout())
+        self.existingObjs = QComboBox()
+        self.existingObjs.addItem(translate("protoPypeForm","<none>"))
         try:
-            self.combo.addItems(
+            self.existingObjs.addItems(
                 [
                     o.Label
                     for o in FreeCAD.activeDocument().Objects
@@ -230,27 +235,42 @@ class protoPypeForm(QDialog):
             #TODO:Still doing some work here in order to sort standarts search
         except Exception as e:
             None 
-        self.combo.currentIndexChanged.connect(self.setCurrentPL)
+        self.existingObjs.currentIndexChanged.connect(self.setCurrentPL)
         if FreeCAD.__activePypeLine__ and FreeCAD.__activePypeLine__ in [
-            self.combo.itemText(i) for i in range(self.combo.count())
+            self.existingObjs.itemText(i) for i in range(self.existingObjs.count())
         ]:
-            self.combo.setCurrentIndex(self.combo.findText(FreeCAD.__activePypeLine__))
-        self.secondCol.layout().addWidget(self.combostandart)
-        self.secondCol.layout().addWidget(self.combo)
-        self.ratingList = QListWidget()
+            self.existingObjs.setCurrentIndex(self.existingObjs.findText(FreeCAD.__activePypeLine__))
+        self.secondCol.layout().addRow(QLabel("Standart:"))
+        self.secondCol.layout().addRow(self.combostandart)
+        self.secondCol.layout().addRow(QLabel("Object to modify:"))
+        self.secondCol.layout().addRow(self.existingObjs)
+        # self.ratingList = QListWidget()
+        self.ratingList = QComboBox()
         self.ratingList.addItems(self.PRatingsList)
-        self.ratingList.itemClicked.connect(self.changeRating)
-        self.ratingList.setCurrentRow(0)
-        self.secondCol.layout().addWidget(self.ratingList)
-        self.btn1 = QPushButton(translate("protoPypeForm", "Insert"))
-        self.secondCol.layout().addWidget(self.btn1)
+        self.ratingList.setCurrentIndex(0)
+        self.sizeList.setCurrentIndex(0)
+        # self.ratingList.itemClicked.connect(self.changeRating)
+        self.ratingList.currentTextChanged.connect(self.changeRating)
+        self.sizeList.currentTextChanged.connect(self.changeSize)
+        self.secondCol.layout().addRow(QLabel("Grade:"))
+        self.secondCol.layout().addRow(self.ratingList)
+        self.secondCol.layout().addRow(QLabel("Size:"))
+        self.secondCol.layout().addRow(self.sizeList)
+        self.btn_insert = QPushButton(translate("protoPypeForm", "Insert"))
+        self.btn_insert.clicked.connect(self.insert)
+        self.secondCol.layout().addRow(self.btn_insert)
         self.mainHL.addWidget(self.secondCol)
         self.resize(max(350, int(self.mw.width() / 4)), max(350, int(self.mw.height() / 2)))
         self.mainHL.setContentsMargins(0, 0, 0, 0)
 
+    def insert(self):
+        size_selected = self.pipeDictList[self.sizeList.currentIndex()]
+        rating = self.ratingList.currentText()
+        return size_selected,rating
+
     def setCurrentPL(self, PLName=None):
-        if self.combo.currentText() not in ["<none>", "<new>"]:
-            FreeCAD.__activePypeLine__ = self.combo.currentText()
+        if self.existingObjs.currentText() not in ["<none>", "<new>"]:
+            FreeCAD.__activePypeLine__ = self.existingObjs.currentText()
         else:
             FreeCAD.__activePypeLine__ = None
 
@@ -274,8 +294,8 @@ class protoPypeForm(QDialog):
                     self.sizeList.addItem(s)
                 break
 
-    def changeRating(self, item):
-        self.PRating = item.text()
+    def changeRating(self, s):
+        self.PRating = s
         self.currentRatingLab.setText(translate("protoPypeForm", "Rating: ") + self.PRating)
         self.fillSizes()
 
@@ -298,6 +318,24 @@ class protoPypeForm(QDialog):
             qu.set_size_system(system)
         self.fillSizes()
 
+    def changeSize(self, s):
+        sizeselected=self.sizeList.currentText()
+        rateselected=self.ratingList.currentText()
+        if not exists(self.previewSectionsPath+self.PType):
+            mkdir(self.previewSectionsPath+self.PType)
+        self.gradeimagepath = str(rateselected)+str(sizeselected)+".png"
+        self.fullimagepath = join(self.previewSectionsPath,self.PType,self.gradeimagepath)
+        if exists(self.fullimagepath):
+            # FreeCAD.Console.PrintMessage(self.fullimagepath+"\r\n")
+            self.labImage.setPixmap(QPixmap(self.fullimagepath).scaledToWidth(180))
+        if not exists(self.fullimagepath):
+            self.insert()
+            self.capturePreviewProfile()
+            last_obj = FreeCAD.ActiveDocument.ActiveObject
+            if last_obj:
+                obj_name = last_obj.Name
+                FreeCAD.ActiveDocument.removeObject(obj_name)
+
     def findDN(self, DN):
         result = None
         for row in self.pipeDictList:
@@ -305,3 +343,10 @@ class protoPypeForm(QDialog):
                 result = row
                 break
         return result
+
+    def capturePreviewProfile(self):
+        FreeCADGui.SendMsgToActiveView("ViewFit")
+        view = FreeCADGui.ActiveDocument.ActiveView
+        FreeCADGui.SendMsgToActiveView("OrthographicCamera")
+        FreeCADGui.SendMsgToActiveView("ViewAxo")
+        view.saveImage(self.fullimagepath,300,300,"Transparent")

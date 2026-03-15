@@ -2884,7 +2884,7 @@ para exportar en formato step</translation>
     <message>
         <location filename="../dodoDialogs.py" line="154"/>
         <source>&lt;none&gt;</source>
-        <translation type="unfinished">&lt;ninguno&gt;</translation>
+        <translation>&lt;ninguno&gt;</translation>
     </message>
     <message>
         <location filename="../dodoDialogs.py" line="207"/>

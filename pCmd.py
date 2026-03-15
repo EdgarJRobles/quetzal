@@ -44,7 +44,6 @@ def readTable(fileName="Pipe_SCH-STD.csv"):
     f.close()
     return table
 
-
 def shapeReferenceAxis(obj=None, axObj=None):
     # function to get the reference axis of the shape for rotateTheTubeAx()
     # used in rotateTheTubeEdge() and pipeForms.rotateForm().getAxis()
@@ -68,11 +67,9 @@ def shapeReferenceAxis(obj=None, axObj=None):
     axShapeRef = FreeCAD.Vector(X, Y, Z)
     return axShapeRef
 
-
 def isPipe(obj):
     "True if obj is a tube"
     return hasattr(obj, "PType") and obj.PType == "Pipe"
-
 
 def isElbow(obj):
     "True if obj is an elbow"
@@ -81,7 +78,6 @@ def isElbow(obj):
 def isTee(obj):
     "True if obj is a Tee"
     return hasattr(obj, "PType") and obj.PType == "Tee"
-
 
 def moveToPyLi(obj, plName):
     """
@@ -97,7 +93,6 @@ def moveToPyLi(obj, plName):
             for e in [FreeCAD.ActiveDocument.getObject(name) for name in obj.Tubes + obj.Curves]:
                 e.ViewObject.ShapeColor = pl.ViewObject.ShapeColor
 
-
 def portsPos(o):
     """
     portsPos(o)
@@ -105,7 +100,6 @@ def portsPos(o):
     """
     if hasattr(o, "Ports") and hasattr(o, "Placement"):
         return [rounded(o.Placement.multVec(p)) for p in o.Ports]
-
 
 def portsDir(o):
     """
@@ -260,7 +254,6 @@ def getSelectedPortDimensions():
     
     return None, None, None, None
 
-
 def autoSelectInPipeForm(form):
     """
     Auto-select the size and rating in form lists based on selected object's port.
@@ -281,13 +274,15 @@ def autoSelectInPipeForm(form):
     
     # Try to select matching rating first
     if PRating and hasattr(form, 'ratingList'):
-        for i in range(form.ratingList.count()):
-            if form.ratingList.item(i).text() == PRating:
-                form.ratingList.setCurrentRow(i)
-                form.PRating = PRating
-                if hasattr(form, 'fillSizes'):
-                    form.fillSizes()
-                break
+        # for i in range(form.ratingList.count()):
+        # if form.ratingList.item(i).text() == PRating:
+        indexres=form.ratingList.findData(PRating)
+        if  indexres!=-1:
+            form.ratingList.setCurrentRow(indexres)
+            form.PRating = PRating
+            if hasattr(form, 'fillSizes'):
+                form.fillSizes()
+            # break
     
     # Try to find matching size by OD and thk
     if not hasattr(form, 'pipeDictList') or not hasattr(form, 'sizeList'):
@@ -307,14 +302,14 @@ def autoSelectInPipeForm(form):
                     branchSize = parts[1]
                     # Prefer straight tees: if detected PSize matches run, i.e. prefer DN50xDN50 over DN50xDN40. This won't find a match here for reducers, but it should find a match later by checking OD's
                     if runSize == branchSize and runSize == PSize:
-                        form.sizeList.setCurrentRow(i)
+                        form.sizeList.setCurrentIndex(i)
                         if hasattr(form, 'fillOD2'):
                             form.fillOD2()
                         return  # Found equal run/branch
             
             # Also check for exact PSize match (including non-Tee items)
             if dictPSize == PSize:
-                form.sizeList.setCurrentRow(i)
+                form.sizeList.setCurrentIndex(i)
                 if hasattr(form, 'fillOD2'):
                     form.fillOD2()
                 return  # Found exact PSize match
@@ -356,7 +351,7 @@ def autoSelectInPipeForm(form):
         
         # Select the best match if found
         if bestMatch is not None and bestMatchScore < 5.0:  # Reasonable tolerance
-            form.sizeList.setCurrentRow(bestMatch)
+            form.sizeList.setCurrentIndex(bestMatch)
             # Call form-specific update if it exists
             if hasattr(form, 'fillOD2'):
                 form.fillOD2()
@@ -451,7 +446,6 @@ class ViewProvider:
         self._check_attr()
         return self.icon_fn
 
-
 def simpleSurfBend(path=None, profile=None):
     "select the centerline and the O.D. and let it sweep"
     curva = FreeCAD.activeDocument().addObject("Part::Feature", "Simple curve")
@@ -520,7 +514,6 @@ def getAttachmentPoints():
         #nothing selected, insert at origin
        return None, None, None, None
 
-
 def makePipe(rating,propList=[], pos=None, Z=None):
     """add a Pipe object
     makePipe(rating,propList,pos,Z);
@@ -550,8 +543,6 @@ def makePipe(rating,propList=[], pos=None, Z=None):
     a.Placement.Rotation = rot.multiply(a.Placement.Rotation)
     a.Label = translate("Objects", "Tube")
     return a
-
-
 
 def doPipes(rating,propList=["DN50", 60.3, 3, 1000], pypeline=None):
     """
@@ -595,7 +586,6 @@ def doPipes(rating,propList=["DN50", 60.3, 3, 1000], pypeline=None):
     FreeCAD.activeDocument().recompute()
     return plist
 
-
 def makeTerminalAdapter(rating,propList=[],pos=None,Z=None):
     """Add TerminalAdapter object
     """
@@ -609,7 +599,6 @@ def makeTerminalAdapter(rating,propList=[],pos=None,Z=None):
     a.Placement.Base = pos
     rot = FreeCAD.Rotation(FreeCAD.Vector(0, 0, 1), -Z)
     a.Placement.Rotation = rot.multiply(a.Placement.Rotation)
-
 
 def makeElbow(propList=[], pos=None, Z=None, rating="SCH-STD"):
     """Adds an Elbow object
@@ -648,7 +637,6 @@ def makeElbow(propList=[], pos=None, Z=None, rating="SCH-STD"):
     a.Placement.Base = pos - port0_world
     a.Label = translate("Objects", "Elbow")
     return a
-
 
 def makeElbowBetweenThings(thing1=None, thing2=None, propList=None):
     """
@@ -710,7 +698,6 @@ def makeElbowBetweenThings(thing1=None, thing2=None, propList=None):
             fCmd.extendTheBeam(tube, portB)
     return elb
 
-
 def doElbow(rating="SCH-STD", propList=["DN50", 60.3, 3, 90, 45.225], pypeline=None):
     """
     propList = [
@@ -727,7 +714,6 @@ def doElbow(rating="SCH-STD", propList=["DN50", 60.3, 3, 90, 45.225], pypeline=N
     if len(selex) == 0:  # no selection -> insert one elbow at origin
         elist.append(makeElbow(propList, rating=rating))
     elif len(selex) == 1 and len(selex[0].SubObjects) == 1:  # one selection -> ...
-               
         #first, if a an object with ports is selected and edges, faces, or vertices are selected, insert the component at the closest port to the 
         #first selected object's first selected edge, face, or vertex. If none of those are present, the entire object is selected - insert
         #the component at the highest number port.
@@ -737,7 +723,6 @@ def doElbow(rating="SCH-STD", propList=["DN50", 60.3, 3, 90, 45.225], pypeline=N
             if hasattr(selex.Object, "PType"):
                 if selex.Object.PType != "Any":
                     usablePorts = True
-        
         pos, Z, srcObj, srcPort = getAttachmentPoints()
         if usablePorts:
             elb = makeElbow(propList, pos, Z, rating=rating)
@@ -771,11 +756,10 @@ def doElbow(rating="SCH-STD", propList=["DN50", 60.3, 3, 90, 45.225], pypeline=N
     FreeCAD.activeDocument().recompute()
     return elist
 
-
 def makeFlange(propList=[], pos=None, Z=None, doOffset=None, rating="DIN-PN16"):
     """Adds a Flange object
-    makeFlange(propList,pos,Z);
-      propList is one optional list with 8 elements:
+        makeFlange(propList,pos,Z);
+        propList is one optional list with 8 elements:
         DN (string): nominal diameter
         FlangeType (string): type of Flange
         D (float): flange diameter
@@ -789,15 +773,15 @@ def makeFlange(propList=[], pos=None, Z=None, doOffset=None, rating="DIN-PN16"):
         twn (float): welding-neck thickness - OPTIONAL -
         dwn (float): welding-neck diameter - OPTIONAL -
         ODp (float): outside diameter of pipe for wn flanges - OPTIONAL -
-      Default is "DN50 (PN16)"
-      pos (vector): position of insertion; default = 0,0,0
-      Z (vector): orientation: default = 0,0,1
-      R Flange fillet radius
-      T1 Overall flange thickness
-      Y Socket depth
-
+        Default is "DN50 (PN16)"
+        pos (vector): position of insertion; default = 0,0,0
+        Z (vector): orientation: default = 0,0,1
+        R Flange fillet radius
+        T1 Overall flange thickness
+        Y Socket depth
     Remember: property PRating must be defined afterwards
     """
+
     if pos == None:
         pos = FreeCAD.Vector(0, 0, 0)
     if Z == None:
@@ -827,14 +811,13 @@ def makeFlange(propList=[], pos=None, Z=None, doOffset=None, rating="DIN-PN16"):
     a.Label = translate("Objects", "Flange")
     return a
 
-
 def doFlanges(
     rating="DIN-PN16",
     propList=["DN50", "SO", 160, 60.3, 132, 14, 15, 4, 0, 0, 0, 0, 0, 0, 0],
     pypeline=None,
     doOffset=None,
     attachFace=None #TODO add radio buttons to flange insertion form for whether to attach flange at face or neck
-):
+    ):
     """
     propList = [
       DN (string): nominal diameter
@@ -873,13 +856,11 @@ def doFlanges(
             if hasattr(selex.Object, "PType"):
                 if selex.Object.PType != "Any":
                     usablePorts = True
-        
         pos, Z, srcObj, srcPort = getAttachmentPoints()
 
         if usablePorts:
             flange = makeFlange(propList, pos, Z, doOffset, rating=rating)
             flist.append(flange)
-            
             #if we need to remove pipe equivalent length
             if doOffset:
                 #Correct offset for raised face flanges. If flat face flanges are added, presumably a.trf would be zero?
@@ -969,7 +950,6 @@ def doFlanges(
     FreeCAD.activeDocument().recompute()
     return flist
 
-
 def makeReduct(propList=[], pos=None, Z=None, conc=True, smallerEnd=False, rating="SCH-STD"):
     """Adds a Reduct object
     makeReduct(propList=[], pos=None, Z=None, conc=True)
@@ -1056,7 +1036,6 @@ def doReduct(rating="SCH-STD", propList=[], pypeline=None, pos=None, Z=None, con
     FreeCAD.activeDocument().recompute()
     return plist
 
-
 def makeUbolt(propList=[], pos=None, Z=None):
     """Adds a Ubolt object:
     makeUbolt(propList,pos,Z);
@@ -1086,7 +1065,6 @@ def makeUbolt(propList=[], pos=None, Z=None):
     a.Label = translate("Objects", "U-Bolt")
     return a
 
-
 def makeShell(L=1000, W=1500, H=1500, thk1=6, thk2=8):
     """
     makeShell(L,W,H,thk1,thk2)
@@ -1105,7 +1083,6 @@ def makeShell(L=1000, W=1500, H=1500, thk1=6, thk2=8):
     FreeCAD.ActiveDocument.recompute()
     a.Label = translate("Objects", "Tank")
     return a
-
 
 def makeCap(propList=[], pos=None, Z=None, rating="SCH-STD"):
     """add a Cap object
@@ -1135,8 +1112,6 @@ def makeCap(propList=[], pos=None, Z=None, rating="SCH-STD"):
     a.Placement.Rotation = rot.multiply(a.Placement.Rotation)
     a.Label = translate("Objects", "Cap")
     return a
-    
-    
 
 def doCaps(rating="SCH-STD", propList=["DN50", 60.3, 3], pypeline=None):
     """
@@ -1178,7 +1153,6 @@ def doCaps(rating="SCH-STD", propList=["DN50", 60.3, 3], pypeline=None):
     FreeCAD.activeDocument().commitTransaction()
     FreeCAD.activeDocument().recompute()
     return plist
-    
     
 def makeTee(propList=[], pos=None, Z=None, insertOnBranch=False, rating="SCH-STD"):
     """add a Tee object
@@ -1228,7 +1202,6 @@ def makeTee(propList=[], pos=None, Z=None, insertOnBranch=False, rating="SCH-STD
     
     a.Label = translate("Objects", "Tee")
     return a
-
 
 def doTees(rating="SCH-STD", propList=["DN150", 168.27, 114.3,7.11,6.02,178,156], pypeline=None, insertOnBranch=False):
     """
@@ -1320,7 +1293,6 @@ def makeW():
     else:
         return None
 
-
 def makePypeLine2(
     DN="DN50",
     PRating="SCH-STD",
@@ -1365,7 +1337,6 @@ def makePypeLine2(
         FreeCAD.Console.PrintWarning("Objects added to pypeline's group " + a.Group + "\n")
     return a
 
-
 def makeBranch(
     base=None,
     DN="DN50",
@@ -1401,7 +1372,6 @@ def makeBranch(
     else:
         FreeCAD.Console.PrintError("Select a valid path.\n")
 
-
 def updatePLColor(sel=None, color=None):
     if not sel:
         sel = FreeCADGui.Selection.getSelection()
@@ -1422,7 +1392,6 @@ def updatePLColor(sel=None, color=None):
                             e.ViewObject.ShapeColor = color
     else:
         FreeCAD.Console.PrintError("Select first one pype line\n")
-
 
 def alignTheTube():
     """
@@ -1582,6 +1551,7 @@ def alignTwoPorts(obj2, port2, obj1, port1):
         obj2.Placement.move(dist)
 
     """
+
 def rotateTheTubeAx(obj=None, vShapeRef=None, angle=45):
     """
     rotateTheTubeAx(obj=None,vShapeRef=None,angle=45)
@@ -1596,7 +1566,6 @@ def rotateTheTubeAx(obj=None, vShapeRef=None, angle=45):
         vShapeRef = FreeCAD.Vector(0, 0, 1)
     rot = FreeCAD.Rotation(fCmd.beamAx(obj, vShapeRef), angle)
     obj.Placement.Rotation = rot.multiply(obj.Placement.Rotation)
-
 
 def reverseTheTube(objEx):
     """
@@ -1619,7 +1588,6 @@ def reverseTheTube(objEx):
     if disp:
         objEx.Object.Placement.move(disp * 2)
 
-
 def rotateTheTubeEdge(ang=45):
     if len(fCmd.edges()) > 0 and fCmd.edges()[0].curvatureAt(0) != 0:
         originalPos = fCmd.edges()[0].centerOfCurvatureAt(0)
@@ -1627,7 +1595,6 @@ def rotateTheTubeEdge(ang=45):
         rotateTheTubeAx(vShapeRef=shapeReferenceAxis(), angle=ang)
         newPos = fCmd.edges()[0].centerOfCurvatureAt(0)
         obj.Placement.move(originalPos - newPos)
-
 
 def placeTheElbow(c, v1=None, v2=None, P=None):
     """
@@ -1657,7 +1624,6 @@ def placeTheElbow(c, v1=None, v2=None, P=None):
             P = c.Placement.Base
         c.Placement.Base = P
 
-
 def placeoTherElbow(c, v1=None, v2=None, P=None):
     """
     Like placeTheElbow() but with more math.
@@ -1684,7 +1650,6 @@ def placeoTherElbow(c, v1=None, v2=None, P=None):
         if not P:
             P = c.Placement.Base
         c.Placement.Base = P
-
 
 def placeThePype(pypeObject, port=0, target=None, targetPort=0):
     """
@@ -1729,7 +1694,6 @@ def placeThePype(pypeObject, port=0, target=None, targetPort=0):
         pos + Z * pOport.Length, FreeCAD.Rotation(pOport * -1, Z)
     )
 
-
 def nearestPort(pypeObject, point):
     try:
         pos = portsPos(pypeObject)[0]
@@ -1744,7 +1708,6 @@ def nearestPort(pypeObject, point):
         return nearest, pos, Z
     except:
         return None
-
 
 def extendTheTubes2intersection(pipe1=None, pipe2=None, both=True):
     """
@@ -1761,7 +1724,6 @@ def extendTheTubes2intersection(pipe1=None, pipe2=None, both=True):
         fCmd.extendTheBeam(pipe1, P)
         if both:
             fCmd.extendTheBeam(pipe2, P)
-
 
 def header():  # start 20200725
     """
@@ -1820,7 +1782,6 @@ def header():  # start 20200725
     else:
         FreeCAD.Console.PrintError("Insufficient pipes selected\n")
 
-
 def laydownTheTube(pipe=None, refFace=None, support=None):
     """
     laydownTheTube(pipe=None, refFace=None, support=None)
@@ -1851,7 +1812,6 @@ def laydownTheTube(pipe=None, refFace=None, support=None):
     except:
         FreeCAD.Console.PrintError("Wrong selection\n")
 
-
 def breakTheTubes(point, pipes=[], gap=0):
     """
     breakTheTube(point,pipes=[],gap=0)
@@ -1878,7 +1838,6 @@ def breakTheTubes(point, pipes=[], gap=0):
         # FreeCAD.activeDocument().recompute()
     return pipes2nd
 
-
 def drawAsCenterLine(obj):
     try:
         obj.ViewObject.LineWidth = 4
@@ -1887,7 +1846,6 @@ def drawAsCenterLine(obj):
     except:
         FreeCAD.Console.PrintError("The object can not be center-lined\n")
 
-
 def getElbowPort(elbow, portId=0):
     """
     getElbowPort(elbow, portId=0)
@@ -1895,7 +1853,6 @@ def getElbowPort(elbow, portId=0):
     """
     if isElbow(elbow):
         return elbow.Placement.multVec(elbow.Ports[portId])
-
 
 def rotateTheTeePort(curve=None, port=0, ang=45):
     if curve == None:
@@ -1923,7 +1880,6 @@ def rotateTheElbowPort(curve=None, port=0, ang=45):
             FreeCAD.Console.PrintError("Please select something before.\n")
     rotateTheTubeAx(curve, curve.Ports[port], ang)
 
-
 def join(obj1, port1, obj2, port2):
     """
     join(obj1,port1,obj2,port2)
@@ -1943,7 +1899,6 @@ def join(obj1, port1, obj2, port2):
             obj2.Placement.move(p1 - p2)
     else:
         FreeCAD.Console.PrintError("Object(s) are not pypes\n")
-
 
 def makeValve(propList=[], pos=None, Z=None):
     """add a Valve object
@@ -1974,7 +1929,6 @@ def makeValve(propList=[], pos=None, Z=None):
     a.Placement.Rotation = rot.multiply(a.Placement.Rotation)
     a.Label = translate("Objects", "Valve")
     return a
-
 
 def doValves(propList=["DN50", "ball", 72, 50, 40, 150], pypeline=None, pos=0):
     """
@@ -2068,7 +2022,6 @@ def doValves(propList=["DN50", "ball", 72, 50, 40, 150], pypeline=None, pos=0):
     FreeCAD.activeDocument().recompute()
     return vlist
 
-
 def attachToTube(port=None):
     pypes = [p for p in FreeCADGui.Selection.getSelection() if hasattr(p, "PType")]
     tube = None
@@ -2105,7 +2058,6 @@ def attachToTube(port=None):
                 FreeCAD.Console.PrintMessage("Object Detached\n")
     except:
         FreeCAD.Console.PrintError("Nothing attached\n")
-
 
 def makeNozzle(DN="DN50", H=200, OD=60.3, thk=3, D=160, d=62, df=132, f=14, t=15, n=4):
     """
@@ -2146,7 +2098,6 @@ def makeNozzle(DN="DN50", H=200, OD=60.3, thk=3, D=160, d=62, df=132, f=14, t=15
             flange.MapMode = "Concentric"
             FreeCAD.ActiveDocument.recompute()
 
-
 def makeRoute(n=Z):
     curvedEdges = [e for e in fCmd.edges() if e.curvatureAt(0) != 0]
     if curvedEdges:
@@ -2177,7 +2128,6 @@ def makeRoute(n=Z):
         )
     FreeCAD.ActiveDocument.recompute()
     FreeCADGui.activeDocument().setEdit(s.Name)
-
 
 def flatten(p1=None, p2=None, c=None):
     if not (p1 and p2) and len(fCmd.beams()) > 1:
@@ -2214,7 +2164,6 @@ def flatten(p1=None, p2=None, c=None):
         FreeCAD.ActiveDocument.commitTransaction()
     except:
         FreeCAD.Console.PrintError("Intersection point not found\n")
-
 
 def makeRegularPolygon(n,r):
     """
@@ -2261,7 +2210,6 @@ def makeGasket(propList=[], pos=None, Z=None):
     a.Placement.Rotation = rot.multiply(a.Placement.Rotation)
     a.Label = translate("Objects", "Gasket")
     return a
-
 
 def doGaskets(propList=[], pypeline=None):
     """Insert one or more Gasket objects at the current selection.
@@ -2338,7 +2286,6 @@ def makeBeam(propList=[], pos=None, Z=None):
     a.Label = translate("Objects", "Beam")
     return a
 
-
 def doBeams(propList=[], frameline=None):
     """Insert one or more Beam objects at the current selection.
     propList: see makeBeam() for element order.
@@ -2394,7 +2341,6 @@ def doBeams(propList=[], frameline=None):
     FreeCAD.activeDocument().recompute()
     return blist
 
-
 def _moveToFrameLine(obj, flName):
     """Move obj into the group of FrameLine flName (analogous to moveToPyLi)."""
     try:
@@ -2403,7 +2349,6 @@ def _moveToFrameLine(obj, flName):
         group.addObject(obj)
     except Exception:
         pass
-
 
 def makeOutlet(propList=[], pos=None, rot=None, carrierOD=0.0):
     """
@@ -2447,7 +2392,6 @@ def makeOutlet(propList=[], pos=None, rot=None, carrierOD=0.0):
     FreeCAD.ActiveDocument.recompute()
     a.Label = translate("Objects", "Outlet")
     return a
-
 
 # ---- placement helpers --------------------------------------------------------
 
@@ -2496,7 +2440,6 @@ def outletPlacementOnPipe(pipeObj, t, phi_deg, alpha_deg=0.0):
 
     return pos_world, final_rot
 
-
 def outletPlacementOnTee(teeObj, t, phi_deg, alpha_deg=0.0):
     """
     Return (pos_world, rot_world) for an outlet on a Tee's run-pipe surface.
@@ -2532,7 +2475,6 @@ def outletPlacementOnTee(teeObj, t, phi_deg, alpha_deg=0.0):
     final_rot = spin_rot.multiply(base_rot)
 
     return pos_world, final_rot
-
 
 def outletPlacementOnElbow(elbowObj, alpha_deg=0.0):
     """
@@ -2587,7 +2529,6 @@ def outletPlacementOnElbow(elbowObj, alpha_deg=0.0):
     final_rot = spin_rot.multiply(base_rot)
 
     return pos_world, final_rot
-
 
 def doOutlets(propList=None, pypeline=None,
               srcObj=None, t=None, phi_deg=None, alpha_deg=0.0):
@@ -2705,7 +2646,6 @@ def makeSocketElbow(propList=[], pos=None, Z=None, rating="3000lb"):
     a.Label = translate("Objects", "SocketElbow")
     return a
 
-
 def doSocketElbow(rating="3000lb", propList=["DN25", 33.4, 90, 35.0, 5.0, 25.4, 22.0, 5.455, "SW"], pypeline=None):
     """
     Insert a SocketEll fitting, aligning it to the selected port when possible.
@@ -2760,7 +2700,6 @@ def doSocketElbow(rating="3000lb", propList=["DN25", 33.4, 90, 35.0, 5.0, 25.4, 
     FreeCAD.activeDocument().recompute()
     return elist
 
-
 def makeSocketTee(propList=[], pos=None, Z=None, insertOnBranch=False, rating="3000lb"):
     """Adds a SocketTee object.
     makeSocketTee(propList, pos, Z, insertOnBranch, rating=rating)
@@ -2808,7 +2747,6 @@ def makeSocketTee(propList=[], pos=None, Z=None, insertOnBranch=False, rating="3
 
     a.Label = translate("Objects", "SocketTee")
     return a
-
 
 def doSocketTee(rating="3000lb", propList=["DN25", "DN25", 33.4, 33.4, 35.0, 5.0, 25.4, 22.0, 5.455, "SW"],
                 pypeline=None, insertOnBranch=False):
@@ -2866,6 +2804,7 @@ def doSocketTee(rating="3000lb", propList=["DN25", "DN25", 33.4, 33.4, 35.0, 5.0
     FreeCAD.activeDocument().commitTransaction()
     FreeCAD.activeDocument().recompute()
     return plist
+
 def makeSocketCap(propList=[], pos=None, Z=None):
     """Adds a SocketCap object.
     makeSocketCap(propList, pos, Z)
@@ -2903,7 +2842,6 @@ def makeSocketCap(propList=[], pos=None, Z=None):
 
     a.Label = translate("Objects", "SocketCap")
     return a
-
 
 def doSocketCap(propList=["DN25", 33.4, 26.0, 5.0, 13.0, "SW"],
                 pypeline=None):
@@ -2988,7 +2926,6 @@ def _makeSocketStraight(fcClass, label, iconName, propList, expectedLen,
     a.Label = translate("Objects", label)
     return a
 
-
 def _doSocketStraight(makeFn, transactionLabel, propList, pypeline=None):
     """Insert a socket coupling or union, aligning to the selected port when
     possible.  Internal helper shared by doSocketCoupling and doSocketUnion.
@@ -3024,7 +2961,6 @@ def _doSocketStraight(makeFn, transactionLabel, propList, pypeline=None):
     FreeCAD.activeDocument().recompute()
     return plist
 
-
 # ── public API: SocketCoupling ────────────────────────────────────────────────
 
 def makeSocketCoupling(propList=[], pos=None, Z=None):
@@ -3047,7 +2983,6 @@ def makeSocketCoupling(propList=[], pos=None, Z=None):
     return _makeSocketStraight(
         pFeatures.SocketCoupling, "SocketCoupling",
         "Quetzal_InsertCoupling", propList, 9, pos, Z)
-
 
 def doSocketCoupling(propList=["DN25", "DN25", 33.4, 33.4, 35.0, 5.0, 25.9, 22.0, "SW"],
                      pypeline=None):
@@ -3074,7 +3009,6 @@ def doSocketCoupling(propList=["DN25", "DN25", 33.4, 33.4, 35.0, 5.0, 25.9, 22.0
     return _doSocketStraight(
         makeSocketCoupling, "Insert socket coupling", propList, pypeline)
 
-
 # ── public API: SocketUnion ───────────────────────────────────────────────────
 
 def makeSocketUnion(propList=[], pos=None, Z=None):
@@ -3095,7 +3029,6 @@ def makeSocketUnion(propList=[], pos=None, Z=None):
     return _makeSocketStraight(
         pFeatures.SocketUnion, "SocketUnion",
         "Quetzal_InsertCoupling", propList, 7, pos, Z)
-
 
 def doSocketUnion(propList=["DN25", 33.4, 35.0, 5.0, 25.9, 22.0, "SW"],
                   pypeline=None):
