@@ -1,8 +1,8 @@
 # SPDX-License-Identifier: LGPL-3.0-or-later
 
 import csv
-from os import listdir
-from os.path import abspath, dirname, join
+from os import listdir, mkdir
+from os.path import abspath, dirname, join, exists
 
 import FreeCAD
 import FreeCADGui
@@ -104,7 +104,6 @@ class protoTypeDialog(object):
 
 class protoPypeForm(QDialog):
     "prototype dialog for insert pFeatures"
-
     def __init__(
         self,
         winTitle="Title",
@@ -139,11 +138,16 @@ class protoPypeForm(QDialog):
         Icon.addFile(iconPath)
         self.setWindowIcon(Icon)
         self.mainHL = QHBoxLayout()
+        self.setMaximumSize(350,230)
         self.setLayout(self.mainHL)
         self.firstCol = QWidget()
         self.firstCol.setLayout(QVBoxLayout())
         self.mainHL.addWidget(self.firstCol)
         self.currentRatingLab = QLabel(translate("protoPypeForm", "Rating: ") + self.PRating)
+        self.previewSectionsPath = FreeCAD.getUserAppDataDir() + "Mod/quetzal/iconz/PreviewSections/"
+        self.gradeimagepath = str()
+        self.labImage = QLabel()
+        self.fullimagepath = str()
         self.firstCol.layout().addWidget(self.currentRatingLab)
         # DN / NPS toggle row
         self._sizeSystemRow = QWidget()
@@ -176,28 +180,23 @@ class protoPypeForm(QDialog):
         self.firstCol.layout().addWidget(self._sizeSystemRow)
         self._btnDN.clicked.connect(lambda: self._setSizeSystem(0))
         self._btnNPS.clicked.connect(lambda: self._setSizeSystem(1))
-        self.sizeList = QListWidget()
+        self.sizeList = QComboBox()
         self.firstCol.layout().addWidget(self.sizeList)
+        self.firstCol.layout().addWidget(self.labImage)
         self.pipeDictList = []
         self.fileList = listdir(join(dirname(abspath(__file__)), "tablez"))
         self.fillSizes()
-        # Use slice-based prefix/suffix removal instead of lstrip/rstrip.
-        # lstrip and rstrip strip individual characters from a set, not a
-        # literal substring, so they corrupt ratings like "generic" by also
-        # removing the trailing 'c' (which appears in the ".csv" character set).
-        _prefix = PType + "_"
-        _suffix = ".csv"
         self.PRatingsList = [
-            s[len(_prefix) : len(s) - len(_suffix)]
+            s.lstrip(PType + "_").rstrip(".csv")
             for s in self.fileList
-            if s.startswith(_prefix) and s.endswith(_suffix)
+            if s.startswith(PType) and s.endswith(".csv")
         ]
         self.secondCol = QWidget()
-        self.secondCol.setLayout(QVBoxLayout())
-        self.combo = QComboBox()
-        self.combo.addItem(translate("protoPypeForm","<none>"))
+        self.secondCol.setLayout(QFormLayout())
+        self.existingObjs = QComboBox()
+        self.existingObjs.addItem(translate("protoPypeForm","<none>"))
         try:
-            self.combo.addItems(
+            self.existingObjs.addItems(
                 [
                     o.Label
                     for o in FreeCAD.activeDocument().Objects
@@ -236,27 +235,42 @@ class protoPypeForm(QDialog):
             #TODO:Still doing some work here in order to sort standarts search
         except Exception as e:
             None 
-        self.combo.currentIndexChanged.connect(self.setCurrentPL)
+        self.existingObjs.currentIndexChanged.connect(self.setCurrentPL)
         if FreeCAD.__activePypeLine__ and FreeCAD.__activePypeLine__ in [
-            self.combo.itemText(i) for i in range(self.combo.count())
+            self.existingObjs.itemText(i) for i in range(self.existingObjs.count())
         ]:
-            self.combo.setCurrentIndex(self.combo.findText(FreeCAD.__activePypeLine__))
-        self.secondCol.layout().addWidget(self.combostandart)
-        self.secondCol.layout().addWidget(self.combo)
-        self.ratingList = QListWidget()
+            self.existingObjs.setCurrentIndex(self.existingObjs.findText(FreeCAD.__activePypeLine__))
+        self.secondCol.layout().addRow(QLabel("Standart:"))
+        self.secondCol.layout().addRow(self.combostandart)
+        self.secondCol.layout().addRow(QLabel("Object to modify:"))
+        self.secondCol.layout().addRow(self.existingObjs)
+        # self.ratingList = QListWidget()
+        self.ratingList = QComboBox()
         self.ratingList.addItems(self.PRatingsList)
-        self.ratingList.itemClicked.connect(self.changeRating)
-        self.ratingList.setCurrentRow(0)
-        self.secondCol.layout().addWidget(self.ratingList)
-        self.btn1 = QPushButton(translate("protoPypeForm", "Insert"))
-        self.secondCol.layout().addWidget(self.btn1)
+        self.ratingList.setCurrentIndex(0)
+        self.sizeList.setCurrentIndex(0)
+        # self.ratingList.itemClicked.connect(self.changeRating)
+        self.ratingList.currentTextChanged.connect(self.changeRating)
+        self.sizeList.currentTextChanged.connect(self.changeSize)
+        self.secondCol.layout().addRow(QLabel("Grade:"))
+        self.secondCol.layout().addRow(self.ratingList)
+        self.secondCol.layout().addRow(QLabel("Size:"))
+        self.secondCol.layout().addRow(self.sizeList)
+        self.btn_insert = QPushButton(translate("protoPypeForm", "Insert"))
+        self.btn_insert.clicked.connect(self.insert)
+        self.secondCol.layout().addRow(self.btn_insert)
         self.mainHL.addWidget(self.secondCol)
         self.resize(max(350, int(self.mw.width() / 4)), max(350, int(self.mw.height() / 2)))
         self.mainHL.setContentsMargins(0, 0, 0, 0)
 
+    def insert(self):
+        size_selected = self.pipeDictList[self.sizeList.currentIndex()]
+        rating = self.ratingList.currentText()
+        return size_selected,rating
+
     def setCurrentPL(self, PLName=None):
-        if self.combo.currentText() not in ["<none>", "<new>"]:
-            FreeCAD.__activePypeLine__ = self.combo.currentText()
+        if self.existingObjs.currentText() not in ["<none>", "<new>"]:
+            FreeCAD.__activePypeLine__ = self.existingObjs.currentText()
         else:
             FreeCAD.__activePypeLine__ = None
 
@@ -280,8 +294,8 @@ class protoPypeForm(QDialog):
                     self.sizeList.addItem(s)
                 break
 
-    def changeRating(self, item):
-        self.PRating = item.text()
+    def changeRating(self, s):
+        self.PRating = s
         self.currentRatingLab.setText(translate("protoPypeForm", "Rating: ") + self.PRating)
         self.fillSizes()
 
@@ -304,6 +318,99 @@ class protoPypeForm(QDialog):
             qu.set_size_system(system)
         self.fillSizes()
 
+    def changeSize(self, s):
+        from os import makedirs, listdir
+        from os.path import join
+
+        idx = self.sizeList.currentIndex()
+        # Always use the raw DN PSize from pipeDictList for the filename,
+        # never the display label (which may be NPS or carry dimension suffixes).
+        if 0 <= idx < len(self.pipeDictList):
+            dn_psize = self.pipeDictList[idx].get("PSize", "")
+        else:
+            dn_psize = self.sizeList.currentText()
+
+        # For two-port fittings (Tee, SocketTee, Reduct, Coupling) the
+        # filename includes the secondary size: <rate><PSize>x<PSize2>.png
+        dn_psize2 = ""
+        try:
+            # Tee / SocketTee: secondary branch list
+            if hasattr(self, "_branchList") and hasattr(self, "_branchDictList"):
+                bi = self._branchList.currentRow()
+                if 0 <= bi < len(self._branchDictList):
+                    dn_psize2 = self._branchDictList[bi].get("PSizeBranch", "")
+            # Reduct: secondary OD2 list stores raw PSize2 strings
+            elif hasattr(self, "_psize2_raw") and hasattr(self, "OD2list"):
+                idx2 = self.OD2list.currentRow()
+                if 0 <= idx2 < len(self._psize2_raw):
+                    dn_psize2 = self._psize2_raw[idx2]
+            # Coupling: secondary port-2 list
+            elif hasattr(self, "_port2List") and hasattr(self, "_port2DictList"):
+                pi = self._port2List.currentRow()
+                if 0 <= pi < len(self._port2DictList):
+                    dn_psize2 = self._port2DictList[pi].get("PSize2", "")
+        except Exception:
+            dn_psize2 = ""
+
+        # Build the full size stem: "DN400" or "DN400xDN150"
+        size_stem = str(dn_psize) + ("x" + str(dn_psize2) if dn_psize2 else "")
+
+        rateselected = self.ratingList.currentText()
+        preview_dir = self.previewSectionsPath + self.PType
+        makedirs(preview_dir, exist_ok=True)
+
+        # Canonical path: <dir>/<rating><size_stem>.png
+        canonical_name = str(rateselected) + size_stem + ".png"
+        self.gradeimagepath = canonical_name
+        self.fullimagepath  = join(preview_dir, canonical_name)
+
+        # Cache check: accept any file whose name starts with rate+size_stem
+        prefix = str(rateselected) + size_stem
+        cached_path = None
+        if exists(self.fullimagepath):
+            cached_path = self.fullimagepath
+        else:
+            try:
+                for fname in listdir(preview_dir):
+                    if fname.startswith(prefix) and fname.endswith(".png"):
+                        cached_path = join(preview_dir, fname)
+                        break
+            except OSError:
+                pass
+
+        if cached_path:
+            self.labImage.setPixmap(QPixmap(cached_path).scaledToWidth(180))
+        else:
+            # Clear selection so insert() creates at the origin, not at a port.
+            saved_sel = FreeCADGui.Selection.getSelectionEx()
+            FreeCADGui.Selection.clearSelection()
+            self.insert()
+            # Reset the created object to the origin in case
+            # positionBySupport() moved it during recompute inside insert().
+            preview_obj = FreeCAD.ActiveDocument.ActiveObject
+            if preview_obj:
+                preview_obj.Placement = FreeCAD.Placement()
+                FreeCAD.ActiveDocument.recompute()
+            self.capturePreviewProfile()
+            last_obj = FreeCAD.ActiveDocument.ActiveObject
+            if last_obj:
+                FreeCAD.ActiveDocument.removeObject(last_obj.Name)
+            # Restore the user's selection, skipping any objects that were
+            # deleted during the preview (e.g. when the selected object was
+            # the same as the preview object and got removed above).
+            doc = FreeCAD.ActiveDocument
+            for sx in saved_sel:
+                try:
+                    # Verify the object still exists in the document
+                    if doc and not doc.getObject(sx.Object.Name):
+                        continue
+                    for sub in sx.SubElementNames:
+                        FreeCADGui.Selection.addSelection(sx.Object, sub)
+                    if not sx.SubElementNames:
+                        FreeCADGui.Selection.addSelection(sx.Object)
+                except Exception:
+                    pass
+
     def findDN(self, DN):
         result = None
         for row in self.pipeDictList:
@@ -311,3 +418,36 @@ class protoPypeForm(QDialog):
                 result = row
                 break
         return result
+
+    def capturePreviewProfile(self):
+        # Hide every object except the one just created (ActiveObject),
+        # recording each object's previous Visibility so it can be restored.
+        doc = FreeCAD.ActiveDocument
+        preview_obj = doc.ActiveObject if doc else None
+        vis_state = {}
+        if doc:
+            for obj in doc.Objects:
+                if obj is preview_obj:
+                    continue
+                try:
+                    vis_state[obj.Name] = obj.Visibility
+                    if obj.Visibility:
+                        obj.Visibility = False
+                except Exception:
+                    pass
+        try:
+            FreeCADGui.SendMsgToActiveView("ViewFit")
+            view = FreeCADGui.ActiveDocument.ActiveView
+            FreeCADGui.SendMsgToActiveView("OrthographicCamera")
+            FreeCADGui.SendMsgToActiveView("ViewAxo")
+            FreeCADGui.Selection.clearSelection()
+            view.saveImage(self.fullimagepath, 300, 300, "Transparent")
+        finally:
+            # Restore visibility regardless of whether saveImage succeeded
+            if doc:
+                for obj in doc.Objects:
+                    if obj.Name in vis_state:
+                        try:
+                            obj.Visibility = vis_state[obj.Name]
+                        except Exception:
+                            pass

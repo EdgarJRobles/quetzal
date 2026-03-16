@@ -389,7 +389,7 @@ def _selectSizeByPSize(form, psize):
     if hasattr(form, "_uniqueSizeList"):
         try:
             idx = form._uniqueSizeList.index(psize)
-            form.sizeList.setCurrentRow(idx)
+            form.sizeList.setCurrentIndex(idx)
             if hasattr(form, "fillOD2"):
                 form.fillOD2()
             if hasattr(form, "fillBranch"):
@@ -405,7 +405,7 @@ def _selectSizeByPSize(form, psize):
         return False
     for i, row in enumerate(form.pipeDictList):
         if row.get("PSize", "") == psize:
-            form.sizeList.setCurrentRow(i)
+            form.sizeList.setCurrentIndex(i)
             if hasattr(form, "fillOD2"):
                 form.fillOD2()
             if hasattr(form, "fillBranch"):
@@ -431,7 +431,7 @@ def _selectSizeByOD(form, OD, thk):
         return False
 
     def _apply(idx):
-        form.sizeList.setCurrentRow(idx)
+        form.sizeList.setCurrentIndex(idx)
         if hasattr(form, "fillOD2"):
             form.fillOD2()
         if hasattr(form, "fillBranch"):
@@ -470,13 +470,11 @@ def preserveSelectSizeByPSize(form, psize):
     Returns True if a match was found.
     """
     if not psize or not hasattr(form, "pipeDictList") or not hasattr(form, "sizeList"):
-        form.sizeList.clearSelection()
-        form.sizeList.setCurrentRow(-1)
+        form.sizeList.setCurrentIndex(-1)
         return False
     found = _selectSizeByPSize(form, psize)
     if not found:
-        form.sizeList.clearSelection()
-        form.sizeList.setCurrentRow(-1)
+        form.sizeList.setCurrentIndex(-1)
     return found
 
 
@@ -500,7 +498,7 @@ def autoSelectInPipeForm(form):
 
     # ---- Resolve rating -------------------------------------------------
     if PRating and hasattr(form, "ratingList"):
-        availRatings = [form.ratingList.item(i).text()
+        availRatings = [form.ratingList.itemText(i)
                         for i in range(form.ratingList.count())]
         # Try exact match first
         matched_rating = PRating if PRating in availRatings else None
@@ -508,13 +506,12 @@ def autoSelectInPipeForm(form):
         if matched_rating is None and PSize:
             matched_rating = findEquivRating(PSize, PRating, availRatings)
         if matched_rating:
-            for i in range(form.ratingList.count()):
-                if form.ratingList.item(i).text() == matched_rating:
-                    form.ratingList.setCurrentRow(i)
-                    form.PRating = matched_rating
-                    if hasattr(form, "fillSizes"):
-                        form.fillSizes()
-                    break
+            idx = form.ratingList.findText(matched_rating)
+            if idx >= 0:
+                form.ratingList.setCurrentIndex(idx)
+                form.PRating = matched_rating
+                if hasattr(form, "fillSizes"):
+                    form.fillSizes()
 
     # ---- Resolve size ----------------------------------------------------
     if not hasattr(form, "pipeDictList") or not hasattr(form, "sizeList"):
@@ -550,13 +547,12 @@ def autoSelectGasketForm(form):
         psize  = obj.PSize  if hasattr(obj, "PSize")  else None
 
         if fclass and hasattr(form, "ratingList"):
-            for i in range(form.ratingList.count()):
-                if form.ratingList.item(i).text() == fclass:
-                    form.ratingList.setCurrentRow(i)
-                    form.PRating = fclass
-                    if hasattr(form, "fillSizes"):
-                        form.fillSizes()
-                    break
+            idx = form.ratingList.findText(fclass)
+            if idx >= 0:
+                form.ratingList.setCurrentIndex(idx)
+                form.PRating = fclass
+                if hasattr(form, "fillSizes"):
+                    form.fillSizes()
 
         if psize and hasattr(form, "pipeDictList") and hasattr(form, "sizeList"):
             _selectSizeByPSize(form, psize)
