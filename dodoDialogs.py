@@ -240,7 +240,7 @@ class protoPypeForm(QDialog):
             self.existingObjs.itemText(i) for i in range(self.existingObjs.count())
         ]:
             self.existingObjs.setCurrentIndex(self.existingObjs.findText(FreeCAD.__activePypeLine__))
-        self.secondCol.layout().addRow(QLabel("Standart:"))
+        self.secondCol.layout().addRow(QLabel("Standard:"))
         self.secondCol.layout().addRow(self.combostandart)
         self.secondCol.layout().addRow(QLabel("Object to modify:"))
         self.secondCol.layout().addRow(self.existingObjs)

@@ -2581,7 +2581,7 @@ class Gasket(pypeType):
 
     def onChanged(self, fp, prop):
         # Sealing element must be thicker than or equal to the rings
-        if prop == "Rthk" and fp.Rthk > fp.SEthk:
+        if prop == "Rthk" and hasattr(fp, "SEthk") and fp.Rthk > fp.SEthk:
             FreeCAD.Console.PrintError(
                 "Gasket: Ring thickness (Rthk) must not exceed sealing element "
                 "thickness (SEthk)\n"
