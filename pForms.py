@@ -248,12 +248,12 @@ class insertPipeForm(dodoDialogs.protoPypeForm):
             return
 
         # Image not yet cached -- create a temporary pipe at origin
-        d = self.pipeDictList[idx]
+        size_selected = self.pipeDictList[idx]
         try:
             propList = [
                 dn_psize,
-                float(pq(d["OD"])),
-                float(pq(d["thk"])),
+                float(pq(size_selected["OD"])),
+                float(pq(size_selected["thk"])),
                 200.0,   # fixed 200 mm preview length
             ]
         except (KeyError, Exception):
@@ -296,15 +296,15 @@ class insertPipeForm(dodoDialogs.protoPypeForm):
         idx = self.sizeList.currentIndex()
         if idx < 0 or idx >= len(self.pipeDictList):
             return
-        pipe_size_selected = self.pipeDictList[idx]
+        size_selected = self.pipeDictList[idx]
         rating = self.ratingList.currentText()
         if self.edit1.text():
             self.H = float(pq(self.edit1.text()))
         self.sli.setValue(100)
         propList = [
-            pipe_size_selected["PSize"],
-            float(pq(pipe_size_selected["OD"])),
-            float(pq(pipe_size_selected["thk"])),
+            size_selected["PSize"],
+            float(pq(size_selected["OD"])),
+            float(pq(size_selected["thk"])),
             self.H,
         ]
         # INSERT PIPES
@@ -326,12 +326,12 @@ class insertPipeForm(dodoDialogs.protoPypeForm):
         idx = self.sizeList.currentIndex()
         if idx < 0 or idx >= len(self.pipeDictList):
             return
-        d = self.pipeDictList[idx]
+        size_selected = self.pipeDictList[idx]
         for obj in FreeCADGui.Selection.getSelection():
             if hasattr(obj, "PType") and obj.PType == self.PType:
-                obj.PSize = d["PSize"]
-                obj.OD = pq(d["OD"])
-                obj.thk = pq(d["thk"])
+                obj.PSize = size_selected["PSize"]
+                obj.OD = pq(size_selected["OD"])
+                obj.thk = pq(size_selected["thk"])
                 obj.PRating = self.PRating
                 if self.edit1.text():
                     obj.Height = self.H
@@ -549,7 +549,7 @@ class insertElbowForm(dodoDialogs.protoPypeForm):
             idx = self.sizeList.currentIndex()
             if idx < 0 or idx >= len(self.pipeDictList):
                 return
-            d = self.pipeDictList[idx]
+            size_selected = self.pipeDictList[idx]
 
             try:
                 ang = float(self.edit1.text())
@@ -557,19 +557,19 @@ class insertElbowForm(dodoDialogs.protoPypeForm):
                     ang = 180
                     self.edit1.setText("180")
             except (ValueError, AttributeError):
-                ang = float(pq(d["BendAngle"]))
+                ang = float(pq(size_selected["BendAngle"]))
 
             if self._isSocketConn():
                 propList = [
-                    d["PSize"],
-                    float(pq(d["OD"])),
+                    size_selected["PSize"],
+                    float(pq(size_selected["OD"])),
                     ang,
-                    float(pq(d["A"])),
-                    float(pq(d["C"])),
-                    float(pq(d["D"])),
-                    float(pq(d["E"])),
-                    float(pq(d["G"])),
-                    d.get("Conn", "SW"),
+                    float(pq(size_selected["A"])),
+                    float(pq(size_selected["C"])),
+                    float(pq(size_selected["D"])),
+                    float(pq(size_selected["E"])),
+                    float(pq(size_selected["G"])),
+                    size_selected.get("Conn", "SW"),
                 ]
                 rating = self.ratingList.currentText()
                 self.lastElbow = pCmd.doSocketElbow(
@@ -577,11 +577,11 @@ class insertElbowForm(dodoDialogs.protoPypeForm):
                     doOffset=doOffset)[-1]
             else:
                 propList = [
-                    d["PSize"],
-                    float(pq(d["OD"])),
-                    float(pq(d["thk"])),
+                    size_selected["PSize"],
+                    float(pq(size_selected["OD"])),
+                    float(pq(size_selected["thk"])),
                     ang,
-                    float(d["BendRadius"]),
+                    float(size_selected["BendRadius"]),
                 ]
                 if self.edit2.text():
                     propList[-1] = float(pq(self.edit2.text()))
@@ -641,36 +641,36 @@ class insertElbowForm(dodoDialogs.protoPypeForm):
         idx = self.sizeList.currentIndex()
         if idx < 0 or idx >= len(self.pipeDictList):
             return
-        d = self.pipeDictList[idx]
+        size_selected = self.pipeDictList[idx]
         try:
             ang = float(self.edit1.text())
         except (ValueError, AttributeError):
-            ang = float(pq(d["BendAngle"]))
+            ang = float(pq(size_selected["BendAngle"]))
 
         for obj in FreeCADGui.Selection.getSelection():
             if not hasattr(obj, "PType"):
                 continue
             if obj.PType == "SocketEll" and self._isSocketConn():
-                obj.PSize     = d["PSize"]
-                obj.OD        = pq(d["OD"])
+                obj.PSize     = size_selected["PSize"]
+                obj.OD        = pq(size_selected["OD"])
                 obj.BendAngle = ang
-                obj.A         = pq(d["A"])
-                obj.C         = pq(d["C"])
-                obj.D         = pq(d["D"])
-                obj.E         = pq(d["E"])
-                obj.G         = pq(d["G"])
-                obj.Conn      = d.get("Conn", "SW")
+                obj.A         = pq(size_selected["A"])
+                obj.C         = pq(size_selected["C"])
+                obj.D         = pq(size_selected["D"])
+                obj.E         = pq(size_selected["E"])
+                obj.G         = pq(size_selected["G"])
+                obj.Conn      = size_selected.get("Conn", "SW")
                 obj.PRating   = self.PRating
                 FreeCAD.activeDocument().recompute()
             elif obj.PType == "Elbow" and not self._isSocketConn():
-                obj.PSize = d["PSize"]
-                obj.OD    = pq(d["OD"])
-                obj.thk   = pq(d["thk"])
+                obj.PSize = size_selected["PSize"]
+                obj.OD    = pq(size_selected["OD"])
+                obj.thk   = pq(size_selected["thk"])
                 obj.BendAngle = ang
                 if self.edit2.text():
                     obj.BendRadius = float(pq(self.edit2.text()))
                 else:
-                    obj.BendRadius = pq(d["BendRadius"])
+                    obj.BendRadius = pq(size_selected["BendRadius"])
                 obj.PRating = self.PRating
                 FreeCAD.activeDocument().recompute()
 
@@ -1123,17 +1123,17 @@ class insertTerminalAdapterForm(dodoDialogs.protoPypeForm):
         self.lastTA = None
 
     def applyProp(self):
-        r = self.pipeDictList[self.sizeList.currentIndex()]
-        DN = r["PSize"]
-        OD1 = float(pq(r["OD"]))
+        size_selected = self.pipeDictList[self.sizeList.currentIndex()]
+        DN = size_selected["PSize"]
+        OD1 = float(pq(size_selected["OD"]))
         idx2 = self.OD2list.currentRow()
         OD2 = float(pq(self._od2_raw[idx2])) if hasattr(self, "_od2_raw") and idx2 < len(self._od2_raw) else float(pq(self.OD2list.currentItem().text()))
-        thk1 = float(pq(r["thk"]))
+        thk1 = float(pq(size_selected["thk"]))
         try:
-            thk2 = float(pq(self._thk2_raw[idx2])) if hasattr(self, "_thk2_raw") and idx2 < len(self._thk2_raw) else float(pq(r["thk2"].split(">")[idx2]))
+            thk2 = float(pq(self._thk2_raw[idx2])) if hasattr(self, "_thk2_raw") and idx2 < len(self._thk2_raw) else float(pq(size_selected["thk2"].split(">")[idx2]))
         except:
             thk2 = thk1
-        H = pq(r["H"])
+        H = pq(size_selected["H"])
         terminalAdapter = [
             red
             for red in FreeCADGui.Selection.getSelection()
@@ -1354,8 +1354,8 @@ class insertFlangeForm(dodoDialogs.protoPypeForm):
     def _currentFlangeType(self):
         """Return the FlangeType string for the currently selected size row, or ''."""
         try:
-            d = self.pipeDictList[self.sizeList.currentIndex()]
-            return d.get("FlangeType", "")
+            size_selected = self.pipeDictList[self.sizeList.currentIndex()]
+            return size_selected.get("FlangeType", "")
         except Exception:
             return ""
 
@@ -1473,55 +1473,55 @@ class insertFlangeForm(dodoDialogs.protoPypeForm):
             idx = self.sizeList.currentIndex()
             if idx < 0 or idx >= len(self.pipeDictList):
                 return
-            d = self.pipeDictList[idx]
+            size_selected = self.pipeDictList[idx]
 
             # Determine bore diameter: WN flanges use pipe schedule wall thickness
-            if d["FlangeType"] == "WN":
-                thk = self._getSchedThk(d["PSize"])
-                flgBore = pipe_OD.get(d["PSize"], 0.0) - 2.0 * thk
+            if size_selected["FlangeType"] == "WN":
+                thk = self._getSchedThk(size_selected["PSize"])
+                flgBore = pipe_OD.get(size_selected["PSize"], 0.0) - 2.0 * thk
             else:
-                flgBore = float(pq(d.get("d", "0")))
+                flgBore = float(pq(size_selected.get("size_selected", "0")))
 
             propList = [
-                d["PSize"],
-                d["FlangeType"],
-                float(pq(d["D"])),
+                size_selected["PSize"],
+                size_selected["FlangeType"],
+                float(pq(size_selected["D"])),
                 flgBore,
-                float(pq(d["df"])),
-                float(pq(d["f"])),
-                float(pq(d["t"])),
-                int(d["n"]),
+                float(pq(size_selected["df"])),
+                float(pq(size_selected["f"])),
+                float(pq(size_selected["t"])),
+                int(size_selected["n"]),
             ]
             try:  # for raised-face
-                propList.append(float(d["trf"]))
-                propList.append(float(d["drf"]))
+                propList.append(float(size_selected["trf"]))
+                propList.append(float(size_selected["drf"]))
             except:
                 for _ in range(2):
                     propList.append(0)
             try:  # for welding-neck
-                propList.append(float(d["twn"]))
-                propList.append(float(d["dwn"]))
+                propList.append(float(size_selected["twn"]))
+                propList.append(float(size_selected["dwn"]))
             except:
                 for _ in range(2):
                     propList.append(0)
             try:  # for welding-neck
-                propList.append(float(d["ODp"]))
+                propList.append(float(size_selected["ODp"]))
             except:
                 propList.append(0)
             try:  # for welding-neck
-                propList.append(float(d["R"]))
+                propList.append(float(size_selected["R"]))
             except:
                 propList.append(0)
             try:
-                propList.append(float(d["T1"]))
+                propList.append(float(size_selected["T1"]))
             except:
                 propList.append(0)
             try:
-                propList.append(float(d["B2"]))
+                propList.append(float(size_selected["B2"]))
             except:
                 propList.append(0)
             try:
-                propList.append(float(d["Y"]))
+                propList.append(float(size_selected["Y"]))
             except:
                 propList.append(0)
 
@@ -1530,7 +1530,7 @@ class insertFlangeForm(dodoDialogs.protoPypeForm):
             # and port-matching helpers work correctly.  The flange pressure class is
             # carried separately in FClass.
             # For all other flange types the PRating is meaningless, so pass No Rating.
-            if d["FlangeType"] == "WN":
+            if size_selected["FlangeType"] == "WN":
                 sched_row = self.schedList.currentRow()
                 rating = self._schedNames[sched_row] if sched_row >= 0 and self._schedNames else "SCH-STD"
             else:
@@ -1553,17 +1553,17 @@ class insertFlangeForm(dodoDialogs.protoPypeForm):
         idx = self.sizeList.currentIndex()
         if idx < 0 or idx >= len(self.pipeDictList):
             return
-        d = self.pipeDictList[idx]
+        size_selected = self.pipeDictList[idx]
         for obj in FreeCADGui.Selection.getSelection():
             if hasattr(obj, "PType") and obj.PType == self.PType:
-                obj.PSize = d["PSize"]
-                obj.FlangeType = d["FlangeType"]
-                obj.D = float(pq(d["D"]))
-                obj.d = float(pq(d.get("d", "0")))      # blind flanges have no bore
-                obj.df = float(pq(d["df"]))
-                obj.f = float(pq(d["f"]))
-                obj.t = float(pq(d["t"]))
-                obj.n = int(pq(d["n"]))
+                obj.PSize = size_selected["PSize"]
+                obj.FlangeType = size_selected["FlangeType"]
+                obj.D = float(pq(size_selected["D"]))
+                obj.size_selected = float(pq(size_selected.get("size_selected", "0")))      # blind flanges have no bore
+                obj.df = float(pq(size_selected["df"]))
+                obj.f = float(pq(size_selected["f"]))
+                obj.t = float(pq(size_selected["t"]))
+                obj.n = int(pq(size_selected["n"]))
                 obj.PRating = self.PRating
                 FreeCAD.activeDocument().recompute()
 
@@ -1730,18 +1730,18 @@ class insertReductForm(dodoDialogs.protoPypeForm):
         FreeCAD.activeDocument().recompute()
 
     def applyProp(self):
-        r = self.pipeDictList[self.sizeList.currentIndex()]
-        DN = r["PSize"]
-        OD1 = float(pq(r["OD"]))
+        size_selected = self.pipeDictList[self.sizeList.currentIndex()]
+        DN = size_selected["PSize"]
+        OD1 = float(pq(size_selected["OD"]))
         idx2 = self.OD2list.currentRow()
         OD2 = float(pq(self._od2_raw[idx2])) if hasattr(self, "_od2_raw") and idx2 < len(self._od2_raw) else float(pq(self.OD2list.currentItem().text().split()[0]))
         DN2 = self._psize2_raw[idx2] if hasattr(self, "_psize2_raw") and idx2 < len(self._psize2_raw) else ""
-        thk1 = float(pq(r["thk"]))
+        thk1 = float(pq(size_selected["thk"]))
         try:
-            thk2 = float(pq(self._thk2_raw[idx2])) if hasattr(self, "_thk2_raw") and idx2 < len(self._thk2_raw) else float(pq(r["thk2"].split(">")[idx2]))
+            thk2 = float(pq(self._thk2_raw[idx2])) if hasattr(self, "_thk2_raw") and idx2 < len(self._thk2_raw) else float(pq(size_selected["thk2"].split(">")[idx2]))
         except:
             thk2 = thk1
-        H = pq(r["H"])
+        H = pq(size_selected["H"])
         reductions = [
             red
             for red in FreeCADGui.Selection.getSelection()
@@ -1781,10 +1781,10 @@ class insertReductForm(dodoDialogs.protoPypeForm):
         row_idx = self.sizeList.currentIndex()
         if row_idx < 0:
             row_idx = 0
-        r = self.pipeDictList[row_idx]
-        od2_vals    = r["OD2"].split(">")
-        thk2_vals   = r.get("thk2", "").split(">")
-        psize2_vals = r.get("PSize2", "").split(">")
+        size_selected = self.pipeDictList[row_idx]
+        od2_vals    = size_selected["OD2"].split(">")
+        thk2_vals   = size_selected.get("thk2", "").split(">")
+        psize2_vals = size_selected.get("PSize2", "").split(">")
         for i, od2 in enumerate(od2_vals):
             thk2   = thk2_vals[i]   if i < len(thk2_vals)   else ""
             psize2 = psize2_vals[i] if i < len(psize2_vals) else ""
@@ -1834,19 +1834,19 @@ class insertReductForm(dodoDialogs.protoPypeForm):
         idx = self.sizeList.currentIndex()
         if idx < 0 or idx >= len(self.pipeDictList):
             return
-        r = self.pipeDictList[idx]
+        size_selected = self.pipeDictList[idx]
         pos = Z = H = None
-        DN = r["PSize"]
-        OD1 = float(pq(r["OD"]))
+        DN = size_selected["PSize"]
+        OD1 = float(pq(size_selected["OD"]))
         idx2 = self.OD2list.currentRow()
         OD2 = float(pq(self._od2_raw[idx2])) if hasattr(self, "_od2_raw") and idx2 < len(self._od2_raw) else float(pq(self.OD2list.currentItem().text()))
         DN2 = self._psize2_raw[idx2] if hasattr(self, "_psize2_raw") and idx2 < len(self._psize2_raw) else ""
-        thk1 = float(pq(r["thk"]))
+        thk1 = float(pq(size_selected["thk"]))
         try:
-            thk2 = float(pq(self._thk2_raw[idx2])) if hasattr(self, "_thk2_raw") and idx2 < len(self._thk2_raw) else float(pq(r["thk2"].split(">")[idx2]))
+            thk2 = float(pq(self._thk2_raw[idx2])) if hasattr(self, "_thk2_raw") and idx2 < len(self._thk2_raw) else float(pq(size_selected["thk2"].split(">")[idx2]))
         except:
             thk2 = thk1
-        H = pq(r["H"])
+        H = pq(size_selected["H"])
         if not H:  # calculate length if it's not defined
             H = float(3 * (OD1 - OD2))
         insertOnSmallerEnd = self.smallerEndRadio.isChecked()
@@ -2126,22 +2126,22 @@ class insertCapForm(dodoDialogs.protoPypeForm):
             _idx = self.sizeList.currentIndex()
             if _idx < 0 or _idx >= len(self.pipeDictList):
                 return
-            d = self.pipeDictList[_idx]
+            size_selected = self.pipeDictList[_idx]
 
             if self._isSocketConn():
                 # ── Socket / threaded cap ────────────────────────────────────
                 propList = [
-                    d["PSize"],
-                    float(pq(d["OD"])),
-                    float(pq(d["A"])),
-                    float(pq(d["C"])),
-                    float(pq(d["E"])),
-                    d.get("Conn", "SW"),
+                    size_selected["PSize"],
+                    float(pq(size_selected["OD"])),
+                    float(pq(size_selected["A"])),
+                    float(pq(size_selected["C"])),
+                    float(pq(size_selected["E"])),
+                    size_selected.get("Conn", "SW"),
                 ]
                 self.lastCap = pCmd.doSocketCap(propList, FreeCAD.__activePypeLine__)[-1]
             else:
                 # ── Butt-weld cap ────────────────────────────────────────────
-                propList = [d["PSize"], float(pq(d["OD"])), float(pq(d["thk"]))]
+                propList = [size_selected["PSize"], float(pq(size_selected["OD"])), float(pq(size_selected["thk"]))]
                 rating = self.ratingList.currentText()
                 self.lastCap = pCmd.doCaps(rating, propList, FreeCAD.__activePypeLine__)[-1]
 
@@ -2170,7 +2170,7 @@ class insertCapForm(dodoDialogs.protoPypeForm):
         _idx = self.sizeList.currentIndex()
         if _idx < 0 or _idx >= len(self.pipeDictList):
             return
-        d = self.pipeDictList[_idx]
+        size_selected = self.pipeDictList[_idx]
 
         for obj in FreeCADGui.Selection.getSelection():
             if not hasattr(obj, "PType"):
@@ -2178,20 +2178,20 @@ class insertCapForm(dodoDialogs.protoPypeForm):
 
             # ── Socket / threaded cap ────────────────────────────────────
             if obj.PType == "SocketCap" and self._isSocketConn():
-                obj.PSize   = d["PSize"]
-                obj.OD      = pq(d["OD"])
-                obj.A       = pq(d["A"])
-                obj.C       = pq(d["C"])
-                obj.E       = pq(d["E"])
-                obj.Conn    = d.get("Conn", "SW")
+                obj.PSize   = size_selected["PSize"]
+                obj.OD      = pq(size_selected["OD"])
+                obj.A       = pq(size_selected["A"])
+                obj.C       = pq(size_selected["C"])
+                obj.E       = pq(size_selected["E"])
+                obj.Conn    = size_selected.get("Conn", "SW")
                 obj.PRating = self.PRating
                 FreeCAD.activeDocument().recompute()
 
             # ── Butt-weld cap ────────────────────────────────────────────
             elif obj.PType == "Cap" and not self._isSocketConn():
-                obj.PSize   = d["PSize"]
-                obj.OD      = pq(d["OD"])
-                obj.thk     = pq(d["thk"])
+                obj.PSize   = size_selected["PSize"]
+                obj.OD      = pq(size_selected["OD"])
+                obj.thk     = pq(size_selected["thk"])
                 obj.PRating = self.PRating
                 FreeCAD.activeDocument().recompute()
 
@@ -3089,8 +3089,8 @@ class insertValveForm(dodoDialogs.protoPypeForm):
         _idx = self.sizeList.currentIndex()
         if _idx < 0 or _idx >= len(self.pipeDictList):
             return
-        d = self.pipeDictList[_idx]
-        r = self._normRow(d)
+        size_selected = self.pipeDictList[_idx]
+        r = self._normRow(size_selected)
 
         for obj in FreeCADGui.Selection.getSelection():
             if not (hasattr(obj, "PType") and obj.PType == "Valve"):
@@ -3606,18 +3606,18 @@ class insertGasketForm(dodoDialogs.protoPypeForm):
             _idx = self.sizeList.currentIndex()
             if _idx < 0 or _idx >= len(self.pipeDictList):
                 return
-            d = self.pipeDictList[_idx]
+            size_selected = self.pipeDictList[_idx]
 
             if insert_gasket:
                 propList = [
-                    d["PSize"],
+                    size_selected["PSize"],
                     self.PRating,   # FClass comes from the selected rating
-                    float(pq(d["IRID"])),
-                    float(pq(d["SEID"])),
-                    float(pq(d["SEOD"])),
-                    float(pq(d["CROD"])),
-                    float(pq(d["SEthk"])),
-                    float(pq(d["Rthk"])),
+                    float(pq(size_selected["IRID"])),
+                    float(pq(size_selected["SEID"])),
+                    float(pq(size_selected["SEOD"])),
+                    float(pq(size_selected["CROD"])),
+                    float(pq(size_selected["SEthk"])),
+                    float(pq(size_selected["Rthk"])),
                 ]
                 self.lastGasket = pCmd.doGaskets(
                     propList,
@@ -3628,7 +3628,7 @@ class insertGasketForm(dodoDialogs.protoPypeForm):
                 bolt_row = self._getBoltRow()
                 if bolt_row is not None:
                     # SEthk is taken from the gasket data for the same PSize/rating
-                    sethk = float(pq(d["SEthk"]))
+                    sethk = float(pq(size_selected["SEthk"]))
                     bolt_propList = [
                         bolt_row["PSize"],
                         self.PRating,
@@ -3652,7 +3652,7 @@ class insertGasketForm(dodoDialogs.protoPypeForm):
         _idx = self.sizeList.currentIndex()
         if _idx < 0 or _idx >= len(self.pipeDictList):
             return
-        d = self.pipeDictList[_idx]
+        size_selected = self.pipeDictList[_idx]
         targets = [
             g
             for g in FreeCADGui.Selection.getSelection()
@@ -3661,14 +3661,14 @@ class insertGasketForm(dodoDialogs.protoPypeForm):
         if not targets and self.lastGasket:
             targets = [self.lastGasket]
         for g in targets:
-            g.PSize   = d["PSize"]
+            g.PSize   = size_selected["PSize"]
             g.FClass  = self.PRating
-            g.IRID    = float(pq(d["IRID"]))
-            g.SEID    = float(pq(d["SEID"]))
-            g.SEOD    = float(pq(d["SEOD"]))
-            g.CROD    = float(pq(d["CROD"]))
-            g.SEthk   = float(pq(d["SEthk"]))
-            g.Rthk    = float(pq(d["Rthk"]))
+            g.IRID    = float(pq(size_selected["IRID"]))
+            g.SEID    = float(pq(size_selected["SEID"]))
+            g.SEOD    = float(pq(size_selected["SEOD"]))
+            g.CROD    = float(pq(size_selected["CROD"]))
+            g.SEthk   = float(pq(size_selected["SEthk"]))
+            g.Rthk    = float(pq(size_selected["Rthk"]))
         FreeCAD.activeDocument().recompute()
 
     def changeSize(self, s):
@@ -4226,17 +4226,17 @@ class insertOutletForm(dodoDialogs.protoPypeForm):
         row = self.sizeList.currentIndex()
         if row < 0 or row >= len(self.pipeDictList):
             return None
-        d = self.pipeDictList[row]
-        E = float(pq(d["E"])) if "E" in d and d["E"].strip() else 0.0
+        size_selected = self.pipeDictList[row]
+        E = float(pq(size_selected["E"])) if "E" in size_selected and size_selected["E"].strip() else 0.0
         return [
             self.PRating,
-            d["PSize"],
-            float(pq(d["OD"])),
-            float(pq(d["thk"])),
-            float(pq(d["A"])),
-            float(pq(d["B"])),
-            d.get("Conn", "BW"),       # passed straight to pFeatures as EndType
-            int(d.get("Ang", "0")),
+            size_selected["PSize"],
+            float(pq(size_selected["OD"])),
+            float(pq(size_selected["thk"])),
+            float(pq(size_selected["A"])),
+            float(pq(size_selected["B"])),
+            size_selected.get("Conn", "BW"),       # passed straight to pFeatures as EndType
+            int(size_selected.get("Ang", "0")),
             E,
         ]
 
@@ -4535,17 +4535,17 @@ class insertCouplingUnionForm(dodoDialogs.protoPypeForm):
                     FreeCAD.Console.PrintWarning(
                         "insertCouplingUnionForm: no port-1 size selected\n")
                     return
-                d = self._port2DictList[idx]
+                size_selected = self._port2DictList[idx]
                 propList = [
-                    d["PSize"],
-                    d.get("PSize2", d["PSize"]),
-                    float(pq(d["OD"])),
-                    float(pq(d["OD2"])),
-                    float(pq(d["A"])),
-                    float(pq(d["C"])),
-                    float(pq(d["D"])),
-                    float(pq(d["E"])),
-                    d.get("Conn", "SW"),
+                    size_selected["PSize"],
+                    size_selected.get("PSize2", size_selected["PSize"]),
+                    float(pq(size_selected["OD"])),
+                    float(pq(size_selected["OD2"])),
+                    float(pq(size_selected["A"])),
+                    float(pq(size_selected["C"])),
+                    float(pq(size_selected["D"])),
+                    float(pq(size_selected["E"])),
+                    size_selected.get("Conn", "SW"),
                 ]
                 self.lastFitting = pCmd.doSocketCoupling(
                     propList, FreeCAD.__activePypeLine__)[-1]
@@ -4556,15 +4556,15 @@ class insertCouplingUnionForm(dodoDialogs.protoPypeForm):
                     FreeCAD.Console.PrintWarning(
                         "insertCouplingUnionForm: no size selected\n")
                     return
-                d = self.pipeDictList[idx]
+                size_selected = self.pipeDictList[idx]
                 propList = [
-                    d["PSize"],
-                    float(pq(d["OD"])),
-                    float(pq(d["A"])),
-                    float(pq(d["C"])),
-                    float(pq(d["D"])),
-                    float(pq(d["E"])),
-                    d.get("Conn", "SW"),
+                    size_selected["PSize"],
+                    float(pq(size_selected["OD"])),
+                    float(pq(size_selected["A"])),
+                    float(pq(size_selected["C"])),
+                    float(pq(size_selected["D"])),
+                    float(pq(size_selected["E"])),
+                    size_selected.get("Conn", "SW"),
                 ]
                 self.lastFitting = pCmd.doSocketUnion(
                     propList, FreeCAD.__activePypeLine__)[-1]
@@ -4600,16 +4600,16 @@ class insertCouplingUnionForm(dodoDialogs.protoPypeForm):
                 idx = self._port2List.currentRow()
                 if idx < 0 or idx >= len(self._port2DictList):
                     continue
-                d = self._port2DictList[idx]
-                obj.PSize   = d["PSize"]
-                obj.PSize2  = d.get("PSize2", d["PSize"])
-                obj.OD      = pq(d["OD"])
-                obj.OD2     = pq(d["OD2"])
-                obj.A       = pq(d["A"])
-                obj.C       = pq(d["C"])
-                obj.D       = pq(d["D"])
-                obj.E       = pq(d["E"])
-                obj.Conn    = d.get("Conn", "SW")
+                size_selected = self._port2DictList[idx]
+                obj.PSize   = size_selected["PSize"]
+                obj.PSize2  = size_selected.get("PSize2", size_selected["PSize"])
+                obj.OD      = pq(size_selected["OD"])
+                obj.OD2     = pq(size_selected["OD2"])
+                obj.A       = pq(size_selected["A"])
+                obj.C       = pq(size_selected["C"])
+                obj.D       = pq(size_selected["D"])
+                obj.E       = pq(size_selected["E"])
+                obj.Conn    = size_selected.get("Conn", "SW")
                 obj.PRating = self.PRating
                 FreeCAD.activeDocument().recompute()
 
@@ -4617,14 +4617,14 @@ class insertCouplingUnionForm(dodoDialogs.protoPypeForm):
                 idx = self.sizeList.currentIndex()
                 if idx < 0 or idx >= len(self.pipeDictList):
                     continue
-                d = self.pipeDictList[idx]
-                obj.PSize   = d["PSize"]
-                obj.OD      = pq(d["OD"])
-                obj.A       = pq(d["A"])
-                obj.C       = pq(d["C"])
-                obj.D       = pq(d["D"])
-                obj.E       = pq(d["E"])
-                obj.Conn    = d.get("Conn", "SW")
+                size_selected = self.pipeDictList[idx]
+                obj.PSize   = size_selected["PSize"]
+                obj.OD      = pq(size_selected["OD"])
+                obj.A       = pq(size_selected["A"])
+                obj.C       = pq(size_selected["C"])
+                obj.D       = pq(size_selected["D"])
+                obj.E       = pq(size_selected["E"])
+                obj.Conn    = size_selected.get("Conn", "SW")
                 obj.PRating = self.PRating
                 FreeCAD.activeDocument().recompute()
 
