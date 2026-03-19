@@ -247,9 +247,13 @@ class protoPypeForm(QDialog):
         # self.ratingList = QListWidget()
         self.ratingList = QComboBox()
         self.ratingList.addItems(self.PRatingsList)
+        # Block signals during initial index set so that changeRating does
+        # not fire before the subclass has finished building its controls.
+        # Subclasses call fillSizes() explicitly after their __init__ completes.
+        self.ratingList.blockSignals(True)
         self.ratingList.setCurrentIndex(0)
+        self.ratingList.blockSignals(False)
         self.sizeList.setCurrentIndex(0)
-        # self.ratingList.itemClicked.connect(self.changeRating)
         self.ratingList.currentTextChanged.connect(self.changeRating)
         self.sizeList.currentTextChanged.connect(self.changeSize)
         self.secondCol.layout().addRow(QLabel("Grade:"))
@@ -295,9 +299,62 @@ class protoPypeForm(QDialog):
                 break
 
     def changeRating(self, s):
+        """Handle a rating (grade) selection change.
+
+        Captures the currently selected PSize, reloads the size list inside
+        sizeList.blockSignals (preventing changeSize from firing for every
+        item added during reload), restores the previously selected size in
+        the new list if possible, then calls onRatingChanged(s) so subclasses
+        can perform any additional post-fill actions without needing to
+        disconnect and reconnect this signal.
+        """
+        # Capture the currently selected PSize so it can be restored after
+        # the size list is reloaded for the new rating.
+        cur_idx = self.sizeList.currentIndex()
+        cur_psize = None
+        if hasattr(self, "pipeDictList") and 0 <= cur_idx < len(self.pipeDictList):
+            cur_psize = self.pipeDictList[cur_idx].get("PSize")
+        # Also check a _uniqueSizeList if the form uses one (Tee, Coupling)
+        if cur_psize is None and hasattr(self, "_uniqueSizeList"):
+            if 0 <= cur_idx < len(self._uniqueSizeList):
+                cur_psize = self._uniqueSizeList[cur_idx]
+
         self.PRating = s
-        self.currentRatingLab.setText(translate("protoPypeForm", "Rating: ") + self.PRating)
-        self.fillSizes()
+        self.currentRatingLab.setText(
+            translate("protoPypeForm", "Rating: ") + self.PRating)
+
+        # Reload the size list with signals blocked so that changeSize is
+        # not triggered for every item added during the reload.
+        self.sizeList.blockSignals(True)
+        try:
+            self.fillSizes()
+        finally:
+            self.sizeList.blockSignals(False)
+
+        # Try to restore the previously selected PSize in the new list.
+        # import here to avoid a circular dependency at module load time.
+        try:
+            import pCmd as _pCmd
+            _pCmd.preserveSelectSizeByPSize(self, cur_psize)
+        except Exception:
+            self.sizeList.setCurrentIndex(-1)
+
+        # Subclass hook: called after the size list has been reloaded and
+        # the size selection restored.  Override this (not changeRating)
+        # for any form-specific post-fill actions.
+        self.onRatingChanged(s)
+
+    def onRatingChanged(self, s):
+        """Hook called by changeRating after the size list has been reloaded.
+
+        Subclasses override this method to perform form-specific post-fill
+        actions (e.g. refreshing a secondary list, updating visibility of
+        dependent controls) without needing to disconnect and reconnect the
+        ratingList.currentTextChanged signal.
+        The default implementation does nothing.
+        """
+        pass
+
 
     def _setSizeSystem(self, system):
         """Toggle the DN/NPS display on the size list without saving to prefs."""
@@ -385,31 +442,28 @@ class protoPypeForm(QDialog):
             saved_sel = FreeCADGui.Selection.getSelectionEx()
             FreeCADGui.Selection.clearSelection()
             self.insert()
-            # Reset the created object to the origin in case
-            # positionBySupport() moved it during recompute inside insert().
+            # Capture the preview object name immediately after insert() so
+            # that capturePreviewProfile() (which triggers recomputes and view
+            # operations that may shift ActiveObject) cannot cause us to delete
+            # the wrong object.
             preview_obj = FreeCAD.ActiveDocument.ActiveObject
+            preview_name = preview_obj.Name if preview_obj else None
             if preview_obj:
+                # Reset to the origin in case positionBySupport() moved it.
                 preview_obj.Placement = FreeCAD.Placement()
                 FreeCAD.ActiveDocument.recompute()
             self.capturePreviewProfile()
-            last_obj = FreeCAD.ActiveDocument.ActiveObject
-            if last_obj:
-                FreeCAD.ActiveDocument.removeObject(last_obj.Name)
-            # Restore the user's selection, skipping any objects that were
-            # deleted during the preview (e.g. when the selected object was
-            # the same as the preview object and got removed above).
-            doc = FreeCAD.ActiveDocument
-            for sx in saved_sel:
+            if preview_name:
                 try:
-                    # Verify the object still exists in the document
-                    if doc and not doc.getObject(sx.Object.Name):
-                        continue
-                    for sub in sx.SubElementNames:
-                        FreeCADGui.Selection.addSelection(sx.Object, sub)
-                    if not sx.SubElementNames:
-                        FreeCADGui.Selection.addSelection(sx.Object)
+                    FreeCAD.ActiveDocument.removeObject(preview_name)
                 except Exception:
                     pass
+            # Restore the user's selection
+            for sx in saved_sel:
+                for sub in sx.SubElementNames:
+                    FreeCADGui.Selection.addSelection(sx.Object, sub)
+                if not sx.SubElementNames:
+                    FreeCADGui.Selection.addSelection(sx.Object)
 
     def findDN(self, DN):
         result = None
