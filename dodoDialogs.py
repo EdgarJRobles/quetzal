@@ -282,7 +282,7 @@ class protoPypeForm(QDialog):
         self.sizeList.clear()
         for fileName in self.fileList:
             if fileName == self.PType + "_" + self.PRating + ".csv":
-                f = open(join(dirname(abspath(__file__)), "tablez", fileName), "r")
+                f = open(join(dirname(abspath(__file__)), "tablez", fileName), "r", encoding="utf-8-sig")
                 reader = csv.DictReader(f, delimiter=";")
                 self.pipeDictList = [DNx for DNx in reader]
                 f.close()

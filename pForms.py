@@ -60,6 +60,25 @@ pipe_OD = {
     "DN600" : 609.6,
 }
 
+def _autoSelectSizeOnly(form):
+    """Attempt to select the size in form.sizeList that matches the PSize (and
+    optionally OD) of the currently selected FreeCAD object, WITHOUT touching
+    the rating (grade) list.
+
+    This is used by onRatingChanged hooks so that size auto-matching can run
+    after the user has manually chosen a grade, without accidentally triggering
+    a rating change (which would loop back into changeRating).
+
+    If no matching size is found the sizeList selection is left at -1 (blank).
+    """
+    OD, thk, _rating, PSize = pCmd.getSelectedPortDimensions()
+    if OD is None and PSize is None:
+        return  # Nothing selected -- leave size list blank
+    if PSize and pCmd._selectSizeByPSize(form, PSize):
+        return
+    pCmd._selectSizeByOD(form, OD, thk)
+
+
 class redrawDialog(QDialog):
     def __init__(self):
         super(redrawDialog, self).__init__()
@@ -165,8 +184,8 @@ class insertPipeForm(dodoDialogs.protoPypeForm):
         self.mainHL.addWidget(self.sli)
         self.sli.valueChanged.connect(self.changeL)
 
-        #auto-select pipe size and rating if available
-        pCmd.autoSelectInPipeForm(self)
+        # Auto-select size only (no rating override) if a fitting is selected.
+        _autoSelectSizeOnly(self)
 
         self.show()
         self.lastPipe = None
@@ -174,6 +193,7 @@ class insertPipeForm(dodoDialogs.protoPypeForm):
 
     def onRatingChanged(self, s):
         pass  # Base changeRating handles blockSignals, fillSizes, and PSize preservation.
+
     def changeSize(self, s):
         """Generate a preview thumbnail for the selected pipe size.
 
@@ -405,8 +425,14 @@ class insertElbowForm(dodoDialogs.protoPypeForm):
         self.screenDial.layout().addWidget(self._elbowRotSpin)
         self.firstCol.layout().addWidget(self.screenDial)
 
-        # Leave initial selection blank; matching happens when a rating is selected.
-        self.sizeList.setCurrentIndex(-1)
+        # Leave rating and size lists blank on open.  The user selects a grade
+        # first; onRatingChanged then loads the size list and attempts to
+        # auto-match the PSize of any selected fitting.
+        self.ratingList.blockSignals(True)
+        self.ratingList.setCurrentIndex(-1)
+        self.ratingList.blockSignals(False)
+        self.sizeList.clear()
+        self.pipeDictList = []
         self._refreshLayout()
 
         self.show()
@@ -439,7 +465,7 @@ class insertElbowForm(dodoDialogs.protoPypeForm):
         fname = "Elbow_" + self.PRating + ".csv"
         fpath = join(dirname(abspath(__file__)), "tablez", fname)
         try:
-            with open(fpath, "r") as fh:
+            with open(fpath, "r", encoding="utf-8-sig") as fh:
                 self.pipeDictList = list(csv.DictReader(fh, delimiter=";"))
         except Exception:
             return
@@ -469,7 +495,9 @@ class insertElbowForm(dodoDialogs.protoPypeForm):
     def onRatingChanged(self, s):
         # Base changeRating has already reloaded fillSizes and preserved the
         # selected PSize.  Refresh the layout for BW vs SW/TH control visibility.
+        # No automatic size or rating matching -- user selects size manually.
         self._refreshLayout()
+
     def _refreshLayout(self):
         """Show/hide edit2 (bend radius) based on whether the CSV is SW/TH."""
         if not hasattr(self, "edit2"):
@@ -735,11 +763,18 @@ class insertTeeForm(dodoDialogs.protoPypeForm):
         # Trigger preview reload when the branch size selection changes.
         self._branchList.currentRowChanged.connect(lambda _: self.changeSize(""))
 
-        # Leave initial selection blank; matching happens when a rating is selected.
-        self.sizeList.setCurrentIndex(-1)
-        if hasattr(self, "_branchList"):
-            self._branchList.clearSelection()
-            self._branchList.setCurrentRow(-1)
+        # Leave rating and size lists blank on open.  The user selects a grade
+        # first; onRatingChanged then loads the size list and attempts to
+        # auto-match the PSize of any selected fitting.
+        self.ratingList.blockSignals(True)
+        self.ratingList.setCurrentIndex(-1)
+        self.ratingList.blockSignals(False)
+        self.sizeList.clear()
+        self.pipeDictList = []
+        self._uniqueRunPSizes = []
+        self._uniqueSizeList = []
+        self._branchDictList = []
+        self._branchList.clear()
 
         self.show()
         self.lastTee   = None
@@ -769,7 +804,7 @@ class insertTeeForm(dodoDialogs.protoPypeForm):
         fname = "Tee_" + self.PRating + ".csv"
         fpath = join(dirname(abspath(__file__)), "tablez", fname)
         try:
-            with open(fpath, "r") as fh:
+            with open(fpath, "r", encoding="utf-8-sig") as fh:
                 self.pipeDictList = list(csv.DictReader(fh, delimiter=";"))
         except Exception:
             return
@@ -842,7 +877,9 @@ class insertTeeForm(dodoDialogs.protoPypeForm):
 
     def onRatingChanged(self, s):
         # Base changeRating has reloaded fillSizes and preserved the run PSize.
-        # Now default the branch selection to the equal-size (straight tee) entry.
+        # No automatic size or rating matching -- user selects size manually.
+        # Default the branch selection to the equal-size (straight tee) entry
+        # when a run size was successfully preserved from a previous selection.
         cur_idx = self.sizeList.currentIndex()
         if hasattr(self, "_uniqueSizeList") and 0 <= cur_idx < len(self._uniqueSizeList):
             cur_psize = self._uniqueSizeList[cur_idx]
@@ -1328,7 +1365,7 @@ class insertFlangeForm(dodoDialogs.protoPypeForm):
         fname = "Pipe_" + sched_name + ".csv"
         fpath = join(dirname(abspath(__file__)), "tablez", fname)
         try:
-            with open(fpath, "r") as fh:
+            with open(fpath, "r", encoding="utf-8-sig") as fh:
                 reader = csv.DictReader(fh, delimiter=";")
                 for rec in reader:
                     if rec.get("PSize", "").strip() == psize.strip():
@@ -1977,7 +2014,14 @@ class insertCapForm(dodoDialogs.protoPypeForm):
         self.btn_insert.setDefault(True)
         self.btn_insert.setFocus()
 
-        pCmd.autoSelectInPipeForm(self)
+        # Leave rating and size lists blank on open.  The user selects a grade
+        # first; onRatingChanged then loads the size list.
+        self.ratingList.blockSignals(True)
+        self.ratingList.setCurrentIndex(-1)
+        self.ratingList.blockSignals(False)
+        self.sizeList.clear()
+        self.pipeDictList = []
+
         self.show()
         self.lastCap = None
 
@@ -2001,7 +2045,7 @@ class insertCapForm(dodoDialogs.protoPypeForm):
         fname = "Cap_" + self.PRating + ".csv"
         fpath = join(dirname(abspath(__file__)), "tablez", fname)
         try:
-            with open(fpath, "r") as fh:
+            with open(fpath, "r", encoding="utf-8-sig") as fh:
                 self.pipeDictList = list(csv.DictReader(fh, delimiter=";"))
         except Exception:
             return
@@ -2713,7 +2757,14 @@ class insertValveForm(dodoDialogs.protoPypeForm):
 
         # Now that sli, cb1, and actuator controls exist, apply the correct visibility
         self._refreshLayout()
-        self.sizeList.setCurrentIndex(-1)
+        # Leave rating and size lists blank on open.  The user selects a grade
+        # first; onRatingChanged then loads the size list and attempts to
+        # auto-match the PSize of any selected fitting.
+        self.ratingList.blockSignals(True)
+        self.ratingList.setCurrentIndex(-1)
+        self.ratingList.blockSignals(False)
+        self.sizeList.clear()
+        self.pipeDictList = []
         self.show()
 
     # ── helper: detect SW/TH rating ──────────────────────────────────────────
@@ -2737,7 +2788,7 @@ class insertValveForm(dodoDialogs.protoPypeForm):
         fname = "Flange_ASME-BL-RF-" + conn + ".csv"
         fpath = join(dirname(abspath(__file__)), "tablez", fname)
         try:
-            with open(fpath, "r") as fh:
+            with open(fpath, "r", encoding="utf-8-sig") as fh:
                 reader = csv.DictReader(fh, delimiter=";")
                 for row in reader:
                     if row.get("PSize", "").strip() == psize:
@@ -2808,7 +2859,7 @@ class insertValveForm(dodoDialogs.protoPypeForm):
         fname = "Valve_" + self.PRating + ".csv"
         fpath = join(dirname(abspath(__file__)), "tablez", fname)
         try:
-            with open(fpath, "r") as fh:
+            with open(fpath, "r", encoding="utf-8-sig") as fh:
                 self.pipeDictList = list(csv.DictReader(fh, delimiter=";"))
         except Exception:
             return
@@ -2845,8 +2896,12 @@ class insertValveForm(dodoDialogs.protoPypeForm):
 
     def onRatingChanged(self, s):
         # Base changeRating reloads fillSizes, preserves PSize, and sets
-        # currentIndex(-1) if no match.  Refresh layout for BW/SW/flanged.
+        # currentIndex(-1) if no match.  Refresh layout for BW/SW/flanged,
+        # then attempt size-only matching against any selected fitting -- but
+        # do NOT re-run rating matching since the user has already chosen the grade.
         self._refreshLayout()
+        if self.sizeList.currentIndex() < 0:
+            _autoSelectSizeOnly(self)
     def _valveDialChanged(self, val):
         if self._valveRotUpdating:
             return
@@ -3233,7 +3288,7 @@ class insertTankForm(dodoDialogs.protoTypeDialog):
         try:
             fileName = "Pipe_" + self.form.comboPipe.currentText() + ".csv"
             # print(fileName)
-            f = open(join(dirname(abspath(__file__)), "tablez", fileName), "r")
+            f = open(join(dirname(abspath(__file__)), "tablez", fileName), "r", encoding="utf-8-sig")
             reader = csv.DictReader(f, delimiter=";")
             pipes = dict(
                 [[line["PSize"], [float(line["OD"]), float(line["thk"])]] for line in reader]
@@ -3241,7 +3296,7 @@ class insertTankForm(dodoDialogs.protoTypeDialog):
             f.close()
             fileName = "Flange_" + self.form.comboFlange.currentText() + ".csv"
             # print(fileName)
-            f = open(join(dirname(abspath(__file__)), "tablez", fileName), "r")
+            f = open(join(dirname(abspath(__file__)), "tablez", fileName), "r", encoding="utf-8-sig")
             reader = csv.DictReader(f, delimiter=";")
             flanges = dict(
                 [
@@ -3393,7 +3448,7 @@ class insertGasketForm(dodoDialogs.protoPypeForm):
         fname = "Bolt_" + self.PRating + ".csv"
         fpath = join(csv_dir, fname)
         try:
-            with open(fpath, "r") as fh:
+            with open(fpath, "r", encoding="utf-8-sig") as fh:
                 bolt_list = list(csv.DictReader(fh, delimiter=";"))
         except Exception:
             FreeCAD.Console.PrintError(
@@ -3883,7 +3938,7 @@ class insertOutletForm(dodoDialogs.protoPypeForm):
         fname = "Outlet_" + self.PRating + ".csv"
         fpath = join(dirname(abspath(__file__)), "tablez", fname)
         try:
-            with open(fpath, "r") as fh:
+            with open(fpath, "r", encoding="utf-8-sig") as fh:
                 all_rows = list(csv.DictReader(fh, delimiter=";"))
         except Exception:
             return
