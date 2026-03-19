@@ -945,21 +945,21 @@ class insertTeeForm(dodoDialogs.protoPypeForm):
         if branch_idx < 0 or branch_idx >= len(self._branchDictList):
             FreeCAD.Console.PrintWarning("insertTeeForm: no branch size selected\n")
             return
-        d = self._branchDictList[branch_idx]
+        size_selected = self._branchDictList[branch_idx]
 
         if self._isSocketConn():
             # ── Socket / threaded tee ────────────────────────────────────
             propList = [
-                d["PSize"],
-                d.get("PSizeBranch", d["PSize"]),
-                float(pq(d["OD"])),
-                float(pq(d["OD2"])),
-                float(pq(d["A"])),
-                float(pq(d["C"])),
-                float(pq(d["D"])),
-                float(pq(d["E"])),
-                float(pq(d["G"])),
-                d.get("Conn", "SW"),
+                size_selected["PSize"],
+                size_selected.get("PSizeBranch", size_selected["PSize"]),
+                float(pq(size_selected["OD"])),
+                float(pq(size_selected["OD2"])),
+                float(pq(size_selected["A"])),
+                float(pq(size_selected["C"])),
+                float(pq(size_selected["D"])),
+                float(pq(size_selected["E"])),
+                float(pq(size_selected["G"])),
+                size_selected.get("Conn", "SW"),
             ]
             rating = self.ratingList.currentText()
             self.lastTee = pCmd.doSocketTee(
@@ -968,14 +968,14 @@ class insertTeeForm(dodoDialogs.protoPypeForm):
         else:
             # ── Butt-weld tee ────────────────────────────────────────────
             propList = [
-                d["PSize"],
-                float(pq(d["OD"])),
-                float(pq(d["OD2"])),
-                float(pq(d["thk"])),
-                float(pq(d["thk2"])),
-                float(pq(d["C"])),
-                float(pq(d["M"])),
-                d.get("PSizeBranch", ""),
+                size_selected["PSize"],
+                float(pq(size_selected["OD"])),
+                float(pq(size_selected["OD2"])),
+                float(pq(size_selected["thk"])),
+                float(pq(size_selected["thk2"])),
+                float(pq(size_selected["C"])),
+                float(pq(size_selected["M"])),
+                size_selected.get("PSizeBranch", ""),
             ]
             rating = self.ratingList.currentText()
             self.lastTee = pCmd.doTees(
@@ -1037,33 +1037,33 @@ class insertTeeForm(dodoDialogs.protoPypeForm):
         branch_idx = self._branchList.currentRow()
         if branch_idx < 0 or branch_idx >= len(self._branchDictList):
             return
-        d = self._branchDictList[branch_idx]
+        size_selected = self._branchDictList[branch_idx]
 
         for obj in FreeCADGui.Selection.getSelection():
             if not hasattr(obj, "PType"):
                 continue
             if obj.PType == "SocketTee" and self._isSocketConn():
-                obj.PSize       = d["PSize"]
-                obj.PSizeBranch = d.get("PSizeBranch", d["PSize"])
-                obj.OD          = pq(d["OD"])
-                obj.OD2         = pq(d["OD2"])
-                obj.A           = pq(d["A"])
-                obj.C           = pq(d["C"])
-                obj.D           = pq(d["D"])
-                obj.E           = pq(d["E"])
-                obj.G           = pq(d["G"])
-                obj.Conn        = d.get("Conn", "SW")
+                obj.PSize       = size_selected["PSize"]
+                obj.PSizeBranch = size_selected.get("PSizeBranch", size_selected["PSize"])
+                obj.OD          = pq(size_selected["OD"])
+                obj.OD2         = pq(size_selected["OD2"])
+                obj.A           = pq(size_selected["A"])
+                obj.C           = pq(size_selected["C"])
+                obj.D           = pq(size_selected["D"])
+                obj.E           = pq(size_selected["E"])
+                obj.G           = pq(size_selected["G"])
+                obj.Conn        = size_selected.get("Conn", "SW")
                 obj.PRating     = self.PRating
                 FreeCAD.activeDocument().recompute()
             elif obj.PType == "Tee" and not self._isSocketConn():
-                obj.PSize   = d["PSize"]
-                obj.OD      = pq(d["OD"])
-                obj.OD2     = pq(d["OD2"])
-                obj.thk     = pq(d["thk"])
-                obj.thk2    = pq(d["thk2"])
+                obj.PSize   = size_selected["PSize"]
+                obj.OD      = pq(size_selected["OD"])
+                obj.OD2     = pq(size_selected["OD2"])
+                obj.thk     = pq(size_selected["thk"])
+                obj.thk2    = pq(size_selected["thk2"])
                 obj.PRating = self.PRating
                 if hasattr(obj, "PSizeBranch"):
-                    obj.PSizeBranch = d.get("PSizeBranch", "")
+                    obj.PSizeBranch = size_selected.get("PSizeBranch", "")
                 FreeCAD.activeDocument().recompute()
 
     # ── reverse ──────────────────────────────────────────────────────────────
