@@ -968,7 +968,7 @@ class Tee(pypeType):
 
 
 
-        if fp.M == fp.C:
+        if fp.PSize == fp.PSizeBranch:
             #model as quarter torus centered 1 mm off of OD, with a diameter of OD, mirrored across XY plane. Can add internal torus at some point perhaps if you feel like it.
             #1 mm offset
 

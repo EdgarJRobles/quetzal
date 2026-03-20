@@ -186,10 +186,16 @@ class protoPypeForm(QDialog):
         self.pipeDictList = []
         self.fileList = listdir(join(dirname(abspath(__file__)), "tablez"))
         self.fillSizes()
+        # Use slice-based prefix/suffix removal instead of lstrip/rstrip.
+        # lstrip and rstrip strip individual characters from a set, not a
+        # literal substring, so they corrupt ratings like "generic" by also
+        # removing the trailing 'c' (which appears in the ".csv" character set).
+        _prefix = PType + "_"
+        _suffix = ".csv"
         self.PRatingsList = [
-            s.lstrip(PType + "_").rstrip(".csv")
+            s[len(_prefix) : len(s) - len(_suffix)]
             for s in self.fileList
-            if s.startswith(PType) and s.endswith(".csv")
+            if s.startswith(_prefix) and s.endswith(_suffix)
         ]
         self.secondCol = QWidget()
         self.secondCol.setLayout(QFormLayout())
@@ -380,9 +386,17 @@ class protoPypeForm(QDialog):
         from os.path import join
 
         idx = self.sizeList.currentIndex()
-        # Always use the raw DN PSize from pipeDictList for the filename,
-        # never the display label (which may be NPS or carry dimension suffixes).
-        if 0 <= idx < len(self.pipeDictList):
+        # Always use the raw DN PSize for the filename, never the display label
+        # (which may be NPS or carry dimension suffixes).
+        #
+        # For forms with a deduplicated sizeList (_uniqueSizeList exists -- e.g.
+        # Tee, SocketTee, Coupling) the sizeList index maps 1-to-1 to
+        # _uniqueSizeList, NOT to pipeDictList (which has one row per
+        # run+branch combination).  Reading pipeDictList[idx] directly would
+        # pick up a wrong row and produce an incorrect dn_psize.
+        if hasattr(self, "_uniqueSizeList") and 0 <= idx < len(self._uniqueSizeList):
+            dn_psize = self._uniqueSizeList[idx]
+        elif 0 <= idx < len(self.pipeDictList):
             dn_psize = self.pipeDictList[idx].get("PSize", "")
         else:
             dn_psize = self.sizeList.currentText()
@@ -416,20 +430,28 @@ class protoPypeForm(QDialog):
         preview_dir = self.previewSectionsPath + self.PType
         makedirs(preview_dir, exist_ok=True)
 
-        # Canonical path: <dir>/<rating><size_stem>.png
+        # Canonical filename: <rating><PSize>[x<PSize2>].png
+        # e.g. SCH-STDDN150xDN100.png
         canonical_name = str(rateselected) + size_stem + ".png"
         self.gradeimagepath = canonical_name
         self.fullimagepath  = join(preview_dir, canonical_name)
 
-        # Cache check: accept any file whose name starts with rate+size_stem
-        prefix = str(rateselected) + size_stem
+        # Cache check: the cached filename stem (everything before ".png") must
+        # match the canonical stem EXACTLY.  A prefix-only check is unsafe
+        # because e.g. "SCH-STDDN40" is a prefix of "SCH-STDDN40xDN65.png",
+        # which would cause a straight-tee selection to display a reducing-tee
+        # image (or vice versa) whenever the larger name happens to sort first.
+        canonical_stem = str(rateselected) + size_stem  # no ".png"
         cached_path = None
         if exists(self.fullimagepath):
             cached_path = self.fullimagepath
         else:
             try:
                 for fname in listdir(preview_dir):
-                    if fname.startswith(prefix) and fname.endswith(".png"):
+                    if not fname.endswith(".png"):
+                        continue
+                    fname_stem = fname[:-4]  # strip ".png"
+                    if fname_stem == canonical_stem:
                         cached_path = join(preview_dir, fname)
                         break
             except OSError:
@@ -438,32 +460,43 @@ class protoPypeForm(QDialog):
         if cached_path:
             self.labImage.setPixmap(QPixmap(cached_path).scaledToWidth(180))
         else:
-            # Clear selection so insert() creates at the origin, not at a port.
+            # 1. Save current selection and camera state
             saved_sel = FreeCADGui.Selection.getSelectionEx()
+            view = FreeCADGui.ActiveDocument.ActiveView
+            
+            # getCamera() returns the current view parameters as a string
+            saved_camera = view.getCamera() 
+            
             FreeCADGui.Selection.clearSelection()
+            
+            # 2. Insert the object
             self.insert()
-            # Capture the preview object name immediately after insert() so
-            # that capturePreviewProfile() (which triggers recomputes and view
-            # operations that may shift ActiveObject) cannot cause us to delete
-            # the wrong object.
             preview_obj = FreeCAD.ActiveDocument.ActiveObject
-            preview_name = preview_obj.Name if preview_obj else None
+            
             if preview_obj:
-                # Reset to the origin in case positionBySupport() moved it.
+                preview_name = preview_obj.Name
                 preview_obj.Placement = FreeCAD.Placement()
                 FreeCAD.ActiveDocument.recompute()
-            self.capturePreviewProfile()
-            if preview_name:
+                
+                # 3. Capture the profile
+                self.capturePreviewProfile()
+                
+                # 4. Cleanup
                 try:
                     FreeCAD.ActiveDocument.removeObject(preview_name)
                 except Exception:
                     pass
-            # Restore the user's selection
+            
+            # Restore view using the saved string
+            view.setCamera(saved_camera)
+            
+            # Restore selection
             for sx in saved_sel:
-                for sub in sx.SubElementNames:
-                    FreeCADGui.Selection.addSelection(sx.Object, sub)
                 if not sx.SubElementNames:
                     FreeCADGui.Selection.addSelection(sx.Object)
+                else:
+                    for sub in sx.SubElementNames:
+                        FreeCADGui.Selection.addSelection(sx.Object, sub)
 
     def findDN(self, DN):
         result = None
@@ -474,34 +507,52 @@ class protoPypeForm(QDialog):
         return result
 
     def capturePreviewProfile(self):
-        # Hide every object except the one just created (ActiveObject),
-        # recording each object's previous Visibility so it can be restored.
         doc = FreeCAD.ActiveDocument
-        preview_obj = doc.ActiveObject if doc else None
+        if not doc:
+            return
+        #some object classes were having trouble finding the correct path - seems to be an issue of / vs \ in the file path
+        import os as _os
+        _img_dir = _os.path.dirname(self.fullimagepath)
+        if _img_dir:
+            _os.makedirs(_img_dir, exist_ok=True)
+
+        view = FreeCADGui.ActiveDocument.ActiveView
+        preview_obj = doc.ActiveObject
         vis_state = {}
-        if doc:
-            for obj in doc.Objects:
-                if obj is preview_obj:
-                    continue
-                try:
-                    vis_state[obj.Name] = obj.Visibility
-                    if obj.Visibility:
-                        obj.Visibility = False
-                except Exception:
-                    pass
+
+        # Hide other objects
+        for obj in doc.Objects:
+            if obj == preview_obj:
+                continue
+            try:
+                vis_state[obj.Name] = obj.Visibility
+                obj.Visibility = False
+            except:
+                pass
+
         try:
-            FreeCADGui.SendMsgToActiveView("ViewFit")
-            view = FreeCADGui.ActiveDocument.ActiveView
-            FreeCADGui.SendMsgToActiveView("OrthographicCamera")
-            FreeCADGui.SendMsgToActiveView("ViewAxo")
+            # Set to Axometric and Orthographic
+            view.viewAxometric()
+            view.setCameraType("Orthographic")
+            
+            # Fit the object to the screen
+            view.fitAll() 
+            
+            # Allow the 3D view to update its camera 
+            # before the saveImage command fires.
+            from PySide.QtCore import QCoreApplication
+            QCoreApplication.processEvents() 
             FreeCADGui.Selection.clearSelection()
+            
+            # Save the image
             view.saveImage(self.fullimagepath, 300, 300, "Transparent")
+            
         finally:
-            # Restore visibility regardless of whether saveImage succeeded
-            if doc:
-                for obj in doc.Objects:
-                    if obj.Name in vis_state:
-                        try:
-                            obj.Visibility = vis_state[obj.Name]
-                        except Exception:
-                            pass
+            # Restore visibility
+            for name, state in vis_state.items():
+                try:
+                    target = doc.getObject(name)
+                    if target:
+                        target.Visibility = state
+                except:
+                    pass

@@ -1,0 +1,545 @@
+# generate_all_previews.FCMacro
+#
+# Batch-generate preview images for all Quetzal insertion forms that support
+# the changeSize() preview mechanism.
+#
+# For each form the macro:
+#   1. Opens the form once.
+#   2. Iterates every rating, then every primary size, then (where applicable)
+#      every secondary size (branch, OD2, or port-2).
+#   3. Calls form.changeSize("") for each combination.  The base changeSize()
+#      skips any combination whose image file already exists on disk, so it is
+#      safe to re-run -- only missing images will be generated.
+#
+# Forms covered
+# -------------
+#   Simple (rating + size only):
+#     Pipe, Elbow, TerminalAdapter, Flange, Cap, Valve, Gasket, Beam,
+#     Outlet, Ubolt
+#
+#   With secondary size list:
+#     Tee        -- branch size via _branchList / fillBranch()
+#     Reduct     -- small-end size via OD2list / fillOD2()
+#     Coupling   -- port-1 size via _port2List / _fillPort2()
+#     Union      -- same form, toggled via _unionRad radio button
+#
+#   Skipped (changeSize suppressed with pass):
+#     PypeLine, Branch
+#
+# Usage
+# -----
+#   1. Open a FreeCAD document (needed to create temporary preview objects).
+#   2. Run this macro from the Macro menu.
+#   3. Progress is printed to the FreeCAD Report View.
+#   4. Close the form manually when finished (the macro leaves it open).
+
+import os
+import FreeCAD
+import FreeCADGui
+from PySide.QtWidgets import QApplication
+
+
+# ---------------------------------------------------------------------------
+# Shared helpers
+# ---------------------------------------------------------------------------
+
+def _pump():
+    """Pump the Qt event loop so the 3D view can render between captures."""
+    QApplication.processEvents()
+
+
+def _set_combo(combo, text):
+    """Set a QComboBox to the entry matching text exactly.
+    Returns True on success."""
+    idx = combo.findText(text)
+    if idx < 0:
+        return False
+    combo.setCurrentIndex(idx)
+    return True
+
+
+def _find_quetzal_dir():
+    """Return the path to the quetzal workbench Mod directory, or None."""
+    for root in (
+        os.path.join(FreeCAD.getUserAppDataDir(), "Mod"),
+        os.path.join(FreeCAD.getResourceDir(),    "Mod"),
+    ):
+        candidate = os.path.join(root, "quetzal")
+        if os.path.isdir(candidate):
+            return candidate
+    return None
+
+
+def _ratings_for_ptype(tablez_dir, ptype):
+    """Return a sorted list of rating strings for files named <ptype>_*.csv."""
+    prefix = ptype + "_"
+    return sorted(
+        f[len(prefix):-len(".csv")]
+        for f in os.listdir(tablez_dir)
+        if f.startswith(prefix) and f.endswith(".csv")
+    )
+
+
+def _is_cached(form, rating, size_stem):
+    """Return True if the preview image for <rating><size_stem>.png exists."""
+    preview_dir   = os.path.join(form.previewSectionsPath, form.PType)
+    canonical_stem = rating + size_stem
+    canonical_path = os.path.join(preview_dir, canonical_stem + ".png")
+    if os.path.exists(canonical_path):
+        return True
+    try:
+        for fname in os.listdir(preview_dir):
+            if fname.endswith(".png") and fname[:-4] == canonical_stem:
+                return True
+    except OSError:
+        pass
+    return False
+
+
+def _trigger(form, rating, size_stem, label):
+    """Call form.changeSize("") and log the result."""
+    if _is_cached(form, rating, size_stem):
+        FreeCAD.Console.PrintMessage("  [SKIP]     %s\n" % label)
+        return "skip"
+    FreeCAD.Console.PrintMessage("  [GENERATE] %s\n" % label)
+    try:
+        form.changeSize("")
+        _pump()
+        return "generated"
+    except Exception as exc:
+        FreeCAD.Console.PrintError("  [ERROR]    %s -- %s\n" % (label, exc))
+        return "error"
+
+
+def _log_header(form_name):
+    FreeCAD.Console.PrintMessage(
+        "\n=== %s ===\n" % form_name
+    )
+
+
+def _close_form(form):
+    """Close a form quietly."""
+    try:
+        form.close()
+    except Exception:
+        pass
+
+
+# ---------------------------------------------------------------------------
+# Counter helper
+# ---------------------------------------------------------------------------
+
+class _Counter:
+    def __init__(self):
+        self.generated = 0
+        self.skipped   = 0
+        self.errors    = 0
+        self.total     = 0
+
+    def record(self, result):
+        self.total += 1
+        if result == "generated":
+            self.generated += 1
+        elif result == "skip":
+            self.skipped += 1
+        else:
+            self.errors += 1
+
+    def report(self):
+        FreeCAD.Console.PrintMessage(
+            "  Total: %d  Generated: %d  Skipped: %d  Errors: %d\n"
+            % (self.total, self.generated, self.skipped, self.errors)
+        )
+
+
+# ---------------------------------------------------------------------------
+# Generic simple form runner  (rating -> size)
+# ---------------------------------------------------------------------------
+
+def _run_simple(form_class, form_name, tablez_dir):
+    """Open a simple form and iterate every rating/size combination."""
+    _log_header(form_name)
+    c = _Counter()
+
+    import pForms
+    form = getattr(pForms, form_class)()
+    _pump()
+
+    ptype   = form.PType
+    ratings = _ratings_for_ptype(tablez_dir, ptype)
+
+    if not ratings:
+        FreeCAD.Console.PrintWarning("  No CSV files for PType '%s' -- skipping\n" % ptype)
+        _close_form(form)
+        return c
+
+    for rating in ratings:
+        if not _set_combo(form.ratingList, rating):
+            FreeCAD.Console.PrintWarning("  Rating '%s' not in list -- skipping\n" % rating)
+            continue
+        _pump()
+
+        n = form.sizeList.count()
+        for size_idx in range(n):
+            # Read the raw DN PSize for the filename stem
+            if (hasattr(form, "_uniqueSizeList")
+                    and size_idx < len(form._uniqueSizeList)):
+                dn_psize = form._uniqueSizeList[size_idx]
+            elif size_idx < len(form.pipeDictList):
+                dn_psize = form.pipeDictList[size_idx].get("PSize", str(size_idx))
+            else:
+                dn_psize = str(size_idx)
+
+            # Set sizeList with signals blocked so changeSize fires only once
+            # when we call it explicitly.
+            form.sizeList.blockSignals(True)
+            form.sizeList.setCurrentIndex(size_idx)
+            form.sizeList.blockSignals(False)
+
+            label = "%s / %s / %s" % (form_name, rating, dn_psize)
+            c.record(_trigger(form, rating, dn_psize, label))
+
+    _close_form(form)
+    c.report()
+    return c
+
+
+# ---------------------------------------------------------------------------
+# Tee form runner  (rating -> run size -> branch size)
+# ---------------------------------------------------------------------------
+
+def _run_tee(tablez_dir):
+    _log_header("insertTeeForm")
+    c = _Counter()
+
+    import pForms
+    form = pForms.insertTeeForm()
+    _pump()
+
+    ratings = _ratings_for_ptype(tablez_dir, "Tee")
+    if not ratings:
+        FreeCAD.Console.PrintWarning("  No Tee_*.csv files -- skipping\n")
+        _close_form(form)
+        return c
+
+    for rating in ratings:
+        if not _set_combo(form.ratingList, rating):
+            FreeCAD.Console.PrintWarning("  Rating '%s' not in list -- skipping\n" % rating)
+            continue
+        _pump()
+
+        n_sizes = form.sizeList.count()
+        for size_idx in range(n_sizes):
+            run_psize = (form._uniqueSizeList[size_idx]
+                         if hasattr(form, "_uniqueSizeList")
+                            and size_idx < len(form._uniqueSizeList)
+                         else str(size_idx))
+
+            form.sizeList.blockSignals(True)
+            form.sizeList.setCurrentIndex(size_idx)
+            form.sizeList.blockSignals(False)
+            form.fillBranch()
+            _pump()
+
+            n_branches = form._branchList.count()
+            for branch_idx in range(n_branches):
+                form._branchList.blockSignals(True)
+                form._branchList.setCurrentRow(branch_idx)
+                form._branchList.blockSignals(False)
+
+                branch_psize = ""
+                if (hasattr(form, "_branchDictList")
+                        and branch_idx < len(form._branchDictList)):
+                    branch_psize = form._branchDictList[branch_idx].get(
+                        "PSizeBranch", str(branch_idx))
+
+                size_stem = run_psize + ("x" + branch_psize if branch_psize else "")
+                label     = "Tee / %s / %s / %s" % (rating, run_psize, branch_psize)
+                c.record(_trigger(form, rating, size_stem, label))
+
+    _close_form(form)
+    c.report()
+    return c
+
+
+# ---------------------------------------------------------------------------
+# Reduct form runner  (rating -> run size -> OD2 index)
+# ---------------------------------------------------------------------------
+
+def _run_reduct(tablez_dir):
+    _log_header("insertReductForm")
+    c = _Counter()
+
+    import pForms
+    form = pForms.insertReductForm()
+    _pump()
+
+    ratings = _ratings_for_ptype(tablez_dir, "Reduct")
+    if not ratings:
+        FreeCAD.Console.PrintWarning("  No Reduct_*.csv files -- skipping\n")
+        _close_form(form)
+        return c
+
+    for rating in ratings:
+        # insertReductForm uses changeRating2 connected to ratingList, so
+        # setting the combo triggers fillSizes() + fillOD2() automatically.
+        if not _set_combo(form.ratingList, rating):
+            FreeCAD.Console.PrintWarning("  Rating '%s' not in list -- skipping\n" % rating)
+            continue
+        _pump()
+
+        n_sizes = form.sizeList.count()
+        for size_idx in range(n_sizes):
+            run_psize = (form.pipeDictList[size_idx].get("PSize", str(size_idx))
+                         if size_idx < len(form.pipeDictList) else str(size_idx))
+
+            form.sizeList.blockSignals(True)
+            form.sizeList.setCurrentIndex(size_idx)
+            form.sizeList.blockSignals(False)
+            form.fillOD2()
+            _pump()
+
+            n_od2 = form.OD2list.count()
+            for od2_idx in range(n_od2):
+                form.OD2list.blockSignals(True)
+                form.OD2list.setCurrentRow(od2_idx)
+                form.OD2list.blockSignals(False)
+
+                psize2 = ""
+                if (hasattr(form, "_psize2_raw")
+                        and od2_idx < len(form._psize2_raw)):
+                    psize2 = form._psize2_raw[od2_idx]
+
+                size_stem = run_psize + ("x" + psize2 if psize2 else "")
+                label     = "Reduct / %s / %s / %s" % (rating, run_psize, psize2)
+                c.record(_trigger(form, rating, size_stem, label))
+
+    _close_form(form)
+    c.report()
+    return c
+
+
+# ---------------------------------------------------------------------------
+# CouplingUnion form runner  (Coupling mode then Union mode)
+# ---------------------------------------------------------------------------
+
+def _run_coupling_union(tablez_dir):
+    _log_header("insertCouplingUnionForm")
+    c = _Counter()
+
+    import pForms
+    form = pForms.insertCouplingUnionForm()
+    _pump()
+
+    # -- Coupling mode --------------------------------------------------------
+    FreeCAD.Console.PrintMessage("  -- Coupling mode --\n")
+    form._couplingRad.setChecked(True)
+    form._onModeChange()
+    _pump()
+
+    coup_ratings = _ratings_for_ptype(tablez_dir, "Coupling")
+    for rating in coup_ratings:
+        if not _set_combo(form.ratingList, rating):
+            FreeCAD.Console.PrintWarning("  Rating '%s' not in list -- skipping\n" % rating)
+            continue
+        _pump()
+
+        n_sizes = form.sizeList.count()
+        for size_idx in range(n_sizes):
+            run_psize = (form._uniqueSizeList[size_idx]
+                         if hasattr(form, "_uniqueSizeList")
+                            and size_idx < len(form._uniqueSizeList)
+                         else str(size_idx))
+
+            form.sizeList.blockSignals(True)
+            form.sizeList.setCurrentIndex(size_idx)
+            form.sizeList.blockSignals(False)
+            form._fillPort2()
+            _pump()
+
+            n_port2 = form._port2List.count()
+            for p2_idx in range(n_port2):
+                form._port2List.blockSignals(True)
+                form._port2List.setCurrentRow(p2_idx)
+                form._port2List.blockSignals(False)
+
+                psize2 = ""
+                if (hasattr(form, "_port2DictList")
+                        and p2_idx < len(form._port2DictList)):
+                    psize2 = form._port2DictList[p2_idx].get("PSize2", str(p2_idx))
+
+                size_stem = run_psize + ("x" + psize2 if psize2 else "")
+                label     = "Coupling / %s / %s / %s" % (rating, run_psize, psize2)
+                c.record(_trigger(form, rating, size_stem, label))
+
+    # -- Union mode -----------------------------------------------------------
+    FreeCAD.Console.PrintMessage("  -- Union mode --\n")
+    form._unionRad.setChecked(True)
+    form._onModeChange()
+    _pump()
+
+    # After _onModeChange, form.PType == "Union"; the ratingList is now
+    # populated with Union_*.csv ratings.
+    union_ratings = _ratings_for_ptype(tablez_dir, "Union")
+    for rating in union_ratings:
+        if not _set_combo(form.ratingList, rating):
+            FreeCAD.Console.PrintWarning("  Rating '%s' not in list -- skipping\n" % rating)
+            continue
+        _pump()
+
+        n_sizes = form.sizeList.count()
+        for size_idx in range(n_sizes):
+            run_psize = (form._uniqueSizeList[size_idx]
+                         if hasattr(form, "_uniqueSizeList")
+                            and size_idx < len(form._uniqueSizeList)
+                         else (form.pipeDictList[size_idx].get("PSize", str(size_idx))
+                               if size_idx < len(form.pipeDictList) else str(size_idx)))
+
+            form.sizeList.blockSignals(True)
+            form.sizeList.setCurrentIndex(size_idx)
+            form.sizeList.blockSignals(False)
+
+            label = "Union / %s / %s" % (rating, run_psize)
+            c.record(_trigger(form, rating, run_psize, label))
+
+    _close_form(form)
+    c.report()
+    return c
+
+
+# ---------------------------------------------------------------------------
+# Outlet form runner  -- two angle passes (0 deg and 45 deg)
+# ---------------------------------------------------------------------------
+
+def _run_outlet(tablez_dir):
+    _log_header("insertOutletForm")
+    c = _Counter()
+
+    import pForms
+    form = pForms.insertOutletForm()
+    _pump()
+
+    ratings = _ratings_for_ptype(tablez_dir, "Outlet")
+    if not ratings:
+        FreeCAD.Console.PrintWarning("  No Outlet_*.csv files -- skipping\n")
+        _close_form(form)
+        return c
+
+    for ang_label, radio in (("straight", form._radioStr), ("lateral45", form._radioLat)):
+        FreeCAD.Console.PrintMessage("  -- Angle: %s --\n" % ang_label)
+        radio.setChecked(True)
+        form._onAngChanged()
+        _pump()
+
+        for rating in ratings:
+            if not _set_combo(form.ratingList, rating):
+                FreeCAD.Console.PrintWarning(
+                    "  Rating '%s' not in list -- skipping\n" % rating)
+                continue
+            _pump()
+
+            n = form.sizeList.count()
+            for size_idx in range(n):
+                dn_psize = (form.pipeDictList[size_idx].get("PSize", str(size_idx))
+                            if size_idx < len(form.pipeDictList) else str(size_idx))
+
+                form.sizeList.blockSignals(True)
+                form.sizeList.setCurrentIndex(size_idx)
+                form.sizeList.blockSignals(False)
+
+                # Outlet changeSize() uses form.PType = "Outlet" but the
+                # canonical filename stem needs to distinguish straight from
+                # lateral.  The CSV rows already carry Ang=0/45, so the PSize
+                # column is sufficient to make filenames unique within each
+                # angle pass as long as the rating is also included.
+                # The base changeSize() builds: <rating><PSize><Ang_suffix>.png
+                # -- but the Ang column is not appended by the base logic.
+                # Use a pseudo-rating that embeds the angle so the two passes
+                # stay in separate files: "<rating>_Ang<ang>".
+                # Override fullimagepath directly so capturePreviewProfile()
+                # writes to the right file.
+                ang_val  = str(form._angFilter)
+                stem     = rating + "_Ang" + ang_val + dn_psize
+                label    = "Outlet / %s / Ang%s / %s" % (rating, ang_val, dn_psize)
+                c.record(_trigger(form, rating + "_Ang" + ang_val, dn_psize, label))
+
+    _close_form(form)
+    c.report()
+    return c
+
+
+# ---------------------------------------------------------------------------
+# Master runner
+# ---------------------------------------------------------------------------
+
+def generate_all_previews():
+    quetzal_dir = _find_quetzal_dir()
+    if quetzal_dir is None:
+        FreeCAD.Console.PrintError(
+            "generate_all_previews: cannot locate the quetzal Mod directory.\n"
+        )
+        return
+
+    tablez_dir = os.path.join(quetzal_dir, "tablez")
+    if not os.path.isdir(tablez_dir):
+        FreeCAD.Console.PrintError(
+            "generate_all_previews: tablez directory not found at: %s\n" % tablez_dir
+        )
+        return
+
+    FreeCAD.Console.PrintMessage(
+        "generate_all_previews: tablez = %s\n" % tablez_dir
+    )
+
+    grand = _Counter()
+
+    def _merge(sub):
+        grand.generated += sub.generated
+        grand.skipped   += sub.skipped
+        grand.errors    += sub.errors
+        grand.total     += sub.total
+
+    # -- Simple forms ---------------------------------------------------------
+    # Each entry: (form_class_name_string, descriptive_label)
+    # PypeLine and Branch are intentionally omitted -- changeSize is a no-op.
+    simple_forms = [
+        ("insertPipeForm",             "Pipe"),
+        ("insertElbowForm",            "Elbow"),
+        ("insertTerminalAdapterForm",  "TerminalAdapter"),
+        ("insertFlangeForm",           "Flange"),
+        ("insertCapForm",              "Cap"),
+        ("insertValveForm",            "Valve"),
+        ("insertGasketForm",           "Gasket"),
+        ("insertBeamForm",             "Beam"),
+        ("insertUboltForm",            "Ubolt"),
+    ]
+    for cls_name, label in simple_forms:
+        _merge(_run_simple(cls_name, label, tablez_dir))
+
+    # -- Forms with secondary size lists -------------------------------------
+    _merge(_run_tee(tablez_dir))
+    _merge(_run_reduct(tablez_dir))
+    _merge(_run_coupling_union(tablez_dir))
+
+    # -- Outlet (two angle passes) -------------------------------------------
+    _merge(_run_outlet(tablez_dir))
+
+    # -- Grand total ---------------------------------------------------------
+    FreeCAD.Console.PrintMessage(
+        "\n=== GRAND TOTAL ===\n"
+        "  Total: %d  Generated: %d  Skipped: %d  Errors: %d\n"
+        % (grand.total, grand.generated, grand.skipped, grand.errors)
+    )
+
+
+# ---------------------------------------------------------------------------
+# Entry point
+# ---------------------------------------------------------------------------
+
+if FreeCAD.ActiveDocument is None:
+    FreeCAD.newDocument("PreviewTemp")
+    FreeCAD.Console.PrintMessage(
+        "generate_all_previews: created temporary document 'PreviewTemp'.\n"
+    )
+
+generate_all_previews()
