@@ -1005,8 +1005,8 @@ def doElbow(rating="SCH-STD", propList=["DN50", 60.3, 3, 90, 45.225], pypeline=N
 
 def makeFlange(propList=[], pos=None, Z=None, doOffset=None, rating="DIN-PN16", fclass=""):
     """Adds a Flange object
-    makeFlange(propList,pos,Z);
-      propList is one optional list with 8 elements:
+        makeFlange(propList,pos,Z);
+        propList is one optional list with 8 elements:
         DN (string): nominal diameter
         FlangeType (string): type of Flange
         D (float): flange diameter
@@ -1020,12 +1020,12 @@ def makeFlange(propList=[], pos=None, Z=None, doOffset=None, rating="DIN-PN16", 
         twn (float): welding-neck thickness - OPTIONAL -
         dwn (float): welding-neck diameter - OPTIONAL -
         ODp (float): outside diameter of pipe for wn flanges - OPTIONAL -
-      Default is "DN50 (PN16)"
-      pos (vector): position of insertion; default = 0,0,0
-      Z (vector): orientation: default = 0,0,1
-      R Flange fillet radius
-      T1 Overall flange thickness
-      Y Socket depth
+        Default is "DN50 (PN16)"
+        pos (vector): position of insertion; default = 0,0,0
+        Z (vector): orientation: default = 0,0,1
+        R Flange fillet radius
+        T1 Overall flange thickness
+        Y Socket depth
 
     Remember: property PRating must be defined afterwards
     """
