@@ -1047,6 +1047,19 @@ class insertTeeForm(dodoDialogs.protoPypeForm):
     def changeSize(self, s):
         super().changeSize(s)
 
+    def _previewReady(self):
+        """Preview requires a grade, a run size, and a branch size."""
+        if not super()._previewReady():
+            return False
+        if not hasattr(self, "_branchList"):
+            return False
+        if self._branchList.currentRow() < 0:
+            return False
+        if not hasattr(self, "_branchDictList") or not self._branchDictList:
+            return False
+        return True
+
+
 class insertTerminalAdapterForm(dodoDialogs.protoPypeForm):
     """
     Dialog to insert adapter.
@@ -1860,6 +1873,18 @@ class insertReductForm(dodoDialogs.protoPypeForm):
 
     def changeSize(self, s):
         super().changeSize(s)
+
+    def _previewReady(self):
+        """Preview requires a grade, a primary (large end) size, and an OD2 selection."""
+        if not super()._previewReady():
+            return False
+        if not hasattr(self, "OD2list"):
+            return False
+        if self.OD2list.currentRow() < 0:
+            return False
+        if not hasattr(self, "_od2_raw") or not self._od2_raw:
+            return False
+        return True
 
 class insertUboltForm(dodoDialogs.protoPypeForm):
     """
@@ -4548,3 +4573,19 @@ class insertCouplingUnionForm(dodoDialogs.protoPypeForm):
 
     def changeSize(self, s):
         super().changeSize(s)
+
+    def _previewReady(self):
+        """Preview requires a grade and size; coupling mode also needs a port-2 selection."""
+        if not super()._previewReady():
+            return False
+        # Union mode: only grade + primary size are needed.
+        if not self._isCoupling():
+            return True
+        # Coupling mode: also requires a port-1 (secondary) size selection.
+        if not hasattr(self, "_port2List"):
+            return False
+        if self._port2List.currentRow() < 0:
+            return False
+        if not hasattr(self, "_port2DictList") or not self._port2DictList:
+            return False
+        return True

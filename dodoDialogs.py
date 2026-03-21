@@ -362,6 +362,24 @@ class protoPypeForm(QDialog):
         pass
 
 
+    def _previewReady(self):
+        """Return True when enough selections have been made to generate a preview.
+
+        The base implementation requires that both the rating list and the size
+        list have a valid (>= 0) current index.  Forms that also require a
+        secondary size selection (branch, OD2, port-2) override this method to
+        additionally check their secondary list.
+
+        changeSize() calls this guard before doing any cache lookup or
+        image-generation work, so a partially-configured form never triggers
+        an accidental insert().
+        """
+        if self.ratingList.currentIndex() < 0:
+            return False
+        if self.sizeList.currentIndex() < 0:
+            return False
+        return True
+
     def _setSizeSystem(self, system):
         """Toggle the DN/NPS display on the size list without saving to prefs."""
         _ss_active   = "font-weight:bold; text-decoration:underline;"
@@ -384,6 +402,15 @@ class protoPypeForm(QDialog):
     def changeSize(self, s):
         from os import makedirs, listdir
         from os.path import join
+
+        # Do not attempt a cache lookup or image generation until the form has
+        # a complete selection (grade + size, and secondary size if applicable).
+        # An incomplete selection fires this signal during list population and
+        # would otherwise call self.insert(), creating and then deleting a
+        # document object -- potentially destroying the user's work.
+        if not self._previewReady():
+            self.labImage.clear()
+            return
 
         idx = self.sizeList.currentIndex()
         # Always use the raw DN PSize for the filename, never the display label
