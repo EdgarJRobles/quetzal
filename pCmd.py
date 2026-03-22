@@ -44,6 +44,7 @@ def readTable(fileName="Pipe_SCH-STD.csv"):
     f.close()
     return table
 
+
 def shapeReferenceAxis(obj=None, axObj=None):
     # function to get the reference axis of the shape for rotateTheTubeAx()
     # used in rotateTheTubeEdge() and pipeForms.rotateForm().getAxis()
@@ -67,9 +68,11 @@ def shapeReferenceAxis(obj=None, axObj=None):
     axShapeRef = FreeCAD.Vector(X, Y, Z)
     return axShapeRef
 
+
 def isPipe(obj):
     "True if obj is a tube"
     return hasattr(obj, "PType") and obj.PType == "Pipe"
+
 
 def isElbow(obj):
     "True if obj is an elbow"
@@ -78,6 +81,7 @@ def isElbow(obj):
 def isTee(obj):
     "True if obj is a Tee"
     return hasattr(obj, "PType") and obj.PType == "Tee"
+
 
 def moveToPyLi(obj, plName):
     """
@@ -93,6 +97,7 @@ def moveToPyLi(obj, plName):
             for e in [FreeCAD.ActiveDocument.getObject(name) for name in obj.Tubes + obj.Curves]:
                 e.ViewObject.ShapeColor = pl.ViewObject.ShapeColor
 
+
 def portsPos(o):
     """
     portsPos(o)
@@ -100,6 +105,7 @@ def portsPos(o):
     """
     if hasattr(o, "Ports") and hasattr(o, "Placement"):
         return [rounded(o.Placement.multVec(p)) for p in o.Ports]
+
 
 def portsDir(o):
     """
@@ -155,206 +161,402 @@ def portsDir(o):
 
 def getSelectedPortDimensions():
     """
-    Determine the OD and thickness of the selected port.
-    Returns (OD, thk, PRating, PSize) or (None, None, None, None) if cannot determine.
-    
-    For objects with multiple port sizes (Tee, Reduct), determines which port
-    is closest to the selected edge/vertex to get the correct dimensions.
-    
-    This is a helper function for form auto-selection features.
+    Determine the port dimensions of the selected object.
+    Returns (OD, thk, PRating, PSize).
+
+    OD and thk are set to None for objects whose connection type is SW or TH
+    (socket-weld or threaded), because their OD does not correspond to the
+    connecting pipe OD and OD-based matching would produce wrong results.
+    The affected types are:
+      - Outlet with EndType "SocketWeld" or "ThreadedEnd"
+      - SocketCap, SocketEll, SocketTee, SocketCoupling, SocketUnion
+        (Conn property is always SW or TH)
+      - Valve with Conn SW or TH
+      - Flange with FlangeType BL, SW, SO, or LJ
+
+    For objects with multiple port sizes (Tee, Reduct), the port closest to
+    the selected sub-object is used.
+
+    Returns (None, None, None, None) when no suitable object is selected.
     """
+    # Flange types that have no pipe-matching OD
+    _NO_OD_FLANGE_TYPES = {"BL", "SW", "SO", "LJ"}
+    # EndType strings for Outlet SW/TH variants
+    _SW_TH_END_TYPES = {"SocketWeld", "ThreadedEnd", "SW", "TH"}
+
+    def _closest_port(obj, sx):
+        """Return the index of the port closest to the selected sub-object,
+        or None when the port cannot be determined."""
+        if not (hasattr(obj, "Ports") and obj.Ports):
+            return None
+        if not sx.SubObjects:
+            return None
+        sub = sx.SubObjects[0]
+        if hasattr(sub, "CenterOfMass"):
+            pt = sub.CenterOfMass
+        elif hasattr(sub, "Point"):
+            pt = sub.Point
+        else:
+            return None
+        best_i, best_d = 0, float("inf")
+        for i, port in enumerate(obj.Ports):
+            d = (obj.Placement.multVec(port) - pt).Length
+            if d < best_d:
+                best_d = d
+                best_i = i
+        return best_i
+
     selex = FreeCADGui.Selection.getSelectionEx()
     if not selex:
         return None, None, None, None
-    
+
     for sx in selex:
         obj = sx.Object
         if not hasattr(obj, "PType"):
             continue
-        
-        # Get object properties
-        ptype = obj.PType
-        
-        # For objects with uniform port sizes (Pipe, Elbow, Flange, Cap, Valve)
-        if ptype in ["Pipe", "Elbow", "Flange", "Cap", "Valve"]:
-            if hasattr(obj, "OD") and hasattr(obj, "thk") and hasattr(obj, "PRating") and hasattr(obj, "PSize"):
-                return float(obj.OD), float(obj.thk), obj.PRating, obj.PSize
-        
-        # For Tee: has run and branch with potentially different sizes
-        elif ptype == "Tee":
+        ptype  = obj.PType
+        psize  = obj.PSize  if hasattr(obj, "PSize")   else None
+        rating = obj.PRating if hasattr(obj, "PRating") else None
+
+        # ── Outlet ────────────────────────────────────────────────────────
+        if ptype == "Outlet":
+            end_type = obj.EndType if hasattr(obj, "EndType") else "ButtWeld"
+            if end_type in _SW_TH_END_TYPES:
+                # SW/TH outlet: PRating won't match pipe ratings; only PSize
+                # is useful (for PSize matching after a rating is selected).
+                return None, None, None, psize
+            # BW outlet: full match -- OD, thk, PRating, and PSize all valid
+            od  = float(obj.OD)  if hasattr(obj, "OD")  else None
+            thk = float(obj.thk) if hasattr(obj, "thk") else None
+            return od, thk, rating, psize
+
+        # ── Socket/threaded fittings: Conn is always SW or TH ─────────────
+        if ptype in ("SocketCap", "SocketEll", "SocketTee",
+                     "SocketCoupling", "SocketUnion"):
+            return None, None, None, psize
+
+        # ── Valve: suppress OD when SW or TH ──────────────────────────────
+        if ptype == "Valve":
+            conn = obj.Conn if hasattr(obj, "Conn") else ""
+            if conn.upper() in ("SW", "TH"):
+                return None, None, rating, psize
+            od  = float(obj.OD)  if hasattr(obj, "OD")  else None
+            thk = float(obj.thk) if hasattr(obj, "thk") else None
+            return od, thk, rating, psize
+
+        # ── Flange: suppress OD for non-pipe-neck types ────────────────────
+        if ptype == "Flange":
+            ftype = obj.FlangeType if hasattr(obj, "FlangeType") else ""
+            if ftype in _NO_OD_FLANGE_TYPES:
+                return None, None, rating, psize
+            od  = float(obj.OD)  if hasattr(obj, "OD")  else None
+            thk = float(obj.thk) if hasattr(obj, "thk") else None
+            return od, thk, rating, psize
+
+        # ── Pipe, Elbow, Cap: single uniform port size ─────────────────────
+        if ptype in ("Pipe", "Elbow", "Cap"):
+            od  = float(obj.OD)  if hasattr(obj, "OD")  else None
+            thk = float(obj.thk) if hasattr(obj, "thk") else None
+            return od, thk, rating, psize
+
+        # ── Tee: run ports share OD/thk; branch port uses OD2/thk2 ─────────
+        if ptype == "Tee":
             if not (hasattr(obj, "Ports") and len(obj.Ports) >= 3):
                 continue
-            
-            # Determine which port is selected based on proximity
-            selectedPort = None
-            if sx.SubObjects:
-                subObj = sx.SubObjects[0]
-                if hasattr(subObj, "CenterOfMass"):
-                    selectionPoint = subObj.CenterOfMass
-                elif hasattr(subObj, "Point"):
-                    selectionPoint = subObj.Point
-                else:
-                    selectionPoint = None
-                
-                if selectionPoint:
-                    # Find closest port
-                    minDist = float('inf')
-                    for i, port in enumerate(obj.Ports):
-                        portWorldPos = obj.Placement.multVec(port)
-                        dist = (portWorldPos - selectionPoint).Length
-                        if dist < minDist:
-                            minDist = dist
-                            selectedPort = i
-            
-            # Port 2 is the branch, ports 0 and 1 are the run
-            if selectedPort == 2:
+            port_i = _closest_port(obj, sx)
+            if port_i == 2:
                 # Branch port
-                if hasattr(obj, "OD2") and hasattr(obj, "thk2"):
-                    return float(obj.OD2), float(obj.thk2), obj.PRating if hasattr(obj, "PRating") else None, obj.PSize if hasattr(obj, "PSize") else None
-            else:
-                # Run port (0 or 1, or default if couldn't determine)
-                if hasattr(obj, "OD") and hasattr(obj, "thk"):
-                    return float(obj.OD), float(obj.thk), obj.PRating if hasattr(obj, "PRating") else None, obj.PSize if hasattr(obj, "PSize") else None
-        
-        # For Reduct: port 0 is larger end, port 1 is smaller end
-        elif ptype == "Reduct":
+                branch_psize = (obj.PSizeBranch if hasattr(obj, "PSizeBranch")
+                                else psize)
+                od  = float(obj.OD2) if hasattr(obj, "OD2") else None
+                thk = float(obj.thk2) if hasattr(obj, "thk2") else None
+                return od, thk, rating, branch_psize
+            # Run port (0, 1, or undetermined)
+            od  = float(obj.OD)  if hasattr(obj, "OD")  else None
+            thk = float(obj.thk) if hasattr(obj, "thk") else None
+            return od, thk, rating, psize
+
+        # ── Reduct: port 0 = large end (OD/PSize), port 1 = small end ───────
+        if ptype == "Reduct":
             if not (hasattr(obj, "Ports") and len(obj.Ports) >= 2):
                 continue
-            
-            # Determine which port is selected
-            selectedPort = None
-            if sx.SubObjects:
-                subObj = sx.SubObjects[0]
-                if hasattr(subObj, "CenterOfMass"):
-                    selectionPoint = subObj.CenterOfMass
-                elif hasattr(subObj, "Point"):
-                    selectionPoint = subObj.Point
-                else:
-                    selectionPoint = None
-                
-                if selectionPoint:
-                    # Find closest port
-                    minDist = float('inf')
-                    for i, port in enumerate(obj.Ports):
-                        portWorldPos = obj.Placement.multVec(port)
-                        dist = (portWorldPos - selectionPoint).Length
-                        if dist < minDist:
-                            minDist = dist
-                            selectedPort = i
-            
-            # Port 0 is larger end (OD), port 1 is smaller end (OD2)
-            if selectedPort == 1:
-                # Smaller end
-                if hasattr(obj, "OD2") and hasattr(obj, "thk2"):
-                    return float(obj.OD2), float(obj.thk2), obj.PRating if hasattr(obj, "PRating") else None, obj.PSize if hasattr(obj, "PSize") else None
-            else:
-                # Larger end (0 or default)
-                if hasattr(obj, "OD") and hasattr(obj, "thk"):
-                    return float(obj.OD), float(obj.thk), obj.PRating if hasattr(obj, "PRating") else None, obj.PSize if hasattr(obj, "PSize") else None
-    
+            port_i = _closest_port(obj, sx)
+            if port_i == 1:
+                psize2 = (obj.PSize2 if hasattr(obj, "PSize2") else psize)
+                od  = float(obj.OD2) if hasattr(obj, "OD2") else None
+                thk = float(obj.thk2) if hasattr(obj, "thk2") else None
+                return od, thk, rating, psize2
+            od  = float(obj.OD)  if hasattr(obj, "OD")  else None
+            thk = float(obj.thk) if hasattr(obj, "thk") else None
+            return od, thk, rating, psize
+
     return None, None, None, None
 
-def autoSelectInPipeForm(form):
+
+# ---------------------------------------------------------------------------
+# Equivalent schedule table.
+# Maps PSize -> {numbered_schedule: suffix_string} where suffix_string is
+# "STD", "XS", or "XXS" when that numbered schedule is identical to the
+# named schedule for that pipe size.  A missing entry means no equivalence.
+# ---------------------------------------------------------------------------
+EQUIV_SCHEDULE = {
+    "DN6":   {40: "STD", 80: "XS"},
+    "DN8":   {40: "STD", 80: "XS"},
+    "DN10":  {40: "STD", 80: "XS"},
+    "DN15":  {40: "STD", 80: "XS"},
+    "DN20":  {40: "STD", 80: "XS"},
+    "DN25":  {40: "STD", 80: "XS"},
+    "DN32":  {40: "STD", 80: "XS"},
+    "DN40":  {40: "STD", 80: "XS"},
+    "DN50":  {40: "STD", 80: "XS"},
+    "DN65":  {40: "STD", 80: "XS"},
+    "DN80":  {40: "STD", 80: "XS"},
+    "DN90":  {40: "STD", 80: "XS"},
+    "DN100": {40: "STD", 80: "XS"},
+    "DN125": {40: "STD", 80: "XS"},
+    "DN150": {40: "STD", 80: "XS"},
+    "DN200": {40: "STD", 80: "XS"},
+    "DN250": {30: "STD", 60: "XS", 140: "XXS"},
+    "DN300": {120: "XXS"},
+    "DN350": {30: "STD"},
+    "DN400": {30: "STD", 40: "XS"},
+    "DN500": {20: "STD", 30: "XS"},
+    "DN550": {20: "STD", 30: "XS"},
+    "DN600": {20: "STD"},
+}
+
+
+def findEquivRating(psize, rating, availRatings):
     """
-    Auto-select the size and rating in form lists based on selected object's port.
-    
-    Args:
-        form: The form object (must have ratingList, sizeList, pipeDictList, PRating, fillSizes())
-    
-    This is a helper function for form auto-selection features.
-    Works with any form that has the standard protoPypeForm structure.
+    Given a pipe size and a rating string not found in availRatings, check
+    whether an equivalent named schedule (SCH-STD, SCH-XS, SCH-XXS) is
+    available, or vice versa.
+
+    psize      : string, e.g. "DN50"
+    rating     : string, e.g. "SCH-40" or "SCH-STD"
+    availRatings: list of rating strings present in the form's ratingList
+
+    Returns the matching rating string from availRatings, or None.
+    """
+    if rating in availRatings:
+        return rating  # Already available -- no lookup needed
+
+    size_map = EQUIV_SCHEDULE.get(psize, {})
+
+    # Case 1: rating is a numbered schedule (e.g. "SCH-40")
+    # Check if it maps to a named schedule in availRatings.
+    if rating.startswith("SCH-"):
+        suffix = rating[4:]  # e.g. "40"
+        try:
+            num = int(suffix)
+            named = size_map.get(num)  # e.g. "STD"
+            if named:
+                candidate = "SCH-" + named
+                if candidate in availRatings:
+                    return candidate
+        except ValueError:
+            pass
+
+        # Case 2: rating is a named schedule (e.g. "SCH-STD")
+        # Check if its equivalent numbered schedule is in availRatings.
+        named_upper = suffix.upper()  # "STD", "XS", or "XXS"
+        for num, equiv_named in size_map.items():
+            if equiv_named == named_upper:
+                candidate = "SCH-" + str(num)
+                if candidate in availRatings:
+                    return candidate
+
+    return None
+
+
+def _selectSizeByPSize(form, psize):
+    """
+    Select the row in form.sizeList whose PSize == psize.
+
+    Some forms (Tee, Coupling) show a DEDUPLICATED sizeList: the list widget
+    has fewer rows than pipeDictList because multiple CSV rows share the same
+    PSize.  Those forms must expose a list attribute named _uniqueSizeList
+    containing the PSize string for each sizeList row in order.  When that
+    attribute is present it is used directly; otherwise pipeDictList is
+    scanned and its row index is used (valid only when sizeList rows == pipeDictList rows).
+
+    Returns True if a match was found and selected.
+    """
+    if not psize or not hasattr(form, "sizeList"):
+        return False
+
+    # Prefer the explicit unique-index list when available
+    if hasattr(form, "_uniqueSizeList"):
+        try:
+            idx = form._uniqueSizeList.index(psize)
+            form.sizeList.setCurrentIndex(idx)
+            if hasattr(form, "fillOD2"):
+                form.fillOD2()
+            if hasattr(form, "fillBranch"):
+                form.fillBranch()
+            if hasattr(form, "_fillPort2"):
+                form._fillPort2()
+            return True
+        except ValueError:
+            return False
+
+    # Fallback: pipeDictList rows correspond 1-to-1 with sizeList rows
+    if not hasattr(form, "pipeDictList"):
+        return False
+    for i, row in enumerate(form.pipeDictList):
+        if row.get("PSize", "") == psize:
+            form.sizeList.setCurrentIndex(i)
+            if hasattr(form, "fillOD2"):
+                form.fillOD2()
+            if hasattr(form, "fillBranch"):
+                form.fillBranch()
+            return True
+    return False
+
+
+def _selectSizeByOD(form, OD, thk):
+    """
+    Select the sizeList row whose OD matches within 0.1 mm of OD.
+    Returns True immediately on the first near-exact match found.
+    Returns False if no row is within the tolerance.
+
+    For forms with a deduplicated sizeList (_uniqueSizeList), only the first
+    pipeDictList row for each unique PSize is examined, and the correct sizeList
+    index is obtained from _uniqueSizeList.
     """
     from FreeCAD import Units
     pq = Units.parseQuantity
+    OD_TOL = 0.1   # mm -- near-exact tolerance
+    if OD is None or not hasattr(form, "pipeDictList") or not hasattr(form, "sizeList"):
+        return False
 
+    def _apply(idx):
+        form.sizeList.setCurrentIndex(idx)
+        if hasattr(form, "fillOD2"):
+            form.fillOD2()
+        if hasattr(form, "fillBranch"):
+            form.fillBranch()
+        if hasattr(form, "_fillPort2"):
+            form._fillPort2()
+
+    if hasattr(form, "_uniqueSizeList"):
+        for uniq_idx, upsize in enumerate(form._uniqueSizeList):
+            for row in form.pipeDictList:
+                if row.get("PSize", "") == upsize:
+                    try:
+                        if abs(float(pq(row["OD"])) - OD) < OD_TOL:
+                            _apply(uniq_idx)
+                            return True
+                    except Exception:
+                        pass
+                    break   # Only check the first row for this PSize
+        return False
+
+    # Standard case: sizeList rows correspond 1-to-1 with pipeDictList rows
+    for i, row in enumerate(form.pipeDictList):
+        try:
+            if abs(float(pq(row["OD"])) - OD) < OD_TOL:
+                _apply(i)
+                return True
+        except Exception:
+            continue
+    return False
+
+
+def preserveSelectSizeByPSize(form, psize):
+    """
+    After a rating change has reloaded sizeList, try to reselect the row
+    whose PSize matches psize.  If not found, clear the selection.
+    Returns True if a match was found.
+    """
+    if not psize or not hasattr(form, "pipeDictList") or not hasattr(form, "sizeList"):
+        form.sizeList.setCurrentIndex(-1)
+        return False
+    found = _selectSizeByPSize(form, psize)
+    if not found:
+        form.sizeList.setCurrentIndex(-1)
+    return found
+
+
+def autoSelectInPipeForm(form):
+    """
+    Auto-select the rating and size in form lists based on the selected
+    object's port dimensions.
+
+    Matching order:
+      1. Exact rating match in ratingList.
+      2. Equivalent schedule lookup via EQUIV_SCHEDULE when no exact match.
+      3. Exact PSize match in sizeList after rating is set.
+      4. OD/thk fallback match in sizeList.
+
+    Works with any form that has the standard protoPypeForm structure.
+    """
     OD, thk, PRating, PSize = getSelectedPortDimensions()
-    
-    if OD is None:
-        return  # No valid selection, keep defaults
-    
-    # Try to select matching rating first
-    if PRating and hasattr(form, 'ratingList'):
-        # for i in range(form.ratingList.count()):
-        # if form.ratingList.item(i).text() == PRating:
-        indexres=form.ratingList.findData(PRating)
-        if  indexres!=-1:
-            form.ratingList.setCurrentRow(indexres)
-            form.PRating = PRating
-            if hasattr(form, 'fillSizes'):
-                form.fillSizes()
-            # break
-    
-    # Try to find matching size by OD and thk
-    if not hasattr(form, 'pipeDictList') or not hasattr(form, 'sizeList'):
+
+    if OD is None and PSize is None:
+        return  # No valid selection -- keep defaults
+
+    # ---- Resolve rating -------------------------------------------------
+    if PRating and hasattr(form, "ratingList"):
+        availRatings = [form.ratingList.itemText(i)
+                        for i in range(form.ratingList.count())]
+        # Try exact match first
+        matched_rating = PRating if PRating in availRatings else None
+        # Try equivalence lookup when PSize is known
+        if matched_rating is None and PSize:
+            matched_rating = findEquivRating(PSize, PRating, availRatings)
+        if matched_rating:
+            idx = form.ratingList.findText(matched_rating)
+            if idx >= 0:
+                form.ratingList.setCurrentIndex(idx)
+                form.PRating = matched_rating
+                if hasattr(form, "fillSizes"):
+                    form.fillSizes()
+
+    # ---- Resolve size ----------------------------------------------------
+    if not hasattr(form, "pipeDictList") or not hasattr(form, "sizeList"):
         return
 
-    # If we have PSize from selection, try exact PSize match first
-    if PSize:
-        for i, pipeDict in enumerate(form.pipeDictList):
-            # For Tees: prefer equal run/branch sizes (e.g., "DN50xDN50" over "DN50xDN40")
-            # Check if PSize contains "x" (indicating Tee or Reduct with two sizes)
-            dictPSize = pipeDict.get("PSize", "")
-            if "x" in dictPSize:
-                # Split to get run and branch sizes
-                parts = dictPSize.split("x")
-                if len(parts) == 2:
-                    runSize = parts[0]
-                    branchSize = parts[1]
-                    # Prefer straight tees: if detected PSize matches run, i.e. prefer DN50xDN50 over DN50xDN40. This won't find a match here for reducers, but it should find a match later by checking OD's
-                    if runSize == branchSize and runSize == PSize:
-                        form.sizeList.setCurrentIndex(i)
-                        if hasattr(form, 'fillOD2'):
-                            form.fillOD2()
-                        return  # Found equal run/branch
-            
-            # Also check for exact PSize match (including non-Tee items)
-            if dictPSize == PSize:
-                form.sizeList.setCurrentIndex(i)
-                if hasattr(form, 'fillOD2'):
-                    form.fillOD2()
-                return  # Found exact PSize match
-    
-    # Fallback: If no PSize match, try OD/thk matching with preference for equal OD/OD2
-    if OD is not None:
-        bestMatch = None
-        bestMatchScore = float('inf')
-        
-        for i, pipeDict in enumerate(form.pipeDictList):
-            try:
-                dictOD = float(pq(pipeDict["OD"]))
-                dictThk = float(pq(pipeDict["thk"]))
-                
-                # Check if this is a Tee/Reducer with OD2
-                hasOD2 = "OD2" in pipeDict
-                if hasOD2:
-                    dictOD2 = float(pq(pipeDict["OD2"]))
-                    # Prefer equal-size Tees: if OD matches and OD==OD2
-                    if abs(dictOD - OD) < 0.1 and abs(dictOD - dictOD2) < 0.1:
-                        # Straight tee
-                        score = 0.0  # Perfect match score
-                    else:
-                        # Calculate normal match score
-                        odDiff = abs(dictOD - OD)
-                        thkDiff = abs(dictThk - thk)
-                        score = odDiff * 10 + thkDiff
-                else:
-                    # other fittings - calculate match score
-                    odDiff = abs(dictOD - OD)
-                    thkDiff = abs(dictThk - thk)
-                    score = odDiff * 10 + thkDiff
-                
-                if score < bestMatchScore:
-                    bestMatchScore = score
-                    bestMatch = i
-            except:
-                continue
-        
-        # Select the best match if found
-        if bestMatch is not None and bestMatchScore < 5.0:  # Reasonable tolerance
-            form.sizeList.setCurrentIndex(bestMatch)
-            # Call form-specific update if it exists
-            if hasattr(form, 'fillOD2'):
-                form.fillOD2()
+    # Exact PSize match takes priority
+    if PSize and _selectSizeByPSize(form, PSize):
+        return
+
+    # OD/thk fallback
+    _selectSizeByOD(form, OD, thk)
+
+
+def autoSelectGasketForm(form):
+    """
+    Auto-select FClass (rating) and PSize for insertGasketForm.
+    Matches only when a Flange object is selected.
+    If no Flange is selected, make no default selection.
+    """
+    selex = FreeCADGui.Selection.getSelectionEx()
+    if not selex:
+        return
+
+    for sx in selex:
+        obj = sx.Object
+        if not hasattr(obj, "PType"):
+            continue
+        if obj.PType != "Flange":
+            # Non-Flange object selected -- make no default selection
+            return
+        # Flange found -- match on FClass and PSize
+        fclass = obj.FClass if hasattr(obj, "FClass") else None
+        psize  = obj.PSize  if hasattr(obj, "PSize")  else None
+
+        if fclass and hasattr(form, "ratingList"):
+            idx = form.ratingList.findText(fclass)
+            if idx >= 0:
+                form.ratingList.setCurrentIndex(idx)
+                form.PRating = fclass
+                if hasattr(form, "fillSizes"):
+                    form.fillSizes()
+
+        if psize and hasattr(form, "pipeDictList") and hasattr(form, "sizeList"):
+            _selectSizeByPSize(form, psize)
+        return  # Only process the first ported object
 
 def getSelectionPortAttachment(selex=None):
     """
@@ -446,6 +648,7 @@ class ViewProvider:
         self._check_attr()
         return self.icon_fn
 
+
 def simpleSurfBend(path=None, profile=None):
     "select the centerline and the O.D. and let it sweep"
     curva = FreeCAD.activeDocument().addObject("Part::Feature", "Simple curve")
@@ -514,6 +717,7 @@ def getAttachmentPoints():
         #nothing selected, insert at origin
        return None, None, None, None
 
+
 def makePipe(rating,propList=[], pos=None, Z=None):
     """add a Pipe object
     makePipe(rating,propList,pos,Z);
@@ -543,6 +747,8 @@ def makePipe(rating,propList=[], pos=None, Z=None):
     a.Placement.Rotation = rot.multiply(a.Placement.Rotation)
     a.Label = translate("Objects", "Tube")
     return a
+
+
 
 def doPipes(rating,propList=["DN50", 60.3, 3, 1000], pypeline=None):
     """
@@ -586,6 +792,7 @@ def doPipes(rating,propList=["DN50", 60.3, 3, 1000], pypeline=None):
     FreeCAD.activeDocument().recompute()
     return plist
 
+
 def makeTerminalAdapter(rating,propList=[],pos=None,Z=None):
     """Add TerminalAdapter object
     """
@@ -599,6 +806,7 @@ def makeTerminalAdapter(rating,propList=[],pos=None,Z=None):
     a.Placement.Base = pos
     rot = FreeCAD.Rotation(FreeCAD.Vector(0, 0, 1), -Z)
     a.Placement.Rotation = rot.multiply(a.Placement.Rotation)
+
 
 def makeElbow(propList=[], pos=None, Z=None, rating="SCH-STD"):
     """Adds an Elbow object
@@ -637,6 +845,7 @@ def makeElbow(propList=[], pos=None, Z=None, rating="SCH-STD"):
     a.Placement.Base = pos - port0_world
     a.Label = translate("Objects", "Elbow")
     return a
+
 
 def makeElbowBetweenThings(thing1=None, thing2=None, propList=None):
     """
@@ -677,15 +886,22 @@ def makeElbowBetweenThings(thing1=None, thing2=None, propList=None):
         propList = ["DN50", 60.3, 3.91, ang, 45.24]
     else:
         propList[3] = ang
-    elb = makeElbow(propList, P, directions[0].negative().cross(directions[1].negative()))
-    # mate the elbow ends with the pipes or edges
-    b = fCmd.bisect(directions[0], directions[1])
-    elbBisect = rounded(
-        fCmd.beamAx(elb, FreeCAD.Vector(1, 1, 0))
-    )  # if not rounded, fail in plane xz
-    rot = FreeCAD.Rotation(elbBisect, b)
-    elb.Placement.Rotation = rot.multiply(elb.Placement.Rotation)
-    # trim the adjacent tubes
+    # Create the elbow in its default rest orientation (no pos/Z args).
+    # Then use placeoTherElbow to set the full orientation and position in one step.
+    # This avoids the old approach which tried to find the current bisect via beamAx(elb,(1,1,0))
+    # after makeElbow had already applied a Z-alignment rotation -- that assumption was only
+    # valid when the elbow was still in its default rest pose, causing misalignment on any
+    # pipe path not lying in the world XY plane.
+    # placeoTherElbow computes its rotations from the elbow's local Ports vectors, which
+    # are always in shape space regardless of any prior rotation, so it is safe to call
+    # even after the elbow has been created with a non-identity placement.
+    # Convention: v1 is the incoming tangent (path direction entering the corner) and
+    # v2 is the outgoing tangent. directions[0] points away from P along thing1 (= outgoing
+    # of thing1, which is the incoming approach direction reversed), and directions[1] points
+    # away from P along thing2 (= outgoing tangent). So v1 = -directions[1], v2 = directions[0].
+    elb = makeElbow(propList)
+    placeoTherElbow(elb, directions[0].negative(), directions[1], P)
+    # trim the adjacent tubes    
     # FreeCAD.activeDocument().recompute() # may delete this row?
     portA = elb.Placement.multVec(elb.Ports[0])
     portB = elb.Placement.multVec(elb.Ports[1])
@@ -698,7 +914,8 @@ def makeElbowBetweenThings(thing1=None, thing2=None, propList=None):
             fCmd.extendTheBeam(tube, portB)
     return elb
 
-def doElbow(rating="SCH-STD", propList=["DN50", 60.3, 3, 90, 45.225], pypeline=None):
+
+def doElbow(rating="SCH-STD", propList=["DN50", 60.3, 3, 90, 45.225], pypeline=None, doOffset=False):
     """
     propList = [
       DN (string): nominal diameter
@@ -707,6 +924,12 @@ def doElbow(rating="SCH-STD", propList=["DN50", 60.3, 3, 90, 45.225], pypeline=N
       BA (float): bend angle
       BR (float): bend radius ]
     pypeline = string
+    doOffset (bool): when True and a pipe is the selected insertion object,
+      shorten the pipe by the distance from its end to the elbow base position
+      before inserting the elbow.  The offset distance equals the length of the
+      insertion port vector (Ports[0]) measured from the elbow base, which for
+      a butt-weld elbow is R.valueAt(R.FirstParameter) as computed in
+      pFeatures.Elbow.execute().
     """
     elist = []
     FreeCAD.activeDocument().openTransaction(translate("Transaction", "Insert elbow"))
@@ -714,6 +937,7 @@ def doElbow(rating="SCH-STD", propList=["DN50", 60.3, 3, 90, 45.225], pypeline=N
     if len(selex) == 0:  # no selection -> insert one elbow at origin
         elist.append(makeElbow(propList, rating=rating))
     elif len(selex) == 1 and len(selex[0].SubObjects) == 1:  # one selection -> ...
+               
         #first, if a an object with ports is selected and edges, faces, or vertices are selected, insert the component at the closest port to the 
         #first selected object's first selected edge, face, or vertex. If none of those are present, the entire object is selected - insert
         #the component at the highest number port.
@@ -723,10 +947,32 @@ def doElbow(rating="SCH-STD", propList=["DN50", 60.3, 3, 90, 45.225], pypeline=N
             if hasattr(selex.Object, "PType"):
                 if selex.Object.PType != "Any":
                     usablePorts = True
+        
         pos, Z, srcObj, srcPort = getAttachmentPoints()
         if usablePorts:
             elb = makeElbow(propList, pos, Z, rating=rating)
             elist.append(elb)
+            # If requested, shorten a selected pipe by the port-to-base offset
+            # before aligning the elbow.  Port 0 of an Elbow is the insertion
+            # port; the elbow base sits at the center of the bend, so the pipe
+            # must be shortened by the distance from port 0 to the base
+            # (i.e. the length of the Ports[0] vector in local space).
+            if doOffset:
+                pipes = [t for t in fCmd.beams() if hasattr(t, "PType") and t.PType == "Pipe"]
+                if pipes:
+                    pipe = pipes[0]
+                    # respos: the world position of the elbow base after port
+                    # alignment will be at the elbow Placement base offset by
+                    # the inverse of the insertion port vector.  Before
+                    # alignTwoPorts moves the elbow, the base is already at
+                    # pos (the attachment point), so the target for trimming is
+                    # the elbow base: Ports[0] points from base to the port,
+                    # so base = port_world_pos - Ports[0] in local orientation.
+                    # Use a local-frame displacement of -Ports[0] from pos.
+                    port_vec = elb.Ports[0]
+                    rot = elb.Placement.Rotation
+                    base_world = pos - rot.multVec(port_vec)
+                    fCmd.extendTheBeam(pipe, base_world)
             FreeCAD.activeDocument().commitTransaction()
             FreeCAD.activeDocument().recompute()
             alignTwoPorts(elb, 0, srcObj, srcPort)
@@ -756,7 +1002,8 @@ def doElbow(rating="SCH-STD", propList=["DN50", 60.3, 3, 90, 45.225], pypeline=N
     FreeCAD.activeDocument().recompute()
     return elist
 
-def makeFlange(propList=[], pos=None, Z=None, doOffset=None, rating="DIN-PN16"):
+
+def makeFlange(propList=[], pos=None, Z=None, doOffset=None, rating="DIN-PN16", fclass=""):
     """Adds a Flange object
         makeFlange(propList,pos,Z);
         propList is one optional list with 8 elements:
@@ -779,6 +1026,7 @@ def makeFlange(propList=[], pos=None, Z=None, doOffset=None, rating="DIN-PN16"):
         R Flange fillet radius
         T1 Overall flange thickness
         Y Socket depth
+
     Remember: property PRating must be defined afterwards
     """
 
@@ -788,9 +1036,9 @@ def makeFlange(propList=[], pos=None, Z=None, doOffset=None, rating="DIN-PN16"):
         Z = FreeCAD.Vector(0, 0, 1)
     a = FreeCAD.ActiveDocument.addObject("Part::FeaturePython", "Flange")
     if len(propList) >= 8:
-        pFeatures.Flange(a, rating, *propList)
+        pFeatures.Flange(a, rating, *propList, FClass=fclass)
     else:
-        pFeatures.Flange(a, rating)
+        pFeatures.Flange(a, rating, FClass=fclass)
     ViewProvider(a.ViewObject, "Quetzal_InsertFlange")
     a.Placement.Base = pos
     rot = FreeCAD.Rotation(FreeCAD.Vector(0, 0, 1), Z)
@@ -805,19 +1053,21 @@ def makeFlange(propList=[], pos=None, Z=None, doOffset=None, rating="DIN-PN16"):
         else:
             zpos = 0
         a.Placement = a.Placement.multiply(
-            FreeCAD.Placement(FreeCAD.Vector(0, 0, zpos), FreeCAD.Rotation(1, 0, 0))
+            FreeCAD.Placement(FreeCAD.Vector(0, 0, zpos), FreeCAD.Rotation())
         )
     FreeCAD.ActiveDocument.recompute()
     a.Label = translate("Objects", "Flange")
     return a
+
 
 def doFlanges(
     rating="DIN-PN16",
     propList=["DN50", "SO", 160, 60.3, 132, 14, 15, 4, 0, 0, 0, 0, 0, 0, 0],
     pypeline=None,
     doOffset=None,
-    attachFace=None #TODO add radio buttons to flange insertion form for whether to attach flange at face or neck
-    ):
+    attachFace=None, 
+    fclass="",
+):
     """
     propList = [
       DN (string): nominal diameter
@@ -842,6 +1092,7 @@ def doFlanges(
     flist = []
     tubes = [t for t in fCmd.beams() if hasattr(t, "PSize")]
     FreeCAD.activeDocument().openTransaction(translate("Transaction", "Insert flange"))
+
     if attachFace:
         connecting_port = 0
     else:
@@ -856,11 +1107,13 @@ def doFlanges(
             if hasattr(selex.Object, "PType"):
                 if selex.Object.PType != "Any":
                     usablePorts = True
+        
         pos, Z, srcObj, srcPort = getAttachmentPoints()
 
         if usablePorts:
-            flange = makeFlange(propList, pos, Z, doOffset, rating=rating)
+            flange = makeFlange(propList, pos, Z, doOffset, rating=rating, fclass=fclass)
             flist.append(flange)
+            
             #if we need to remove pipe equivalent length
             if doOffset:
                 #Correct offset for raised face flanges. If flat face flanges are added, presumably a.trf would be zero?
@@ -875,7 +1128,7 @@ def doFlanges(
                     zpos = a.trf
                 pipe = fCmd.beams()[0]
                 #respos=a.Placement.multiply(FreeCAD.Placement(FreeCAD.Vector(0,0,-zpos), FreeCAD.Rotation(1, 0, 0)))
-                respos=a.Placement.multiply(FreeCAD.Placement(FreeCAD.Vector(0,0,zpos), FreeCAD.Rotation(1, 0, 0)))
+                respos=a.Placement.multiply(FreeCAD.Placement(FreeCAD.Vector(0,0,zpos), FreeCAD.Rotation()))
                 fCmd.extendTheBeam(pipe,respos.Base)
             FreeCAD.activeDocument().commitTransaction()
             FreeCAD.activeDocument().recompute()
@@ -884,65 +1137,11 @@ def doFlanges(
 
 
         else:
-            flist.append(makeFlange(propList, pos, Z, doOffset, rating=rating))
+            flist.append(makeFlange(propList, pos, Z, doOffset, rating=rating, fclass=fclass))
     except:
         #nothing selected, insert at origin
-        flist.append(makeFlange(propList))
+        flist.append(makeFlange(propList, rating=rating, fclass=fclass))
 
-    ###OLD METHOD
-    """
-    if len(fCmd.edges()) == 0:
-        vs = [
-            v
-            for sx in FreeCADGui.Selection.getSelectionEx()
-            for so in sx.SubObjects
-            for v in so.Vertexes
-        ]
-        if len(vs) == 0:
-            flist.append(makeFlange(propList))
-        else:
-            for v in vs:
-                flist.append(makeFlange(propList, v.Point))
-    elif tubes:
-        selex = FreeCADGui.Selection.getSelectionEx()
-        for sx in selex:
-            if isPipe(sx.Object) and fCmd.edges([sx]):
-                for edge in fCmd.edges([sx]):
-                    if edge.curvatureAt(0) != 0:
-                        flist.append(
-                            makeFlange(
-                                propList,
-                                edge.centerOfCurvatureAt(0),
-                                sx.Object.Shape.Solids[0].CenterOfMass
-                                - edge.centerOfCurvatureAt(0),
-                                doOffset
-                            )
-                        )
-                        if doOffset:
-                            a=flist.pop()
-                            if a.FlangeType == "WN":
-                                zpos = -a.T1 + a.trf
-                            elif a.FlangeType == "SW":
-                                zpos = -a.T1 + a.Y + a.trf
-                            elif a.FlangeType == "LJ":
-                                zpos = 0
-                            else:
-                                zpos = 0
-                            pipe = fCmd.beams()[0]
-                            respos=a.Placement.multiply(FreeCAD.Placement(FreeCAD.Vector(0,0,-zpos), FreeCAD.Rotation(1, 0, 0)))
-                            fCmd.extendTheBeam(pipe,respos.Base)
-    else:
-        for edge in fCmd.edges():
-            if edge.curvatureAt(0) != 0:
-                flist.append(
-                    makeFlange(
-                        propList,
-                        edge.centerOfCurvatureAt(0),
-                        edge.tangentAt(0).cross(edge.normalAt(0)),
-                        doOffset
-                    )
-                )
-    """
     if pypeline:
         for f in flist:
             moveToPyLi(f, pypeline)
@@ -950,16 +1149,18 @@ def doFlanges(
     FreeCAD.activeDocument().recompute()
     return flist
 
+
 def makeReduct(propList=[], pos=None, Z=None, conc=True, smallerEnd=False, rating="SCH-STD"):
     """Adds a Reduct object
     makeReduct(propList=[], pos=None, Z=None, conc=True)
-      propList is one optional list with 6 elements:
-        PSize (string): nominal diameter
+      propList is one optional list with 6 or 7 elements:
+        PSize (string): nominal diameter (major end)
         OD (float): major diameter
         OD2 (float): minor diameter
         thk (float): major thickness
         thk2 (float): minor thickness
         H (float): length of reduction
+        PSize2 (string, optional): nominal diameter (minor end)
       pos (vector): position of insertion; default = 0,0,0
       Z (vector): orientation: default = 0,0,1
       conc (bool): True for concentric or False for eccentric reduction
@@ -970,7 +1171,14 @@ def makeReduct(propList=[], pos=None, Z=None, conc=True, smallerEnd=False, ratin
     if Z == None:
         Z = FreeCAD.Vector(0, 0, 1)
     a = FreeCAD.ActiveDocument.addObject("Part::FeaturePython", "Reduction")
-    propList.append(conc)
+    # propList layout from the form:
+    #   [PSize, OD, OD2, thk, thk2, H]        (6 elements, no PSize2)
+    #   [PSize, OD, OD2, thk, thk2, H, PSize2] (7 elements, with PSize2)
+    # Reduct.__init__ positional order after (obj, rating):
+    #   DN, OD, OD2, thk, thk2, H, conc, DN2
+    # So insert conc at index 6 (after H, before optional PSize2).
+    propList = list(propList)
+    propList.insert(6, conc)
     pFeatures.Reduct(a, rating, *propList)
     ViewProvider(a.ViewObject, "Quetzal_InsertReduct")
     a.Placement.Base = pos
@@ -988,12 +1196,13 @@ def makeReduct(propList=[], pos=None, Z=None, conc=True, smallerEnd=False, ratin
 
 def doReduct(rating="SCH-STD", propList=[], pypeline=None, pos=None, Z=None, conc=True, smallerEnd=False):
     """propList[] = 
-      PSize (string): nominal diameter
+      PSize (string): nominal diameter (major end)
         OD (float): major diameter
         OD2 (float): minor diameter
         thk (float): major thickness
         thk2 (float): minor thickness
         H (float): length of reduction
+        PSize2 (string, optional): nominal diameter (minor end)
       pos (vector): position of insertion; default = 0,0,0
       Z (vector): orientation: default = 0,0,1
       conc (bool): True for concentric or False for eccentric reduction
@@ -1036,6 +1245,7 @@ def doReduct(rating="SCH-STD", propList=[], pypeline=None, pos=None, Z=None, con
     FreeCAD.activeDocument().recompute()
     return plist
 
+
 def makeUbolt(propList=[], pos=None, Z=None):
     """Adds a Ubolt object:
     makeUbolt(propList,pos,Z);
@@ -1065,6 +1275,7 @@ def makeUbolt(propList=[], pos=None, Z=None):
     a.Label = translate("Objects", "U-Bolt")
     return a
 
+
 def makeShell(L=1000, W=1500, H=1500, thk1=6, thk2=8):
     """
     makeShell(L,W,H,thk1,thk2)
@@ -1083,6 +1294,7 @@ def makeShell(L=1000, W=1500, H=1500, thk1=6, thk2=8):
     FreeCAD.ActiveDocument.recompute()
     a.Label = translate("Objects", "Tank")
     return a
+
 
 def makeCap(propList=[], pos=None, Z=None, rating="SCH-STD"):
     """add a Cap object
@@ -1112,6 +1324,8 @@ def makeCap(propList=[], pos=None, Z=None, rating="SCH-STD"):
     a.Placement.Rotation = rot.multiply(a.Placement.Rotation)
     a.Label = translate("Objects", "Cap")
     return a
+    
+    
 
 def doCaps(rating="SCH-STD", propList=["DN50", 60.3, 3], pypeline=None):
     """
@@ -1154,17 +1368,19 @@ def doCaps(rating="SCH-STD", propList=["DN50", 60.3, 3], pypeline=None):
     FreeCAD.activeDocument().recompute()
     return plist
     
+    
 def makeTee(propList=[], pos=None, Z=None, insertOnBranch=False, rating="SCH-STD"):
     """add a Tee object
     makeTee(propList,pos,Z);
-    propList is one optional list with 7 elements:
-      DN (string): nominal diameter
+    propList is one optional list with 7 or 8 elements:
+      DN (string): nominal diameter (run)
       OD (float): outside diameter of run
       OD2 (float): outside diameter of branch
       thk (float): shell thickness of run
-      thk (float): shell thickness of branch
+      thk2 (float): shell thickness of branch
       C (float): Length of run from centerline
       M (float): Length of branch from centerline
+      DN2 (string, optional): nominal diameter of branch end (stored as PSizeBranch)
     Default is "DN50 (SCH-STD)"
     pos (vector): position of insertion; default = 0,0,0
     Z (vector): orientation: default = 0,0,1
@@ -1175,7 +1391,7 @@ def makeTee(propList=[], pos=None, Z=None, insertOnBranch=False, rating="SCH-STD
     if Z == None:
         Z = FreeCAD.Vector(0, 0, 1)
     a = FreeCAD.ActiveDocument.addObject("Part::FeaturePython", "Tee")
-    if len(propList) == 7:
+    if len(propList) in (7, 8):
         pFeatures.Tee(a, rating, *propList)
     else:
         pFeatures.Tee(a, rating)
@@ -1203,20 +1419,28 @@ def makeTee(propList=[], pos=None, Z=None, insertOnBranch=False, rating="SCH-STD
     a.Label = translate("Objects", "Tee")
     return a
 
-def doTees(rating="SCH-STD", propList=["DN150", 168.27, 114.3,7.11,6.02,178,156], pypeline=None, insertOnBranch=False):
+
+def doTees(rating="SCH-STD", propList=["DN150", 168.27, 114.3,7.11,6.02,178,156], pypeline=None, insertOnBranch=False, doOffset=False):
     """
     propList = [
-       DN (string): nominal diameter
+       DN (string): nominal diameter (run)
       OD (float): outside diameter of run
       OD2 (float): outside diameter of branch
       thk (float): shell thickness of run
-      thk (float): shell thickness of branch
+      thk2 (float): shell thickness of branch
       C (float): Length of run from centerline
       M (float): Length of branch from centerline
+      DN2 (string, optional): nominal diameter of branch end (stored as PSizeBranch)
       Default is "DN50 (SCH-STD)"
 
       pypeline = string
-      insertOnBranch = Boolean 
+      insertOnBranch = Boolean
+      doOffset (bool): when True and a pipe is the selected insertion object,
+        shorten the pipe by the distance from its end to the tee base position
+        before inserting the tee.  For a butt-weld Tee the insertion port is
+        Ports[0] (run, -Z, at -C from base) when inserting on the run, or
+        Ports[2] (branch, +Y, at M from base) when inserting on the branch.
+        For a SocketTee the equivalent port vectors are identical in structure.
     """
     if insertOnBranch:
         insertion_port = 2
@@ -1239,6 +1463,19 @@ def doTees(rating="SCH-STD", propList=["DN150", 168.27, 114.3,7.11,6.02,178,156]
         if usablePorts:
             tee = makeTee(propList, pos, Z, insertOnBranch, rating=rating)
             plist.append(tee)
+            # If requested, shorten a selected pipe by the port-to-base offset
+            # before aligning the tee.  The insertion port vector (Ports[insertion_port])
+            # points from the tee base to the port in local space.  The world
+            # position of the tee base after alignment will be at pos offset by
+            # the inverse of that port vector rotated into world space.
+            if doOffset:
+                pipes = [t for t in fCmd.beams() if hasattr(t, "PType") and t.PType == "Pipe"]
+                if pipes:
+                    pipe = pipes[0]
+                    port_vec = tee.Ports[insertion_port]
+                    rot = tee.Placement.Rotation
+                    base_world = pos - rot.multVec(port_vec)
+                    fCmd.extendTheBeam(pipe, base_world)
             FreeCAD.activeDocument().commitTransaction()
             FreeCAD.activeDocument().recompute()
             alignTwoPorts(tee, insertion_port, srcObj, srcPort)
@@ -1293,6 +1530,7 @@ def makeW():
     else:
         return None
 
+
 def makePypeLine2(
     DN="DN50",
     PRating="SCH-STD",
@@ -1337,6 +1575,7 @@ def makePypeLine2(
         FreeCAD.Console.PrintWarning("Objects added to pypeline's group " + a.Group + "\n")
     return a
 
+
 def makeBranch(
     base=None,
     DN="DN50",
@@ -1372,6 +1611,7 @@ def makeBranch(
     else:
         FreeCAD.Console.PrintError("Select a valid path.\n")
 
+
 def updatePLColor(sel=None, color=None):
     if not sel:
         sel = FreeCADGui.Selection.getSelection()
@@ -1392,6 +1632,81 @@ def updatePLColor(sel=None, color=None):
                             e.ViewObject.ShapeColor = color
     else:
         FreeCAD.Console.PrintError("Select first one pype line\n")
+
+
+
+def mateEdgesCmd():
+    """
+    Implements the Mate Edges command.
+    Requires exactly 2 distinct objects and exactly 2 sub-selections (edges/faces/vertices).
+    If both objects have usable Quetzal ports, uses port-based alignment via
+    getSelectionPortAttachment and alignTwoPorts (obj1 stationary, obj2 moves).
+    Falls back to alignTheTube for objects without ports.
+    """
+    selex = FreeCADGui.Selection.getSelectionEx()
+
+    # Collect unique objects while preserving selection order.
+    seen = []
+    for sx in selex:
+        if sx.Object not in seen:
+            seen.append(sx.Object)
+    unique_objects = seen
+
+    total_subs = sum(len(sx.SubObjects) for sx in selex)
+
+    if len(unique_objects) != 2:
+        FreeCAD.Console.PrintError(
+            "Mate Edges: exactly 2 objects must be selected (got %d).\n"
+            % len(unique_objects)
+        )
+        return None
+
+    if total_subs != 2:
+        FreeCAD.Console.PrintError(
+            "Mate Edges: exactly 2 edges/faces/vertices must be selected (got %d).\n"
+            % total_subs
+        )
+        return None
+
+    if len(selex) != 2:
+        FreeCAD.Console.PrintError(
+            "Mate Edges: could not resolve two distinct object selections.\n"
+        )
+        return None
+
+    sel1 = selex[0]
+    sel2 = selex[1]
+    obj1 = sel1.Object
+    obj2 = sel2.Object
+
+    obj1HasPorts = (
+        hasattr(obj1, "Ports")
+        and hasattr(obj1, "PType")
+        and obj1.PType != "Any"
+    )
+    obj2HasPorts = (
+        hasattr(obj2, "Ports")
+        and hasattr(obj2, "PType")
+        and obj2.PType != "Any"
+    )
+
+    if obj1HasPorts and obj2HasPorts:
+        # Port-based alignment: find the closest port on each object to its
+        # respective selection point, then align those two ports.
+        # obj1 is stationary; obj2 moves.
+        pos1, Z1, srcObj1, srcPort1 = getSelectionPortAttachment([sel1])
+        pos2, Z2, srcObj2, srcPort2 = getSelectionPortAttachment([sel2])
+        if srcObj1 is None or srcObj2 is None:
+            FreeCAD.Console.PrintError(
+                "Mate Edges: could not determine attachment ports for both objects.\n"
+            )
+            return None
+        alignTwoPorts(obj2, srcPort2, obj1, srcPort1)
+    else:
+        # Fallback: use edge-based alignment for objects without ports.
+        alignTheTube()
+
+    return True
 
 def alignTheTube():
     """
@@ -1477,81 +1792,7 @@ def alignTwoPorts(obj2, port2, obj1, port1):
     p1_world = obj1.Placement.multVec(obj1.Ports[port1])
     p2_world = obj2.Placement.multVec(obj2.Ports[port2])
     obj2.Placement.move(p1_world - p2_world)
-    """
-    # Get world coordinates
-    p1_world = obj1.Placement.multVec(obj1.Ports[port1])
-    p2_world = obj2.Placement.multVec(obj2.Ports[port2])
-    dir1_world = obj1.Placement.Rotation.multVec(obj1.PortDirections[port1])
-    dir2_world = obj2.Placement.Rotation.multVec(obj2.PortDirections[port2])
     
-    # Ports should face opposite directions
-    target_dir = dir1_world * -1
-    
-    # Calculate and apply rotation
-    rot = FreeCAD.Rotation(dir2_world, target_dir)
-    obj2.Placement.Rotation = rot.multiply(obj2.Placement.Rotation)
-    
-    # Calculate and apply translation
-    p2_world = obj2.Placement.multVec(obj2.Ports[port2])
-    dist = p1_world - p2_world
-    obj2.Placement.move(dist)
-    """
-    
-    """
-    #calculate absolute positions of the two ports
-    p1 = obj1.Placement.multVec(obj1.Ports[port1])
-    p2 = obj2.Placement.multVec(obj2.Ports[port2])
-
-    #calculate the local positions of the ports relative to each object's base position
-    obj1PortPos = p1-obj1.Placement.Base
-    obj2PortPos = p2-obj2.Placement.Base
-
-    #calculate the rotation required of object 2
-    rot = FreeCAD.Rotation(obj2PortPos.normalize(), obj1PortPos.normalize())
-
-    #perform the rotation, which aligns the two ports
-    obj2.Placement.Rotation = rot.multiply(obj2.Placement.Rotation)
-    
-    # get new positions of the ports after rotation (object 1 shouldn't have moved but recalculate for good measure)
-    d1=obj1.Placement.multVec(obj1.Ports[port1])
-    d2=obj2.Placement.multVec(obj2.Ports[port2])
-
-    #calculate the distance between the two and move object 2
-    dist = d1 - d2
-    obj2.Placement.move(dist)
-
-    #get new position of object 2's port
-    d2=obj2.Placement.multVec(obj2.Ports[port2])
-
-    #check if center of masses aligned correctly by calculating the dot product of the port vectors to the opposite object's center of mass. 
-    #If the dot product >0, then the port is facing the wrong way, so flip it 180 degrees around an axis perpendicular to the port axis. 
-    #This won't work properly if the object's center of mass is facing the connection point, which would be extremely unusual for most common piping components,
-    # but could plausibly happen on an object with a circuitous shape
-    obj1PorttoObj2COM = d1-obj2.Shape.Solids[0].CenterOfMass
-    obj2PorttoObj1COM = d2-obj1.Shape.Solids[0].CenterOfMass
-
-    
-    if obj1PorttoObj2COM.dot(obj2PorttoObj1COM) > 0:
-        crossVector1 = FreeCAD.Vector(1,0,0)
-        crossVector2 = obj2.Ports[port2].normalize()
-        #if the port is at Vector(0,0,0) or Vector(1,0,0), it will cause problems, so catch those and assign different rotation axes.
-        if crossVector2 == crossVector1:
-            crossVector1 = FreeCAD.Vector(0,1,0)
-        if crossVector2 == FreeCAD.Vector(0,0,0):
-            crossVector2 = FreeCAD.Vector(0, 1, 0)
-
-
-        rotateTheTubeAx(obj=obj2,vShapeRef=crossVector2.cross(crossVector1), angle=180)
-        # get new positions of the ports after rotation, again (object 1 shouldn't have moved but recalculate for good measure)
-        d1=obj1.Placement.multVec(obj1.Ports[port1])
-        d2=obj2.Placement.multVec(obj2.Ports[port2])
-
-        #recalculate the distance between the two and move object 2 again
-        dist = d1 - d2
-        obj2.Placement.move(dist)
-
-    """
-
 def rotateTheTubeAx(obj=None, vShapeRef=None, angle=45):
     """
     rotateTheTubeAx(obj=None,vShapeRef=None,angle=45)
@@ -1566,6 +1807,7 @@ def rotateTheTubeAx(obj=None, vShapeRef=None, angle=45):
         vShapeRef = FreeCAD.Vector(0, 0, 1)
     rot = FreeCAD.Rotation(fCmd.beamAx(obj, vShapeRef), angle)
     obj.Placement.Rotation = rot.multiply(obj.Placement.Rotation)
+
 
 def reverseTheTube(objEx):
     """
@@ -1588,6 +1830,7 @@ def reverseTheTube(objEx):
     if disp:
         objEx.Object.Placement.move(disp * 2)
 
+
 def rotateTheTubeEdge(ang=45):
     if len(fCmd.edges()) > 0 and fCmd.edges()[0].curvatureAt(0) != 0:
         originalPos = fCmd.edges()[0].centerOfCurvatureAt(0)
@@ -1595,6 +1838,7 @@ def rotateTheTubeEdge(ang=45):
         rotateTheTubeAx(vShapeRef=shapeReferenceAxis(), angle=ang)
         newPos = fCmd.edges()[0].centerOfCurvatureAt(0)
         obj.Placement.move(originalPos - newPos)
+
 
 def placeTheElbow(c, v1=None, v2=None, P=None):
     """
@@ -1624,6 +1868,7 @@ def placeTheElbow(c, v1=None, v2=None, P=None):
             P = c.Placement.Base
         c.Placement.Base = P
 
+
 def placeoTherElbow(c, v1=None, v2=None, P=None):
     """
     Like placeTheElbow() but with more math.
@@ -1650,6 +1895,7 @@ def placeoTherElbow(c, v1=None, v2=None, P=None):
         if not P:
             P = c.Placement.Base
         c.Placement.Base = P
+
 
 def placeThePype(pypeObject, port=0, target=None, targetPort=0):
     """
@@ -1694,6 +1940,7 @@ def placeThePype(pypeObject, port=0, target=None, targetPort=0):
         pos + Z * pOport.Length, FreeCAD.Rotation(pOport * -1, Z)
     )
 
+
 def nearestPort(pypeObject, point):
     try:
         pos = portsPos(pypeObject)[0]
@@ -1708,6 +1955,7 @@ def nearestPort(pypeObject, point):
         return nearest, pos, Z
     except:
         return None
+
 
 def extendTheTubes2intersection(pipe1=None, pipe2=None, both=True):
     """
@@ -1724,6 +1972,7 @@ def extendTheTubes2intersection(pipe1=None, pipe2=None, both=True):
         fCmd.extendTheBeam(pipe1, P)
         if both:
             fCmd.extendTheBeam(pipe2, P)
+
 
 def header():  # start 20200725
     """
@@ -1782,6 +2031,7 @@ def header():  # start 20200725
     else:
         FreeCAD.Console.PrintError("Insufficient pipes selected\n")
 
+
 def laydownTheTube(pipe=None, refFace=None, support=None):
     """
     laydownTheTube(pipe=None, refFace=None, support=None)
@@ -1812,6 +2062,7 @@ def laydownTheTube(pipe=None, refFace=None, support=None):
     except:
         FreeCAD.Console.PrintError("Wrong selection\n")
 
+
 def breakTheTubes(point, pipes=[], gap=0):
     """
     breakTheTube(point,pipes=[],gap=0)
@@ -1838,6 +2089,7 @@ def breakTheTubes(point, pipes=[], gap=0):
         # FreeCAD.activeDocument().recompute()
     return pipes2nd
 
+
 def drawAsCenterLine(obj):
     try:
         obj.ViewObject.LineWidth = 4
@@ -1846,6 +2098,7 @@ def drawAsCenterLine(obj):
     except:
         FreeCAD.Console.PrintError("The object can not be center-lined\n")
 
+
 def getElbowPort(elbow, portId=0):
     """
     getElbowPort(elbow, portId=0)
@@ -1853,6 +2106,7 @@ def getElbowPort(elbow, portId=0):
     """
     if isElbow(elbow):
         return elbow.Placement.multVec(elbow.Ports[portId])
+
 
 def rotateTheTeePort(curve=None, port=0, ang=45):
     if curve == None:
@@ -1880,6 +2134,7 @@ def rotateTheElbowPort(curve=None, port=0, ang=45):
             FreeCAD.Console.PrintError("Please select something before.\n")
     rotateTheTubeAx(curve, curve.Ports[port], ang)
 
+
 def join(obj1, port1, obj2, port2):
     """
     join(obj1,port1,obj2,port2)
@@ -1900,164 +2155,176 @@ def join(obj1, port1, obj2, port2):
     else:
         FreeCAD.Console.PrintError("Object(s) are not pypes\n")
 
-def makeValve(propList=[], pos=None, Z=None):
-    """add a Valve object
-    makeValve(propList,pos,Z);
-    propList is one optional list with at least 4 elements:
-      DN (string): nominal diameter
-      VType (string): type of valve
-      OD (float): outside diameter
-      ID (float): inside diameter
-      H (float): length of pipe
-      Kv (float): valve's flow factor (optional)
-    Default is "DN50 ball valve ('ball')"
-    pos (vector): position of insertion; default = 0,0,0
-    Z (vector): orientation: default = 0,0,1
+
+def makeValve(propList=[], pos=None, Z=None, flgPropList=None, actuator="Handle"):
+    """Add a Valve object.
+
+    makeValve(propList, pos, Z, flgPropList, actuator)
+
+    propList elements for the basic double-cone valve rendering path:
+      DN      (string): nominal diameter
+      VType   (string): valve type
+      ODBody  (float) : body outer diameter
+      ID      (float) : bore inside diameter
+      H       (float) : body length
+      Kv      (float) : flow factor  [optional]
+
+    propList elements for the socket-weld / threaded path:
+      DN      (string): nominal diameter
+      VType   (string): valve type
+      OD      (float) : attachment pipe outer diameter
+      ODBody  (float) : hex body flat-to-flat
+      H       (float) : body length
+      E       (float) : socket / thread engagement depth
+      Conn    (string): "SW" or "TH"
+      Kv      (float) : flow factor  [optional]
+
+    propList elements for the flanged (Trunnion Ball) path:
+      DN      (string): nominal diameter
+      VType   (string): valve type (e.g. "Ball_LongPatternRF")
+      H       (float) : body length, flange face to flange face
+      Kv      (float) : flow factor  [optional]
+      Conn    (string): pressure class, e.g. "150lb"
+
+    flgPropList — list of blind-flange properties read from the matching
+      Flange_ASME-BL-RF-<Conn>.csv table.  Elements in order:
+      [PSize, FlangeType, D, t, f, n, df, drf, trf]
+      (Same column order as the CSV, matching the Flange __init__ signature.)
+      When provided the flanged construction path is used automatically.
+
+    actuator -- "Handle" (default) or "Gearbox".  Applies to flanged valves only.
+
+    pos (Vector): insertion point; default = origin
+    Z   (Vector): flow-axis direction; default = (0,0,1)
     """
-    if pos == None:
+    if pos is None:
         pos = FreeCAD.Vector(0, 0, 0)
-    if Z == None:
+    if Z is None:
         Z = FreeCAD.Vector(0, 0, 1)
+
     a = FreeCAD.ActiveDocument.addObject("Part::FeaturePython", "Valve")
-    if len(propList):
-        pFeatures.Valve(a, *propList)
+
+    if flgPropList is not None:
+        # Flanged valve path.
+        # propList: [DN, VType, H, (Kv), Conn]
+        DN    = propList[0] if len(propList) > 0 else "DN50"
+        VType = propList[1] if len(propList) > 1 else "Ball_LongPatternRF"
+        H     = float(propList[2]) if len(propList) > 2 else 200.0
+        Kv    = float(propList[3]) if len(propList) > 3 else 0.0
+        Conn  = str(propList[4]) if len(propList) > 4 else "150lb"
+        # flgPropList: [PSize, FlangeType, D, t, f, n, df, drf, trf]
+        flgD   = float(flgPropList[2]) if len(flgPropList) > 2 else 0.0
+        flgt   = float(flgPropList[3]) if len(flgPropList) > 3 else 0.0
+        flgf   = float(flgPropList[4]) if len(flgPropList) > 4 else 0.0
+        flgn   = int(float(flgPropList[5])) if len(flgPropList) > 5 else 0
+        flgdf  = float(flgPropList[6]) if len(flgPropList) > 6 else 0.0
+        flgdrf = float(flgPropList[7]) if len(flgPropList) > 7 else 0.0
+        flgtrf = float(flgPropList[8]) if len(flgPropList) > 8 else 0.0
+        pFeatures.Valve(a, DN=DN, VType=VType, H=H, Kv=Kv, Conn=Conn,
+                        flgD=flgD, flgt=flgt, flgdrf=flgdrf, flgtrf=flgtrf,
+                        flgdf=flgdf, flgf=flgf, flgn=flgn,
+                        actuator=actuator)
+    elif propList:
+        # Detect socket/threaded variant by the presence of a "Conn" field.
+        # Convention: propList for the SW/TH path carries Conn as element [6]
+        # (after DN, VType, OD, ODBody, H, E).
+        if len(propList) >= 7 and isinstance(propList[6], str) and \
+                propList[6] in ("SW", "TH"):
+            # [DN, VType, OD, ODBody, H, E, Conn, (Kv)]
+            DN, VType, OD, ODBody, H, E, Conn = propList[:7]
+            Kv = float(propList[7]) if len(propList) >= 8 else 0.0
+            pFeatures.Valve(a, DN=DN, VType=VType, ODBody=ODBody, H=H, Kv=Kv,
+                            OD=OD, E=E, Conn=Conn)
+        else:
+            # Legacy path: [DN, VType, ODBody, ID, H, (Kv)]
+            pFeatures.Valve(a, *propList)
     else:
         pFeatures.Valve(a)
+
     ViewProvider(a.ViewObject, "Quetzal_InsertValve")
-    a.Placement.Base = pos
-    rot = FreeCAD.Rotation(FreeCAD.Vector(0, 0, 1), Z)
+
+    # Orient port 0's local direction to face Z, then place origin so that
+    # port 0 lands at pos.  (Mirrors the pattern used by makeElbow / makePipe.)
+    port0_local_dir = a.PortDirections[0] if a.PortDirections else FreeCAD.Vector(0, 0, 1)
+    rot = FreeCAD.Rotation(port0_local_dir, Z)
     a.Placement.Rotation = rot.multiply(a.Placement.Rotation)
+    port0_world = a.Placement.multVec(a.Ports[0])
+    a.Placement.Base = pos - port0_world
+
     a.Label = translate("Objects", "Valve")
     return a
 
-def doValves(propList=["DN50", "ball", 72, 50, 40, 150], pypeline=None, pos=0):
+
+def doValves(propList=["DN50", "ball", 72, 50, 40, 150], pypeline=None, pos=0,
+             flgPropList=None, actuator="Handle"):
+    """Insert one or more Valve objects.
+
+    propList  -- see makeValve() for the accepted formats.
+    pypeline  -- optional pypeline label to add the valve to.
+    pos       -- legacy: position along pipe (0-100 %).  Kept for back-compat.
+                 When a pype-object with ports is selected the new attachment
+                 method (getAttachmentPoints / alignTwoPorts) is used instead.
+    flgPropList -- optional list of blind-flange properties for flanged valves.
+                   When supplied the flanged construction path is used.
+                   Elements: [PSize, FlangeType, D, t, f, n, df, drf, trf]
+    actuator    -- "Handle" (default) or "Gearbox".  Flanged valves only.
     """
-    propList = [
-      DN (string): nominal diameter
-      VType (string): type of valve
-      OD (float): outside diameter
-      ID (float): inside diameter
-      H (float): length of pipe
-      Kv (float): valve's flow factor (optional) ]
-    pypeline = string
-    pos (]0..100[) = position along pipe or edge
-    """
-    # self.lastValve=None
-    color = 0.05, 0.3, 0.75
-    vlist = []
-    # d=self.pipeDictList[self.sizeList.currentRow()]
+    color  = 0.05, 0.3, 0.75
+    vlist  = []
     FreeCAD.activeDocument().openTransaction(translate("Transaction", "Insert valve"))
-    # propList=[d['PSize'],d['VType'],float(pq(d['OD'])),float(pq(d['ID'])),float(pq(d['H'])),float(pq(d['Kv']))]
-    if 0 < pos < 100:  # ..place the valve in the middle of pipe(s)
+
+    if 0 < pos < 100:
+        # -- legacy: split a pipe and insert valve in the gap ----------------
         pipes = [p for p in FreeCADGui.Selection.getSelection() if isPipe(p)]
         if pipes:
             for p1 in pipes:
-                vlist.append(makeValve(propList))
+                valve = makeValve(propList, flgPropList=flgPropList, actuator=actuator)
+                vlist.append(valve)
                 p2 = breakTheTubes(
                     float(p1.Height) * pos / 100,
                     pipes=[p1],
                     gap=float(vlist[-1].Height),
-                )[0]
+                )
                 if p2 and pypeline:
-                    moveToPyLi(p2, pypeline)
+                    moveToPyLi(p2[0], pypeline)
                 vlist[-1].Placement = p1.Placement
                 vlist[-1].Placement.move(portsDir(p1)[1] * float(p1.Height))
                 vlist[-1].ViewObject.ShapeColor = color
-                # if self.combo.currentText()!='<none>':
-                # pCmd.moveToPyLi(self.lastValve,self.combo.currentText())
-            # FreeCAD.ActiveDocument.recompute()
-    elif len(fCmd.edges()) == 0:  # ..no edges selected
-        vs = [
-            v
-            for sx in FreeCADGui.Selection.getSelectionEx()
-            for so in sx.SubObjects
-            for v in so.Vertexes
-        ]
-        if len(vs) == 0:  # ...no vertexes selected
-            vlist.append(makeValve(propList))
-            vlist[-1].ViewObject.ShapeColor = color
-            # if self.combo.currentText()!='<none>':
-            # pCmd.moveToPyLi(self.lastValve,self.combo.currentText())
-        else:
-            for v in vs:  # ... one or more vertexes
-                vlist.append(makeValve(propList, v.Point))
-                vlist[-1].ViewObject.ShapeColor = color
-                # if self.combo.currentText()!='<none>':
-                # pCmd.moveToPyLi(self.lastValve,self.combo.currentText())
     else:
-        selex = FreeCADGui.Selection.getSelectionEx()
-        for objex in selex:
-            o = objex.Object
-            for edge in fCmd.edges([objex]):  # ...one or more edges...
-                if edge.curvatureAt(0) == 0:  # ...straight edges
-                    vlist.append(
-                        makeValve(
-                            propList,
-                            edge.valueAt(edge.LastParameter / 2 - propList[4] / 2),
-                            edge.tangentAt(0),
-                        )
-                    )
-                    # if self.combo.currentText()!='<none>':
-                    # pCmd.moveToPyLi(self.lastValve,self.combo.currentText())
-                else:  # ...curved edges
-                    pos = edge.centerOfCurvatureAt(
-                        0
-                    )  # SNIPPET TO ALIGN WITH THE PORTS OF Pype SELECTED: BEGIN...
-                    if hasattr(o, "PType") and len(o.Ports) == 2:
-                        p0, p1 = portsPos(o)
-                        if (p0 - pos).Length < (p1 - pos).Length:
-                            Z = portsDir(o)[0]
-                        else:
-                            Z = portsDir(o)[1]
-                    else:
-                        Z = edge.tangentAt(0).cross(edge.normalAt(0))  # ...END
-                    vlist.append(makeValve(propList, pos, Z))
-                    # if self.combo.currentText()!='<none>':
-                    # pCmd.moveToPyLi(self.lastValve,self.combo.currentText())
-                vlist[-1].ViewObject.ShapeColor = color
+        try:
+            selex = FreeCADGui.Selection.getSelectionEx()[0]
+            usablePorts = (
+                hasattr(selex.Object, "Ports")
+                and hasattr(selex.Object, "PType")
+                and selex.Object.PType != "Any"
+            )
+            pos_vec, Z_vec, srcObj, srcPort = getAttachmentPoints()
+
+            if usablePorts:
+                valve = makeValve(propList, pos_vec, Z_vec, flgPropList=flgPropList, actuator=actuator)
+                vlist.append(valve)
+                valve.ViewObject.ShapeColor = color
+                FreeCAD.activeDocument().commitTransaction()
+                FreeCAD.activeDocument().recompute()
+                alignTwoPorts(valve, 0, srcObj, srcPort)
+            else:
+                valve = makeValve(propList, pos_vec, Z_vec, flgPropList=flgPropList, actuator=actuator)
+                vlist.append(valve)
+                valve.ViewObject.ShapeColor = color
+        except Exception:
+            # Nothing selected -- insert at origin
+            valve = makeValve(propList, flgPropList=flgPropList, actuator=actuator)
+            vlist.append(valve)
+            valve.ViewObject.ShapeColor = color
+
     if pypeline:
         for v in vlist:
             moveToPyLi(v, pypeline)
+
     FreeCAD.activeDocument().commitTransaction()
     FreeCAD.activeDocument().recompute()
     return vlist
 
-def attachToTube(port=None):
-    pypes = [p for p in FreeCADGui.Selection.getSelection() if hasattr(p, "PType")]
-    tube = None
-    try:
-        tubes = [t for t in pypes if t.PType == "Pipe"]
-        if tubes:
-            tube = tubes[0]
-            pypes.pop(pypes.index(tube))
-            for p in pypes:
-                p.MapMode = "Concentric"
-                if not port:
-                    port = tube.Proxy.nearestPort(p.Shape.Solids[0].CenterOfMass)[0]
-                if port == 0:
-                    if p.PType != "Flange":
-                        p.MapReversed = True
-                    else:
-                        p.MapReversed = False
-                    p.Support = [(tube, "Edge3")]
-                elif port == 1:
-                    if p.PType != "Flange":
-                        p.MapReversed = False
-                    else:
-                        p.MapReversed = True
-                    p.Support = [(tube, "Edge1")]
-                if p.PType == "Elbow":
-                    p.AttachmentOffset = FreeCAD.Placement(
-                        FreeCAD.Vector(0, 0, p.Ports[0].Length),
-                        FreeCAD.Rotation(p.Ports[1], FreeCAD.Vector(0, 0, 1).negative()),
-                    )
-                FreeCAD.Console.PrintMessage("%s attached to %s\n" % (p.Label, tube.Label))
-        else:
-            for p in pypes:
-                p.MapMode = "Deactivated"
-                FreeCAD.Console.PrintMessage("Object Detached\n")
-    except:
-        FreeCAD.Console.PrintError("Nothing attached\n")
 
 def makeNozzle(DN="DN50", H=200, OD=60.3, thk=3, D=160, d=62, df=132, f=14, t=15, n=4):
     """
@@ -2098,6 +2365,7 @@ def makeNozzle(DN="DN50", H=200, OD=60.3, thk=3, D=160, d=62, df=132, f=14, t=15
             flange.MapMode = "Concentric"
             FreeCAD.ActiveDocument.recompute()
 
+
 def makeRoute(n=Z):
     curvedEdges = [e for e in fCmd.edges() if e.curvatureAt(0) != 0]
     if curvedEdges:
@@ -2128,6 +2396,7 @@ def makeRoute(n=Z):
         )
     FreeCAD.ActiveDocument.recompute()
     FreeCADGui.activeDocument().setEdit(s.Name)
+
 
 def flatten(p1=None, p2=None, c=None):
     if not (p1 and p2) and len(fCmd.beams()) > 1:
@@ -2164,6 +2433,7 @@ def flatten(p1=None, p2=None, c=None):
         FreeCAD.ActiveDocument.commitTransaction()
     except:
         FreeCAD.Console.PrintError("Intersection point not found\n")
+
 
 def makeRegularPolygon(n,r):
     """
@@ -2211,6 +2481,7 @@ def makeGasket(propList=[], pos=None, Z=None):
     a.Label = translate("Objects", "Gasket")
     return a
 
+
 def doGaskets(propList=[], pypeline=None):
     """Insert one or more Gasket objects at the current selection.
     propList = [
@@ -2254,6 +2525,91 @@ def doGaskets(propList=[], pypeline=None):
     FreeCAD.activeDocument().recompute()
     return glist
 
+
+def makeBolts_Nuts(propList=[], pos=None, Z=None):
+    """Add a Bolts_Nuts object.
+    makeBolts_Nuts(propList, pos, Z)
+      propList is one optional list with 9 elements:
+        DN (string)   : nominal diameter
+        FClass (string): flange class / pressure rating
+        dBolt (float) : stud bolt cylinder outer diameter
+        dNut (float)  : hex nut circumscribed circle outer diameter
+        tNut (float)  : hex nut extruded length
+        df (float)    : bolt center distance from flange centerline
+        n (int)       : number of bolts per flange
+        lBolt (float) : bolt length
+        SEthk (float) : sealing element thickness from matching gasket
+      pos (vector)    : position of insertion; default = 0,0,0
+      Z (vector)      : orientation; default = 0,0,1
+    """
+    if pos is None:
+        pos = FreeCAD.Vector(0, 0, 0)
+    if Z is None:
+        Z = FreeCAD.Vector(0, 0, 1)
+    a = FreeCAD.ActiveDocument.addObject("Part::FeaturePython", "Bolts_Nuts")
+
+    if len(propList) == 9:
+        rating = propList[1]  # FClass is the second element
+        pFeatures.Bolts_Nuts(a, rating, *propList)
+    else:
+        pFeatures.Bolts_Nuts(a, "150lb")
+
+    ViewProvider(a.ViewObject, "Quetzal_InsertGasket")
+    a.ViewObject.ShapeColor = (0.7, 0.7, 0.7)   # light gray for metal
+    a.Placement.Base = pos
+    rot = FreeCAD.Rotation(FreeCAD.Vector(0, 0, 1), Z)
+    a.Placement.Rotation = rot.multiply(a.Placement.Rotation)
+    a.Label = translate("Objects", "Bolts_Nuts")
+    return a
+
+
+def doBolts_Nuts(propList=[], pypeline=None):
+    """Insert one or more Bolts_Nuts objects at the current selection.
+    propList = [
+      DN (string)   : nominal diameter
+      FClass (string): flange class / pressure rating
+      dBolt (float) : stud bolt cylinder outer diameter
+      dNut (float)  : hex nut circumscribed circle outer diameter
+      tNut (float)  : hex nut extruded length
+      df (float)    : bolt center distance from flange centerline
+      n (int)       : number of bolts per flange
+      lBolt (float) : bolt length
+      SEthk (float) : sealing element thickness from matching gasket ]
+    pypeline = string
+    """
+    FreeCAD.activeDocument().openTransaction(
+        translate("Transaction", "Insert bolts and nuts")
+    )
+    blist = []
+    connecting_port = 0  # bolts connect via Port[0] (the -Z face) to the mating flange face
+    try:
+        selex = FreeCADGui.Selection.getSelectionEx()[0]
+        usablePorts = False
+        if hasattr(selex.Object, "Ports"):
+            if hasattr(selex.Object, "PType") and selex.Object.PType != "Any":
+                usablePorts = True
+
+        pos, Z, srcObj, srcPort = getAttachmentPoints()
+        if usablePorts:
+            bn = makeBolts_Nuts(propList, pos, Z)
+            blist.append(bn)
+            FreeCAD.activeDocument().commitTransaction()
+            FreeCAD.activeDocument().recompute()
+            alignTwoPorts(bn, connecting_port, srcObj, srcPort)
+        else:
+            blist.append(makeBolts_Nuts(propList, pos, Z))
+    except:
+        # nothing selected -- insert at origin
+        blist.append(makeBolts_Nuts(propList))
+
+    if pypeline:
+        for b in blist:
+            moveToPyLi(b, pypeline)
+    FreeCAD.activeDocument().commitTransaction()
+    FreeCAD.activeDocument().recompute()
+    return blist
+
+
 def makeBeam(propList=[], pos=None, Z=None):
     """Add a Beam structural section object.
     makeBeam(propList, pos, Z)
@@ -2285,6 +2641,7 @@ def makeBeam(propList=[], pos=None, Z=None):
     a.Placement.Rotation = rot.multiply(a.Placement.Rotation)
     a.Label = translate("Objects", "Beam")
     return a
+
 
 def doBeams(propList=[], frameline=None):
     """Insert one or more Beam objects at the current selection.
@@ -2341,6 +2698,7 @@ def doBeams(propList=[], frameline=None):
     FreeCAD.activeDocument().recompute()
     return blist
 
+
 def _moveToFrameLine(obj, flName):
     """Move obj into the group of FrameLine flName (analogous to moveToPyLi)."""
     try:
@@ -2349,6 +2707,7 @@ def _moveToFrameLine(obj, flName):
         group.addObject(obj)
     except Exception:
         pass
+
 
 def makeOutlet(propList=[], pos=None, rot=None, carrierOD=0.0):
     """
@@ -2392,6 +2751,7 @@ def makeOutlet(propList=[], pos=None, rot=None, carrierOD=0.0):
     FreeCAD.ActiveDocument.recompute()
     a.Label = translate("Objects", "Outlet")
     return a
+
 
 # ---- placement helpers --------------------------------------------------------
 
@@ -2440,6 +2800,7 @@ def outletPlacementOnPipe(pipeObj, t, phi_deg, alpha_deg=0.0):
 
     return pos_world, final_rot
 
+
 def outletPlacementOnTee(teeObj, t, phi_deg, alpha_deg=0.0):
     """
     Return (pos_world, rot_world) for an outlet on a Tee's run-pipe surface.
@@ -2475,6 +2836,7 @@ def outletPlacementOnTee(teeObj, t, phi_deg, alpha_deg=0.0):
     final_rot = spin_rot.multiply(base_rot)
 
     return pos_world, final_rot
+
 
 def outletPlacementOnElbow(elbowObj, alpha_deg=0.0):
     """
@@ -2529,6 +2891,7 @@ def outletPlacementOnElbow(elbowObj, alpha_deg=0.0):
     final_rot = spin_rot.multiply(base_rot)
 
     return pos_world, final_rot
+
 
 def doOutlets(propList=None, pypeline=None,
               srcObj=None, t=None, phi_deg=None, alpha_deg=0.0):
@@ -2646,7 +3009,8 @@ def makeSocketElbow(propList=[], pos=None, Z=None, rating="3000lb"):
     a.Label = translate("Objects", "SocketElbow")
     return a
 
-def doSocketElbow(rating="3000lb", propList=["DN25", 33.4, 90, 35.0, 5.0, 25.4, 22.0, 5.455, "SW"], pypeline=None):
+
+def doSocketElbow(rating="3000lb", propList=["DN25", 33.4, 90, 35.0, 5.0, 25.4, 22.0, 5.455, "SW"], pypeline=None, doOffset=False):
     """
     Insert a SocketEll fitting, aligning it to the selected port when possible.
 
@@ -2661,6 +3025,11 @@ def doSocketElbow(rating="3000lb", propList=["DN25", 33.4, 90, 35.0, 5.0, 25.4, 
       G         (float):  inner body wall thickness
       Conn      (string): connection type ("SW" or "TH") ]
     pypeline = string (optional PypeLine label)
+    doOffset (bool): when True and a pipe is the selected insertion object,
+      shorten the pipe by the distance from its end to the elbow base position
+      before inserting the elbow.  For a SocketEll the insertion port (Ports[0])
+      is at (E, 0, 0) in local space, so the base sits E mm behind the port
+      along the port direction (pFeatures.SocketEll.execute()).
 
       - No selection         -> insert one SocketEll at the origin.
       - One or more sub-object-> insert at the closest port of the first selected
@@ -2684,6 +3053,18 @@ def doSocketElbow(rating="3000lb", propList=["DN25", 33.4, 90, 35.0, 5.0, 25.4, 
         if usablePorts:
             socketEll = makeSocketElbow(propList, pos, Z, rating=rating)
             elist.append(socketEll)
+            # If requested, shorten a selected pipe by the port-to-base offset.
+            # For SocketEll, Ports[0] = (E,0,0) in local space; the base is at
+            # the origin, so the pipe must be trimmed to the world position of
+            # the elbow base (i.e. pos minus the rotated port vector).
+            if doOffset:
+                pipes = [t for t in fCmd.beams() if hasattr(t, "PType") and t.PType == "Pipe"]
+                if pipes:
+                    pipe = pipes[0]
+                    port_vec = socketEll.Ports[0]
+                    rot = socketEll.Placement.Rotation
+                    base_world = pos - rot.multVec(port_vec)
+                    fCmd.extendTheBeam(pipe, base_world)
             FreeCAD.activeDocument().commitTransaction()
             FreeCAD.activeDocument().recompute()
             alignTwoPorts(socketEll, 0, srcObj, srcPort)
@@ -2699,6 +3080,7 @@ def doSocketElbow(rating="3000lb", propList=["DN25", 33.4, 90, 35.0, 5.0, 25.4, 
     FreeCAD.activeDocument().commitTransaction()
     FreeCAD.activeDocument().recompute()
     return elist
+
 
 def makeSocketTee(propList=[], pos=None, Z=None, insertOnBranch=False, rating="3000lb"):
     """Adds a SocketTee object.
@@ -2748,8 +3130,9 @@ def makeSocketTee(propList=[], pos=None, Z=None, insertOnBranch=False, rating="3
     a.Label = translate("Objects", "SocketTee")
     return a
 
+
 def doSocketTee(rating="3000lb", propList=["DN25", "DN25", 33.4, 33.4, 35.0, 5.0, 25.4, 22.0, 5.455, "SW"],
-                pypeline=None, insertOnBranch=False):
+                pypeline=None, insertOnBranch=False, doOffset=False):
     """
     Insert a SocketTee fitting, aligning it to the selected port when possible.
 
@@ -2765,13 +3148,18 @@ def doSocketTee(rating="3000lb", propList=["DN25", "DN25", 33.4, 33.4, 35.0, 5.0
       G           (float):  inner body wall thickness
       Conn        (string): connection type ("SW" or "TH") ]
     pypeline       = string (optional PypeLine label)
-    insertOnBranch = bool   (True → insert/align on the branch port)
+    insertOnBranch = bool   (True -> insert/align on the branch port)
+    doOffset (bool): when True and a pipe is the selected insertion object,
+      shorten the pipe by the distance from its end to the tee base position
+      before inserting the tee.  For a SocketTee the run ports are at +/-E
+      along Z and the branch port is at +E along Y in local space
+      (pFeatures.SocketTee.execute()), so the base sits E mm behind the port.
 
     Behaviour:
-      - No selection          → insert at origin.
-      - Ported object selected → align the insertion port to the selected port
+      - No selection          -> insert at origin.
+      - Ported object selected -> align the insertion port to the selected port
                                   via alignTwoPorts.
-      - Non-ported geometry   → insert with insertion port direction matching
+      - Non-ported geometry   -> insert with insertion port direction matching
                                   the selected face normal / edge tangent.
     """
     insertion_port = 2 if insertOnBranch else 0
@@ -2789,13 +3177,25 @@ def doSocketTee(rating="3000lb", propList=["DN25", "DN25", 33.4, 33.4, 35.0, 5.0
         if usablePorts:
             tee = makeSocketTee(propList, pos, Z, insertOnBranch, rating=rating)
             plist.append(tee)
+            # If requested, shorten a selected pipe by the port-to-base offset.
+            # For SocketTee, Ports[0] = (0,0,-E) and Ports[2] = (0,E,0) in
+            # local space; the base is at the origin, so the pipe is trimmed
+            # to the world position of the tee base (pos minus rotated port vec).
+            if doOffset:
+                pipes = [t for t in fCmd.beams() if hasattr(t, "PType") and t.PType == "Pipe"]
+                if pipes:
+                    pipe = pipes[0]
+                    port_vec = tee.Ports[insertion_port]
+                    rot = tee.Placement.Rotation
+                    base_world = pos - rot.multVec(port_vec)
+                    fCmd.extendTheBeam(pipe, base_world)
             FreeCAD.activeDocument().commitTransaction()
             FreeCAD.activeDocument().recompute()
             alignTwoPorts(tee, insertion_port, srcObj, srcPort)
         else:
             plist.append(makeSocketTee(propList, pos, Z, insertOnBranch, rating=rating))
     except Exception:
-        # Nothing selected — insert at origin.
+        # Nothing selected -- insert at origin.
         plist.append(makeSocketTee(propList, insertOnBranch=insertOnBranch))
 
     if pypeline:
@@ -2804,7 +3204,6 @@ def doSocketTee(rating="3000lb", propList=["DN25", "DN25", 33.4, 33.4, 35.0, 5.0
     FreeCAD.activeDocument().commitTransaction()
     FreeCAD.activeDocument().recompute()
     return plist
-
 def makeSocketCap(propList=[], pos=None, Z=None):
     """Adds a SocketCap object.
     makeSocketCap(propList, pos, Z)
@@ -2842,6 +3241,7 @@ def makeSocketCap(propList=[], pos=None, Z=None):
 
     a.Label = translate("Objects", "SocketCap")
     return a
+
 
 def doSocketCap(propList=["DN25", 33.4, 26.0, 5.0, 13.0, "SW"],
                 pypeline=None):
@@ -2926,6 +3326,7 @@ def _makeSocketStraight(fcClass, label, iconName, propList, expectedLen,
     a.Label = translate("Objects", label)
     return a
 
+
 def _doSocketStraight(makeFn, transactionLabel, propList, pypeline=None):
     """Insert a socket coupling or union, aligning to the selected port when
     possible.  Internal helper shared by doSocketCoupling and doSocketUnion.
@@ -2961,6 +3362,7 @@ def _doSocketStraight(makeFn, transactionLabel, propList, pypeline=None):
     FreeCAD.activeDocument().recompute()
     return plist
 
+
 # ── public API: SocketCoupling ────────────────────────────────────────────────
 
 def makeSocketCoupling(propList=[], pos=None, Z=None):
@@ -2983,6 +3385,7 @@ def makeSocketCoupling(propList=[], pos=None, Z=None):
     return _makeSocketStraight(
         pFeatures.SocketCoupling, "SocketCoupling",
         "Quetzal_InsertCoupling", propList, 9, pos, Z)
+
 
 def doSocketCoupling(propList=["DN25", "DN25", 33.4, 33.4, 35.0, 5.0, 25.9, 22.0, "SW"],
                      pypeline=None):
@@ -3009,6 +3412,7 @@ def doSocketCoupling(propList=["DN25", "DN25", 33.4, 33.4, 35.0, 5.0, 25.9, 22.0
     return _doSocketStraight(
         makeSocketCoupling, "Insert socket coupling", propList, pypeline)
 
+
 # ── public API: SocketUnion ───────────────────────────────────────────────────
 
 def makeSocketUnion(propList=[], pos=None, Z=None):
@@ -3029,6 +3433,7 @@ def makeSocketUnion(propList=[], pos=None, Z=None):
     return _makeSocketStraight(
         pFeatures.SocketUnion, "SocketUnion",
         "Quetzal_InsertCoupling", propList, 7, pos, Z)
+
 
 def doSocketUnion(propList=["DN25", 33.4, 35.0, 5.0, 25.9, 22.0, "SW"],
                   pypeline=None):
