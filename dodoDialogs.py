@@ -199,18 +199,12 @@ class protoPypeForm(QDialog):
         ]
         self.secondCol = QWidget()
         self.secondCol.setLayout(QFormLayout())
+        #create and populate combobox with existing Objects
         self.existingObjs = QComboBox()
+        if FreeCAD.ActiveDocument.Objects is not None:
+            self.existingObjs.addItems(self.getPL())
         self.existingObjs.addItem(translate("protoPypeForm","<none>"))
-        try:
-            self.existingObjs.addItems(
-                [
-                    o.Label
-                    for o in FreeCAD.activeDocument().Objects
-                    if hasattr(o, "PType") and o.PType == "PypeLine"
-                ]
-            )
-        except:
-            None
+        self.existingObjs.activated.connect(self.on_activatedExistingObjects)
         self.combostandart = QComboBox()
         try:
             asmeflag = False
@@ -281,8 +275,20 @@ class protoPypeForm(QDialog):
     def setCurrentPL(self, PLName=None):
         if self.existingObjs.currentText() not in ["<none>", "<new>"]:
             FreeCAD.__activePypeLine__ = self.existingObjs.currentText()
+            pl_obj=FreeCAD.ActiveDocument.getObject(FreeCAD.__activePypeLine__)
+            self.ratingList.setCurrentText(pl_obj.PRating)
+            sizetext=self.sizeList.itemText(self.sizeList.findText(pl_obj.PSize))
+            self.sizeList.setCurrentText(sizetext)
         else:
             FreeCAD.__activePypeLine__ = None
+
+    def getPL(self):
+        "Get a name list of Ptype on active document"
+        temp_ptypelist = list()
+        for item in FreeCAD.ActiveDocument.Objects:
+            if hasattr(item, "PType") and item.PType == self.PType:
+                temp_ptypelist.append(item.Name)
+        return temp_ptypelist
 
     def fillSizes(self):
         self.sizeList.clear()
@@ -380,6 +386,17 @@ class protoPypeForm(QDialog):
             return False
         return True
 
+    def on_activatedExistingObjects(self,index):
+        #check pipetype objects exist to update combobox
+        if FreeCAD.ActiveDocument.Objects is not None:
+            allpl=self.getPL()
+            for pl in allpl:
+                res=self.existingObjs.findText(pl)
+                if res == -1:
+                    self.existingObjs.addItem(pl)
+        else:
+            FreeCAD.__activePypeLine__ = None
+ 
     def _setSizeSystem(self, system):
         """Toggle the DN/NPS display on the size list without saving to prefs."""
         _ss_active   = "font-weight:bold; text-decoration:underline;"
