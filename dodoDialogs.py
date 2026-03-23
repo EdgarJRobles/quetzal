@@ -17,7 +17,6 @@ try:
 except Exception:
     qu = None  # graceful fallback if module not yet present
 
-
 class protoTypeDialog(object):
     "prototype for dialogs.ui with callback function"
 
@@ -101,7 +100,6 @@ class protoTypeDialog(object):
         if FreeCAD.ActiveDocument:
             FreeCAD.ActiveDocument.recompute()
 
-
 class protoPypeForm(QDialog):
     "prototype dialog for insert pFeatures"
     def __init__(
@@ -143,12 +141,10 @@ class protoPypeForm(QDialog):
         self.firstCol = QWidget()
         self.firstCol.setLayout(QVBoxLayout())
         self.mainHL.addWidget(self.firstCol)
-        self.currentRatingLab = QLabel(translate("protoPypeForm", "Rating: ") + self.PRating)
         self.previewSectionsPath = FreeCAD.getUserAppDataDir() + "Mod/quetzal/iconz/PreviewSections/"
         self.gradeimagepath = str()
         self.labImage = QLabel()
         self.fullimagepath = str()
-        self.firstCol.layout().addWidget(self.currentRatingLab)
         # DN / NPS toggle row
         self._sizeSystemRow = QWidget()
         self._sizeSystemRow.setLayout(QHBoxLayout())
@@ -182,6 +178,7 @@ class protoPypeForm(QDialog):
         self._btnNPS.clicked.connect(lambda: self._setSizeSystem(1))
         self.sizeList = QComboBox()
         self.firstCol.layout().addWidget(self.sizeList)
+        self.firstCol.layout().addStretch()
         self.firstCol.layout().addWidget(self.labImage)
         self.pipeDictList = []
         self.fileList = listdir(join(dirname(abspath(__file__)), "tablez"))
@@ -234,7 +231,7 @@ class protoPypeForm(QDialog):
                     isoflag = True
             #TODO:Still doing some work here in order to sort standarts search
         except Exception as e:
-            None 
+            pass 
         self.existingObjs.currentIndexChanged.connect(self.setCurrentPL)
         if FreeCAD.__activePypeLine__ and FreeCAD.__activePypeLine__ in [
             self.existingObjs.itemText(i) for i in range(self.existingObjs.count())
@@ -330,11 +327,7 @@ class protoPypeForm(QDialog):
         if cur_psize is None and hasattr(self, "_uniqueSizeList"):
             if 0 <= cur_idx < len(self._uniqueSizeList):
                 cur_psize = self._uniqueSizeList[cur_idx]
-
         self.PRating = s
-        self.currentRatingLab.setText(
-            translate("protoPypeForm", "Rating: ") + self.PRating)
-
         # Reload the size list with signals blocked so that changeSize is
         # not triggered for every item added during the reload.
         self.sizeList.blockSignals(True)
@@ -366,7 +359,6 @@ class protoPypeForm(QDialog):
         The default implementation does nothing.
         """
         pass
-
 
     def _previewReady(self):
         """Return True when enough selections have been made to generate a preview.
