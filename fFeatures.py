@@ -32,6 +32,8 @@ from PySide.QtWidgets import (
 )
 
 import fCmd
+from DraftGeomUtils import findIntersection
+from numpy.random import randint
 import pCmd
 from quetzal_config import FREECADVERSION, get_icon_path
 from uCmd import label3D
@@ -42,7 +44,6 @@ QT_TRANSLATE_NOOP = FreeCAD.Qt.QT_TRANSLATE_NOOP
 settings = QSettings("quetzal","fFeatures")
 
 ################ FUNCTIONS ###########################
-
 
 def newProfile(prop):
     """
@@ -79,7 +80,6 @@ def newProfile(prop):
             )
     return profile
 
-
 def indexEdge(edge, listedges):
     """
     Auxiliary function to find the index of an edge
@@ -88,7 +88,6 @@ def indexEdge(edge, listedges):
         if e.isSame(edge):
             return listedges.index(e)
     return None
-
 
 def findFB(beamName=None, baseName=None):
     """
@@ -113,7 +112,6 @@ def findFB(beamName=None, baseName=None):
             ):  # if beam.Name in activeFB.Beams:
                 return FreeCAD.ActiveDocument.getObject(name)
     return None
-
 
 def refreshBranchObject(beamChild=None):
     """
@@ -355,7 +353,6 @@ class frameLineForm(QDialog):
                 prof.Placement.Rotation = FreeCAD.Base.Rotation()
                 self.current.Profile = prof
 
-
 class insertSectForm(QWidget):
     """dialog for Arch.makeProfile
     This allows to create in the model the 2D profiles to be used
@@ -457,9 +454,7 @@ class insertSectForm(QWidget):
             group.addObject(s)
         FreeCAD.activeDocument().recompute()
 
-
 import dodoDialogs
-
 
 class frameBranchForm(dodoDialogs.protoTypeDialog):
     "dialog for framebranches"
@@ -675,107 +670,242 @@ class frameBranchForm(dodoDialogs.protoTypeDialog):
                 object.Visibility=False
         return miterplanes
 
-    def roundVectors(self, vxlist, num):
-        l = [v for v in vxlist]
-        return FreeCAD.Vector(round(l[0], num), round(l[1], num), round(l[2], num))
-
     def generateBisectPlanes(self):
-        """Get intersection between lines, generate a plane between lines & do a boolean diferente"""
+        """Get intersections between lines/wire segments and generate a
+        bisect cutting plane at every junction point."""
+ 
         sel = FreeCADGui.Selection.getSelection()
-        from DraftGeomUtils import findIntersection
-        # FreeCAD.Console.PrintMessage('posicion de boceto:'+ str(sel[0].Placement.Rotation)+'\r\n')
-        i=0
-        rep=0
-        reachedlines = []
-        interVertex = []
-        if sel[0].FType == 'FrameBranch':
-          for element in sel[0].Base.Geometry:
-              # FreeCAD.Console.PrintMessage('Segmento '+str(element)+'\r\n')
-              for subelement in sel[0].Base.Geometry:
-                  # Avoid process the geometric element that match StartPoint and EndPoint and also just have process elements with  a common point
-                  if  (element.EndPoint != subelement.EndPoint or
-                       element.StartPoint != subelement.StartPoint or
-                       (element.EndPoint != subelement.EndPoint and
-                        element.StartPoint != subelement.StartPoint) and
-                       (element.EndPoint != subelement.StartPoint and
-                        element.StartPoint != subelement.EndPoint)):
-                      #WARN:intersectionCLines method forces to detect infinite intersections that is not required
-                      # interVertex=fCmd.intersectionCLines(element.toShape().Edges[0],subelement.toShape().Edges[0])                        
-                      interVertex=findIntersection(element.toShape().Edges[0],subelement.toShape().Edges[0],infinite1=False, infinite2=False)
-                      if interVertex:
-                          roundelementStart=self.roundVectors(element.StartPoint,2)
-                          roundelementEnd=self.roundVectors(element.EndPoint,2)
-                          roundsubelementStart=self.roundVectors(subelement.StartPoint,2)
-                          roundsubelementEnd=self.roundVectors(subelement.EndPoint,2)
-                          roundinterVertex=self.roundVectors(interVertex[0],2)
-                          if [element.Tag,subelement.Tag] not in reachedlines:
-                              content=True
-                              reachedlines.append([element.Tag,subelement.Tag])
-                          else:
-                              content=False
-                          if [subelement.Tag,element.Tag] not in reachedlines:
-                              contentsub=True
-                              reachedlines.append([subelement.Tag,element.Tag])
-                          else:
-                              contentsub=False
-                          if (content) or (contentsub):
-                              # FreeCAD.Console.PrintMessage('Punto de interseccion: '+str(interVertex[0])+'\r\n')
-                              # Store edge pair that intersect
-                              FreeCAD.Console.PrintMessage('Reachedlines: {0} and {1}'.format(reachedlines[rep][0],reachedlines[rep][1])+'\r\n')
-                              rep=rep+1
-                              # FIXME: intersectCC method does not return line intersection; findIntersection method does it right
-                              # interpoint=element.intersectCC(subelement)[0] 
-
-                              # FreeCAD.Console.PrintMessage('Segmento '+str(element)+' intersecta con segmento '+str(subelement)+' aqui:'+ str(interpoint)+'\r\n')
-                              # FreeCAD.Console.PrintMessage(str(type(interpoint)))
-                              # INFO:Section aided to get bisect vector on each intersection
-                              if roundelementStart== roundinterVertex:
-                                  resultv1 = FreeCAD.Vector(element.EndPoint-element.StartPoint)
-                              elif roundelementEnd == roundinterVertex:
-                                  resultv1 = FreeCAD.Vector(element.StartPoint-element.EndPoint)
-                              if roundsubelementStart == roundinterVertex:
-                                  resultv2 = FreeCAD.Vector(subelement.EndPoint-subelement.StartPoint)
-                              elif roundsubelementEnd == roundinterVertex:
-                                  resultv2 = FreeCAD.Vector(subelement.StartPoint-subelement.EndPoint)
-                              bisectvector=fCmd.bisect(resultv1,resultv2)
-                              plane=FreeCAD.activeDocument().addObject("Part::Plane","cutplane")
-                              import numpy
-                              from math import pi
-                              plane.AttachmentSupport = sel[0].Base.AttachmentSupport
-                              plane.MapMode = 'FlatFace'
-                              self.rotvector =(interVertex[0])-(FreeCAD.Vector(0,plane.Length/2,-plane.Length/2))
-                              # INFO: Section aided to apply random color to each plane
-                              randomcolorarray=numpy.random.choice(range(256),size=3)
-                              plane.ViewObject.ShapeAppearance = FreeCAD.Material(DiffuseColor= tuple(map(int,randomcolorarray)))
-                              plane.recompute()
-                              # self.CenterOfMass = plane.Shape.CenterOfMass
-                              # INFO:Section aided to get the correct plane orientation on each intersection
-                              self.placementrotplan = FreeCAD.Placement(self.rotvector,FreeCAD.Rotation(FreeCAD.Vector(0,1,0),90))
-                              plane.AttachmentOffset = self.placementrotplan
-                              # FreeCAD.Console.PrintMessage('Antes Angulo de arista a vector bisectriz: '+str((FreeCAD.Rotation(bisectvector,plane.Shape.normalAt(0,0)).Angle)*180/pi)+'\r\n')
-                              # crossvector=resultv1.cross(resultv2).normalize()
-                              # FreeCAD.Console.PrintMessage('Vector cruz: '+str(crossvector)+'\r\n')
-                              # FreeCAD.Console.PrintMessage('Vector normal de plano: '+str(self.roundVectors(plane.Shape.normalAt(0,0),2))+'\r\n')
-                              self.placementrelative = FreeCAD.Placement(FreeCAD.Vector(0,0,0),FreeCAD.Rotation(plane.Shape.normalAt(0,0),bisectvector),interVertex[0]).multiply(self.placementrotplan)
-                              # plane.AttachmentOffset = self.placementrelative
-                              # FreeCAD.Console.PrintMessage('Despues Angulo de arista a vector bisectriz: '+str((FreeCAD.Rotation(bisectvector,plane.Shape.normalAt(0,0)).Angle)*180/pi)+'\r\n')
-                              if self.roundVectors(plane.Shape.normalAt(0,0),0) == FreeCAD.Vector(1.0, 0.0, 0.0):
-                                  rotateplane=90
-                              else:
-                                  rotateplane=0
-                              self.placementfinal = FreeCAD.Placement(FreeCAD.Vector(0,0,0),FreeCAD.Rotation(FreeCAD.Vector(0,0,1),rotateplane),interVertex[0]).multiply(self.placementrelative)
-                              plane.AttachmentOffset = self.placementfinal
-                              # FreeCAD.Console.PrintMessage(str(plane.Name))
-                              # sel[0].cutplanes.append(plane.Name)
-              # TODO::Made method definition to change plane dots colors
-              # if i==0:
-              #     FreeCADGui.ActiveDocument.myplane.PointSize = 10
-              #     FreeCADGui.ActiveDocument.myplane.PointColor = 100,50,20
-              # elif i>=1:
-              #     obj=FreeCADGui.ActiveDocument.getObject('myplane00'+str(i))
-              #     obj.PointSize = 10
-              #     obj.PointColor = 100,50,20
-              i=i+1
+        if not sel:
+            FreeCAD.Console.PrintError("No selection found.\n")
+            return
+ 
+        base_obj = sel[0].Base
+ 
+        if sel[0].FType != "FrameBranch":
+            FreeCAD.Console.PrintWarning("Selected object is not a FrameBranch.\n")
+            return
+ 
+        # ---- Sketch-based geometry (lines stored as Geometry elements) ----
+        if hasattr(base_obj, "Geometry"):
+            self._bisect_from_sketch(sel[0], base_obj)
+ 
+        # ---- Wire / polyline-based geometry (Points list) ----
+        elif hasattr(base_obj, "Points"):
+            self._bisect_from_wire(sel[0], base_obj)
+ 
+        else:
+            FreeCAD.Console.PrintWarning(
+                "Base object has neither Geometry nor Points attribute.\n"
+            )
+ 
+    # ------------------------------------------------------------------
+    # Private helpers
+    # ------------------------------------------------------------------
+ 
+    def _bisect_from_sketch(self, frame_obj, base_obj):
+        """Process sketch geometry: find all segment intersections and
+        create one bisect plane per unique junction."""
+ 
+        geometry = base_obj.Geometry
+        # Use a set of frozensets for O(1) duplicate detection.
+        visited_pairs = set()
+ 
+        for element in geometry:
+            for subelement in geometry:
+                # Skip identical elements.
+                if element.Tag == subelement.Tag:
+                    continue
+ 
+                pair = frozenset([element.Tag, subelement.Tag])
+                if pair in visited_pairs:
+                    continue
+ 
+                inter = findIntersection(
+                    element.toShape().Edges[0],
+                    subelement.toShape().Edges[0],
+                    infinite1=False,
+                    infinite2=False,
+                )
+ 
+                if not inter:
+                    continue
+ 
+                visited_pairs.add(pair)
+                inter_point = inter[0]
+ 
+                FreeCAD.Console.PrintMessage(
+                    f"Intersection found between {element.Tag} "
+                    f"and {subelement.Tag} at {inter_point}\n"
+                )
+ 
+                r_elem_start = self.roundVectors(element.StartPoint, 2)
+                r_elem_end   = self.roundVectors(element.EndPoint,   2)
+                r_sub_start  = self.roundVectors(subelement.StartPoint, 2)
+                r_sub_end    = self.roundVectors(subelement.EndPoint,   2)
+                r_inter      = self.roundVectors(inter_point, 2)
+ 
+                # Vector pointing *away* from the intersection along each segment.
+                v1 = self._outgoing_vector(element,   r_elem_start, r_elem_end,   r_inter)
+                v2 = self._outgoing_vector(subelement, r_sub_start,  r_sub_end,    r_inter)
+ 
+                if v1 is None or v2 is None:
+                    FreeCAD.Console.PrintWarning(
+                        "Could not determine outgoing vectors – skipping pair.\n"
+                    )
+                    continue
+ 
+                bisect_vec = fCmd.bisect(v1, v2)
+                self._create_bisect_plane(frame_obj, inter_point, bisect_vec)
+ 
+    def _bisect_from_wire(self, frame_obj, base_obj):
+        """Process a Wire/polyline object: create a bisect plane at every
+        vertex where two consecutive segments share a point."""
+ 
+        points = base_obj.Points
+        n = len(points)
+        if n < 2:
+            return
+ 
+        closed = base_obj.Closed
+ 
+        # Build the range of *segment indices* to visit.
+        # Segment i goes from points[i] to points[(i+1) % n].
+        seg_range = range(n) if closed else range(n - 1)
+ 
+        # For each interior vertex (or all vertices if closed) compute
+        # the bisect between the incoming and outgoing segment.
+        if closed:
+            vertex_range = range(n)          # every vertex is a junction
+        else:
+            vertex_range = range(1, n - 1)   # skip the two open endpoints
+ 
+        for vi in vertex_range:
+            prev_idx = (vi - 1) % n
+            next_idx = (vi + 1) % n
+ 
+            p_prev  = FreeCAD.Vector(*points[prev_idx])
+            p_curr  = FreeCAD.Vector(*points[vi])
+            p_next  = FreeCAD.Vector(*points[next_idx])
+ 
+            # Outgoing vectors from the junction vertex.
+            v_incoming = (p_prev - p_curr)   # direction toward previous point
+            v_outgoing = (p_next - p_curr)   # direction toward next point
+ 
+            if v_incoming.Length < 1e-9 or v_outgoing.Length < 1e-9:
+                FreeCAD.Console.PrintWarning(
+                    f"Degenerate segment at vertex {vi} – skipping.\n"
+                )
+                continue
+ 
+            bisect_vec = fCmd.bisect(v_incoming, v_outgoing)
+ 
+            FreeCAD.Console.PrintMessage(
+                f"Wire junction at vertex {vi}: {p_curr}\n"
+            )
+ 
+            self._create_bisect_plane(frame_obj, p_curr, bisect_vec)
+ 
+        # Optionally handle open-wire endpoints (only one segment meets here).
+        # A single segment has no bisect partner, so we use its own direction
+        # as the cut normal – useful for square end-cuts.
+        # if not closed:
+        #     self._create_endpoint_plane(frame_obj, points, 0,      at_start=True)
+        #     self._create_endpoint_plane(frame_obj, points, n - 1,  at_start=False)
+ 
+    # ------------------------------------------------------------------
+    # Plane factory – shared by both code paths
+    # ------------------------------------------------------------------
+ 
+    def _create_bisect_plane(self, frame_obj, inter_point, bisect_vec):
+        """Add a Part::Plane to the document, oriented so its normal aligns
+        with *bisect_vec* and centred on *inter_point*."""
+ 
+        doc   = FreeCAD.activeDocument()
+        plane = doc.addObject("Part::Plane", "cutplane")
+ 
+        plane.AttachmentSupport = frame_obj.Base
+        plane.MapMode           = "FlatFace"
+ 
+        # Random colour so overlapping planes are visually distinct.
+        rand_color = tuple(randint(0, 256, size=3) / 255.0)
+        plane.ViewObject.ShapeAppearance = FreeCAD.Material(DiffuseColor=rand_color)
+ 
+        # Initial placement – shift origin so the plane is centred on the
+        # intersection point before rotation.
+        rot_vector = inter_point - FreeCAD.Vector(0, plane.Length / 2, -plane.Length / 2)
+        placement_rot = FreeCAD.Placement(
+            rot_vector,
+            FreeCAD.Rotation(FreeCAD.Vector(0, 1, 0), 90),
+        )
+        plane.AttachmentOffset = placement_rot
+        plane.recompute()
+ 
+        # Rotate normal to align with bisect vector.
+        placement_rel = FreeCAD.Placement(
+            FreeCAD.Vector(0, 0, 0),
+            FreeCAD.Rotation(plane.Shape.normalAt(0, 0), bisect_vec),
+            inter_point,
+        ).multiply(placement_rot)
+ 
+        # Extra 90° around Z when the initial normal points along +X.
+        if self.roundVectors(plane.Shape.normalAt(0, 0), 0) == FreeCAD.Vector(1, 0, 0):
+            extra_rot = 90
+        else:
+            extra_rot = 0
+ 
+        placement_final = FreeCAD.Placement(
+            FreeCAD.Vector(0, 0, 0),
+            FreeCAD.Rotation(FreeCAD.Vector(0, 0, 1), extra_rot),
+            inter_point,
+        ).multiply(placement_rel)
+ 
+        plane.AttachmentOffset = placement_final
+        plane.recompute()
+ 
+    def _create_endpoint_plane(self, frame_obj, points, vi, at_start):
+        """Create a square-cut plane at an open-wire endpoint.
+        The cut normal is the direction of the only segment that meets here."""
+ 
+        n = len(points)
+        p_curr = FreeCAD.Vector(*points[vi])
+ 
+        if at_start:
+            neighbour = FreeCAD.Vector(*points[vi + 1])
+            direction = (p_curr - neighbour)   # outward from wire
+        else:
+            neighbour = FreeCAD.Vector(*points[vi - 1])
+            direction = (p_curr - neighbour)
+ 
+        if direction.Length < 1e-9:
+            return
+ 
+        FreeCAD.Console.PrintMessage(
+            f"Wire endpoint plane at vertex {vi}: {p_curr}\n"
+        )
+        self._create_bisect_plane(frame_obj, p_curr, direction)
+ 
+    # ------------------------------------------------------------------
+    # Utilities
+    # ------------------------------------------------------------------
+ 
+    @staticmethod
+    def _outgoing_vector(segment, r_start, r_end, r_inter):
+        """Return the vector pointing *away* from *r_inter* along *segment*.
+        Returns None if the intersection is not at either endpoint."""
+ 
+        if r_start == r_inter:
+            return FreeCAD.Vector(segment.EndPoint - segment.StartPoint)
+        elif r_end == r_inter:
+            return FreeCAD.Vector(segment.StartPoint - segment.EndPoint)
+        return None
+ 
+    @staticmethod
+    def roundVectors(vector, decimals):
+        return FreeCAD.Vector(
+            round(vector.x, decimals),
+            round(vector.y, decimals),
+            round(vector.z, decimals),
+        )
 
     def accept(self):
         if FreeCAD.ActiveDocument:
@@ -1368,7 +1498,6 @@ class ViewProviderFrameBranch:
 import Draft
 from FreeCAD import Vector
 
-
 def doProfile(typeS="RH", label="Square", dims=[50, 100, 5])->FreeCAD.DocumentObject:
     "doProfile(typeS, label, dims)"
     if typeS in ["RH", "R", "H", "U", "L", "T","TSLOT", "Z", "omega", "circle"]:
@@ -1403,7 +1532,6 @@ def doProfile(typeS="RH", label="Square", dims=[50, 100, 5])->FreeCAD.DocumentOb
         return obj
     else:
         FreeCAD.Console.PrintError("Not such section!\n")
-
 
 def drawAndCenter(points:list[Vector])->Part.Face:
     """
@@ -2235,7 +2363,6 @@ class beamType(object):
     def execute(self, fp):
         fp.positionBySupport()
 
-
 class Beam(beamType):
     """
     Beam(obj, rating, SSize, stype, H, W, ta, tf)
@@ -2433,7 +2560,6 @@ class Beam(beamType):
             FreeCAD.Vector(0, 0,  1),
         ]
         super(Beam, self).execute(fp)
-
 
 class ViewProviderBeam:
     def __init__(self, vobj, icon_fn="Quetzal_InsertSection"):
