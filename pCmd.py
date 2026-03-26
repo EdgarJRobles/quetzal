@@ -1051,7 +1051,7 @@ def makeFlange(propList=[], pos=None, Z=None, doOffset=None, rating="DIN-PN16", 
         elif a.FlangeType == "LJ":
             zpos = 0
         else:
-            zpos = 0
+             zpos = -a.trf
         a.Placement = a.Placement.multiply(
             FreeCAD.Placement(FreeCAD.Vector(0, 0, zpos), FreeCAD.Rotation())
         )
@@ -1125,7 +1125,7 @@ def doFlanges(
                 elif a.FlangeType == "LJ":
                     zpos = 0
                 else:
-                    zpos = a.trf
+                    zpos = -2 * a.trf
                 pipe = fCmd.beams()[0]
                 #respos=a.Placement.multiply(FreeCAD.Placement(FreeCAD.Vector(0,0,-zpos), FreeCAD.Rotation(1, 0, 0)))
                 respos=a.Placement.multiply(FreeCAD.Placement(FreeCAD.Vector(0,0,zpos), FreeCAD.Rotation()))
