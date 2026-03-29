@@ -190,6 +190,8 @@ class Pipe(pypeType):
             QT_TRANSLATE_NOOP("App::Property", "Section dim."),
         ).Profile = str(obj.OD) + "x" + str(obj.thk)
 
+        self.execute(obj)
+
     def onChanged(self, fp, prop):
         if prop == "ID" and fp.ID < fp.OD:
             fp.thk = (fp.OD - fp.ID) / 2
@@ -952,7 +954,8 @@ class Tee(pypeType):
             "Tee",
             QT_TRANSLATE_NOOP("App::Property", "Run and Branch Size"),
         ).Profile = str(obj.OD) + "x" + str(obj.OD2)
-        
+        self.execute(obj)
+
     def onChanged(self, fp, prop):
         return None
     
@@ -1328,6 +1331,8 @@ class Reduct(pypeType):
             QT_TRANSLATE_NOOP("App::Property", "Concentric or Eccentric"),
         ).conc = conc
 
+        self.execute(obj)
+
     def onChanged(self, fp, prop):
         return None
 
@@ -1414,6 +1419,8 @@ class Cap(pypeType):
             "Cap",
             QT_TRANSLATE_NOOP("App::Property", "Section dim."),
         ).Profile = str(obj.OD) + "x" + str(obj.thk)
+
+        self.execute(obj)
 
     def onChanged(self, fp, prop):
         return None
@@ -1642,6 +1649,8 @@ class Ubolt:
             "PBase",
             QT_TRANSLATE_NOOP("App::Property", "Ports position relative to the origin of Shape"),
         )
+
+        self.execute(obj)
 
     def onChanged(self, fp, prop):
         return None
@@ -2579,6 +2588,8 @@ class Gasket(pypeType):
             QT_TRANSLATE_NOOP("App::Property", "Inner and centering ring thickness"),
         ).Rthk = Rthk
 
+        self.execute(obj)
+
     def onChanged(self, fp, prop):
         # Sealing element must be thicker than or equal to the rings
         if prop == "Rthk" and hasattr(fp, "SEthk") and fp.Rthk > fp.SEthk:
@@ -2725,6 +2736,8 @@ class Bolts_Nuts(pypeType):
             QT_TRANSLATE_NOOP("App::Property",
                               "Sealing element thickness of the matching gasket"),
         ).SEthk = SEthk
+
+        self.execute(obj)
 
     def onChanged(self, fp, prop):
         return None
@@ -2958,6 +2971,8 @@ class Outlet(pypeType):
             "App::PropertyString", "Profile", "Outlet",
             QT_TRANSLATE_NOOP("App::Property", "Section dimensions"),
         ).Profile = str(OD) + "x" + str(thk)
+
+        self.execute(obj)
 
     # ------------------------------------------------------------------
     def onChanged(self, fp, prop):
