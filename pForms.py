@@ -3179,8 +3179,8 @@ class point2pointPipe(DraftTools.Wire):
                     float(v.Length),
                 ]
                 self.lastPipe = pCmd.makePipe(rating,propList, self.start, v)
-                if self.pform.combo.currentText() != "<none>":
-                    pCmd.moveToPyLi(self.lastPipe, self.pform.combo.currentText())
+                if self.pform.existingObjs.currentText() != "<none>":
+                    pCmd.moveToPyLi(self.lastPipe, self.pform.existingObjs.currentText())
                 self.start = self.point
                 FreeCAD.ActiveDocument.recompute()
                 if prev:
@@ -3195,8 +3195,8 @@ class point2pointPipe(DraftTools.Wire):
                             float(pq(d["OD"]) * 0.75),
                         ],
                     )
-                    if c and self.pform.combo.currentText() != "<none>":
-                        pCmd.moveToPyLi(c, self.pform.combo.currentText())
+                    if c and self.pform.existingObjs.currentText() != "<none>":
+                        pCmd.moveToPyLi(c, self.pform.existingObjs.currentText())
                     FreeCAD.ActiveDocument.recompute()
             if self.pform.cb1.isChecked():
                 rot = FreeCAD.DraftWorkingPlane.getPlacement().Rotation
