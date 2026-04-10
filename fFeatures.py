@@ -967,7 +967,7 @@ class frameBranchForm(dodoDialogs.protoTypeDialog):
                     beam.Support = [(FB.Base, "Edge" + str(i + 1))]
                 beam.MapMode = "NormalToEdge"
                 beam.MapReversed = True
-                beamsList[i] = str(beam.Name)
+                beamsList.append(beam.Name)
             FB.Beams = beamsList
             FreeCAD.ActiveDocument.recompute()
             FreeCAD.ActiveDocument.recompute()
