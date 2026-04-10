@@ -2988,8 +2988,8 @@ class insertValveForm(dodoDialogs.protoPypeForm):
             r  = self._normRow(d)
 
             if self._isFlangedConn():
-                # Flanged Trunnion Ball valve
-                # propList: [DN, VType, H, Kv, Conn]
+                # Flanged valve
+                # propList: [DN, VType, H, Kv, Conn, optional TopH, optional WheelD]
                 psize = r["psize"]
                 conn  = r["conn"]
                 propList = [
@@ -2998,6 +2998,8 @@ class insertValveForm(dodoDialogs.protoPypeForm):
                     float(pq(r["h"])),
                     float(pq(r.get("kv", "0"))),
                     conn,
+                    float(pq(r.get("toph", "0"))),
+                    float(pq(r.get("wheeld", "0"))),
                 ]
                 flgPropList = self._loadFlangePropList(conn, psize)
                 # Read actuator choice from radio buttons (default to "Handle")
