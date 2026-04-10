@@ -1361,6 +1361,16 @@ class ViewProviderFrameBranch:
 
     def onDelete(self, feature, subelements):  # subelements is a tuple of strings
         return True
+    
+    def onChanged(self, vobj, prop):
+            if prop == "Visibility":
+                # Sincroniza la visibilidad con todas las vigas
+                new_state = vobj.Visibility
+                if hasattr(self.Object, 'Beams'):
+                    for b in self.Object.Beams:
+                        obj=FreeCAD.ActiveDocument.getObject(b)
+                        if obj and hasattr(obj, 'ViewObject'):
+                            obj.ViewObject.Visibility = new_state
 
 
 ######### customArchProfile ############
