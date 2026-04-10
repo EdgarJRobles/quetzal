@@ -1832,7 +1832,7 @@ class Valve(pypeType):
                  OD=None, E=None, Conn=None,
                  flgD=0, flgt=0, flgdrf=0, flgtrf=0,
                  flgdf=0, flgf=0, flgn=0,
-                 actuator="Handle"):
+                 actuator="Handle", topH=0, wheelD=0):
         super(Valve, self).__init__(obj)
         obj.Proxy   = self
         obj.PType   = "Valve"
@@ -1892,6 +1892,16 @@ class Valve(pypeType):
                 QT_TRANSLATE_NOOP("App::Property",
                                   "Actuator type: Handle or Gearbox"),
             ).Actuator = actuator
+            obj.addProperty(
+                "App::PropertyLength", "TopH", "Valve",
+                QT_TRANSLATE_NOOP("App::Property",
+                                  "Centerline-to-operator height"),
+            ).TopH = topH
+            obj.addProperty(
+                "App::PropertyLength", "WheelD", "Valve",
+                QT_TRANSLATE_NOOP("App::Property",
+                                  "Lever length or handwheel diameter"),
+            ).WheelD = wheelD
 
         elif Conn is not None:
             # -- Socket-weld / Threaded valve properties ---------------------
@@ -1932,7 +1942,10 @@ class Valve(pypeType):
         # to ensure correct dispatch when the proxy is reconstructed on reload.
         _flanged = ("150lb", "300lb", "600lb", "900lb", "1500lb", "2500lb")
         if conn is not None and conn.strip() in _flanged:
-            self._execute_flanged(fp, H)
+            if fp.PRating.lower().find("plug") + 1:
+                self._execute_plug_valve(fp, H)
+            else:
+                self._execute_flanged(fp, H)
         elif conn is not None:
             self._execute_sw_th(fp, H)
         else:
@@ -2215,6 +2228,208 @@ class Valve(pypeType):
         ]
         fp.PortDirections = [
             FreeCAD.Vector(0, 0,  1),
+            FreeCAD.Vector(0, 0, -1),
+        ]
+
+    def _execute_plug_valve(self, fp, H):
+        def _nominal_diameter(psize):
+            try:
+                return float("".join(c for c in psize if c.isdigit() or c == "."))
+            except Exception:
+                return 0.0
+
+        nominal_d = _nominal_diameter(fp.PSize)
+        pipe_od = pipe_OD.get(fp.PSize, nominal_d or float(fp.FlgDrf) * 0.65)
+        bore = nominal_d or pipe_od * 0.9
+        bore_r = bore / 2.0
+
+        flgD = float(fp.FlgD)
+        flgt = float(fp.Flgt)
+        flgDrf = float(fp.FlgDrf)
+        flgTrf = float(fp.FlgTrf)
+        flgDf = float(fp.FlgDf)
+        flgF = float(fp.FlgF)
+        flgN = int(fp.FlgN)
+        flange_r = flgD / 2.0
+
+        wall = max(bore * 0.06, 8.0)
+        sleeve_r = max(pipe_od * 0.52, bore_r + wall)
+        sleeve_r = min(sleeve_r, flange_r * 0.72)
+        sleeve_r = max(sleeve_r, bore_r + wall)
+        chamber_r = max(sleeve_r * 1.25, bore_r + wall * 2.8)
+        chamber_r = min(chamber_r, flange_r * 0.78)
+        chamber_r = max(chamber_r, sleeve_r + wall)
+        body_len = max(H - 2.0 * flgt, H * 0.46)
+
+        def make_rf_flange(z_face, inward):
+            base = Part.Face(Part.Wire(Part.makeCircle(flange_r)))
+            if flgN > 0:
+                bolt = Part.Face(
+                    Part.Wire(
+                        Part.makeCircle(
+                            flgF / 2.0,
+                            FreeCAD.Vector(flgDf / 2.0, 0, 0),
+                            FreeCAD.Vector(0, 0, 1),
+                        )
+                    )
+                )
+                bolt.rotate(
+                    FreeCAD.Vector(0, 0, 0),
+                    FreeCAD.Vector(0, 0, 1),
+                    360.0 / flgN / 2.0,
+                )
+                for _ in range(flgN):
+                    base = base.cut(bolt)
+                    bolt.rotate(
+                        FreeCAD.Vector(0, 0, 0),
+                        FreeCAD.Vector(0, 0, 1),
+                        360.0 / flgN,
+                    )
+
+            flange = base.extrude(FreeCAD.Vector(0, 0, inward * flgt))
+            if flgDrf > 0 and flgTrf > 0:
+                rf = Part.makeCylinder(
+                    flgDrf / 2.0,
+                    flgTrf,
+                    FreeCAD.Vector(0, 0, 0),
+                    FreeCAD.Vector(0, 0, -inward),
+                )
+                flange = flange.fuse(rf)
+            flange.translate(FreeCAD.Vector(0, 0, z_face))
+            return flange
+
+        sleeve = Part.makeCylinder(
+            sleeve_r, H,
+            FreeCAD.Vector(0, 0, -H / 2.0),
+            FreeCAD.Vector(0, 0, 1),
+        )
+        center_body = Part.makeCylinder(
+            chamber_r, body_len,
+            FreeCAD.Vector(0, 0, -body_len / 2.0),
+            FreeCAD.Vector(0, 0, 1),
+        )
+        plug_chamber = Part.makeCylinder(
+            chamber_r * 0.72, chamber_r * 1.9,
+            FreeCAD.Vector(0, -chamber_r * 0.72, 0),
+            FreeCAD.Vector(0, 1, 0),
+        )
+        top_cap = Part.makeCylinder(
+            chamber_r * 0.42, chamber_r * 0.26,
+            FreeCAD.Vector(0, chamber_r * 0.72, 0),
+            FreeCAD.Vector(0, 1, 0),
+        )
+        boss = Part.makeCylinder(
+            chamber_r * 0.32, chamber_r * 0.34,
+            FreeCAD.Vector(0, chamber_r * 0.92, 0),
+            FreeCAD.Vector(0, 1, 0),
+        )
+        flange_neg = make_rf_flange(-H / 2.0, 1.0)
+        flange_pos = make_rf_flange(H / 2.0, -1.0)
+
+        top_h = float(getattr(fp, "TopH", 0)) or max(chamber_r * 2.0, bore * 1.8)
+        operator_w = float(getattr(fp, "WheelD", 0)) or max(bore * 3.0, 250.0)
+        stem_r = max(min(bore * 0.045, 10.0), 4.0)
+        stem_y0 = chamber_r * 0.88
+        stem_top_y = max(top_h - stem_r * 2.0, stem_y0 + 25.0)
+        stem = Part.makeCylinder(
+            stem_r,
+            stem_top_y - stem_y0,
+            FreeCAD.Vector(0, stem_y0, 0),
+            FreeCAD.Vector(0, 1, 0),
+        )
+
+        rating = fp.PRating.lower()
+        operator = None
+        if rating.find("gear") + 1:
+            gear_r = max(min(operator_w * 0.18, chamber_r * 0.42), stem_r * 3.0)
+            gear_h = max(gear_r * 0.85, 28.0)
+            gear_y0 = max(stem_top_y - gear_h, stem_y0)
+            gearbox = Part.makeCylinder(
+                gear_r,
+                gear_h,
+                FreeCAD.Vector(0, gear_y0, 0),
+                FreeCAD.Vector(0, 1, 0),
+            )
+            wheel_r = operator_w / 2.0
+            wheel_t = max(min(wheel_r * 0.055, 12.0), 4.0)
+            wheel_center = FreeCAD.Vector(0, top_h, 0)
+            handwheel = Part.makeTorus(
+                wheel_r, wheel_t, wheel_center, FreeCAD.Vector(0, 1, 0)
+            )
+            hub = Part.makeCylinder(
+                stem_r * 1.8,
+                wheel_t * 3.0,
+                wheel_center - FreeCAD.Vector(0, wheel_t * 1.5, 0),
+                FreeCAD.Vector(0, 1, 0),
+            )
+            axle = Part.makeCylinder(
+                stem_r * 1.25,
+                max(top_h - stem_y0 + wheel_t, wheel_t),
+                FreeCAD.Vector(0, stem_y0, 0),
+                FreeCAD.Vector(0, 1, 0),
+            )
+            spokes = None
+            for direction in (
+                FreeCAD.Vector(1, 0, 0),
+                FreeCAD.Vector(-1, 0, 0),
+                FreeCAD.Vector(0, 0, 1),
+                FreeCAD.Vector(0, 0, -1),
+            ):
+                spoke = Part.makeCylinder(
+                    max(wheel_t * 0.55, 1.6),
+                    wheel_r + wheel_t * 1.5,
+                    wheel_center,
+                    direction,
+                )
+                spokes = spoke if spokes is None else spokes.fuse(spoke)
+            operator = gearbox.fuse(handwheel)
+            operator = operator.fuse(hub)
+            operator = operator.fuse(axle)
+            if spokes is not None:
+                operator = operator.fuse(spokes)
+        else:
+            lever_len = operator_w
+            lever_r = max(min(bore * 0.045, 10.0), 4.0)
+            lever_y = stem_top_y
+            lever = Part.makeCylinder(
+                lever_r,
+                lever_len,
+                FreeCAD.Vector(-lever_len / 2.0, lever_y, 0),
+                FreeCAD.Vector(1, 0, 0),
+            )
+            knob = Part.makeCylinder(
+                lever_r * 1.7,
+                lever_r * 2.8,
+                FreeCAD.Vector(lever_len / 2.0 - lever_r * 1.4, lever_y, 0),
+                FreeCAD.Vector(1, 0, 0),
+            )
+            operator = lever.fuse(knob)
+
+        bore_cut = Part.makeCylinder(
+            bore_r, H + 4.0,
+            FreeCAD.Vector(0, 0, -H / 2.0 - 2.0),
+            FreeCAD.Vector(0, 0, 1),
+        )
+
+        valve = sleeve.fuse(center_body)
+        valve = valve.fuse(plug_chamber)
+        valve = valve.fuse(top_cap)
+        valve = valve.fuse(boss)
+        valve = valve.fuse(flange_neg)
+        valve = valve.fuse(flange_pos)
+        valve = valve.fuse(stem)
+        if operator is not None:
+            valve = valve.fuse(operator)
+        valve = valve.cut(bore_cut)
+        valve = valve.removeSplitter()
+        fp.Shape = valve
+
+        fp.Ports = [
+            FreeCAD.Vector(0, 0, H / 2.0),
+            FreeCAD.Vector(0, 0, -H / 2.0),
+        ]
+        fp.PortDirections = [
+            FreeCAD.Vector(0, 0, 1),
             FreeCAD.Vector(0, 0, -1),
         ]
 
