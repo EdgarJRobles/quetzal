@@ -1256,7 +1256,7 @@ class FrameBranch(object):
                     beam.Height = (
                         float(obj.Base.Shape.Edges[i].Length) + beam.tailOffset + beam.headOffset
                     )
-                    offset = FreeCAD.Vector(0, 0, beam.tailOffset).negative()
+                    offset = FreeCAD.Vector(0, 0, beam.tailOffset)
                     spin = FreeCAD.Rotation()
                     beam.AttachmentOffset = FreeCAD.Placement(offset, spin)
                     angle = degrees(fCmd.beamAx(beam, X).getAngle(n))
