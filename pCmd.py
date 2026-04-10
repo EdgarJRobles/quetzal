@@ -2223,8 +2223,10 @@ def makeValve(propList=[], pos=None, Z=None, flgPropList=None, actuator="Handle"
       DN      (string): nominal diameter
       VType   (string): valve type (e.g. "Ball_LongPatternRF")
       H       (float) : body length, flange face to flange face
-      Kv      (float) : flow factor  [optional]
+      Kv      (float) : flow factor
       Conn    (string): pressure class, e.g. "150lb"
+      TopH    (float) : optional centerline-to-top height
+      WheelD  (float) : optional handwheel diameter
 
     flgPropList — list of blind-flange properties read from the matching
       Flange_ASME-BL-RF-<Conn>.csv table.  Elements in order:
@@ -2252,6 +2254,8 @@ def makeValve(propList=[], pos=None, Z=None, flgPropList=None, actuator="Handle"
         H     = float(propList[2]) if len(propList) > 2 else 200.0
         Kv    = float(propList[3]) if len(propList) > 3 else 0.0
         Conn  = str(propList[4]) if len(propList) > 4 else "150lb"
+        TopH  = float(propList[5]) if len(propList) > 5 else 0.0
+        WheelD = float(propList[6]) if len(propList) > 6 else 0.0
         # flgPropList: [PSize, FlangeType, D, t, f, n, df, drf, trf]
         flgD   = float(flgPropList[2]) if len(flgPropList) > 2 else 0.0
         flgt   = float(flgPropList[3]) if len(flgPropList) > 3 else 0.0
@@ -2263,7 +2267,7 @@ def makeValve(propList=[], pos=None, Z=None, flgPropList=None, actuator="Handle"
         pFeatures.Valve(a, DN=DN, VType=VType, H=H, Kv=Kv, Conn=Conn,
                         flgD=flgD, flgt=flgt, flgdrf=flgdrf, flgtrf=flgtrf,
                         flgdf=flgdf, flgf=flgf, flgn=flgn,
-                        actuator=actuator)
+                        actuator=actuator, topH=TopH, wheelD=WheelD)
     elif propList:
         # Detect socket/threaded variant by the presence of a "Conn" field.
         # Convention: propList for the SW/TH path carries Conn as element [6]
