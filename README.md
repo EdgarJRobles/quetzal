@@ -101,7 +101,7 @@ Here are some of the planned developments for this Workbench:
   - [ ] Pipe Clamping
     - [X] U-bolt clamp
     - [ ] Beam clamp
-  - [ ] Beam joins
+  - [X] Beam joins
 - [ ] Support, if possible, International design standarts:
   - [ ] ASME B16.5 (NPS 1/2 to 24")
   - [ ] ASME B16.47 (NPS 26 to 60")
