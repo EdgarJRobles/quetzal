@@ -1318,6 +1318,35 @@ def makeUbolt(propList=[], pos=None, Z=None):
     return a
 
 
+def makeBeamClamp(propList=[], pos=None, Z=None):
+    """Adds a beam clamp object:
+    makeBeamClamp(propList,pos,Z);
+      propList is one optional list with 9 elements:
+        PSize (string): catalog size row
+        ClampType (string): the clamp type or standard
+        ProductCode (string): vendor product code
+        Bolt (string): nominal bolt size
+        Y, X, V, T, W (float): catalog dimensions in mm
+      pos (vector): position of insertion; default = 0,0,0
+      Z (vector): orientation: default = 0,0,1
+    """
+    if pos == None:
+        pos = FreeCAD.Vector(0, 0, 0)
+    if Z == None:
+        Z = FreeCAD.Vector(0, 0, 1)
+    a = FreeCAD.ActiveDocument.addObject("Part::FeaturePython", "Beam-Clamp")
+    if len(propList) == 9:
+        pFeatures.BeamClamp(a, *propList)
+    else:
+        pFeatures.BeamClamp(a)
+    ViewProvider(a.ViewObject, "Quetzal_InsertUBolt")
+    a.Placement.Base = pos
+    rot = FreeCAD.Rotation(FreeCAD.Vector(0, 0, 1), Z)
+    a.Placement.Rotation = rot.multiply(a.Placement.Rotation)
+    a.Label = translate("Objects", "Beam Clamp")
+    return a
+
+
 def makeShell(L=1000, W=1500, H=1500, thk1=6, thk2=8):
     """
     makeShell(L,W,H,thk1,thk2)
