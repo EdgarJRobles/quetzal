@@ -1542,6 +1542,68 @@ class insertFlangeForm(dodoDialogs.protoPypeForm):
     def changeSize(self, s):
         super().changeSize(s)
 
+
+class insertDuctReductionForm(dodoDialogs.protoPypeForm):
+    """Dialog to insert rectangular HVAC duct transitions/reducers."""
+
+    def __init__(self):
+        super(insertDuctReductionForm, self).__init__(
+            translate("insertDuctReductionForm", "Insert duct reductions"),
+            "DuctReduction",
+            "Rectangular",
+            "reduct.svg",
+            x,
+            y,
+        )
+        self.btn_insert.setDefault(True)
+        self.btn_insert.setFocus()
+        self.show()
+        self.lastDuctReduction = None
+
+    def fillSizes(self):
+        self.sizeList.clear()
+        self.pipeDictList = []
+        fname = "DuctReduction_" + self.PRating + ".csv"
+        fpath = join(dirname(abspath(__file__)), "tablez", fname)
+        try:
+            with open(fpath, "r", encoding="utf-8-sig") as fh:
+                self.pipeDictList = list(csv.DictReader(fh, delimiter=";"))
+        except Exception:
+            return
+
+        for row in self.pipeDictList:
+            label = "{}  L{}  off {},{}".format(
+                row["PSize"],
+                row.get("Length", ""),
+                row.get("OffsetX", "0"),
+                row.get("OffsetY", "0"),
+            )
+            self.sizeList.addItem(label)
+
+    def insert(self):
+        idx = self.sizeList.currentIndex()
+        if idx < 0 or idx >= len(self.pipeDictList):
+            return
+        row = self.pipeDictList[idx]
+        propList = [
+            row["PSize"],
+            float(pq(row["W1"])),
+            float(pq(row["H1"])),
+            float(pq(row["W2"])),
+            float(pq(row["H2"])),
+            float(pq(row["thk"])),
+            float(pq(row["Length"])),
+            float(pq(row.get("OffsetX", "0"))),
+            float(pq(row.get("OffsetY", "0"))),
+        ]
+        FreeCAD.activeDocument().openTransaction(
+            translate("Transaction", "Insert duct reduction")
+        )
+        self.lastDuctReduction = pCmd.makeDuctReduction(propList, rating=self.PRating)
+        FreeCAD.activeDocument().commitTransaction()
+        FreeCAD.activeDocument().recompute()
+
+
 class insertReductForm(dodoDialogs.protoPypeForm):
     """
     Dialog to insert concentric reductions.
