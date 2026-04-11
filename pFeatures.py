@@ -1832,7 +1832,7 @@ class Valve(pypeType):
                  OD=None, E=None, Conn=None,
                  flgD=0, flgt=0, flgdrf=0, flgtrf=0,
                  flgdf=0, flgf=0, flgn=0,
-                 actuator="Handle"):
+                 actuator="Handle", topH=0, wheelD=0):
         super(Valve, self).__init__(obj)
         obj.Proxy   = self
         obj.PType   = "Valve"
@@ -1892,6 +1892,16 @@ class Valve(pypeType):
                 QT_TRANSLATE_NOOP("App::Property",
                                   "Actuator type: Handle or Gearbox"),
             ).Actuator = actuator
+            obj.addProperty(
+                "App::PropertyLength", "TopH", "Valve",
+                QT_TRANSLATE_NOOP("App::Property",
+                                  "Upper operator envelope from valve centerline"),
+            ).TopH = topH
+            obj.addProperty(
+                "App::PropertyLength", "WheelD", "Valve",
+                QT_TRANSLATE_NOOP("App::Property",
+                                  "Handwheel or handle width"),
+            ).WheelD = wheelD
 
         elif Conn is not None:
             # -- Socket-weld / Threaded valve properties ---------------------
@@ -1932,7 +1942,11 @@ class Valve(pypeType):
         # to ensure correct dispatch when the proxy is reconstructed on reload.
         _flanged = ("150lb", "300lb", "600lb", "900lb", "1500lb", "2500lb")
         if conn is not None and conn.strip() in _flanged:
-            self._execute_flanged(fp, H)
+            rating = getattr(fp, "PRating", "").lower()
+            if "needle" in rating:
+                self._execute_needle_valve(fp, H)
+            else:
+                self._execute_flanged(fp, H)
         elif conn is not None:
             self._execute_sw_th(fp, H)
         else:
@@ -2215,6 +2229,158 @@ class Valve(pypeType):
         ]
         fp.PortDirections = [
             FreeCAD.Vector(0, 0,  1),
+            FreeCAD.Vector(0, 0, -1),
+        ]
+
+    def _execute_needle_valve(self, fp, H):
+        """Build a compact flanged OS&Y needle valve / process monoflange."""
+        import math
+
+        flgD   = float(fp.FlgD)
+        flgt   = float(fp.Flgt)
+        flgDrf = float(fp.FlgDrf)
+        flgTrf = float(fp.FlgTrf)
+        flgDf  = float(fp.FlgDf)
+        flgF   = float(fp.FlgF)
+        flgN   = int(fp.FlgN)
+
+        pipe_od = pipe_OD.get(fp.PSize, max(flgDrf * 0.65, 1.0))
+        # Swagelok MS02 process monoflanges publish 0.2 in. / 5 mm bores.
+        bore_r = 2.5
+        top_h = float(getattr(fp, "TopH", 0)) or max(pipe_od * 1.8, flgD * 0.75)
+        handle_w = float(getattr(fp, "WheelD", 0)) or max(65.0, min(125.0, pipe_od * 1.8))
+
+        def make_bl_flange(z_face, face_up):
+            sign = 1.0 if face_up else -1.0
+            base = Part.Face(Part.Wire(Part.makeCircle(flgD / 2.0)))
+            if flgN > 0 and flgF > 0 and flgDf > 0:
+                hole = Part.Face(
+                    Part.Wire(
+                        Part.makeCircle(
+                            flgF / 2.0,
+                            FreeCAD.Vector(flgDf / 2.0, 0, 0),
+                            FreeCAD.Vector(0, 0, 1),
+                        )
+                    )
+                )
+                hole.rotate(FreeCAD.Vector(0, 0, 0),
+                            FreeCAD.Vector(0, 0, 1), 360.0 / flgN / 2.0)
+                for i in range(flgN):
+                    base = base.cut(hole)
+                    hole.rotate(FreeCAD.Vector(0, 0, 0),
+                                FreeCAD.Vector(0, 0, 1), 360.0 / flgN)
+
+            flange = base.extrude(FreeCAD.Vector(0, 0, sign * flgt))
+            if flgTrf > 0 and flgDrf > 0:
+                rf = Part.makeCylinder(
+                    flgDrf / 2.0, flgTrf,
+                    FreeCAD.Vector(0, 0, 0),
+                    FreeCAD.Vector(0, 0, -sign),
+                )
+                flange = flange.fuse(rf)
+            flange.translate(FreeCAD.Vector(0, 0, z_face + flgTrf * sign))
+            return flange
+
+        flange_bot = make_bl_flange(-H / 2.0, face_up=True)
+        flange_top = make_bl_flange(H / 2.0, face_up=False)
+
+        bolt_clear_r = flgDf / 2.0 - flgF / 2.0 - 2.0
+        sleeve_r = max(bore_r + 8.0, min(flgDrf * 0.38, flgD * 0.24, bolt_clear_r * 0.70))
+        sleeve = Part.makeCylinder(
+            sleeve_r, H,
+            FreeCAD.Vector(0, 0, -H / 2.0),
+            FreeCAD.Vector(0, 0, 1),
+        )
+
+        body_len = min(max(H - 2.0 * flgt, H * 0.52), H)
+        body_r = max(
+            sleeve_r * 1.18,
+            min(flgD * 0.34, top_h * 0.30, bolt_clear_r),
+        )
+        body = Part.makeCylinder(
+            body_r, body_len,
+            FreeCAD.Vector(0, 0, -body_len / 2.0),
+            FreeCAD.Vector(0, 0, 1),
+        )
+
+        bonnet_base_y = body_r * 0.62
+        bonnet_top_y = max(top_h - max(12.0, handle_w * 0.10), bonnet_base_y + 18.0)
+        bonnet_r = max(6.0, min(body_r * 0.55, flgD * 0.18))
+        bonnet = Part.makeCone(
+            bonnet_r * 1.35, bonnet_r * 0.72, bonnet_top_y - bonnet_base_y,
+            FreeCAD.Vector(0, bonnet_base_y, 0),
+            FreeCAD.Vector(0, 1, 0),
+        )
+
+        gland_h = max(5.0, min(12.0, flgt * 0.35))
+        gland = Part.makeCylinder(
+            bonnet_r * 0.82, gland_h,
+            FreeCAD.Vector(0, bonnet_top_y - gland_h * 0.20, 0),
+            FreeCAD.Vector(0, 1, 0),
+        )
+
+        valve = flange_bot.fuse(flange_top)
+        for shape in (sleeve, body, bonnet, gland):
+            valve = valve.fuse(shape)
+
+        bore = Part.makeCylinder(
+            bore_r, H + 2.0 * flgt + 4.0,
+            FreeCAD.Vector(0, 0, -H / 2.0 - flgt - 2.0),
+            FreeCAD.Vector(0, 0, 1),
+        )
+        valve = valve.cut(bore)
+
+        stem_r = max(2.0, min(5.0, pipe_od * 0.045))
+        stem = Part.makeCylinder(
+            stem_r, top_h,
+            FreeCAD.Vector(0, 0, 0),
+            FreeCAD.Vector(0, 1, 0),
+        )
+        yoke_gap = max(bonnet_r * 0.62, stem_r * 3.4)
+        yoke_r = max(1.8, stem_r * 0.65)
+        yoke_top = max(top_h - handle_w * 0.12, bonnet_top_y + 8.0)
+        for x in (-yoke_gap, yoke_gap):
+            yoke = Part.makeCylinder(
+                yoke_r, yoke_top - bonnet_top_y + yoke_r,
+                FreeCAD.Vector(x, bonnet_top_y - yoke_r, 0),
+                FreeCAD.Vector(0, 1, 0),
+            )
+            valve = valve.fuse(yoke)
+        bridge = Part.makeBox(
+            yoke_gap * 2.0 + yoke_r * 2.0,
+            yoke_r * 2.0,
+            yoke_r * 2.0,
+            FreeCAD.Vector(-yoke_gap - yoke_r, yoke_top - yoke_r, -yoke_r),
+        )
+
+        handle_r = max(2.2, min(6.0, handle_w * 0.055))
+        handle = Part.makeCylinder(
+            handle_r, handle_w,
+            FreeCAD.Vector(-handle_w / 2.0, top_h, 0),
+            FreeCAD.Vector(1, 0, 0),
+        )
+        knob_l = Part.makeSphere(handle_r * 1.45, FreeCAD.Vector(-handle_w / 2.0, top_h, 0))
+        knob_r = Part.makeSphere(handle_r * 1.45, FreeCAD.Vector(handle_w / 2.0, top_h, 0))
+
+        # Tapered needle tip below the stem, visible as the regulating element.
+        needle = Part.makeCone(
+            stem_r * 1.15, 0.35, max(body_r * 0.9, 18.0),
+            FreeCAD.Vector(0, body_r * 0.25, 0),
+            FreeCAD.Vector(0, -1, 0),
+        )
+
+        for shape in (stem, bridge, handle, knob_l, knob_r, needle):
+            valve = valve.fuse(shape)
+
+        valve = valve.removeSplitter()
+        fp.Shape = valve
+
+        fp.Ports = [
+            FreeCAD.Vector(0, 0, H / 2.0),
+            FreeCAD.Vector(0, 0, -H / 2.0),
+        ]
+        fp.PortDirections = [
+            FreeCAD.Vector(0, 0, 1),
             FreeCAD.Vector(0, 0, -1),
         ]
 

@@ -95,7 +95,7 @@ Here are some of the planned developments for this Workbench:
     - [ ] Check Valve
     - [ ] Globe Valve
     - [X] Butterfly Valve
-    - [ ] Needle Valve
+    - [X] Needle Valve
     - [ ] Knife gate Valve
     - [ ] Pinch Valve
   - [ ] Pipe Clamping
