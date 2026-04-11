@@ -2225,8 +2225,8 @@ def makeValve(propList=[], pos=None, Z=None, flgPropList=None, actuator="Handle"
       H       (float) : body length, flange face to flange face
       Kv      (float) : flow factor
       Conn    (string): pressure class, e.g. "150lb"
-      TopH    (float) : optional centerline-to-top height
-      WheelD  (float) : optional handwheel diameter
+      TopH    (float) : optional centerline-to-operator height
+      WheelD  (float) : optional lever length or handwheel diameter
 
     flgPropList — list of blind-flange properties read from the matching
       Flange_ASME-BL-RF-<Conn>.csv table.  Elements in order:

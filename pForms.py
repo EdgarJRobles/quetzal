@@ -2988,7 +2988,7 @@ class insertValveForm(dodoDialogs.protoPypeForm):
             r  = self._normRow(d)
 
             if self._isFlangedConn():
-                # Flanged Trunnion Ball valve
+                # Flanged valve
                 # propList: [DN, VType, H, Kv, Conn, optional TopH, optional WheelD]
                 psize = r["psize"]
                 conn  = r["conn"]
