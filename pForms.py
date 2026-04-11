@@ -1888,7 +1888,7 @@ class insertReductForm(dodoDialogs.protoPypeForm):
 
 class insertUboltForm(dodoDialogs.protoPypeForm):
     """
-    Dialog to insert U-bolts.
+    Dialog to insert pipe clamps.
     For position and orientation you can select
       - one or more circular edges,
       - nothing.
@@ -1898,7 +1898,7 @@ class insertUboltForm(dodoDialogs.protoPypeForm):
 
     def __init__(self):
         super(insertUboltForm, self).__init__(
-            translate("insertUboltForm", "Insert U-bolt"),
+            translate("insertUboltForm", "Insert clamp"),
             "Clamp",
             "DIN-UBolt",
             "clamp.svg",
@@ -1929,6 +1929,32 @@ class insertUboltForm(dodoDialogs.protoPypeForm):
         self.refNorm = None
         self.getReference()
 
+    def _isBeamClamp(self, row):
+        return row.get("ClampFamily", "").strip().lower() == "beam" or "ProductCode" in row
+
+    def _beamClampPropList(self, row):
+        return [
+            row["PSize"],
+            row.get("ClampFamily", self.PRating),
+            row.get("ProductCode", ""),
+            row.get("Bolt", ""),
+            float(pq(row["Y"])),
+            float(pq(row["X"])),
+            float(pq(row["V"])),
+            float(pq(row["T"])),
+            float(pq(row["W"])),
+        ]
+
+    def _selectedClampPosition(self, selex):
+        for sx in selex:
+            if sx.SubObjects:
+                for sub in sx.SubObjects:
+                    if hasattr(sub, "CenterOfMass"):
+                        return sub.CenterOfMass
+            if hasattr(sx.Object, "Placement"):
+                return sx.Object.Placement.Base
+        return FreeCAD.Vector(0, 0, 0)
+
     def getReference(self):
         selex = FreeCADGui.Selection.getSelectionEx()
         for sx in selex:
@@ -1941,12 +1967,26 @@ class insertUboltForm(dodoDialogs.protoPypeForm):
 
     def insert(self):
         selex = FreeCADGui.Selection.getSelectionEx()
+        _idx = self.sizeList.currentIndex()
+        if _idx < 0 or _idx >= len(self.pipeDictList):
+            return
+        current_row = self.pipeDictList[_idx]
+        if self._isBeamClamp(current_row):
+            FreeCAD.activeDocument().openTransaction(
+                translate("Transaction", "Insert beam clamp")
+            )
+            bc = pCmd.makeBeamClamp(
+                self._beamClampPropList(current_row),
+                pos=self._selectedClampPosition(selex),
+            )
+            if self.existingObjs.currentText() != "<none>":
+                pCmd.moveToPyLi(bc, self.existingObjs.currentText())
+            FreeCAD.activeDocument().commitTransaction()
+            FreeCAD.activeDocument().recompute()
+            return
         if len(selex) == 0:
             # size_selected = self.pipeDictList[self.sizeList.currentIndex()]
-            _idx = self.sizeList.currentIndex()
-            if _idx < 0 or _idx >= len(self.pipeDictList):
-                return
-            size_selected = self.pipeDictList[_idx]
+            size_selected = current_row
             rating = self.ratingList.currentText()
             propList = [
                 size_selected["PSize"],
