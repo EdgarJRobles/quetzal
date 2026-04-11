@@ -559,6 +559,9 @@ class protoPypeForm(QDialog):
         # Hide other objects
         for obj in doc.Objects:
             if obj == preview_obj:
+                if hasattr(obj,"PType") and obj.PType=="Valve":
+                    obj.Placement.Rotation = FreeCAD.Rotation(FreeCAD.Vector(0.0,0.7071,0.7071),180)
+                    obj.touch()
                 continue
             try:
                 vis_state[obj.Name] = obj.Visibility
@@ -579,6 +582,7 @@ class protoPypeForm(QDialog):
             from PySide.QtCore import QCoreApplication
             QCoreApplication.processEvents() 
             FreeCADGui.Selection.clearSelection()
+            FreeCADGui.updateGui()
             
             # Save the image
             view.saveImage(self.fullimagepath, 300, 300, "Transparent")
