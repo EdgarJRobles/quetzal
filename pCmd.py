@@ -1462,6 +1462,34 @@ def makeTee(propList=[], pos=None, Z=None, insertOnBranch=False, rating="SCH-STD
     return a
 
 
+def makeDuctBranch(propList=[], pos=None, Z=None, insertOnBranch=False, rating="Rectangular"):
+    """Adds a rectangular duct branch object.
+
+    propList is one optional list with 9 elements:
+      PSize, RunW, RunH, BranchW, BranchH, thk, RunLength, BranchLength, BranchAngle
+    """
+    if pos == None:
+        pos = FreeCAD.Vector(0, 0, 0)
+    if Z == None:
+        Z = FreeCAD.Vector(0, 0, 1)
+    a = FreeCAD.ActiveDocument.addObject("Part::FeaturePython", "Duct-Branch")
+    if len(propList) == 9:
+        pFeatures.DuctBranch(a, rating, *propList)
+    else:
+        pFeatures.DuctBranch(a, rating)
+    if a.ViewObject:
+        ViewProvider(a.ViewObject, "Quetzal_InsertTee")
+    a.Placement.Base = pos
+    if insertOnBranch:
+        ref = a.PortDirections[2] if a.PortDirections else FreeCAD.Vector(0, 1, 0)
+    else:
+        ref = a.PortDirections[0] if a.PortDirections else FreeCAD.Vector(-1, 0, 0)
+    rot = FreeCAD.Rotation(ref, Z)
+    a.Placement.Rotation = rot.multiply(a.Placement.Rotation)
+    a.Label = translate("Objects", "Duct Branch")
+    return a
+
+
 def doTees(rating="SCH-STD", propList=["DN150", 168.27, 114.3,7.11,6.02,178,156], pypeline=None, insertOnBranch=False, doOffset=False):
     """
     propList = [

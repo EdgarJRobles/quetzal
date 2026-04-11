@@ -4,7 +4,7 @@ __title__ = "pypeTools objects"
 __author__ = "oddtopus"
 __url__ = "github.com/oddtopus/dodo"
 __license__ = "LGPL 3"
-objs = ["Pipe", "Elbow", "Reduct", "Cap", "Flange", "Tee", "Ubolt", "Valve"]
+objs = ["Pipe", "Elbow", "DuctBranch", "Reduct", "Cap", "Flange", "Tee", "Ubolt", "Valve"]
 metaObjs = ["PypeLine", "PypeBranch"]
 
 from os.path import abspath, dirname, join
@@ -1050,6 +1050,162 @@ class Tee(pypeType):
                       FreeCAD.Vector(0, 0, 1), 
                       FreeCAD.Vector(0, 1, 0)]
         super(Tee, self).execute(fp)  # perform common operations
+
+
+class DuctBranch:
+    """Class for object PType="DuctBranch".
+
+    Rectangular duct branch with a straight run and an angled branch takeoff.
+    """
+
+    def __init__(
+        self,
+        obj,
+        rating="Rectangular",
+        PSize="600x300-300x200-45",
+        RunW=600,
+        RunH=300,
+        BranchW=300,
+        BranchH=200,
+        thk=1.0,
+        RunLength=1200,
+        BranchLength=600,
+        BranchAngle=45,
+    ):
+        obj.Proxy = self
+        obj.addProperty(
+            "App::PropertyString",
+            "PType",
+            "DuctBranch",
+            QT_TRANSLATE_NOOP("App::Property", "Type of duct feature"),
+        ).PType = "DuctBranch"
+        obj.addProperty(
+            "App::PropertyString",
+            "PRating",
+            "DuctBranch",
+            QT_TRANSLATE_NOOP("App::Property", "Duct fitting family"),
+        ).PRating = rating
+        obj.addProperty(
+            "App::PropertyString",
+            "PSize",
+            "DuctBranch",
+            QT_TRANSLATE_NOOP("App::Property", "Nominal duct branch size"),
+        ).PSize = PSize
+        for prop, value, text in [
+            ("RunW", RunW, "Run width"),
+            ("RunH", RunH, "Run height"),
+            ("BranchW", BranchW, "Branch width"),
+            ("BranchH", BranchH, "Branch height"),
+            ("thk", thk, "Wall thickness"),
+            ("RunLength", RunLength, "Run length"),
+            ("BranchLength", BranchLength, "Branch length"),
+        ]:
+            obj.addProperty(
+                "App::PropertyLength",
+                prop,
+                "DuctBranch",
+                QT_TRANSLATE_NOOP("App::Property", text),
+            )
+            setattr(obj, prop, value)
+        obj.addProperty(
+            "App::PropertyAngle",
+            "BranchAngle",
+            "DuctBranch",
+            QT_TRANSLATE_NOOP("App::Property", "Branch angle"),
+        ).BranchAngle = BranchAngle
+        obj.addProperty(
+            "App::PropertyString",
+            "Profile",
+            "DuctBranch",
+            QT_TRANSLATE_NOOP("App::Property", "Run and branch section dim."),
+        ).Profile = str(obj.RunW) + "x" + str(obj.RunH) + ">" + str(obj.BranchW) + "x" + str(obj.BranchH)
+        obj.addProperty(
+            "App::PropertyVectorList",
+            "Ports",
+            "PBase",
+            QT_TRANSLATE_NOOP("App::Property", "Ports position relative to the origin of Shape"),
+        )
+        obj.addProperty(
+            "App::PropertyVectorList",
+            "PortDirections",
+            "PBase",
+            QT_TRANSLATE_NOOP("App::Property", "Port directions relative to the origin of Shape"),
+        )
+        self.execute(obj)
+
+    def onChanged(self, fp, prop):
+        return None
+
+    def execute(self, fp):
+        from math import cos, radians, sin
+
+        run_w = max(float(fp.RunW), 1.0)
+        run_h = max(float(fp.RunH), 1.0)
+        branch_w = max(float(fp.BranchW), 1.0)
+        branch_h = max(float(fp.BranchH), 1.0)
+        thk = max(min(float(fp.thk), run_w / 2 - 0.1, run_h / 2 - 0.1, branch_w / 2 - 0.1, branch_h / 2 - 0.1), 0.1)
+        run_len = max(float(fp.RunLength), 1.0)
+        branch_len = max(float(fp.BranchLength), 1.0)
+        angle = max(min(float(fp.BranchAngle), 90.0), 1.0)
+        fp.Profile = str(fp.RunW) + "x" + str(fp.RunH) + ">" + str(fp.BranchW) + "x" + str(fp.BranchH)
+
+        run_outer = self._duct_prism(
+            FreeCAD.Vector(-run_len / 2, 0, 0),
+            FreeCAD.Vector(run_len / 2, 0, 0),
+            run_w,
+            run_h,
+        )
+        run_inner = self._duct_prism(
+            FreeCAD.Vector(-run_len / 2 - 1, 0, 0),
+            FreeCAD.Vector(run_len / 2 + 1, 0, 0),
+            run_w - 2 * thk,
+            run_h - 2 * thk,
+        )
+        direction = FreeCAD.Vector(cos(radians(angle)), sin(radians(angle)), 0)
+        start = FreeCAD.Vector(0, run_h / 2 - branch_h * 0.15, 0)
+        end = start + direction.multiply(branch_len)
+        branch_outer = self._duct_prism(start, end, branch_w, branch_h)
+        branch_inner = self._duct_prism(
+            start - direction,
+            end + direction,
+            branch_w - 2 * thk,
+            branch_h - 2 * thk,
+        )
+        fp.Shape = run_outer.fuse(branch_outer).cut(run_inner.fuse(branch_inner)).removeSplitter()
+        fp.Ports = [
+            FreeCAD.Vector(-run_len / 2, 0, 0),
+            FreeCAD.Vector(run_len / 2, 0, 0),
+            end,
+        ]
+        fp.PortDirections = [
+            FreeCAD.Vector(-1, 0, 0),
+            FreeCAD.Vector(1, 0, 0),
+            direction,
+        ]
+
+    def _duct_prism(self, start, end, width, height):
+        axis = (end - start).normalize()
+        up = vZ
+        side = axis.cross(up)
+        if side.Length == 0:
+            side = vY
+        side.normalize()
+        start_wire = self._rect_wire(start, side, up, width, height)
+        end_wire = self._rect_wire(end, side, up, width, height)
+        return Part.makeLoft([start_wire, end_wire], True, False, False)
+
+    def _rect_wire(self, center, xdir, ydir, width, height):
+        x = xdir.normalize().multiply(width / 2)
+        y = ydir.normalize().multiply(height / 2)
+        pts = [
+            center - x - y,
+            center + x - y,
+            center + x + y,
+            center - x + y,
+            center - x - y,
+        ]
+        return Part.Wire(Part.makePolygon(pts))
+
 
 class SocketTee(pypeType):
     """
