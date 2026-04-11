@@ -124,6 +124,15 @@ reduct_tooltip = (
     "Reverse button:\n"
     "Rotates the reducer 180 degrees about its attachment port.\n"
     "\n"
+	)
+
+duct_reduction_tooltip = (
+    "Tool to insert a rectangular HVAC duct transition/reducer\n"
+    "_________________________________________________ \n"
+    "Usage \n"
+    "Select the rectangular duct reduction family from the rating list, then select the inlet/outlet size and transition length preset.\n"
+    "Click 'Insert' to create a standalone rectangular duct transition at the origin.\n"
+    "The generated object stores inlet width/height, outlet width/height, wall thickness, length, and outlet offsets as editable properties.\n"
 )
 
 cap_tooltip = (

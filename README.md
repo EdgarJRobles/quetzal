@@ -75,7 +75,7 @@ Here are some of the planned developments for this Workbench:
 - [ ] Icrease valve design detail
 - [ ] Add HVAC duct support.
   - [ ] Elbow
-  - [ ] Reduction
+  - [X] Reduction
   - [ ] Branch
   - [ ] Round duct
   - [ ] Square duct
