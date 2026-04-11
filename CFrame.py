@@ -458,6 +458,42 @@ class rotJoin:
         }
 
 
+class joinBeams:
+    """
+    Tool to trim or extend selected beams to their centerline intersection.
+    """
+    def IsActive(self):
+        if FreeCAD.ActiveDocument is None:
+            return False
+        else:
+            return True
+
+    def Activated(self):
+        import FreeCAD
+        import fCmd
+
+        beams = fCmd.beams()
+        if len(beams) > 1:
+            FreeCAD.activeDocument().openTransaction(
+                translate("Transaction", "Join beams")
+            )
+            point = fCmd.joinTheBeams(beams)
+            if point is not None:
+                FreeCAD.activeDocument().recompute()
+            FreeCAD.activeDocument().commitTransaction()
+        else:
+            FreeCAD.Console.PrintError("Select at least two beams to join.\n")
+
+    def GetResources(self):
+        return {
+            "Pixmap": "Quetzal_RotateJoin",
+            "MenuText": QT_TRANSLATE_NOOP("Quetzal_JoinBeams", "Join beams"),
+            "ToolTip": QT_TRANSLATE_NOOP(
+                "Quetzal_JoinBeams", Quetzal_tooltips.joinbeams_tooltip
+            ),
+        }
+
+
 class insertPath:
     """
     Tool to create a continuous DWire over the path defined by the
@@ -598,6 +634,7 @@ addCommand("Quetzal_StretchBeam", stretchBeam())
 addCommand("Quetzal_ExtendBeam", extend())
 addCommand("Quetzal_AdjustFrameAngle", adjustFrameAngle())
 addCommand("Quetzal_RotateJoin", rotJoin())
+addCommand("Quetzal_JoinBeams", joinBeams())
 addCommand("Quetzal_InsertPath", insertPath())
 # addCommand('FrameLineManager',FrameLineManager())
 addCommand("Quetzal_InsertSection", insertSection())
