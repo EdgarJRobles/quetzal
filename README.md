@@ -89,7 +89,7 @@ Here are some of the planned developments for this Workbench:
   - [X] Coupling
   - [X] Flange
   - [ ] Valve
-    - [ ] Gate Valve
+    - [X] Gate Valve
     - [ ] Plug Valve
     - [X] Ball Valve
     - [X] Check Valve
