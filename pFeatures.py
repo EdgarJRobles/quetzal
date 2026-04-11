@@ -2347,13 +2347,107 @@ class Valve(pypeType):
         ]
 
     def _execute_legacy(self, fp, H):
+        if fp.PRating.lower().find("check") + 1:
+            self._execute_check_wafer(fp, H)
+            return
+
         c = Part.makeCone(fp.ODBody / 2, fp.ODBody / 5, H / 2,
                           FreeCAD.Vector(0, 0, -H / 2))
         v = c.fuse(c.mirror(FreeCAD.Vector(0, 0, 0), FreeCAD.Vector(0, 0, 1)))
-        if fp.PRating.find("ball") + 1 or fp.PRating.find("globe") + 1:
+        if fp.PRating.lower().find("ball") + 1 or fp.PRating.lower().find("globe") + 1:
             r = min(H * 0.45, float(fp.ODBody) / 2)
             v = v.fuse(Part.makeSphere(r, FreeCAD.Vector(0, 0, 0)))
         fp.Shape = v
+        fp.Ports = [
+            FreeCAD.Vector(0, 0, -H / 2),
+            FreeCAD.Vector(0, 0,  H / 2),
+        ]
+        fp.PortDirections = [
+            FreeCAD.Vector(0, 0, -1),
+            FreeCAD.Vector(0, 0,  1),
+        ]
+
+    def _execute_check_wafer(self, fp, H):
+        """Build a simple wafer-style swing check valve body.
+
+        The roadmap calls out check valves separately from the existing ball and
+        butterfly entries.  This keeps the generic valve table format while
+        giving check valves a distinct directional body, internal tilted disc,
+        and hinge boss instead of the legacy double-cone symbol.
+        """
+        od_body = float(fp.ODBody)
+        bore = float(fp.ID)
+        body = Part.makeCylinder(
+            od_body / 2,
+            H,
+            FreeCAD.Vector(0, 0, -H / 2),
+            FreeCAD.Vector(0, 0, 1),
+        )
+        bore_cut = Part.makeCylinder(
+            bore / 2,
+            H + 2,
+            FreeCAD.Vector(0, 0, -H / 2 - 1),
+            FreeCAD.Vector(0, 0, 1),
+        )
+        body = body.cut(bore_cut)
+
+        ring_h = max(2.0, min(H * 0.18, 8.0))
+        ring_od = min(od_body, bore + (od_body - bore) * 0.65)
+        ring_id = bore * 0.86
+        rings = []
+        for z0 in (-H / 2, H / 2 - ring_h):
+            ring = Part.makeCylinder(
+                ring_od / 2,
+                ring_h,
+                FreeCAD.Vector(0, 0, z0),
+                FreeCAD.Vector(0, 0, 1),
+            )
+            ring_bore = Part.makeCylinder(
+                ring_id / 2,
+                ring_h + 2,
+                FreeCAD.Vector(0, 0, z0 - 1),
+                FreeCAD.Vector(0, 0, 1),
+            )
+            rings.append(ring.cut(ring_bore))
+
+        disc_thk = max(2.0, min(H * 0.12, 6.0))
+        disc = Part.makeCylinder(
+            bore * 0.38,
+            disc_thk,
+            FreeCAD.Vector(0, 0, -disc_thk / 2),
+            FreeCAD.Vector(0, 0, 1),
+        )
+        disc.rotate(FreeCAD.Vector(0, 0, 0), FreeCAD.Vector(1, 0, 0), 22)
+
+        hinge_radius = max(2.0, min(H * 0.16, bore * 0.08))
+        hinge_y = od_body / 2 + hinge_radius * 0.2
+        hinge = Part.makeCylinder(
+            hinge_radius,
+            od_body * 0.7,
+            FreeCAD.Vector(-od_body * 0.35, hinge_y, 0),
+            FreeCAD.Vector(1, 0, 0),
+        )
+        hinge_web = Part.makeCylinder(
+            hinge_radius * 0.65,
+            od_body * 0.16,
+            FreeCAD.Vector(0, od_body / 2 - hinge_radius * 0.8, 0),
+            FreeCAD.Vector(0, 1, 0),
+        )
+        disc_arm = Part.makeCylinder(
+            hinge_radius * 0.42,
+            hinge_y,
+            FreeCAD.Vector(0, 0, 0),
+            FreeCAD.Vector(0, 1, 0),
+        )
+
+        valve = body
+        for ring in rings:
+            valve = valve.fuse(ring)
+        valve = valve.fuse(disc)
+        valve = valve.fuse(disc_arm)
+        valve = valve.fuse(hinge)
+        valve = valve.fuse(hinge_web)
+        fp.Shape = valve.removeSplitter()
         fp.Ports = [
             FreeCAD.Vector(0, 0, -H / 2),
             FreeCAD.Vector(0, 0,  H / 2),
