@@ -1,0 +1,17 @@
+PSize;W;H;thk;BendAngle;BendRadius;Source
+150x150-45;150;150;0.8;45;225;https://www.northwestern.edu/facilities/docs/construction/design_guidelines/23_hvac/NU_23%203114%20-%20DUCTWORK.pdf
+150x150-90;150;150;0.8;90;225;https://www.northwestern.edu/facilities/docs/construction/design_guidelines/23_hvac/NU_23%203114%20-%20DUCTWORK.pdf
+200x150-45;200;150;0.8;45;300;https://www.northwestern.edu/facilities/docs/construction/design_guidelines/23_hvac/NU_23%203114%20-%20DUCTWORK.pdf
+200x150-90;200;150;0.8;90;300;https://www.northwestern.edu/facilities/docs/construction/design_guidelines/23_hvac/NU_23%203114%20-%20DUCTWORK.pdf
+300x150-45;300;150;0.8;45;450;https://www.northwestern.edu/facilities/docs/construction/design_guidelines/23_hvac/NU_23%203114%20-%20DUCTWORK.pdf
+300x150-90;300;150;0.8;90;450;https://www.northwestern.edu/facilities/docs/construction/design_guidelines/23_hvac/NU_23%203114%20-%20DUCTWORK.pdf
+300x200-45;300;200;0.8;45;450;https://www.northwestern.edu/facilities/docs/construction/design_guidelines/23_hvac/NU_23%203114%20-%20DUCTWORK.pdf
+300x200-90;300;200;0.8;90;450;https://www.northwestern.edu/facilities/docs/construction/design_guidelines/23_hvac/NU_23%203114%20-%20DUCTWORK.pdf
+400x200-45;400;200;0.8;45;600;https://www.northwestern.edu/facilities/docs/construction/design_guidelines/23_hvac/NU_23%203114%20-%20DUCTWORK.pdf
+400x200-90;400;200;0.8;90;600;https://www.northwestern.edu/facilities/docs/construction/design_guidelines/23_hvac/NU_23%203114%20-%20DUCTWORK.pdf
+450x300-45;450;300;0.8;45;675;https://www.northwestern.edu/facilities/docs/construction/design_guidelines/23_hvac/NU_23%203114%20-%20DUCTWORK.pdf
+450x300-90;450;300;0.8;90;675;https://www.northwestern.edu/facilities/docs/construction/design_guidelines/23_hvac/NU_23%203114%20-%20DUCTWORK.pdf
+600x300-45;600;300;1.0;45;900;https://www.northwestern.edu/facilities/docs/construction/design_guidelines/23_hvac/NU_23%203114%20-%20DUCTWORK.pdf
+600x300-90;600;300;1.0;90;900;https://www.northwestern.edu/facilities/docs/construction/design_guidelines/23_hvac/NU_23%203114%20-%20DUCTWORK.pdf
+600x450-45;600;450;1.0;45;900;https://www.northwestern.edu/facilities/docs/construction/design_guidelines/23_hvac/NU_23%203114%20-%20DUCTWORK.pdf
+600x450-90;600;450;1.0;90;900;https://www.northwestern.edu/facilities/docs/construction/design_guidelines/23_hvac/NU_23%203114%20-%20DUCTWORK.pdf

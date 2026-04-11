@@ -847,6 +847,38 @@ def makeElbow(propList=[], pos=None, Z=None, rating="SCH-STD"):
     return a
 
 
+def makeDuctElbow(propList=[], pos=None, Z=None, rating="Rectangular"):
+    """Adds a rectangular duct elbow object.
+
+    propList is one optional list with 6 elements:
+      PSize (string): nominal duct size
+      W (float): duct width
+      H (float): duct height
+      thk (float): wall thickness
+      BendAngle (float): bend angle in degrees
+      BendRadius (float): centerline bend radius
+    """
+    if pos == None:
+        pos = FreeCAD.Vector(0, 0, 0)
+    if Z == None:
+        Z = FreeCAD.Vector(0, 0, 1)
+    a = FreeCAD.ActiveDocument.addObject("Part::FeaturePython", "Duct-Elbow")
+    if len(propList) == 6:
+        pFeatures.DuctElbow(a, rating, *propList)
+    else:
+        pFeatures.DuctElbow(a, rating)
+    if a.ViewObject:
+        ViewProvider(a.ViewObject, "Quetzal_InsertElbow")
+
+    port0_local_dir = a.PortDirections[0] if a.PortDirections else FreeCAD.Vector(0, 0, 1)
+    rot = FreeCAD.Rotation(port0_local_dir, Z)
+    a.Placement.Rotation = rot.multiply(a.Placement.Rotation)
+    port0_world = a.Placement.multVec(a.Ports[0])
+    a.Placement.Base = pos - port0_world
+    a.Label = translate("Objects", "Duct Elbow")
+    return a
+
+
 def makeElbowBetweenThings(thing1=None, thing2=None, propList=None):
     """
     makeElbowBetweenThings(thing1, thing2, propList=None):

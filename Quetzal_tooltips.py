@@ -103,6 +103,15 @@ elbow_tooltip = (
     "\n"
 	)
 
+duct_elbow_tooltip = (
+    "Tool to insert a rectangular HVAC duct elbow\n"
+    "_________________________________________________ \n"
+    "Usage \n"
+    "Select the rectangular duct elbow family from the rating list, then select the duct size, bend angle, and radius preset.\n"
+    "Click 'Insert' to create a standalone rectangular duct radius elbow at the origin.\n"
+    "The generated object stores width, height, wall thickness, bend angle, and centerline bend radius as editable properties.\n"
+)
+
 reduct_tooltip = (
     "Tool to insert a concentric or eccentric pipe reducer\n"
     "______________________________________________________________________________________________________________________________________ \n"
