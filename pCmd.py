@@ -2219,12 +2219,14 @@ def makeValve(propList=[], pos=None, Z=None, flgPropList=None, actuator="Handle"
       Conn    (string): "SW" or "TH"
       Kv      (float) : flow factor  [optional]
 
-    propList elements for the flanged (Trunnion Ball) path:
+    propList elements for the flanged path:
       DN      (string): nominal diameter
       VType   (string): valve type (e.g. "Ball_LongPatternRF")
       H       (float) : body length, flange face to flange face
       Kv      (float) : flow factor  [optional]
       Conn    (string): pressure class, e.g. "150lb"
+      TopH    (float) : upper operator envelope from centerline [optional]
+      WheelD  (float) : handwheel / handle width [optional]
 
     flgPropList — list of blind-flange properties read from the matching
       Flange_ASME-BL-RF-<Conn>.csv table.  Elements in order:
@@ -2246,12 +2248,14 @@ def makeValve(propList=[], pos=None, Z=None, flgPropList=None, actuator="Handle"
 
     if flgPropList is not None:
         # Flanged valve path.
-        # propList: [DN, VType, H, (Kv), Conn]
+        # propList: [DN, VType, H, (Kv), Conn, (TopH), (WheelD)]
         DN    = propList[0] if len(propList) > 0 else "DN50"
         VType = propList[1] if len(propList) > 1 else "Ball_LongPatternRF"
         H     = float(propList[2]) if len(propList) > 2 else 200.0
         Kv    = float(propList[3]) if len(propList) > 3 else 0.0
         Conn  = str(propList[4]) if len(propList) > 4 else "150lb"
+        topH   = float(propList[5]) if len(propList) > 5 else 0.0
+        wheelD = float(propList[6]) if len(propList) > 6 else 0.0
         # flgPropList: [PSize, FlangeType, D, t, f, n, df, drf, trf]
         flgD   = float(flgPropList[2]) if len(flgPropList) > 2 else 0.0
         flgt   = float(flgPropList[3]) if len(flgPropList) > 3 else 0.0
@@ -2263,7 +2267,7 @@ def makeValve(propList=[], pos=None, Z=None, flgPropList=None, actuator="Handle"
         pFeatures.Valve(a, DN=DN, VType=VType, H=H, Kv=Kv, Conn=Conn,
                         flgD=flgD, flgt=flgt, flgdrf=flgdrf, flgtrf=flgtrf,
                         flgdf=flgdf, flgf=flgf, flgn=flgn,
-                        actuator=actuator)
+                        actuator=actuator, topH=topH, wheelD=wheelD)
     elif propList:
         # Detect socket/threaded variant by the presence of a "Conn" field.
         # Convention: propList for the SW/TH path carries Conn as element [6]
