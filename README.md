@@ -92,7 +92,7 @@ Here are some of the planned developments for this Workbench:
     - [X] Gate Valve
     - [ ] Plug Valve
     - [X] Ball Valve
-    - [ ] Check Valve
+    - [X] Check Valve
     - [ ] Globe Valve
     - [X] Butterfly Valve
     - [ ] Needle Valve
