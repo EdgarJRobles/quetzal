@@ -2284,7 +2284,8 @@ class Valve(pypeType):
         flange_bot = make_bl_flange(-H / 2.0, face_up=True)
         flange_top = make_bl_flange(H / 2.0, face_up=False)
 
-        sleeve_r = max(bore_r + 8.0, min(flgDrf * 0.38, flgD * 0.24))
+        bolt_clear_r = flgDf / 2.0 - flgF / 2.0 - 2.0
+        sleeve_r = max(bore_r + 8.0, min(flgDrf * 0.38, flgD * 0.24, bolt_clear_r * 0.70))
         sleeve = Part.makeCylinder(
             sleeve_r, H,
             FreeCAD.Vector(0, 0, -H / 2.0),
@@ -2292,7 +2293,10 @@ class Valve(pypeType):
         )
 
         body_len = min(max(H - 2.0 * flgt, H * 0.52), H)
-        body_r = max(sleeve_r * 1.28, min(flgD * 0.34, top_h * 0.30))
+        body_r = max(
+            sleeve_r * 1.18,
+            min(flgD * 0.34, top_h * 0.30, bolt_clear_r),
+        )
         body = Part.makeCylinder(
             body_r, body_len,
             FreeCAD.Vector(0, 0, -body_len / 2.0),
