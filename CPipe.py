@@ -74,6 +74,28 @@ class insertElbow:
         }
 
 
+class insertDuctElbow:
+    def IsActive(self):
+        if FreeCAD.ActiveDocument is None:
+            return False
+        else:
+            return True
+
+    def Activated(self):
+        import pForms
+
+        pForms.insertDuctElbowForm()
+
+    def GetResources(self):
+        return {
+            "Pixmap": "Quetzal_InsertElbow",
+            "MenuText": QT_TRANSLATE_NOOP("Quetzal_InsertDuctElbow", "Insert a duct elbow"),
+            "ToolTip": QT_TRANSLATE_NOOP(
+                "Quetzal_InsertDuctElbow", Quetzal_tooltips.duct_elbow_tooltip
+            ),
+        }
+
+
 class insertTerminalAdapter:
     def IsActive(self):
         if FreeCAD.ActiveDocument is None:
@@ -711,6 +733,7 @@ addCommand("Quetzal_InsertOutlet", insertOutlet())
 # ---------------------------------------------------------------------------
 addCommand("Quetzal_InsertPipe", insertPipe())
 addCommand("Quetzal_InsertElbow", insertElbow())
+addCommand("Quetzal_InsertDuctElbow", insertDuctElbow())
 addCommand("Quetzal_InsertReduct", insertReduct())
 addCommand("Quetzal_InsertCap", insertCap())
 addCommand("Quetzal_InsertTee", insertTee())

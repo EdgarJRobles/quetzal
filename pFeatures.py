@@ -4,7 +4,7 @@ __title__ = "pypeTools objects"
 __author__ = "oddtopus"
 __url__ = "github.com/oddtopus/dodo"
 __license__ = "LGPL 3"
-objs = ["Pipe", "Elbow", "Reduct", "Cap", "Flange", "Tee", "Ubolt", "Valve"]
+objs = ["Pipe", "Elbow", "DuctElbow", "Reduct", "Cap", "Flange", "Tee", "Ubolt", "Valve"]
 metaObjs = ["PypeLine", "PypeBranch"]
 
 from os.path import abspath, dirname, join
@@ -411,6 +411,141 @@ class Elbow(pypeType):
                 super(Elbow, self).execute(fp)  # perform common operations
             except Part.OCCError as occer:
                 FreeCAD.Console.PrintWarning(str(occer) + "\n")
+
+
+class DuctElbow:
+    """Class for object PType="DuctElbow".
+    Rectangular radius duct elbow driven by width, height, wall thickness,
+    bend angle, and centerline bend radius.
+    """
+
+    def __init__(
+        self,
+        obj,
+        rating="Rectangular",
+        PSize="300x150",
+        W=300,
+        H=150,
+        thk=0.8,
+        BA=90,
+        BR=450,
+    ):
+        obj.Proxy = self
+        obj.addProperty(
+            "App::PropertyString",
+            "PType",
+            "DuctElbow",
+            QT_TRANSLATE_NOOP("App::Property", "Type of duct feature"),
+        ).PType = "DuctElbow"
+        obj.addProperty(
+            "App::PropertyString",
+            "PRating",
+            "DuctElbow",
+            QT_TRANSLATE_NOOP("App::Property", "Duct fitting family"),
+        ).PRating = rating
+        obj.addProperty(
+            "App::PropertyString",
+            "PSize",
+            "DuctElbow",
+            QT_TRANSLATE_NOOP("App::Property", "Nominal duct size"),
+        ).PSize = PSize
+        obj.addProperty(
+            "App::PropertyLength",
+            "W",
+            "DuctElbow",
+            QT_TRANSLATE_NOOP("App::Property", "Duct width"),
+        ).W = W
+        obj.addProperty(
+            "App::PropertyLength",
+            "H",
+            "DuctElbow",
+            QT_TRANSLATE_NOOP("App::Property", "Duct height"),
+        ).H = H
+        obj.addProperty(
+            "App::PropertyLength",
+            "thk",
+            "DuctElbow",
+            QT_TRANSLATE_NOOP("App::Property", "Wall thickness"),
+        ).thk = thk
+        obj.addProperty(
+            "App::PropertyAngle",
+            "BendAngle",
+            "DuctElbow",
+            QT_TRANSLATE_NOOP("App::Property", "Bend Angle"),
+        ).BendAngle = BA
+        obj.addProperty(
+            "App::PropertyLength",
+            "BendRadius",
+            "DuctElbow",
+            QT_TRANSLATE_NOOP("App::Property", "Centerline bend radius"),
+        ).BendRadius = BR
+        obj.addProperty(
+            "App::PropertyString",
+            "Profile",
+            "DuctElbow",
+            QT_TRANSLATE_NOOP("App::Property", "Section dim."),
+        ).Profile = str(obj.W) + "x" + str(obj.H) + "x" + str(obj.thk)
+        obj.addProperty(
+            "App::PropertyVectorList",
+            "Ports",
+            "PBase",
+            QT_TRANSLATE_NOOP("App::Property", "Ports position relative to the origin of Shape"),
+        )
+        obj.addProperty(
+            "App::PropertyVectorList",
+            "PortDirections",
+            "PBase",
+            QT_TRANSLATE_NOOP("App::Property", "Port directions relative to the origin of Shape"),
+        )
+        self.execute(obj)
+
+    def onChanged(self, fp, prop):
+        return None
+
+    def execute(self, fp):
+        from math import cos, radians, sin
+
+        width = max(float(fp.W), 1.0)
+        height = max(float(fp.H), 1.0)
+        thk = max(min(float(fp.thk), width / 2 - 0.1, height / 2 - 0.1), 0.1)
+        angle = max(min(float(fp.BendAngle), 170.0), 1.0)
+        radius = max(float(fp.BendRadius), width / 2 + thk)
+        fp.Profile = str(fp.W) + "x" + str(fp.H) + "x" + str(fp.thk)
+
+        segments = max(6, int(angle / 7.5))
+        outer_wires = []
+        inner_wires = []
+        for i in range(segments + 1):
+            a = radians(angle * i / segments)
+            center = FreeCAD.Vector(radius * sin(a), radius * (1 - cos(a)), 0)
+            radial = FreeCAD.Vector(-sin(a), cos(a), 0)
+            outer_wires.append(self._rect_wire(center, radial, vZ, width, height))
+            inner_wires.append(self._rect_wire(center, radial, vZ, width - 2 * thk, height - 2 * thk))
+
+        outer = Part.makeLoft(outer_wires, True, False, False)
+        inner = Part.makeLoft(inner_wires, True, False, False)
+        fp.Shape = outer.cut(inner)
+        fp.Ports = [
+            outer_wires[0].CenterOfMass,
+            outer_wires[-1].CenterOfMass,
+        ]
+        fp.PortDirections = [
+            FreeCAD.Vector(-1, 0, 0),
+            FreeCAD.Vector(cos(radians(angle)), sin(radians(angle)), 0),
+        ]
+
+    def _rect_wire(self, center, xdir, ydir, width, height):
+        x = xdir.normalize().multiply(width / 2)
+        y = ydir.normalize().multiply(height / 2)
+        pts = [
+            center - x - y,
+            center + x - y,
+            center + x + y,
+            center - x + y,
+            center - x - y,
+        ]
+        return Part.Wire(Part.makePolygon(pts))
+
 
 class Flange(pypeType):
     """Class for object PType="Flange"
