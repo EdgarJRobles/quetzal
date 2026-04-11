@@ -672,6 +672,75 @@ class insertElbowForm(dodoDialogs.protoPypeForm):
     def changeSize(self, s):
         super().changeSize(s)
 
+
+class insertDuctBranchForm(dodoDialogs.protoPypeForm):
+    """Dialog to insert rectangular HVAC duct branch fittings."""
+
+    def __init__(self):
+        super(insertDuctBranchForm, self).__init__(
+            translate("insertDuctBranchForm", "Insert duct branches"),
+            "DuctBranch",
+            "Rectangular",
+            "Tee.svg",
+            x,
+            y,
+        )
+        self.insertModeGroup = QButtonGroup()
+        self.runRadio = QRadioButton(translate("insertDuctBranchForm", "Insert on Run"))
+        self.branchRadio = QRadioButton(translate("insertDuctBranchForm", "Insert on Branch"))
+        self.runRadio.setChecked(True)
+        self.insertModeGroup.addButton(self.runRadio)
+        self.insertModeGroup.addButton(self.branchRadio)
+        self.secondCol.layout().addWidget(self.runRadio)
+        self.secondCol.layout().addWidget(self.branchRadio)
+        self.btn_insert.setDefault(True)
+        self.btn_insert.setFocus()
+        self.show()
+        self.lastDuctBranch = None
+
+    def fillSizes(self):
+        self.sizeList.clear()
+        self.pipeDictList = []
+        fname = "DuctBranch_" + self.PRating + ".csv"
+        fpath = join(dirname(abspath(__file__)), "tablez", fname)
+        try:
+            with open(fpath, "r", encoding="utf-8-sig") as fh:
+                self.pipeDictList = list(csv.DictReader(fh, delimiter=";"))
+        except Exception:
+            return
+
+        for row in self.pipeDictList:
+            label = "{}  {} deg".format(row["PSize"], row.get("BranchAngle", ""))
+            self.sizeList.addItem(label)
+
+    def insert(self):
+        idx = self.sizeList.currentIndex()
+        if idx < 0 or idx >= len(self.pipeDictList):
+            return
+        row = self.pipeDictList[idx]
+        propList = [
+            row["PSize"],
+            float(pq(row["RunW"])),
+            float(pq(row["RunH"])),
+            float(pq(row["BranchW"])),
+            float(pq(row["BranchH"])),
+            float(pq(row["thk"])),
+            float(pq(row["RunLength"])),
+            float(pq(row["BranchLength"])),
+            float(pq(row["BranchAngle"])),
+        ]
+        FreeCAD.activeDocument().openTransaction(
+            translate("Transaction", "Insert duct branch")
+        )
+        self.lastDuctBranch = pCmd.makeDuctBranch(
+            propList,
+            insertOnBranch=self.branchRadio.isChecked(),
+            rating=self.PRating,
+        )
+        FreeCAD.activeDocument().commitTransaction()
+        FreeCAD.activeDocument().recompute()
+
+
 class insertTeeForm(dodoDialogs.protoPypeForm):
     """
     Dialog to insert one tee (butt-weld) or socket/threaded tee.

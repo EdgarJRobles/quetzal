@@ -171,6 +171,16 @@ tee_tooltip = (
     "\n"
 )
 
+duct_branch_tooltip = (
+    "Tool to insert a rectangular HVAC duct branch fitting\n"
+    "_________________________________________________ \n"
+    "Usage \n"
+    "Select the rectangular duct branch family from the rating list, then select the run, branch, and angle preset.\n"
+    "Use the 'Insert on Run' / 'Insert on Branch' radio buttons to choose the insertion orientation.\n"
+    "Click 'Insert' to create a standalone rectangular duct branch at the origin.\n"
+    "The generated object stores run width/height, branch width/height, wall thickness, run length, branch length, and branch angle as editable properties.\n"
+)
+
 gasket_tooltip = (
     "Tool to insert a spiral-wound gasket and/or stud bolt set at a flanged joint\n"
     "______________________________________________________________________________________________________________________________________ \n"
