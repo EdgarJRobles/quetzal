@@ -2699,6 +2699,13 @@ class insertValveForm(dodoDialogs.protoPypeForm):
       propList    : [DN, VType, OD, ODBody, H, E, Conn, Kv]
       "Insert in pipe" checkbox + slider are hidden.
 
+    Flanged  (CSV has Conn == pressure class)
+    -------------------------------------------------------
+      CSV columns : Psize ; Vtype ; H ; Kv ; Conn [; BottomH ; TopH]
+      sizeList    : PSize   H
+      propList    : [DN, VType, H, Kv, Conn, BottomH, TopH]
+      Flange bolt pattern comes from Flange_ASME-BL-RF-<Conn>.csv.
+
     A rotation dial lets the last-inserted valve be spun around its
     flow axis (Z) in 15-degree increments, identical to insertElbowForm.
     """
@@ -2989,7 +2996,7 @@ class insertValveForm(dodoDialogs.protoPypeForm):
 
             if self._isFlangedConn():
                 # Flanged valve
-                # propList: [DN, VType, H, Kv, Conn, optional TopH, optional WheelD]
+                # propList: [DN, VType, H, Kv, Conn, BottomH, TopH]
                 psize = r["psize"]
                 conn  = r["conn"]
                 propList = [
@@ -2998,8 +3005,8 @@ class insertValveForm(dodoDialogs.protoPypeForm):
                     float(pq(r["h"])),
                     float(pq(r.get("kv", "0"))),
                     conn,
+                    float(pq(r.get("bottomh", "0"))),
                     float(pq(r.get("toph", "0"))),
-                    float(pq(r.get("wheeld", "0"))),
                 ]
                 flgPropList = self._loadFlangePropList(conn, psize)
                 # Read actuator choice from radio buttons (default to "Handle")
@@ -3059,7 +3066,29 @@ class insertValveForm(dodoDialogs.protoPypeForm):
             if not (hasattr(obj, "PType") and obj.PType == "Valve"):
                 continue
 
-            if self._isSocketConn() and hasattr(obj, "Conn"):
+            if self._isFlangedConn() and hasattr(obj, "Conn"):
+                obj.PSize   = r["psize"]
+                obj.PRating = r.get("vtype", self.PRating)
+                obj.Height  = pq(r["h"])
+                obj.Kv      = float(pq(r.get("kv", "0")))
+                obj.Conn    = r["conn"]
+                if hasattr(obj, "BottomH"):
+                    obj.BottomH = pq(r.get("bottomh", "0"))
+                if hasattr(obj, "TopH"):
+                    obj.TopH = pq(r.get("toph", "0"))
+
+                flg = self._loadFlangePropList(r["conn"], r["psize"])
+                if flg:
+                    obj.FlgD   = flg[2]
+                    obj.Flgt   = flg[3]
+                    obj.FlgF   = flg[4]
+                    obj.FlgN   = flg[5]
+                    obj.FlgDf  = flg[6]
+                    obj.FlgDrf = flg[7]
+                    obj.FlgTrf = flg[8]
+                FreeCAD.activeDocument().recompute()
+
+            elif self._isSocketConn() and hasattr(obj, "Conn"):
                 # Socket-weld / Threaded valve
                 obj.PSize   = r["psize"]
                 obj.PRating = r.get("vtype", self.PRating)
