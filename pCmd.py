@@ -2223,7 +2223,7 @@ def makeValve(propList=[], pos=None, Z=None, flgPropList=None, actuator="Handle"
       DN      (string): nominal diameter
       VType   (string): valve type (e.g. "Ball_LongPatternRF")
       H       (float) : body length, flange face to flange face
-      Kv      (float) : flow factor  [optional]
+      Kv      (float) : flow factor
       Conn    (string): pressure class, e.g. "150lb"
       BottomH (float) : lower body envelope from centerline [optional]
       TopH    (float) : upper body envelope from centerline [optional]
