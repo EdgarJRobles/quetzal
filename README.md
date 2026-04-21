@@ -100,7 +100,7 @@ Here are some of the planned developments for this Workbench:
     - [X] Pinch Valve
   - [ ] Pipe Clamping
     - [X] U-bolt clamp
-    - [ ] Beam clamp
+    - [X] Beam clamp
   - [ ] Beam joins
 - [ ] Support, if possible, International design standarts:
   - [ ] ASME B16.5 (NPS 1/2 to 24")

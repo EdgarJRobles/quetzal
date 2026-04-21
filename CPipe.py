@@ -209,7 +209,7 @@ class insertUbolt:
     def GetResources(self):
         return {
             "Pixmap": "Quetzal_InsertUBolt",
-            "MenuText": QT_TRANSLATE_NOOP("Quetzal_InsertUbolt", "Insert a U-bolt"),
+            "MenuText": QT_TRANSLATE_NOOP("Quetzal_InsertUbolt", "Insert a clamp"),
             "ToolTip": QT_TRANSLATE_NOOP("Quetzal_InsertUbolt", Quetzal_tooltips.ubolt_tooltip),
         }
 

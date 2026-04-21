@@ -4,7 +4,7 @@ __title__ = "pypeTools objects"
 __author__ = "oddtopus"
 __url__ = "github.com/oddtopus/dodo"
 __license__ = "LGPL 3"
-objs = ["Pipe", "Elbow", "Reduct", "Cap", "Flange", "Tee", "Ubolt", "Valve"]
+objs = ["Pipe", "Elbow", "Reduct", "Cap", "Flange", "Tee", "Ubolt", "BeamClamp", "Valve"]
 metaObjs = ["PypeLine", "PypeBranch"]
 
 from os.path import abspath, dirname, join
@@ -1670,6 +1670,155 @@ class Ubolt:
         path = Part.Wire([c, l1, l2])
         fp.Shape = path.makePipe(p)
         fp.Ports = [FreeCAD.Vector(0, 0, 1)] #not quite sure why a U-bolt has a port?
+
+
+class BeamClamp:
+    """Class for object PType="Clamp".
+    BeamClamp(obj,[PSize="LA037-short", ClampType="Beam", ProductCode="LA037",
+                   Bolt="M10", Y=20, X=11, V=4, T=5, W=26])
+      obj: the "App::FeaturePython" object
+      PSize (string): catalog size row
+      ClampType (string): clamp family
+      ProductCode (string): vendor product code
+      Bolt (string): nominal fastener size
+      Y, X, V, T, W (float): catalog dimensions in mm
+    """
+
+    def __init__(
+        self,
+        obj,
+        PSize="LA037-short",
+        ClampType="Beam",
+        ProductCode="LA037",
+        Bolt="M10",
+        Y=20,
+        X=11,
+        V=4,
+        T=5,
+        W=26,
+    ):
+        obj.Proxy = self
+        obj.addProperty(
+            "App::PropertyString",
+            "PType",
+            "BeamClamp",
+            QT_TRANSLATE_NOOP("App::Property", "Type of pipeFeature"),
+        ).PType = "Clamp"
+        obj.addProperty(
+            "App::PropertyString",
+            "ClampType",
+            "BeamClamp",
+            QT_TRANSLATE_NOOP("App::Property", "Type of clamp"),
+        ).ClampType = ClampType
+        obj.addProperty(
+            "App::PropertyString",
+            "PSize",
+            "BeamClamp",
+            QT_TRANSLATE_NOOP("App::Property", "Size of clamp"),
+        ).PSize = PSize
+        obj.addProperty(
+            "App::PropertyString",
+            "ProductCode",
+            "BeamClamp",
+            QT_TRANSLATE_NOOP("App::Property", "Catalog product code"),
+        ).ProductCode = ProductCode
+        obj.addProperty(
+            "App::PropertyString",
+            "Bolt",
+            "BeamClamp",
+            QT_TRANSLATE_NOOP("App::Property", "Bolt size"),
+        ).Bolt = Bolt
+        for prop, value, text in [
+            ("Y", Y, "Clamp height"),
+            ("X", X, "Clamp body length"),
+            ("V", V, "Tail length"),
+            ("T", T, "Clamp thickness"),
+            ("W", W, "Clamp width"),
+        ]:
+            obj.addProperty(
+                "App::PropertyLength",
+                prop,
+                "BeamClamp",
+                QT_TRANSLATE_NOOP("App::Property", text),
+            )
+            setattr(obj, prop, value)
+        obj.addProperty(
+            "App::PropertyVectorList",
+            "Ports",
+            "PBase",
+            QT_TRANSLATE_NOOP("App::Property", "Ports position relative to the origin of Shape"),
+        )
+        self.execute(obj)
+
+    def onChanged(self, fp, prop):
+        return None
+
+    def execute(self, fp):
+        height = float(fp.Y)
+        body_len = float(fp.X)
+        tail_len = float(fp.V)
+        thk = float(fp.T)
+        width = float(fp.W)
+        bolt_dia = self._bolt_diameter(fp.Bolt, max(height * 0.5, 1))
+
+        body = Part.makeBox(
+            body_len,
+            width,
+            height,
+            FreeCAD.Vector(-body_len / 2, -width / 2, 0),
+        )
+        tail = Part.makeBox(
+            tail_len,
+            width,
+            thk,
+            FreeCAD.Vector(body_len / 2, -width / 2, 0),
+        )
+        nose = Part.makeBox(
+            thk,
+            width,
+            thk,
+            FreeCAD.Vector(-body_len / 2 - thk, -width / 2, -thk),
+        )
+        lower_grip = Part.makeBox(
+            max(body_len * 0.45, thk),
+            width,
+            thk,
+            FreeCAD.Vector(-body_len / 2, -width / 2, -thk),
+        )
+        boss = Part.makeCylinder(
+            bolt_dia * 0.75,
+            thk,
+            FreeCAD.Vector(0, 0, height),
+            vZ,
+        )
+        clearance = Part.makeCylinder(
+            bolt_dia * 0.58,
+            height + thk * 3,
+            FreeCAD.Vector(0, 0, -thk * 1.5),
+            vZ,
+        )
+        clamp = body.fuse(tail).fuse(nose).fuse(lower_grip).fuse(boss).cut(clearance)
+        bolt = Part.makeCylinder(
+            bolt_dia * 0.42,
+            height + thk * 3,
+            FreeCAD.Vector(0, 0, -thk * 1.5),
+            vZ,
+        )
+        head = Part.makeCylinder(
+            bolt_dia * 0.85,
+            thk * 0.8,
+            FreeCAD.Vector(0, 0, height + thk),
+            vZ,
+        )
+        fp.Shape = clamp.fuse(bolt).fuse(head)
+        fp.Ports = [FreeCAD.Vector(0, 0, 0)]
+
+    def _bolt_diameter(self, bolt, fallback):
+        try:
+            return float(str(bolt).strip().upper().replace("M", ""))
+        except Exception:
+            return fallback
+
 
 class Shell:
     """

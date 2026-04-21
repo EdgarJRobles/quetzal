@@ -1,0 +1,16 @@
+PSize;ClampFamily;ProductCode;Bolt;Tail;Y;X;V;T;W;TorqueNm;Source
+LA037-short;Beam;LA037;M10;short;20;11;4;5;26;20;https://www.lindapter.com/us/product/type-a
+LA037-medium;Beam;LA037;M10;medium;20;11;5;5;26;20;https://www.lindapter.com/us/product/type-a
+LA037-long;Beam;LA037;M10;long;20;11;7;5;26;20;https://www.lindapter.com/us/product/type-a
+LA050-short;Beam;LA050;M12;short;26;13;4.5;6;29;69;https://www.lindapter.com/us/product/type-a
+LA050-medium;Beam;LA050;M12;medium;26;13;6;6;29;69;https://www.lindapter.com/us/product/type-a
+LA050-long;Beam;LA050;M12;long;26;13;9.5;6;29;69;https://www.lindapter.com/us/product/type-a
+LA062-short;Beam;LA062;M16;short;30;16;5.5;8;36;147;https://www.lindapter.com/us/product/type-a
+LA062-medium;Beam;LA062;M16;medium;30;16;8;8;36;147;https://www.lindapter.com/us/product/type-a
+LA062-long;Beam;LA062;M16;long;30;16;11;8;36;147;https://www.lindapter.com/us/product/type-a
+LA075-short;Beam;LA075;M20;short;36;19;7;10;46;285;https://www.lindapter.com/us/product/type-a
+LA075-medium;Beam;LA075;M20;medium;36;19;10;10;46;285;https://www.lindapter.com/us/product/type-a
+LA075-long;Beam;LA075;M20;long;36;19;12.5;10;46;285;https://www.lindapter.com/us/product/type-a
+LA100-short;Beam;LA100;M24;short;48;29;9;13;55;491;https://www.lindapter.com/us/product/type-a
+LA100-medium;Beam;LA100;M24;medium;48;29;12;13;55;491;https://www.lindapter.com/us/product/type-a
+LA100-long;Beam;LA100;M24;long;48;29;16;13;55;491;https://www.lindapter.com/us/product/type-a
