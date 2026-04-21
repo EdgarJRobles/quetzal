@@ -1,0 +1,14 @@
+PSize;VType;H;Kv;Conn;BottomH;TopH
+DN50;Check_Swing_FullPortRF;368;0;900lb;61;132
+DN65;Check_Swing_FullPortRF;381;0;900lb;127;349
+DN80;Check_Swing_FullPortRF;381;0;900lb;77;185
+DN100;Check_Swing_FullPortRF;457;0;900lb;94;225
+DN150;Check_Swing_FullPortRF;610;0;900lb;225;297
+DN200;Check_Swing_FullPortRF;737;0;900lb;163;380
+DN250;Check_Swing_FullPortRF;838;0;900lb;196;442
+DN300;Check_Swing_FullPortRF;965;0;900lb;228;508
+DN350;Check_Swing_FullPortRF;1029;0;900lb;254;601
+DN400;Check_Swing_FullPortRF;1130;0;900lb;275;610
+DN450;Check_Swing_FullPortRF;1219;0;900lb;419;921
+DN500;Check_Swing_FullPortRF;1321;0;900lb;457;1051
+DN600;Check_Swing_FullPortRF;1549;0;900lb;546;1200
