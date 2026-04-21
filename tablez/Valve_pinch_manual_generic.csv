@@ -1,0 +1,10 @@
+PSize;VType;ODBody;ID;H;Kv
+DN50;Pinch_Manual;165;50;195;0
+DN65;Pinch_Manual;185;65;230;0
+DN80;Pinch_Manual;200;80;285;0
+DN100;Pinch_Manual;220;96;365;0
+DN125;Pinch_Manual;250;120;440;0
+DN150;Pinch_Manual;285;145;500;0
+DN200;Pinch_Manual;340;195;560;0
+DN250;Pinch_Manual;395;245;630;0
+DN300;Pinch_Manual;445;295;730;0
