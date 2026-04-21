@@ -17,7 +17,6 @@ try:
 except Exception:
     qu = None  # graceful fallback if module not yet present
 
-
 class protoTypeDialog(object):
     "prototype for dialogs.ui with callback function"
 
@@ -101,7 +100,6 @@ class protoTypeDialog(object):
         if FreeCAD.ActiveDocument:
             FreeCAD.ActiveDocument.recompute()
 
-
 class protoPypeForm(QDialog):
     "prototype dialog for insert pFeatures"
     def __init__(
@@ -143,12 +141,10 @@ class protoPypeForm(QDialog):
         self.firstCol = QWidget()
         self.firstCol.setLayout(QVBoxLayout())
         self.mainHL.addWidget(self.firstCol)
-        self.currentRatingLab = QLabel(translate("protoPypeForm", "Rating: ") + self.PRating)
         self.previewSectionsPath = FreeCAD.getUserAppDataDir() + "Mod/quetzal/iconz/PreviewSections/"
         self.gradeimagepath = str()
         self.labImage = QLabel()
         self.fullimagepath = str()
-        self.firstCol.layout().addWidget(self.currentRatingLab)
         # DN / NPS toggle row
         self._sizeSystemRow = QWidget()
         self._sizeSystemRow.setLayout(QHBoxLayout())
@@ -182,6 +178,7 @@ class protoPypeForm(QDialog):
         self._btnNPS.clicked.connect(lambda: self._setSizeSystem(1))
         self.sizeList = QComboBox()
         self.firstCol.layout().addWidget(self.sizeList)
+        self.firstCol.layout().addStretch()
         self.firstCol.layout().addWidget(self.labImage)
         self.pipeDictList = []
         self.fileList = listdir(join(dirname(abspath(__file__)), "tablez"))
@@ -199,18 +196,12 @@ class protoPypeForm(QDialog):
         ]
         self.secondCol = QWidget()
         self.secondCol.setLayout(QFormLayout())
+        #create and populate combobox with existing Objects
         self.existingObjs = QComboBox()
+        if FreeCAD.ActiveDocument.Objects is not None:
+            self.existingObjs.addItems(self.getPL())
         self.existingObjs.addItem(translate("protoPypeForm","<none>"))
-        try:
-            self.existingObjs.addItems(
-                [
-                    o.Label
-                    for o in FreeCAD.activeDocument().Objects
-                    if hasattr(o, "PType") and o.PType == "PypeLine"
-                ]
-            )
-        except:
-            None
+        self.existingObjs.activated.connect(self.on_activatedExistingObjects)
         self.combostandart = QComboBox()
         try:
             asmeflag = False
@@ -240,7 +231,7 @@ class protoPypeForm(QDialog):
                     isoflag = True
             #TODO:Still doing some work here in order to sort standarts search
         except Exception as e:
-            None 
+            pass 
         self.existingObjs.currentIndexChanged.connect(self.setCurrentPL)
         if FreeCAD.__activePypeLine__ and FreeCAD.__activePypeLine__ in [
             self.existingObjs.itemText(i) for i in range(self.existingObjs.count())
@@ -281,8 +272,20 @@ class protoPypeForm(QDialog):
     def setCurrentPL(self, PLName=None):
         if self.existingObjs.currentText() not in ["<none>", "<new>"]:
             FreeCAD.__activePypeLine__ = self.existingObjs.currentText()
+            pl_obj=FreeCAD.ActiveDocument.getObject(FreeCAD.__activePypeLine__)
+            self.ratingList.setCurrentText(pl_obj.PRating)
+            sizetext=self.sizeList.itemText(self.sizeList.findText(pl_obj.PSize))
+            self.sizeList.setCurrentText(sizetext)
         else:
             FreeCAD.__activePypeLine__ = None
+
+    def getPL(self):
+        "Get a name list of Ptype on active document"
+        temp_ptypelist = list()
+        for item in FreeCAD.ActiveDocument.Objects:
+            if hasattr(item, "PType") and item.PType == self.PType:
+                temp_ptypelist.append(item.Name)
+        return temp_ptypelist
 
     def fillSizes(self):
         self.sizeList.clear()
@@ -324,11 +327,7 @@ class protoPypeForm(QDialog):
         if cur_psize is None and hasattr(self, "_uniqueSizeList"):
             if 0 <= cur_idx < len(self._uniqueSizeList):
                 cur_psize = self._uniqueSizeList[cur_idx]
-
         self.PRating = s
-        self.currentRatingLab.setText(
-            translate("protoPypeForm", "Rating: ") + self.PRating)
-
         # Reload the size list with signals blocked so that changeSize is
         # not triggered for every item added during the reload.
         self.sizeList.blockSignals(True)
@@ -361,7 +360,6 @@ class protoPypeForm(QDialog):
         """
         pass
 
-
     def _previewReady(self):
         """Return True when enough selections have been made to generate a preview.
 
@@ -380,6 +378,17 @@ class protoPypeForm(QDialog):
             return False
         return True
 
+    def on_activatedExistingObjects(self,index):
+        #check pipetype objects exist to update combobox
+        if FreeCAD.ActiveDocument.Objects is not None:
+            allpl=self.getPL()
+            for pl in allpl:
+                res=self.existingObjs.findText(pl)
+                if res == -1:
+                    self.existingObjs.addItem(pl)
+        else:
+            FreeCAD.__activePypeLine__ = None
+ 
     def _setSizeSystem(self, system):
         """Toggle the DN/NPS display on the size list without saving to prefs."""
         _ss_active   = "font-weight:bold; text-decoration:underline;"
@@ -550,6 +559,9 @@ class protoPypeForm(QDialog):
         # Hide other objects
         for obj in doc.Objects:
             if obj == preview_obj:
+                if hasattr(obj,"PType") and obj.PType=="Valve":
+                    obj.Placement.Rotation = FreeCAD.Rotation(FreeCAD.Vector(0.0,0.7071,0.7071),180)
+                    obj.touch()
                 continue
             try:
                 vis_state[obj.Name] = obj.Visibility
@@ -570,6 +582,7 @@ class protoPypeForm(QDialog):
             from PySide.QtCore import QCoreApplication
             QCoreApplication.processEvents() 
             FreeCADGui.Selection.clearSelection()
+            FreeCADGui.updateGui()
             
             # Save the image
             view.saveImage(self.fullimagepath, 300, 300, "Transparent")
