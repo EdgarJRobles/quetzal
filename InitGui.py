@@ -78,6 +78,7 @@ class QuetzalWorkbench(Workbench):
             "Quetzal_LevelBeam",
             "Quetzal_AlignEdge",
             "Quetzal_RotateJoin",
+            "Quetzal_JoinBeams",
             "Quetzal_AlignFlange",
             "Quetzal_StretchBeam",
             "Quetzal_ExtendBeam",

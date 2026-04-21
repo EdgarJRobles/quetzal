@@ -462,6 +462,47 @@ def extendTheBeam(beam, target):  # TARGET [working]: make it work when target a
     # FreeCAD.activeDocument().recompute()
 
 
+def beamEndpoints(beam):
+    """Return the base and top centerline points of a beam."""
+    base = beam.Placement.Base
+    axis = beamAx(beam)
+    top = base + axis.multiply(float(beam.Height))
+    return base, top
+
+
+def joinBeamAtPoint(beam, point):
+    """Trim or extend the nearest beam end so it lands on point."""
+    axis = beamAx(beam)
+    base, top = beamEndpoints(beam)
+    target = base + axis.multiply((point - base).dot(axis))
+    if base.distanceToPoint(target) <= top.distanceToPoint(target):
+        beam.Placement.Base = target
+        beam.Height = FreeCAD.Units.Quantity(str(target.distanceToPoint(top)) + "mm")
+    else:
+        beam.Height = FreeCAD.Units.Quantity(str(base.distanceToPoint(target)) + "mm")
+    return target
+
+
+def joinTheBeams(beamList=None, point=None):
+    """Trim or extend selected beams so their nearest ends meet.
+
+    If point is not provided, the centerline intersection of the first two
+    beams is used. Additional selected beams are joined to that same point.
+    """
+    if beamList is None:
+        beamList = beams()
+    if len(beamList) < 2 and point is None:
+        FreeCAD.Console.PrintError("Select at least two beams to join.\n")
+        return None
+    if point is None:
+        point = intersectionCLines(beamList[0], beamList[1])
+    if point is None:
+        return None
+    for beam in beamList:
+        joinBeamAtPoint(beam, point)
+    return point
+
+
 def rotjoinTheBeam(beam=None, e1=None, e2=None):
     if not (beam and e1 and e2):
         beam = beams()[1]

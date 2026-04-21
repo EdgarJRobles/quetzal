@@ -71,6 +71,14 @@ levelbeam_tooltip = (
     "2.- Select second beam face to translate and match faces coplanar\n"
     "Note: - actually the command takes to the same level, respect the position and orientation \n of the first face selected, the center-of-mass of all faces selected. Thus it translates the objects even if the faces are not parallel.\n"
 )
+joinbeams_tooltip = (
+    "Join selected beams at their centerline intersection.\n"
+    "_________________________________________________ \n"
+    "Usage \n"
+    "Preselect two or more beam objects, then run Join beams.\n"
+    "The first two selected beams define the joint point. Quetzal trims or extends the nearest end of each selected beam so the centerlines meet at that point.\n"
+    "This preserves each beam's current axis and section rotation; it only changes the beam base point and/or length.\n"
+)
 pivotbeam_tooltip = (
     "Tool to pivot & copy around one edge or principal X/Y/Z axis\n"
     "_________________________________________________ \n"
