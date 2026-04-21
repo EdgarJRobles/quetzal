@@ -102,6 +102,7 @@ class QuetzalWorkbench(Workbench):
         self.pypeList = [
             "Quetzal_InsertPipe",
             "Quetzal_InsertElbow",
+            "Quetzal_InsertDuctElbow",
             "Quetzal_InsertTee",
             "Quetzal_InsertReduct",
             "Quetzal_InsertCap",
