@@ -76,7 +76,7 @@ Here are some of the planned developments for this Workbench:
 - [ ] Add HVAC duct support.
   - [ ] Elbow
   - [ ] Reduction
-  - [ ] Branch
+  - [X] Branch
   - [ ] Round duct
   - [ ] Square duct
   - [ ] Oval duct
