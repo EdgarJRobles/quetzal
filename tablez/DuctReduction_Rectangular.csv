@@ -1,0 +1,13 @@
+PSize;W1;H1;W2;H2;thk;Length;OffsetX;OffsetY;Source
+300x200-200x150;300;200;200;150;0.8;190;0;0;https://www.northwestern.edu/facilities/docs/construction/design_guidelines/23_hvac/NU_23%203114%20-%20DUCTWORK.pdf
+400x200-300x150;400;200;300;150;0.8;190;0;0;https://www.northwestern.edu/facilities/docs/construction/design_guidelines/23_hvac/NU_23%203114%20-%20DUCTWORK.pdf
+450x300-300x200;450;300;300;200;0.8;280;0;0;https://www.northwestern.edu/facilities/docs/construction/design_guidelines/23_hvac/NU_23%203114%20-%20DUCTWORK.pdf
+600x300-400x200;600;300;400;200;1.0;375;0;0;https://www.northwestern.edu/facilities/docs/construction/design_guidelines/23_hvac/NU_23%203114%20-%20DUCTWORK.pdf
+600x450-450x300;600;450;450;300;1.0;280;0;0;https://www.northwestern.edu/facilities/docs/construction/design_guidelines/23_hvac/NU_23%203114%20-%20DUCTWORK.pdf
+800x400-600x300;800;400;600;300;1.0;375;0;0;https://www.northwestern.edu/facilities/docs/construction/design_guidelines/23_hvac/NU_23%203114%20-%20DUCTWORK.pdf
+300x200-200x150-flat-bottom;300;200;200;150;0.8;190;0;25;https://www.northwestern.edu/facilities/docs/construction/design_guidelines/23_hvac/NU_23%203114%20-%20DUCTWORK.pdf
+400x200-300x150-flat-bottom;400;200;300;150;0.8;190;0;25;https://www.northwestern.edu/facilities/docs/construction/design_guidelines/23_hvac/NU_23%203114%20-%20DUCTWORK.pdf
+450x300-300x200-flat-bottom;450;300;300;200;0.8;375;0;50;https://www.northwestern.edu/facilities/docs/construction/design_guidelines/23_hvac/NU_23%203114%20-%20DUCTWORK.pdf
+600x300-400x200-flat-bottom;600;300;400;200;1.0;375;0;50;https://www.northwestern.edu/facilities/docs/construction/design_guidelines/23_hvac/NU_23%203114%20-%20DUCTWORK.pdf
+600x450-450x300-flat-bottom;600;450;450;300;1.0;560;0;75;https://www.northwestern.edu/facilities/docs/construction/design_guidelines/23_hvac/NU_23%203114%20-%20DUCTWORK.pdf
+800x400-600x300-flat-bottom;800;400;600;300;1.0;375;0;50;https://www.northwestern.edu/facilities/docs/construction/design_guidelines/23_hvac/NU_23%203114%20-%20DUCTWORK.pdf

@@ -1236,6 +1236,36 @@ def makeReduct(propList=[], pos=None, Z=None, conc=True, smallerEnd=False, ratin
     a.Label = translate("Objects", "Reduct")
     return a
 
+
+def makeDuctReduction(propList=[], pos=None, Z=None, smallerEnd=False, rating="Rectangular"):
+    """Adds a rectangular duct transition/reducer object.
+
+    propList is one optional list with 9 elements:
+      PSize, W1, H1, W2, H2, thk, Length, OffsetX, OffsetY
+    """
+    if pos == None:
+        pos = FreeCAD.Vector(0, 0, 0)
+    if Z == None:
+        Z = FreeCAD.Vector(0, 0, 1)
+    a = FreeCAD.ActiveDocument.addObject("Part::FeaturePython", "Duct-Reduction")
+    if len(propList) == 9:
+        pFeatures.DuctReduction(a, rating, *propList)
+    else:
+        pFeatures.DuctReduction(a, rating)
+    if a.ViewObject:
+        ViewProvider(a.ViewObject, "Quetzal_InsertReduct")
+    a.Placement.Base = pos
+    rot = FreeCAD.Rotation(FreeCAD.Vector(0, 0, 1), Z)
+    a.Placement.Rotation = rot.multiply(a.Placement.Rotation)
+    if smallerEnd:
+        initPos = a.Placement.Base
+        rotateTheTubeAx(a, FreeCAD.Vector(0, 1, 0), 180)
+        finalPos = a.Placement.Base
+        a.Placement.move(initPos - finalPos)
+    a.Label = translate("Objects", "Duct Reduction")
+    return a
+
+
 def doReduct(rating="SCH-STD", propList=[], pypeline=None, pos=None, Z=None, conc=True, smallerEnd=False):
     """propList[] = 
       PSize (string): nominal diameter (major end)

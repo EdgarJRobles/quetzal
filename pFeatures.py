@@ -4,7 +4,7 @@ __title__ = "pypeTools objects"
 __author__ = "oddtopus"
 __url__ = "github.com/oddtopus/dodo"
 __license__ = "LGPL 3"
-objs = ["Pipe", "Elbow", "Reduct", "Cap", "Flange", "Tee", "Ubolt", "Valve"]
+objs = ["Pipe", "Elbow", "DuctReduction", "Reduct", "Cap", "Flange", "Tee", "Ubolt", "Valve"]
 metaObjs = ["PypeLine", "PypeBranch"]
 
 from os.path import abspath, dirname, join
@@ -1377,6 +1377,121 @@ class Reduct(pypeType):
                 ]
             fp.PortDirections = [FreeCAD.Vector(0, 0, -1), FreeCAD.Vector(0, 0, 1)] #in either case, ports face +Z and -Z
         super(Reduct, self).execute(fp)  # perform common operations
+
+
+class DuctReduction:
+    """Class for object PType="DuctReduction".
+
+    Rectangular duct transition/reducer driven by inlet/outlet width and
+    height, wall thickness, transition length, and optional outlet offsets.
+    """
+
+    def __init__(
+        self,
+        obj,
+        rating="Rectangular",
+        PSize="600x300-400x200",
+        W1=600,
+        H1=300,
+        W2=400,
+        H2=200,
+        thk=1.0,
+        L=386,
+        OffsetX=0,
+        OffsetY=0,
+    ):
+        obj.Proxy = self
+        obj.addProperty(
+            "App::PropertyString",
+            "PType",
+            "DuctReduction",
+            QT_TRANSLATE_NOOP("App::Property", "Type of duct feature"),
+        ).PType = "DuctReduction"
+        obj.addProperty(
+            "App::PropertyString",
+            "PRating",
+            "DuctReduction",
+            QT_TRANSLATE_NOOP("App::Property", "Duct fitting family"),
+        ).PRating = rating
+        obj.addProperty(
+            "App::PropertyString",
+            "PSize",
+            "DuctReduction",
+            QT_TRANSLATE_NOOP("App::Property", "Nominal duct transition size"),
+        ).PSize = PSize
+        for prop, value, text in [
+            ("W1", W1, "Inlet width"),
+            ("H1", H1, "Inlet height"),
+            ("W2", W2, "Outlet width"),
+            ("H2", H2, "Outlet height"),
+            ("thk", thk, "Wall thickness"),
+            ("Height", L, "Transition length"),
+            ("OffsetX", OffsetX, "Outlet horizontal offset"),
+            ("OffsetY", OffsetY, "Outlet vertical offset"),
+        ]:
+            obj.addProperty(
+                "App::PropertyLength",
+                prop,
+                "DuctReduction",
+                QT_TRANSLATE_NOOP("App::Property", text),
+            )
+            setattr(obj, prop, value)
+        obj.addProperty(
+            "App::PropertyString",
+            "Profile",
+            "DuctReduction",
+            QT_TRANSLATE_NOOP("App::Property", "Section dim."),
+        ).Profile = str(obj.W1) + "x" + str(obj.H1) + ">" + str(obj.W2) + "x" + str(obj.H2)
+        obj.addProperty(
+            "App::PropertyVectorList",
+            "Ports",
+            "PBase",
+            QT_TRANSLATE_NOOP("App::Property", "Ports position relative to the origin of Shape"),
+        )
+        obj.addProperty(
+            "App::PropertyVectorList",
+            "PortDirections",
+            "PBase",
+            QT_TRANSLATE_NOOP("App::Property", "Port directions relative to the origin of Shape"),
+        )
+        self.execute(obj)
+
+    def onChanged(self, fp, prop):
+        return None
+
+    def execute(self, fp):
+        w1 = max(float(fp.W1), 1.0)
+        h1 = max(float(fp.H1), 1.0)
+        w2 = max(float(fp.W2), 1.0)
+        h2 = max(float(fp.H2), 1.0)
+        thk = max(min(float(fp.thk), w1 / 2 - 0.1, h1 / 2 - 0.1, w2 / 2 - 0.1, h2 / 2 - 0.1), 0.1)
+        length = max(float(fp.Height), 1.0)
+        offset = FreeCAD.Vector(float(fp.OffsetX), float(fp.OffsetY), length)
+        fp.Profile = str(fp.W1) + "x" + str(fp.H1) + ">" + str(fp.W2) + "x" + str(fp.H2)
+
+        inlet = self._rect_wire(vO, vX, vY, w1, h1)
+        outlet = self._rect_wire(offset, vX, vY, w2, h2)
+        inner_inlet = self._rect_wire(vO, vX, vY, w1 - 2 * thk, h1 - 2 * thk)
+        inner_outlet = self._rect_wire(offset, vX, vY, w2 - 2 * thk, h2 - 2 * thk)
+
+        outer = Part.makeLoft([inlet, outlet], True, False, False)
+        inner = Part.makeLoft([inner_inlet, inner_outlet], True, False, False)
+        fp.Shape = outer.cut(inner)
+        fp.Ports = [vO, offset]
+        fp.PortDirections = [FreeCAD.Vector(0, 0, -1), FreeCAD.Vector(0, 0, 1)]
+
+    def _rect_wire(self, center, xdir, ydir, width, height):
+        x = xdir.normalize().multiply(width / 2)
+        y = ydir.normalize().multiply(height / 2)
+        pts = [
+            center - x - y,
+            center + x - y,
+            center + x + y,
+            center - x + y,
+            center - x - y,
+        ]
+        return Part.Wire(Part.makePolygon(pts))
+
 
 class Cap(pypeType):
     """Class for object PType="Cap"

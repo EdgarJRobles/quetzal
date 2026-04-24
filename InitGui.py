@@ -104,6 +104,7 @@ class QuetzalWorkbench(Workbench):
             "Quetzal_InsertElbow",
             "Quetzal_InsertTee",
             "Quetzal_InsertReduct",
+            "Quetzal_InsertDuctReduction",
             "Quetzal_InsertCap",
             "Quetzal_InsertCoupling",
             "Quetzal_InsertValve",
