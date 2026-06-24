@@ -335,8 +335,9 @@ class DialogQM(QtGui.QDialog):
         self.PRating = self.QM.comboRating.currentText()
         for fileName in self.files:  # adds sizes in list
             if fileName == self.PType + "_" + self.PRating + ".csv":
-                f = open(join(dirname(abspath(__file__)), "tablez", fileName), "r",
-                         encoding="utf-8-sig")
+                f = open(
+                    join(dirname(abspath(__file__)), "tablez", fileName), "r", encoding="utf-8-sig"
+                )
                 reader = csv.DictReader(f, delimiter=";")
                 self.dictList = [DNx for DNx in reader]
                 f.close()
@@ -390,7 +391,11 @@ class pQM(DialogQM):
             L = float(self.QM.lineEdit.text())
         else:
             L = 1000
-        pCmd.doPipes([d["PSize"], float(d["OD"]), float(d["thk"]), L], FreeCAD.__activePypeLine__)
+        pCmd.doPipes(
+            self.PRating,
+            [d["PSize"], float(d["OD"]), float(d["thk"]), L],
+            FreeCAD.__activePypeLine__,
+        )
         super(pQM, self).go()
 
 
@@ -413,7 +418,11 @@ class eQM(DialogQM):
         self.QM.lineEdit2.setValidator(QtGui.QDoubleValidator())
 
     def go(self):
-        d = self.dictList[self.QM.listSize.currentRow()]
+        # d = self.dictList[self.QM.listSize.currentRow()]
+        row = self.QM.listSize.currentRow()
+        if row < 0:
+            return
+        d = self.dictList[row]
         if self.QM.lineEdit.text():
             ang = float(self.QM.lineEdit.text())
             if ang > 180:
@@ -422,15 +431,24 @@ class eQM(DialogQM):
         else:
             ang = 90
         if self.QM.lineEdit2.text():
-            rad = float(self.QM.lineEdit2.text())
+            # rad = float(self.QM.lineEdit2.text())
+            rad = float(self.QM.lineEdit2.text().replace(",", "."))
             if rad < float(d["OD"]) / 2:
                 rad = float(d["OD"]) / 2 * 1.1
                 self.QM.lineEdit.setText(str(rad))
         else:
             rad = d["BendRadius"]
         pCmd.doElbow(
-            [d["PSize"], float(d["OD"]), float(d["thk"]), ang, rad],
-            FreeCAD.__activePypeLine__,
+            rating=self.PRating,
+            propList=[
+                d["PSize"],
+                float(d["OD"]),
+                float(d.get("thk") or d.get("Thk") or d.get("thickness") or 0),
+                ang,
+                rad,
+            ],
+            pypeline=FreeCAD.__activePypeLine__,
+            doOffset=False,
         )
         super(eQM, self).go()
 
@@ -441,11 +459,12 @@ class fQM(DialogQM):
 
     def go(self):
         d = self.dictList[self.QM.listSize.currentRow()]
+
         proplist = [
             d["PSize"],
             d["FlangeType"],
             float(d["D"]),
-            float(d["d"]),
+            float(0),  # float(d["d"]) shall be zero because blind flange
             float(d["df"]),
             float(d["f"]),
             float(d["t"]),
@@ -462,7 +481,7 @@ class fQM(DialogQM):
             proplist.append(float(d["ODp"]))
         except:
             pass
-        pCmd.doFlanges(proplist, FreeCAD.__activePypeLine__)
+        pCmd.doFlanges(self.PRating, proplist, FreeCAD.__activePypeLine__)
         super(fQM, self).go()
 
 
@@ -497,15 +516,25 @@ class cQM(DialogQM):
         if d.get("Conn", "").strip().upper() in ("SW", "TH"):
             # Socket-weld / threaded cap
             pCmd.doSocketCap(
-                [d["PSize"], float(d["OD"]), float(d["A"]),
-                 float(d["C"]), float(d["E"]), d["Conn"]],
-                FreeCAD.__activePypeLine__)
+                [
+                    d["PSize"],
+                    float(d["OD"]),
+                    float(d["A"]),
+                    float(d["C"]),
+                    float(d["E"]),
+                    d["Conn"],
+                ],
+                FreeCAD.__activePypeLine__,
+            )
         else:
             # Butt-weld cap
             pCmd.doCaps(
+                self.PRating,
                 [d["PSize"], float(d["OD"]), float(d["thk"])],
-                FreeCAD.__activePypeLine__)
+                FreeCAD.__activePypeLine__,
+            )
         super(cQM, self).go()
+
 
 class tQM(DialogQM):
     def __init__(self):
@@ -516,20 +545,36 @@ class tQM(DialogQM):
         if d.get("Conn", "").strip().upper() in ("SW", "TH"):
             # Socket-weld / threaded tee
             pCmd.doSocketTee(
-                [d["PSize"], d.get("PSizeBranch", d["PSize"]),
-                 float(d["OD"]), float(d["OD2"]),
-                 float(d["A"]), float(d["C"]),
-                 float(d["D"]), float(d["E"]),
-                 float(d["G"]), d["Conn"]],
-                FreeCAD.__activePypeLine__)
+                [
+                    d["PSize"],
+                    d.get("PSizeBranch", d["PSize"]),
+                    float(d["OD"]),
+                    float(d["OD2"]),
+                    float(d["A"]),
+                    float(d["C"]),
+                    float(d["D"]),
+                    float(d["E"]),
+                    float(d["G"]),
+                    d["Conn"],
+                ],
+                FreeCAD.__activePypeLine__,
+            )
         else:
             # Butt-weld tee
             pCmd.doTees(
-                [d["PSize"], float(d["OD"]), float(d["OD2"]),
-                 float(d["thk"]), float(d["thk2"]),
-                 float(d["C"]), float(d["M"])],
-                FreeCAD.__activePypeLine__)
+                [
+                    d["PSize"],
+                    float(d["OD"]),
+                    float(d["OD2"]),
+                    float(d["thk"]),
+                    float(d["thk2"]),
+                    float(d["C"]),
+                    float(d["M"]),
+                ],
+                FreeCAD.__activePypeLine__,
+            )
         super(tQM, self).go()
+
 
 # create instances of qkMenu dialogs
 pqm = pQM()
@@ -547,7 +592,6 @@ toolList = [
     "Quetzal_FlangeQM",
     "Quetzal_ValveQM",
     "Quetzal_CapQM",
-    
 ]  # ["Quetzal_InsertPipe","Quetzal_InsertElbow","Quetzal_InsertReduct","Quetzal_InsertCap","Quetzal_InsertValve","Quetzal_InsertFlange","Quetzal_InsertUbolt"]
 compositingManager = True
 if QtCore.qVersion() < "5":
