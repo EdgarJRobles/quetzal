@@ -2268,6 +2268,8 @@ class insertCapForm(dodoDialogs.protoPypeForm):
                     size_selected.get("Conn", "SW"),
                 ]
                 self.lastCap = pCmd.doSocketCap(propList, FreeCAD.__activePypeLine__)[-1]
+                # the class (e.g. "6000lb"); SocketCap defaults to 3000lb
+                self.lastCap.PRating = self.PRating.split("_")[0]
             else:
                 # ── Butt-weld cap ────────────────────────────────────────────
                 propList = [size_selected["PSize"], float(pq(size_selected["OD"])), float(pq(size_selected["thk"]))]
@@ -2849,17 +2851,22 @@ class insertValveForm(dodoDialogs.protoPypeForm):
 
     Socket-weld / Threaded  (CSV has Conn == "SW" or "TH")
     -------------------------------------------------------
-      CSV columns : Psize ; OD ; Vtype ; ODBody ; H ; E ; Conn  [; Kv]
+      CSV columns : Psize ; OD ; Vtype ; ODBody ; H ; E ; Conn  [; Kv ; E2 ; Conn2]
       sizeList    : PSize   OD
-      propList    : [DN, VType, OD, ODBody, H, E, Conn, Kv]
+      propList    : [DN, VType, OD, ODBody, H, E, Conn, Kv, E2, Conn2]
+      E2 / Conn2 describe port 1 on socket x threaded valves (default E / Conn).
+      Gate and globe tables offer Handwheel / Handwheel (closed) only.
       "Insert in pipe" checkbox + slider are hidden.
 
     Flanged  (CSV has Conn == pressure class)
     -------------------------------------------------------
-      CSV columns : Psize ; Vtype ; H ; Kv ; Conn [; BottomH ; TopH]
+      CSV columns : Psize ; Vtype ; H ; Kv ; Conn [; BottomH ; TopH ; WheelD]
       sizeList    : PSize   H
-      propList    : [DN, VType, H, Kv, Conn, BottomH, TopH]
+      propList    : [DN, VType, H, Kv, Conn, BottomH, TopH, WheelD]
       Flange bolt pattern comes from Flange_ASME-BL-RF-<Conn>.csv.
+      Gate and globe tables (VType Gate_* / Globe_*) offer Handwheel /
+      Gearbox actuators, each open or closed, in place of Handle /
+      Handle (closed) / Gearbox; globe tables add Pneumatic (open / closed).
 
     A rotation dial lets the last-inserted valve be spun around its
     flow axis (Z) in 15-degree increments, identical to insertElbowForm.
@@ -2931,16 +2938,39 @@ class insertValveForm(dodoDialogs.protoPypeForm):
         self.cb1 = QCheckBox(translate("insertValveForm", " Insert in pipe"))
         self.secondCol.layout().addWidget(self.cb1)
 
-        # Actuator selection radio buttons (flanged valves only)
+        # Actuator selection radio buttons (flanged and SW/TH valves)
+        # Grid: one column per actuator, open on the top row, closed below.
         self.actuatorGroup = QWidget()
-        self.actuatorGroup.setLayout(QHBoxLayout())
+        self.actuatorGroup.setLayout(QGridLayout())
         self.actuatorGroup.layout().setContentsMargins(0, 0, 0, 0)
-        self.rbHandle   = QRadioButton(translate("insertValveForm", "Handle"))
-        self.rbGearbox  = QRadioButton(translate("insertValveForm", "Gearbox"))
+        self.rbHandle       = QRadioButton(translate("insertValveForm", "Handle"))
+        self.rbHandleClosed = QRadioButton(translate("insertValveForm", "Handle (closed)"))
+        self.rbGearbox      = QRadioButton(translate("insertValveForm", "Gearbox"))
+        self.rbGearboxClosed = QRadioButton(translate("insertValveForm", "Gearbox (closed)"))
+        self.rbPneumatic    = QRadioButton(translate("insertValveForm", "Pneumatic"))
+        self.rbPneumaticClosed = QRadioButton(
+            translate("insertValveForm", "Pneumatic (closed)"))
         self.rbHandle.setChecked(True)
-        self.actuatorGroup.layout().addWidget(self.rbHandle)
-        self.actuatorGroup.layout().addWidget(self.rbGearbox)
+        grid = self.actuatorGroup.layout()
+        grid.addWidget(self.rbHandle, 0, 0)
+        grid.addWidget(self.rbHandleClosed, 1, 0)
+        grid.addWidget(self.rbGearbox, 0, 1)
+        grid.addWidget(self.rbGearboxClosed, 1, 1)
+        grid.addWidget(self.rbPneumatic, 0, 2)
+        grid.addWidget(self.rbPneumaticClosed, 1, 2)
         self.secondCol.layout().addWidget(self.actuatorGroup)
+
+        # Which end of a directional valve (swing check, globe) goes on the
+        # selected port: the back is the inlet (port 0), the front the outlet.
+        self.directionGroup = QWidget()
+        self.directionGroup.setLayout(QHBoxLayout())
+        self.directionGroup.layout().setContentsMargins(0, 0, 0, 0)
+        self.rbConnectBack  = QRadioButton(translate("insertValveForm", "Connect to back"))
+        self.rbConnectFront = QRadioButton(translate("insertValveForm", "Connect to front"))
+        self.rbConnectBack.setChecked(True)
+        self.directionGroup.layout().addWidget(self.rbConnectBack)
+        self.directionGroup.layout().addWidget(self.rbConnectFront)
+        self.secondCol.layout().addWidget(self.directionGroup)
 
         # Now that sli, cb1, and actuator controls exist, apply the correct visibility
         self._refreshLayout()
@@ -2965,6 +2995,39 @@ class insertValveForm(dodoDialogs.protoPypeForm):
             if row.get("Conn", "").strip() in self._FLANGE_CONNS:
                 return True
         return False
+
+    def _isRisingStemTable(self, kinds=("gate", "globe")):
+        """Return True when the loaded CSV is a gate or globe valve table
+        (or one of the given kinds)."""
+        for row in self.pipeDictList:
+            if self._normRow(row).get("vtype", "").lower().startswith(kinds):
+                return True
+        return False
+
+    def _isDirectionalTable(self):
+        """Return True for valves modelled with a flow direction: flanged
+        swing checks, SW / TH checks and flanged / SW / TH globe valves (not
+        the generic two-cone globe or wafer check)."""
+        for row in self.pipeDictList:
+            r = self._normRow(row)
+            vtype = r.get("vtype", "").lower()
+            if "check_swing" in vtype or \
+                    (vtype.startswith(("globe", "check")) and r.get("conn")):
+                return True
+        return False
+
+    def _isCheckTable(self):
+        """Return True for check valve tables (no actuator)."""
+        return any(self._normRow(row).get("vtype", "").lower().startswith("check")
+                   for row in self.pipeDictList)
+
+    def _attachPort(self):
+        """Valve port that goes on the selected port: 0 = back (inlet),
+        1 = front (outlet).  Non-directional valves always use port 0."""
+        if self._isDirectionalTable() and hasattr(self, "rbConnectFront") \
+                and self.rbConnectFront.isChecked():
+            return 1
+        return 0
 
     def _loadFlangePropList(self, conn, psize):
         """Load the matching blind-flange CSV and return the property row for psize.
@@ -3018,7 +3081,13 @@ class insertValveForm(dodoDialogs.protoPypeForm):
         """Show/hide controls depending on valve connection type.
 
         - "Insert in pipe" slider/checkbox: shown for legacy BW valves only.
-        - Actuator radio buttons (Handle / Gearbox): shown for flanged valves only.
+        - Connect to back / front: shown for check and globe valves.
+        - Actuator radio buttons are hidden for check valves.
+        - Actuator radio buttons: shown for flanged and SW/TH valves; the
+          Gearbox option is shown for flanged valves only.  Gate and globe
+          tables relabel them Handwheel / Handwheel (closed) and, when
+          flanged, add Gearbox (closed); flanged globe tables add Pneumatic
+          and Pneumatic (closed).
 
         Called from fillSizes() which runs during __init__ (via super().__init__),
         so controls may not exist yet -- guard with hasattr throughout.
@@ -3030,7 +3099,46 @@ class insertValveForm(dodoDialogs.protoPypeForm):
         if hasattr(self, "cb1"):
             self.cb1.setVisible(not is_socket_or_flanged)
         if hasattr(self, "actuatorGroup"):
-            self.actuatorGroup.setVisible(is_flanged)
+            self.actuatorGroup.setVisible(is_socket_or_flanged and
+                                          not self._isCheckTable())
+            is_gate = self._isRisingStemTable()
+            is_globe = self._isRisingStemTable(("globe",))
+            shown = {
+                self.rbGearbox: is_flanged,
+                self.rbGearboxClosed: is_gate and is_flanged,
+                self.rbPneumatic: is_globe and is_flanged,
+                self.rbPneumaticClosed: is_globe and is_flanged,
+            }
+            for btn, visible in shown.items():
+                btn.setVisible(visible)
+                if not visible and btn.isChecked():
+                    self.rbHandle.setChecked(True)
+            if is_gate:
+                self.rbHandle.setText(translate("insertValveForm", "Handwheel"))
+                self.rbHandleClosed.setText(
+                    translate("insertValveForm", "Handwheel (closed)"))
+            else:
+                self.rbHandle.setText(translate("insertValveForm", "Handle"))
+                self.rbHandleClosed.setText(
+                    translate("insertValveForm", "Handle (closed)"))
+        if hasattr(self, "directionGroup"):
+            self.directionGroup.setVisible(self._isDirectionalTable())
+
+    def _actuator(self):
+        """Actuator string from the radio buttons (default "Handle", or
+        "Handwheel" for gate and globe valves)."""
+        gate = self._isRisingStemTable()
+        if hasattr(self, "rbPneumaticClosed") and self.rbPneumaticClosed.isChecked():
+            return "Pneumatic-closed"
+        if hasattr(self, "rbPneumatic") and self.rbPneumatic.isChecked():
+            return "Pneumatic"
+        if hasattr(self, "rbGearboxClosed") and self.rbGearboxClosed.isChecked():
+            return "Gearbox-closed"
+        if hasattr(self, "rbGearbox") and self.rbGearbox.isChecked():
+            return "Gearbox"
+        if hasattr(self, "rbHandleClosed") and self.rbHandleClosed.isChecked():
+            return "Handwheel-closed" if gate else "Handle-closed"
+        return "Handwheel" if gate else "Handle"
 
     # ── fillSizes override ───────────────────────────────────────────────────
 
@@ -3151,7 +3259,7 @@ class insertValveForm(dodoDialogs.protoPypeForm):
 
             if self._isFlangedConn():
                 # Flanged valve
-                # propList: [DN, VType, H, Kv, Conn, BottomH, TopH]
+                # propList: [DN, VType, H, Kv, Conn, BottomH, TopH, WheelD]
                 psize = r["psize"]
                 conn  = r["conn"]
                 propList = [
@@ -3162,16 +3270,16 @@ class insertValveForm(dodoDialogs.protoPypeForm):
                     conn,
                     float(pq(r.get("bottomh", "0"))),
                     float(pq(r.get("toph", "0"))),
+                    float(pq(r.get("wheeld", "0"))),
                 ]
                 flgPropList = self._loadFlangePropList(conn, psize)
-                # Read actuator choice from radio buttons (default to "Handle")
-                actuator = "Gearbox" if (hasattr(self, "rbGearbox") and
-                                         self.rbGearbox.isChecked()) else "Handle"
                 self.lastValve = pCmd.doValves(
                     propList, FreeCAD.__activePypeLine__,
-                    flgPropList=flgPropList, actuator=actuator)[-1]
+                    flgPropList=flgPropList, actuator=self._actuator(),
+                    port=self._attachPort())[-1]
             elif self._isSocketConn():
-                # [DN, VType, OD, ODBody, H, E, Conn, Kv]
+                # [DN, VType, OD, ODBody, H, E, Conn, Kv, E2, Conn2]
+                # E2 / Conn2 (port 1) only differ on socket x threaded valves.
                 propList = [
                     r["psize"],
                     r.get("vtype", self.PRating),
@@ -3181,8 +3289,12 @@ class insertValveForm(dodoDialogs.protoPypeForm):
                     float(pq(r["e"])),
                     r["conn"],
                     float(pq(r.get("kv", "0"))),
+                    float(pq(r.get("e2") or r["e"])),
+                    r.get("conn2") or r["conn"],
                 ]
-                self.lastValve = pCmd.doValves(propList, FreeCAD.__activePypeLine__)[-1]
+                self.lastValve = pCmd.doValves(
+                    propList, FreeCAD.__activePypeLine__,
+                    actuator=self._actuator(), port=self._attachPort())[-1]
             else:
                 # [DN, VType, ODBody, ID, H, Kv]
                 propList = [
@@ -3231,6 +3343,8 @@ class insertValveForm(dodoDialogs.protoPypeForm):
                     obj.BottomH = pq(r.get("bottomh", "0"))
                 if hasattr(obj, "TopH"):
                     obj.TopH = pq(r.get("toph", "0"))
+                if hasattr(obj, "WheelD"):
+                    obj.WheelD = pq(r.get("wheeld", "0"))
 
                 flg = self._loadFlangePropList(r["conn"], r["psize"])
                 if flg:
@@ -3253,6 +3367,9 @@ class insertValveForm(dodoDialogs.protoPypeForm):
                 obj.E       = pq(r["e"])
                 obj.Conn    = r["conn"]
                 obj.Kv      = float(pq(r.get("kv", "0")))
+                if hasattr(obj, "E2"):
+                    obj.E2    = pq(r.get("e2") or r["e"])
+                    obj.Conn2 = r.get("conn2") or r["conn"]
                 FreeCAD.activeDocument().recompute()
 
             elif not self._isSocketConn() and hasattr(obj, "ID"):
@@ -4698,6 +4815,8 @@ class insertCouplingUnionForm(dodoDialogs.protoPypeForm):
                 self.lastFitting = pCmd.doSocketUnion(
                     propList, FreeCAD.__activePypeLine__)[-1]
 
+            # the class (e.g. "6000lb"); the classes default to 3000lb
+            self.lastFitting.PRating = self.PRating.split("_")[0]
             FreeCAD.activeDocument().recompute()
             FreeCADGui.Selection.clearSelection()
             FreeCADGui.Selection.addSelection(self.lastFitting)
@@ -4775,3 +4894,258 @@ class insertCouplingUnionForm(dodoDialogs.protoPypeForm):
         if not hasattr(self, "_port2DictList") or not self._port2DictList:
             return False
         return True
+
+
+class insertBushingPlugForm(dodoDialogs.protoPypeForm):
+    """
+    Dialog to insert a threaded hex-head bushing or plug (ASME B16.11).
+
+    A radio-button pair at the top of the second column selects Bushing or Plug.
+
+    Bushing mode
+    ────────────
+      CSV: Bushing_<rating>.csv  columns: PSize;PSize2;OD;OD2;F;C;L;L2;D;Conn
+      Primary sizeList  : unique PSize values  (male / large end, port 0)
+      Secondary portList: PSize2 rows for the selected PSize (female / small end)
+      Insert  → pCmd.doHexBushing (10-element propList)
+      Apply   → pushes properties onto selected HexBushing objects
+
+    Plug mode
+    ─────────
+      CSV: Plug_<rating>.csv  columns: PSize;OD;F;C;L;Conn
+      Insert  → pCmd.doHexPlug (6-element propList)
+      Apply   → pushes properties onto selected HexPlug objects
+    """
+
+    def __init__(self):
+        super(insertBushingPlugForm, self).__init__(
+            translate("insertBushingPlugForm", "Insert bushing / plug"),
+            "Bushing",
+            "B16.11",
+            "Quetzal_BushingPlug.svg",
+            x,
+            y,
+        )
+        self.sizeList.setCurrentIndex(0)
+        self.ratingList.setCurrentIndex(0)
+
+        # ── mode radio buttons ────────────────────────────────────────────────
+        self._modeGroup  = QButtonGroup()
+        self._bushingRad = QRadioButton(
+            translate("insertBushingPlugForm", "Bushing"))
+        self._plugRad    = QRadioButton(
+            translate("insertBushingPlugForm", "Plug"))
+        self._bushingRad.setChecked(True)
+        self._modeGroup.addButton(self._bushingRad)
+        self._modeGroup.addButton(self._plugRad)
+        self.secondCol.layout().addWidget(self._bushingRad)
+        self.secondCol.layout().addWidget(self._plugRad)
+        self._bushingRad.toggled.connect(self._onModeChange)
+
+        # ── secondary small-end size list (bushing only) ──────────────────────
+        self._port2DictList = []
+        self._port2Label    = QLabel(
+            translate("insertBushingPlugForm", "Small end size:"))
+        self._port2List     = QListWidget()
+        self._port2List.setMaximumHeight(100)
+        self.secondCol.layout().addWidget(self._port2Label)
+        self.secondCol.layout().addWidget(self._port2List)
+
+        # ── buttons ───────────────────────────────────────────────────────────
+        self._btnReverse = QPushButton(
+            translate("insertBushingPlugForm", "Reverse"))
+        self.secondCol.layout().addWidget(self._btnReverse)
+        self._btnReverse.clicked.connect(self.reverse)
+        self._btnApply = QPushButton(
+            translate("insertBushingPlugForm", "Apply"))
+        self.secondCol.layout().addWidget(self._btnApply)
+        self._btnApply.clicked.connect(self.apply)
+        self.btn_insert.setDefault(True)
+        self.btn_insert.setFocus()
+
+        self.sizeList.currentIndexChanged.connect(self._fillPort2)
+        self._port2List.currentRowChanged.connect(lambda _: self.changeSize(""))
+
+        self.ratingList.setCurrentIndex(0)
+        if self.ratingList.currentText():
+            self.PRating = self.ratingList.currentText()
+        self.fillSizes()
+        _, _, _, psize = pCmd.getSelectedPortDimensions()
+        if psize:
+            pCmd._selectSizeByPSize(self, psize)
+        else:
+            self.sizeList.setCurrentIndex(0)
+
+        self.show()
+        self.lastFitting = None
+
+    # ── mode helpers ──────────────────────────────────────────────────────────
+
+    def _isBushing(self):
+        return self._bushingRad.isChecked()
+
+    def _onModeChange(self):
+        """Called when the Bushing/Plug radio button changes."""
+        is_bushing = self._isBushing()
+        self.PType = "Bushing" if is_bushing else "Plug"
+        self._port2Label.setVisible(is_bushing)
+        self._port2List.setVisible(is_bushing)
+        self.sizeList.blockSignals(True)
+        try:
+            self.fillSizes()
+        finally:
+            self.sizeList.blockSignals(False)
+        _, _, _, psize = pCmd.getSelectedPortDimensions()
+        if psize and pCmd._selectSizeByPSize(self, psize):
+            pass
+        else:
+            self.sizeList.setCurrentIndex(-1)
+
+    def onRatingChanged(self, s):
+        pass  # Base changeRating handles reload and PSize preservation.
+
+    def fillSizes(self):
+        """Load the appropriate CSV and populate sizeList (and the small-end list)."""
+        self.sizeList.clear()
+        self.pipeDictList = []
+        self._uniqueSizeList = []  # Deduplicated PSize list aligned with sizeList rows
+
+        fname = self.PType + "_" + self.PRating + ".csv"
+        fpath = join(dirname(abspath(__file__)), "tablez", fname)
+        try:
+            with open(fpath, "r", encoding="utf-8-sig") as fh:
+                self.pipeDictList = list(csv.DictReader(fh, delimiter=";"))
+        except Exception:
+            return
+
+        for row in self.pipeDictList:
+            ps = row["PSize"]
+            if ps in self._uniqueSizeList:
+                continue
+            self._uniqueSizeList.append(ps)
+            if qu:
+                label = qu.format_psize(ps) + "  " + qu.format_dim(row.get("OD", ""))
+            else:
+                label = ps + "  " + row.get("OD", "")
+            self.sizeList.addItem(label)
+
+        self._fillPort2()
+
+    def _fillPort2(self):
+        """Populate _port2List with the PSize2 options for the selected PSize."""
+        # _port2List is created after super().__init__, which already calls fillSizes.
+        if not hasattr(self, "_port2List"):
+            return
+        self._port2List.clear()
+        self._port2DictList = []
+
+        if not self._isBushing() or not self.pipeDictList:
+            return
+
+        idx = self.sizeList.currentIndex()
+        if idx < 0 or idx >= len(self._uniqueSizeList):
+            return
+        big = self._uniqueSizeList[idx]
+
+        for row in self.pipeDictList:
+            if row["PSize"] != big:
+                continue
+            self._port2DictList.append(row)
+            if qu:
+                label = qu.format_psize(row["PSize2"]) + "  " + qu.format_dim(row.get("OD2", ""))
+            else:
+                label = row["PSize2"] + "  " + row.get("OD2", "")
+            self._port2List.addItem(label)
+
+        # Default to the largest reduction below the run size.
+        self._port2List.blockSignals(True)
+        self._port2List.setCurrentRow(len(self._port2DictList) - 1)
+        self._port2List.blockSignals(False)
+
+    def _selectedRow(self):
+        """CSV row for the current selection, or None."""
+        if self._isBushing():
+            idx = self._port2List.currentRow()
+            if 0 <= idx < len(self._port2DictList):
+                return self._port2DictList[idx]
+            return None
+        idx = self.sizeList.currentIndex()
+        if 0 <= idx < len(self.pipeDictList):
+            return self.pipeDictList[idx]
+        return None
+
+    # ── insert ────────────────────────────────────────────────────────────────
+
+    def insert(self):
+        if not hasattr(self, "_port2List"):
+            return
+        row = self._selectedRow()
+        if row is None:
+            FreeCAD.Console.PrintWarning("insertBushingPlugForm: no size selected\n")
+            return
+        self.sizeList.blockSignals(True)
+        try:
+            if self._isBushing():
+                propList = [row["PSize"], row["PSize2"]] + [
+                    float(pq(row[k])) for k in ("OD", "OD2", "F", "C", "L", "L2", "D")
+                ] + [row.get("Conn", "TH")]
+                self.lastFitting = pCmd.doHexBushing(
+                    propList, FreeCAD.__activePypeLine__)[-1]
+            else:
+                propList = [row["PSize"]] + [
+                    float(pq(row[k])) for k in ("OD", "F", "C", "L")
+                ] + [row.get("Conn", "TH")]
+                self.lastFitting = pCmd.doHexPlug(
+                    propList, FreeCAD.__activePypeLine__)[-1]
+            self.lastFitting.PRating = self.PRating
+
+            FreeCAD.activeDocument().recompute()
+            FreeCADGui.Selection.clearSelection()
+            FreeCADGui.Selection.addSelection(self.lastFitting)
+        finally:
+            self.sizeList.blockSignals(False)
+
+    # ── reverse ───────────────────────────────────────────────────────────────
+
+    def reverse(self):
+        """Flip selected bushings/plugs (or the last inserted one) 180 degrees around X."""
+        ptypes = ("HexBushing", "HexPlug")
+        sel = [p for p in FreeCADGui.Selection.getSelection()
+               if hasattr(p, "PType") and p.PType in ptypes]
+        if sel:
+            for p in sel:
+                pCmd.rotateTheTubeAx(p, FreeCAD.Vector(1, 0, 0), 180)
+        elif self.lastFitting:
+            pCmd.rotateTheTubeAx(self.lastFitting, FreeCAD.Vector(1, 0, 0), 180)
+
+    # ── apply ─────────────────────────────────────────────────────────────────
+
+    def apply(self):
+        """Push the current size onto all selected bushings or plugs."""
+        row = self._selectedRow()
+        if row is None:
+            return
+        ptype = "HexBushing" if self._isBushing() else "HexPlug"
+        keys = ("OD", "OD2", "F", "C", "L", "L2", "D") if self._isBushing() \
+            else ("OD", "F", "C", "L")
+        for obj in FreeCADGui.Selection.getSelection():
+            if getattr(obj, "PType", None) != ptype:
+                continue
+            obj.PSize = row["PSize"]
+            if self._isBushing():
+                obj.PSize2 = row["PSize2"]
+            for k in keys:
+                setattr(obj, k, pq(row[k]))
+            obj.Conn    = row.get("Conn", "TH")
+            obj.PRating = self.PRating
+        FreeCAD.activeDocument().recompute()
+
+    def _previewReady(self):
+        """Preview requires a grade and size; bushing mode also needs a small-end size."""
+        if not super()._previewReady():
+            return False
+        if not hasattr(self, "_port2List"):
+            return False
+        if not self._isBushing():
+            return True
+        return self._port2List.currentRow() >= 0 and bool(self._port2DictList)
