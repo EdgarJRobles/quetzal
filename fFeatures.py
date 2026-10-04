@@ -557,6 +557,12 @@ class frameBranchForm(dodoDialogs.protoTypeDialog):
                 # prop=prop2
             FreeCAD.Console.PrintMessage(prop)
             profile = makeProfile(prop)
+            # FIX: Fix for T-slots, as they are added in the wrong direction
+            if prop[3] == "TSLOT":
+                profile.Placement.Rotation = FreeCAD.Rotation(
+                    FreeCAD.Vector(1, 0, 0),
+                    180,
+                )
             # profile = newProfile(prop)
         if fCmd.faces():
             Z = FreeCAD.Vector(0, 0, 1)
@@ -940,6 +946,12 @@ class frameBranchForm(dodoDialogs.protoTypeDialog):
                     prop = self.getPropsfromSizes()
                     # FreeCAD.Console.PrintMessage(prop)
                     profile = makeProfile(prop)
+                    # FIX: Fix for T-slots, as they are added in the wrong direction
+                    if prop[3] == "TSLOT":
+                        profile.Placement.Rotation = FreeCAD.Rotation(
+                            FreeCAD.Vector(1, 0, 0),
+                            180,
+                        )
                     # profile = newProfile(prop)
                 # MAKE FRAMEBRANCH
                 if self.form.editName.text():
@@ -1149,6 +1161,12 @@ class frameBranchForm(dodoDialogs.protoTypeDialog):
                 # prop = self.sectDictList[self.form.listSizes.currentRow()]
                 # profile = newProfile(prop)
                 profile = makeProfile(prop)
+                # FIX: Fix for T-slots, as they are added in the wrong direction
+                if prop[3] == "TSLOT":
+                    profile.Placement.Rotation = FreeCAD.Rotation(
+                        FreeCAD.Vector(1, 0, 0),
+                        180,
+                    )
             name = FB.Profile.Name
             FB.Profile = profile
             FB.Proxy.redraw(FB)
