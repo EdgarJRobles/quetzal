@@ -85,11 +85,10 @@ No consumer is forced to depend on FreeCAD or Qt to use these.
 
 1. `Valve` geometry is split, but its property schema is still dynamic and
    construction-dependent.
-2. `PypeLine2` still resolves its group by label (PypeBranch links are done).
-3. Existing command classes still repeat `IsActive`/`GetResources`; the
+2. Existing command classes still repeat `IsActive`/`GetResources`; the
    registry already captures their metadata centrally.
-4. Dialog preview code still has two implementations.
-5. `doBeams` and `doOutlets` keep custom placement logic because they are not
+3. Dialog preview code still has two implementations.
+4. `doBeams` and `doOutlets` keep custom placement logic because they are not
    port-attachment flows (frameline beams and host-surface outlets).
 
 The roadmap in [ARCHITECTURE.md](../ARCHITECTURE.md#remaining-roadmap) tracks

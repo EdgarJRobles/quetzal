@@ -20,6 +20,7 @@ from quetzal.features.flange import (
 )
 from quetzal.features.flange.properties import define_flange_properties
 from quetzal.application.valve import ValveContext
+from quetzal.application.pype_line import line_group as resolve_line_group
 from quetzal.application.pype_children import (
     branch_children,
     clear_branch_children,
@@ -1295,19 +1296,21 @@ class PypeLine2(pypeType):
         obj.addProperty("App::PropertyLink", "Base", "PypeLine2", "the edges")
 
     def onChanged(self, fp, prop):
-        if prop == "Label" and len(fp.InList):
-            fp.InList[0].Label = fp.Label + "_pieces"
-            fp.Group = fp.Label + "_pieces"
+        if prop == "Label":
+            group = fp.getParentGroup()
+            if group is not None:
+                group.Label = fp.Label + "_pieces"
+                fp.Group = group.Label
         if hasattr(fp, "Base") and prop == "Base" and fp.Base:
             FreeCAD.Console.PrintWarning(fp.Label + " Base has changed to " + fp.Base.Label + "\n")
         if prop == "OD":
             fp.BendRadius = 0.75 * fp.OD
 
     def purge(self, fp):
-        group = FreeCAD.activeDocument().getObjectsByLabel(fp.Group)[0]
-        for o in group.OutList:
-            if hasattr(o, "PType") and o.PType in ["Pipe", "Elbow"]:
-                FreeCAD.activeDocument().removeObject(o.Name)
+        group = resolve_line_group(fp)
+        for obj in list(group.OutList):
+            if hasattr(obj, "PType") and obj.PType in ["Pipe", "Elbow"]:
+                fp.Document.removeObject(obj.Name)
 
     def update(self, fp, edges=None):
         import fCmd

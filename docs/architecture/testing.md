@@ -70,6 +70,8 @@ fails. It runs without a GUI and verifies:
 12. **PypeBranch links** – children are created as `TubesLink`/`CurvesLink`,
     survive a label rename and save/reload, and legacy name lists migrate on
     recompute.
+13. **PypeLine group** – parent-group resolution, unique-label fallback,
+    `moveToPyLi` membership and safe purge.
 
 ### How the script is executed
 

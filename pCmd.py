@@ -156,11 +156,12 @@ def isTee(obj):
 
 
 def moveToPyLi(obj, plName):
-    """
-    Move obj to the group of pypeLine plName
-    """
-    pl = FreeCAD.ActiveDocument.getObjectsByLabel(plName)[0]
-    group = FreeCAD.ActiveDocument.getObjectsByLabel(str(pl.Group))[0]
+    """Move ``obj`` to the group of the PypeLine referenced by name or label."""
+    from quetzal.application.pype_line import line_group, resolve_line
+
+    document = FreeCAD.ActiveDocument
+    pl = resolve_line(plName, document)
+    group = line_group(pl)
     group.addObject(obj)
     if hasattr(obj, "PType"):
         color = _shape_color(pl)
@@ -1621,7 +1622,9 @@ def updatePLColor(sel=None, color=None):
         if hasattr(pl, "PType") and pl.PType == "PypeLine":
             if not color:
                 color = _shape_color(pl)
-            group = FreeCAD.activeDocument().getObjectsByLabel(pl.Group)[0]
+            from quetzal.application.pype_line import line_group
+
+            group = line_group(pl)
             for o in group.OutList:
                 if hasattr(o, "PType"):
                     if o.PType in objToPaint:

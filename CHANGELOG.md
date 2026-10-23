@@ -31,6 +31,8 @@
   union) now share the same transaction/selection/alignment pipeline.
 - `PypeBranch2` now stores children in authoritative `TubesLink`/`CurvesLink`
   properties, migrates legacy name lists on load and keeps dual writes.
+- `PypeLine2` resolves its group through `getParentGroup()` with a unique-label
+  fallback; `moveToPyLi`, color updates and purge no longer use `[0]` lookups.
 - `Gasket` now uses declarative properties and an injectable shape builder.
 - Add a `CommandSpec` registry and a single ordered `quetzal.ui.layout` for
   toolbars, menus, context menus and watchers; `InitGui` and the pie menu use

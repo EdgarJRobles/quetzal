@@ -271,6 +271,38 @@ def check_pype_branch_links():
             os.remove(path)
 
 
+def check_pypeline_group():
+    """PypeLine groups resolve through the parent/unique label and purge safely."""
+
+    from quetzal.application.pype_line import line_group
+
+    document = FreeCAD.newDocument("quetzal_pypeline")
+    try:
+        line = document.addObject("Part::FeaturePython", "PypeLine")
+        pFeatures.PypeLine2(line, "SCH-STD")
+        document.recompute()
+        group = line_group(line)
+        assert group.Label == "PypeLine_pieces"
+
+        pipe = pCmd.makePipe("SCH-STD", ["DN50", 60.32, 3, 1000])
+        document.recompute()
+        pCmd.moveToPyLi(pipe, line.Name)
+        assert pipe in line_group(line).OutList
+
+        line.Label = "RenamedLine"
+        document.recompute()
+        assert line.Group == "RenamedLine_pieces"
+        assert line_group(line).Label == "RenamedLine_pieces"
+
+        pipe_name = pipe.Name
+        line.Proxy.purge(line)
+        document.recompute()
+        assert document.getObject(pipe_name) is None
+        return 3
+    finally:
+        FreeCAD.closeDocument(document.Name)
+
+
 def main():
     print(f"FreeCAD {FreeCAD.Version()[0]}.{FreeCAD.Version()[1]}", flush=True)
     document = FreeCAD.newDocument("quetzal_integration")
@@ -369,6 +401,10 @@ def main():
     constant_count = check("module constants unchanged", check_module_constants)
     if constant_count:
         print(f"     shared vectors checked: {constant_count}", flush=True)
+
+    pypeline_count = check("PypeLine group resolution", check_pypeline_group)
+    if pypeline_count:
+        print(f"     PypeLine group operations checked: {pypeline_count}", flush=True)
 
     branch_count = check("PypeBranch link migration", check_pype_branch_links)
     if branch_count:

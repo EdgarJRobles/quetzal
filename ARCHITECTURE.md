@@ -194,6 +194,7 @@ work. Save/reload is checked by the headless integration suite.
 | Flange geometry | Five builders plus a generic fallback selected at execute time by `FlangeType`; ports/insertion offsets live in `quetzal.domain.flange`; the 6-type geometry baseline is unchanged. |
 | Flange properties | Declared as `PropertySpec` in `quetzal.features.flange.properties` with the original order, groups and docs. |
 | PypeBranch children | `TubesLink`/`CurvesLink` are authoritative; legacy `Tubes`/`Curves` names are still written and migrated on load. |
+| PypeLine group | Resolved through `getParentGroup()` with a unique-label fallback; `moveToPyLi`, color updates and purge no longer use `[0]` lookups. |
 | Generic insertion | `FeatureInserter` + `FeatureRegistry` available. |
 | Attached insertion | Shared pipeline for the port-based `do*` flows: pipes, caps, flanges, reducers, gaskets, bolts, elbows, tees, valves and all socket fittings (14 objects in the integration matrix). |
 | Command metadata | `CommandSpec`/`CommandRegistry` record all 61 commands; `quetzal.ui.layout` is the single ordered source for toolbars, menus, context menus and watchers. `InitGui` and `dodoPM` consume it. |
@@ -209,8 +210,9 @@ next steps:
    (`Tee`, `Reduct`, `Elbow`, `Outlet`, socket fittings, ...).
 2. Introduce a `PreviewService` for the dialog previews (single cache key and
    configurable path).
-3. Replace the remaining `PypeLine2` group lookup by label with a parent-group
-   helper and a unique-group fallback.
+3. Migrate the remaining feature proxies (Elbow, Tee, Reduct, Outlet, socket
+   fittings) to `PropertySpec`/`FeatureDefinition` and finish the
+   `PreviewService` migration for dialog previews.
 
 See [SOLID mapping](docs/architecture/solid-mapping.md),
 [extension guide](docs/architecture/extending.md),
