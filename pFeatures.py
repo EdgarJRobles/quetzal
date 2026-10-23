@@ -13,9 +13,9 @@ import FreeCAD
 import FreeCADGui
 import Part
 
-import fCmd
-import pCmd
 from quetzal_config import FREECADVERSION, get_icon_path
+from quetzal.domain.pipe_sizes import PIPE_OUTSIDE_DIAMETERS_MM as pipe_OD
+from quetzal.features import Cap, Pipe, PypeFeature as pypeType
 
 QT_TRANSLATE_NOOP = FreeCAD.Qt.QT_TRANSLATE_NOOP
 translate = FreeCAD.Qt.translate
@@ -24,214 +24,10 @@ vO = FreeCAD.Vector(0, 0, 0)
 vX = FreeCAD.Vector(1, 0, 0)
 vY = FreeCAD.Vector(0, 1, 0)
 vZ = FreeCAD.Vector(0, 0, 1)
-pipe_OD = {
-    "DN6" : 10.29,
-    "DN8" : 13.72,
-    "DN10" : 17.14,
-    "DN15" : 21.34,
-    "DN20" : 26.67,
-    "DN25" : 33.4,
-    "DN32" : 42.16,
-    "DN40" : 48.26,
-    "DN50" : 60.32,
-    "DN65" : 73.02,
-    "DN80" : 88.9,
-    "DN90" : 101.6,
-    "DN100" : 114.3,
-    "DN125" : 141.3,
-    "DN150" : 168.27,
-    "DN200" : 219.07,
-    "DN250" : 273.05,
-    "DN300" : 323.85,
-    "DN350" : 355.6,
-    "DN400" : 406.4,
-    "DN450" : 457.2,
-    "DN500" : 508,
-    "DN550" : 558.8,
-    "DN600" : 609.6
-}
+# Nominal OD table lives in quetzal.domain.pipe_sizes (imported above).
 
 ################ CLASSES ###########################
 
-
-class pypeType(object):
-    def __init__(self, obj):
-        obj.addProperty(
-            "App::PropertyString",
-            "PType",
-            "PBase",
-            QT_TRANSLATE_NOOP("App::Property", "Type of tubeFeature"),
-        ).PType
-        obj.addProperty(
-            "App::PropertyString",
-            "PRating",
-            "PBase",
-            QT_TRANSLATE_NOOP("App::Property", "Rating of pipeFeature"),
-        ).PRating
-        obj.addProperty(
-            "App::PropertyString",
-            "PSize",
-            "PBase",
-            QT_TRANSLATE_NOOP("App::Property", "Nominal diameter"),
-        ).PSize
-        obj.addProperty(
-            "App::PropertyVectorList",
-            "Ports",
-            "PBase",
-            QT_TRANSLATE_NOOP(
-                "App::Property",
-                "Ports position relative to the origin of Shape",
-            ),
-        )
-        obj.addProperty(
-            "App::PropertyVectorList",
-            "PortDirections",
-            "PBase",
-            QT_TRANSLATE_NOOP(
-                "App::Property",
-                "Port direction vectors (unit vectors pointing outward from each port)",
-            ),
-        )
-        obj.addProperty(
-            "App::PropertyFloat",
-            "Kv",
-            "PBase",
-            QT_TRANSLATE_NOOP("App::Property", "Flow factor (m3/h/bar)"),
-        ).Kv
-        if FREECADVERSION > 0.19:
-            obj.addExtension("Part::AttachExtensionPython")
-        else:
-            obj.addExtension("Part::AttachExtensionPython", obj)  # 20220704
-        self.Name = obj.Name
-
-    def execute(self, fp):
-        fp.positionBySupport()  # to recomute placement according the Support
-
-    def nearestPort(self, point=None):
-        """
-        nearestPort (point=None)
-          Returns the Port nearest to  point
-          or to the selected geometry.
-          (<portNr>, <portPos>, <portDir>)
-        """
-        if FreeCAD.ActiveDocument:
-            obj = FreeCAD.ActiveDocument.getObject(self.Name)
-            if not point and FreeCADGui.ActiveDocument:
-                try:
-                    selex = FreeCADGui.Selection.getSelectionEx()
-                    target = selex[0].Object
-                    so = selex[0].SubObjects[0]
-                except:
-                    FreeCAD.Console.PrintError("No geometry selected\n")
-                    return None
-                if type(so) == Part.Vertex:
-                    point = so.Point
-                else:
-                    point = so.CenterOfMass
-            if point:
-                pos = pCmd.portsPos(obj)[0]
-                Z = pCmd.portsDir(obj)[0]
-                i = nearest = 0
-                if len(obj.Ports) > 1:
-                    for p in pCmd.portsPos(obj)[1:]:
-                        i += 1
-                        if (p - point).Length < (pos - point).Length:
-                            pos = p
-                            Z = pCmd.portsDir(obj)[i]
-                            nearest = i
-                return nearest, pos, Z
-
-class Pipe(pypeType):
-    """Class for object PType="Pipe"
-    Pipe(obj,[PSize="DN50",OD=60.3,thk=3, H=100])
-      obj: the "App::FeaturePython object"
-      PSize (string): nominal diameter
-      OD (float): outside diameter
-      thk (float): shell thickness
-      H (float): length of pipe"""
-
-    def __init__(self, obj,rating, DN="DN50", OD=60.3, thk=3, H=100):
-        # initialize the parent class
-        super(Pipe, self).__init__(obj)
-        # define common properties
-        obj.PType = "Pipe"
-        obj.Proxy = self
-        obj.PRating = rating
-        obj.PSize = DN
-        # define specific properties
-        obj.addProperty(
-            "App::PropertyLength",
-            "OD",
-            "Pipe",
-            QT_TRANSLATE_NOOP("App::Property", "Outside diameter"),
-        ).OD = OD
-        obj.addProperty(
-            "App::PropertyLength",
-            "thk",
-            "Pipe",
-            QT_TRANSLATE_NOOP("App::Property", "Wall thickness"),
-        ).thk = thk
-        obj.addProperty(
-            "App::PropertyLength",
-            "ID",
-            "Pipe",
-            QT_TRANSLATE_NOOP("App::Property", "Inside diameter"),
-        ).ID = obj.OD - 2 * obj.thk
-        obj.addProperty(
-            "App::PropertyLength",
-            "Height",
-            "Pipe",
-            QT_TRANSLATE_NOOP("App::Property", "Length of tube"),
-        ).Height = H
-        obj.addProperty(
-            "App::PropertyString",
-            "Profile",
-            "Pipe",
-            QT_TRANSLATE_NOOP("App::Property", "Section dim."),
-        ).Profile = str(obj.OD) + "x" + str(obj.thk)
-
-        self.execute(obj)
-
-    def onChanged(self, fp, prop):
-        if prop == "ID" and fp.ID < fp.OD:
-            fp.thk = (fp.OD - fp.ID) / 2
-
-    def execute(self, fp):
-        from math import tan
-
-        try:
-            parent = fp.getParentGroup()
-            i = parent.Tubes.index(fp.Name)
-            edges = parent.Base.Shape.Edges
-            L = edges[i].Length
-            R = parent.BendRadius
-            if i < len(parent.Curves):
-                v1, v2 = [e.tangentAt(0) for e in edges[i : i + 2]]
-                alfa = float(v1.getAngle(v2)) / 2
-                L -= float(R * tan(alfa))
-            if i:
-                v1, v2 = [e.tangentAt(0) for e in edges[i - 1 : i + 1]]
-                alfa = float(v1.getAngle(v2)) / 2
-                tang = float(R * tan(alfa))
-                L -= tang
-                fp.AttachmentOffset.Base = FreeCAD.Vector(0, 0, tang)
-            fp.Height = L
-        except Exception:
-            #  FreeCAD.Console.PrintWarning(str(e) + "\n")
-            pass
-        if fp.thk > fp.OD / 2:
-            fp.thk = fp.OD / 2
-        fp.ID = fp.OD - 2 * fp.thk
-        fp.Profile = str(fp.OD) + "x" + str(fp.thk)
-        if fp.ID:
-            fp.Shape = Part.makeCylinder(fp.OD / 2, fp.Height).cut(
-                Part.makeCylinder(fp.ID / 2, fp.Height)
-            )
-        else:
-            fp.Shape = Part.makeCylinder(fp.OD / 2, fp.Height)
-        fp.Ports = [FreeCAD.Vector(), FreeCAD.Vector(0, 0, float(fp.Height))]
-        fp.PortDirections = [FreeCAD.Vector(0, 0, -1), FreeCAD.Vector(0, 0, 1)] 
-        super(Pipe, self).execute(fp)  # perform common operations
 
 class TerminalAdapter(pypeType):
     """Class for objet Ptype="TerminalAdapter"
@@ -275,6 +71,7 @@ class TerminalAdapter(pypeType):
     def onChanged(self, fp,prop):
         pass
     def execute(self, fp):
+        import pCmd
         from math import tan
         polygonthickness = fp.SW/5
         threadthickness = fp.L-fp.SW
@@ -356,6 +153,7 @@ class Elbow(pypeType):
             fp.thk = (fp.OD - fp.ID) / 2
 
     def execute(self, fp):
+        import pCmd
         parent = fp.getParentGroup()
         if parent:
             try:
@@ -1642,78 +1440,6 @@ class DuctReduction:
         return Part.Wire(Part.makePolygon(pts))
 
 
-class Cap(pypeType):
-    """Class for object PType="Cap"
-    Cap(obj,[PSize="DN50",OD=60.3,thk=3])
-      obj: the "App::FeaturePython object"
-      PSize (string): nominal diameter
-      OD (float): outside diameter
-      thk (float): shell thickness"""
-
-    def __init__(self, obj, rating="SCH-STD", DN="DN50", OD=60.3, thk=3):
-        # initialize the parent class
-        super(Cap, self).__init__(obj)
-        # define common properties
-        obj.PType = "Cap"
-        obj.Proxy = self
-        obj.PRating = rating
-        obj.PSize = DN
-        # define specific properties
-        obj.addProperty(
-            "App::PropertyLength",
-            "OD",
-            "Cap",
-            QT_TRANSLATE_NOOP("App::Property", "Outside diameter"),
-        ).OD = OD
-        obj.addProperty(
-            "App::PropertyLength",
-            "thk",
-            "Cap",
-            QT_TRANSLATE_NOOP("App::Property", "Wall thickness"),
-        ).thk = thk
-        obj.addProperty(
-            "App::PropertyLength",
-            "ID",
-            "Cap",
-            QT_TRANSLATE_NOOP("App::Property", "Inside diameter"),
-        ).ID = obj.OD - 2 * obj.thk
-        obj.addProperty(
-            "App::PropertyString",
-            "Profile",
-            "Cap",
-            QT_TRANSLATE_NOOP("App::Property", "Section dim."),
-        ).Profile = str(obj.OD) + "x" + str(obj.thk)
-
-        self.execute(obj)
-
-    def onChanged(self, fp, prop):
-        return None
-
-    def execute(self, fp):
-        if fp.thk > fp.OD / 2:
-            fp.thk = fp.OD / 2.1
-        fp.ID = fp.OD - 2 * fp.thk
-        fp.Profile = str(fp.OD) + "x" + str(fp.thk)
-        D = float(fp.OD)
-        s = float(fp.thk)
-        sfera = Part.makeSphere(0.8 * D, FreeCAD.Vector(0, 0, -(0.55 * D - 6 * s)))
-        cilindro = Part.makeCylinder(
-            D / 2,
-            D * 1.7,
-            FreeCAD.Vector(0, 0, -(0.55 * D - 6 * s + 1)),
-            FreeCAD.Vector(0, 0, 1),
-        )
-        common = sfera.common(cilindro)
-        fil = common.makeFillet(D / 6.5, common.Edges)
-        cut = fil.cut(
-            Part.makeCylinder(D * 1.1, D * 2, FreeCAD.Vector(0, 0, 0), FreeCAD.Vector(0, 0, -1))
-        )
-        cap = cut.makeThickness([f for f in cut.Faces if type(f.Surface) == Part.Plane], -s, 1.0e-3)
-        fp.Shape = cap
-        fp.Ports = [FreeCAD.Vector()]
-        fp.PortDirections = [FreeCAD.Vector(0, 0, -1)]
-        super(Cap, self).execute(fp)  # perform common operations
-
 class PypeLine2(pypeType):
     """Class for object PType="PypeLine2"
     This object represent a collection of objects "PType" that are updated with the
@@ -1792,6 +1518,8 @@ class PypeLine2(pypeType):
                 FreeCAD.activeDocument().removeObject(o.Name)
 
     def update(self, fp, edges=None):
+        import fCmd
+        import pCmd
         from DraftVecUtils import rounded
         from math import degrees
 
@@ -3303,6 +3031,7 @@ class PypeBranch2(pypeType):  # use AttachExtensionPython
             return
 
     def redraw(self, fp):
+        import pCmd
         from math import tan, degrees
 
         tubes = list()
