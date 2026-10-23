@@ -1,5 +1,37 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- Layered `quetzal/` package: pure domain (catalogues, pipe sizes, ports),
+  application (feature registry, insertion service), FreeCAD infrastructure
+  and migrated feature proxies.
+- `FeatureDefinition`/`FeatureRegistry` so features can be added by
+  registration instead of editing factory chains.
+- Headless integration suite covering 22 features, 243 catalogues, document
+  save/reload, 61 commands and 9 insertion flows.
+
+### Changed
+
+- `Pipe` and `Cap` now use declarative properties, injectable shape builders
+  and the generic insertion service; `pFeatures` re-exports them for
+  compatibility.
+- `pFeatures.pypeType` is now `quetzal.features.base.PypeFeature`; the
+  `pFeatures <-> pCmd` module import cycle was removed.
+- Six `do*` insertion flows share one transaction/selection/alignment
+  pipeline; alignment now happens before the transaction is committed.
+- `protoPypeForm.fillSizes` and the nominal OD lookups use the shared
+  catalogue repository.
+- `pCmd` selection and `ViewObject` access degrade safely in console mode.
+
+### Fixed
+
+- Register `Quetzal_TeeQM` correctly and remove the duplicated
+  `Quetzal_CapQM` registration.
+- Use `Quetzal_CouplingUnion` without the `.svg` suffix so the icon resolves.
+- Avoid headless `AttributeError` on `FreeCADGui.Selection`/`ViewObject`.
+
 ## [1.7.8] - 2025-12-13
 
 - Sync quetzal version

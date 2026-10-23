@@ -49,3 +49,15 @@ If you have QA experience consider writing test cases.
 Feel like adding a new feature/part? Open a ticket to use as a basis for discussion.
 
 Describe your idea. Discuss with the other developers and start coding!
+
+### Before opening a pull request
+
+- Keep business rules in `quetzal/domain` free of `FreeCAD`, `Part`, `PySide`
+  and `FreeCADGui` imports.
+- Run `python3 -m pytest` for the pure domain/application tests.
+- Run `freecadcmd tests/integration/freecad_check.py` if you changed a feature
+  proxy, the catalogue, a command or an insertion flow.
+- Read [ARCHITECTURE.md](./ARCHITECTURE.md) and the
+  [extension guide](./docs/architecture/extending.md); new features should use
+  `PropertySpec`, a `ShapeBuilder` and a `FeatureDefinition` instead of adding
+  new `if/elif` branches.

@@ -21,4 +21,4 @@ The package follows a layered architecture:
     re-exports for backwards compatibility.
 """
 
-__version__ = "1.9.0"
+__version__ = "1.8.11"

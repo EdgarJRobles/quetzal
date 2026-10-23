@@ -63,6 +63,19 @@ Discussion in the FreeCAD Forum:
 
 [Drawings 2D nomeclature of tablez CVS]: ./Nomeclature.md
 
+## Architecture
+
+Quetzal now has a layered core under `quetzal/` (domain, application,
+infrastructure and features) while keeping the historical `pFeatures`/`pCmd`
+API for existing documents and macros. See [ARCHITECTURE.md](./ARCHITECTURE.md)
+for the dependency rules and the migration roadmap.
+
+Run the fast tests with `python3 -m pytest`. For the headless FreeCAD checks:
+
+```shell
+freecadcmd tests/integration/freecad_check.py
+```
+
 ## Changelog
 
 Read our [CHANGELOG] file to know about the latest changes.
