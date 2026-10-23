@@ -51,6 +51,10 @@ class QuetzalWorkbench(Workbench):
         This function is called at the first activation of the workbench,
         here is the place to import all the commands.
         """
+        # Import locally too: FreeCAD may keep an InitGui module loaded from a
+        # previous session, and this keeps Initialize self-contained.
+        from quetzal.ui import layout as quetzal_layout
+
         QT_TRANSLATE_NOOP = FreeCAD.Qt.QT_TRANSLATE_NOOP
         import CUtils  # noqa: F401
 
@@ -95,6 +99,8 @@ class QuetzalWorkbench(Workbench):
         quetzal_layout.validate_registry()
 
     def ContextMenu(self, recipient):
+        from quetzal.ui import layout as quetzal_layout
+
         QT_TRANSLATE_NOOP = FreeCAD.Qt.QT_TRANSLATE_NOOP
         for surface in quetzal_layout.CONTEXT_MENUS:
             self.appendContextMenu(
@@ -103,6 +109,8 @@ class QuetzalWorkbench(Workbench):
             )
 
     def setWatchers(self):
+        from quetzal.ui import layout as quetzal_layout
+
         class QuetzalWatcher:
             def __init__(self, commands, title, predicate):
                 self.commands = list(commands)
