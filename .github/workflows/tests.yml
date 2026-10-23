@@ -1,0 +1,33 @@
+name: tests
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  unit:
+    name: Unit tests (no FreeCAD)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install test dependency
+        run: python -m pip install --upgrade pip pytest
+      - name: Run unit tests
+        run: python -m pytest
+      - name: Byte-compile touched modules
+        run: >-
+          python -m compileall -q
+          quetzal
+          tests
+          pFeatures.py
+          pCmd.py
+          pForms.py
+          dodoDialogs.py
+          CPipe.py
+          dodoPM.py
