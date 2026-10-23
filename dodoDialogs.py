@@ -10,6 +10,7 @@ from PySide.QtGui import *
 
 from quetzal.domain.errors import CatalogNotFoundError
 from quetzal.infrastructure.catalog import default_catalog_repository
+from quetzal.infrastructure.freecad.preview import default_preview_service
 
 translate = FreeCAD.Qt.translate
 
@@ -111,6 +112,7 @@ class protoPypeForm(QDialog):
         icon="dodo.svg",
         x=100,
         y=350,
+        preview_service=None,
     ):
         """
         __init__(self,winTitle='Title', PType='Pipe', PRating='SCH-STD')
@@ -142,7 +144,8 @@ class protoPypeForm(QDialog):
         self.firstCol = QWidget()
         self.firstCol.setLayout(QVBoxLayout())
         self.mainHL.addWidget(self.firstCol)
-        self.previewSectionsPath = FreeCAD.getUserAppDataDir() + "Mod/quetzal/iconz/PreviewSections/"
+        self._preview = preview_service or default_preview_service()
+        self.previewSectionsPath = str(self._preview.cache.paths.write_root) + "/"
         self.gradeimagepath = str()
         self.labImage = QLabel()
         self.fullimagepath = str()

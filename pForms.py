@@ -17,6 +17,7 @@ from PySide.QtGui import *
 import dodoDialogs
 import fCmd
 import pCmd
+from quetzal.domain.preview import PreviewKey
 from quetzal.domain.pipe_sizes import PIPE_OUTSIDE_DIAMETERS_MM as pipe_OD
 from PySide.QtWidgets import QCheckBox
 
@@ -177,87 +178,29 @@ class insertPipeForm(dodoDialogs.protoPypeForm):
         pass  # Base changeRating handles blockSignals, fillSizes, and PSize preservation.
 
     def changeSize(self, s):
-        """Generate a preview thumbnail for the selected pipe size.
-
-        The base changeSize calls self.insert() with the user's live selection,
-        which would create a pipe at the selected position and corrupt state.
-        Instead, a temporary pipe is created at origin with a fixed 200 mm length
-        via pCmd.makePipe(), capturePreviewProfile() saves the image, then the
-        pipe is deleted.  The selection is cleared for the duration so that
-        makePipe() places the object at the origin rather than at a port.
-
-        Image filename always uses the raw DN PSize (never the NPS display label)
-        for compatibility with existing cached images.  Any cached file whose
-        name starts with <rating><DN_psize> is accepted as a hit so that legacy
-        files with dimension suffixes still match.
-        """
-        from os.path import exists, join
-        from os import makedirs, listdir
-        from PySide.QtGui import QPixmap
-
+        """Render the pipe preview through the shared PreviewService."""
         idx = self.sizeList.currentIndex()
         if idx < 0 or idx >= len(self.pipeDictList):
             return
-
-        # Always use the raw DN PSize for the filename, never the display label
-        dn_psize = self.pipeDictList[idx].get("PSize", "")
-        rateselected = self.ratingList.currentText()
-        preview_dir = join(self.previewSectionsPath, self.PType)
-        makedirs(preview_dir, exist_ok=True)
-
-        # Canonical filename for new images
-        canonical_path = join(preview_dir, rateselected + dn_psize + ".png")
-
-        # Cache check: accept any file whose name starts with rate+dn_psize
-        # (covers legacy files with dimensions appended to the name)
-        prefix = rateselected + dn_psize
-        cached_path = None
-        if exists(canonical_path):
-            cached_path = canonical_path
-        else:
-            try:
-                for fname in listdir(preview_dir):
-                    if fname.startswith(prefix) and fname.endswith(".png"):
-                        cached_path = join(preview_dir, fname)
-                        break
-            except OSError:
-                pass
-
-        if cached_path:
-            self.labImage.setPixmap(QPixmap(cached_path).scaledToWidth(180))
-            return
-
-        # Image not yet cached -- create a temporary pipe at origin
-        size_selected = self.pipeDictList[idx]
+        row = self.pipeDictList[idx]
+        key = PreviewKey("Pipe", self.ratingList.currentText(), row.get("PSize", ""))
         try:
-            propList = [
-                dn_psize,
-                float(pq(size_selected["OD"])),
-                float(pq(size_selected["thk"])),
-                200.0,   # fixed 200 mm preview length
+            prop_list = [
+                row["PSize"],
+                float(pq(row["OD"])),
+                float(pq(row["thk"])),
+                200.0,
             ]
-        except (KeyError, Exception):
+        except (KeyError, ValueError, TypeError):
             return
-        try:
-            saved_sel = FreeCADGui.Selection.getSelectionEx()
-            FreeCADGui.Selection.clearSelection()
-            preview_pipe = pCmd.makePipe(rateselected, propList)
-            FreeCAD.activeDocument().recompute()
-            # Reset to origin in case positionBySupport() moved it
-            preview_pipe.Placement = FreeCAD.Placement()
-            self.fullimagepath = canonical_path
-            self.capturePreviewProfile()
-            FreeCAD.activeDocument().removeObject(preview_pipe.Name)
-            FreeCAD.activeDocument().recompute()
-            # Restore the user's selection
-            for sx in saved_sel:
-                for sub in sx.SubElementNames:
-                    FreeCADGui.Selection.addSelection(sx.Object, sub)
-                if not sx.SubElementNames:
-                    FreeCADGui.Selection.addSelection(sx.Object)
-        except Exception:
-            pass
 
+        def factory():
+            return pCmd.makePipe(self.ratingList.currentText(), prop_list)
+
+        path = self._preview.image_for(key, factory)
+        if path is not None:
+            self.fullimagepath = str(path)
+            self.labImage.setPixmap(QPixmap(str(path)).scaledToWidth(180))
 
     def reverse(self):  # revert orientation of selected or last inserted pipe
         selPipes = [
