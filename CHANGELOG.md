@@ -23,6 +23,12 @@
   re-exports them for compatibility.
 - `Valve` geometry is split into six strategies with pure mode resolvers;
   the public `pFeatures.Valve` facade and its 8-mode geometry are unchanged.
+- `Flange` geometry is split into five builders plus a generic fallback;
+  ports and insertion offsets live in the pure domain layer.
+- `Flange` properties are declared with `PropertySpec`, preserving the
+  original order, groups and documentation.
+- The port-based `do*` flows (elbow, tee, valve, socket elbow/tee/cap/coupling/
+  union) now share the same transaction/selection/alignment pipeline.
 - `pFeatures.pypeType` is now `quetzal.features.base.PypeFeature`; the
   `pFeatures <-> pCmd` module import cycle was removed.
 - Six `do*` insertion flows share one transaction/selection/alignment

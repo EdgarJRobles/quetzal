@@ -818,6 +818,7 @@ def _insert_attached(
     pypeline=None,
     align_port=0,
     before_align=None,
+    after_create=None,
 ):
     """Run the shared create-place-align-commit pipeline.
 
@@ -829,16 +830,21 @@ def _insert_attached(
     created = []
     try:
         context = _attachment_context()
+        source = port = None
         if context is not None:
             pos, direction, source, port, usable_ports = context
             obj = make_fn(pos, direction)
             created.append(obj)
-            if usable_ports and align_port is not None:
-                if before_align is not None:
-                    before_align(obj, source, port)
-                alignTwoPorts(obj, align_port, source, port)
         else:
-            created.append(make_fn(None, None))
+            usable_ports = False
+            obj = make_fn(None, None)
+            created.append(obj)
+        if after_create is not None:
+            after_create(obj, source, port)
+        if usable_ports and align_port is not None:
+            if before_align is not None:
+                before_align(obj, source, port)
+            alignTwoPorts(obj, align_port, source, port)
         if pypeline:
             for item in created:
                 moveToPyLi(item, pypeline)
@@ -1063,86 +1069,56 @@ def shortenPipeAtPort(pipe, trim_length, port):
         pipe.Placement.move(axis.multiply(trim_length))
 
 
-def doElbow(rating="SCH-STD", propList=["DN50", 60.3, 3, 90, 45.225], pypeline=None, doOffset=False):
-    """
-    propList = [
-      DN (string): nominal diameter
-      OD (float): outside diameter
-      thk (float): shell thickness
-      BA (float): bend angle
-      BR (float): bend radius ]
-    pypeline = string
-    doOffset (bool): when True and a pipe is the selected insertion object,
-      shorten the pipe by the distance from its end to the elbow base position
-      before inserting the elbow.  The offset distance equals the length of the
-      insertion port vector (Ports[0]) measured from the elbow base, which for
-      a butt-weld elbow is R.valueAt(R.FirstParameter) as computed in
-      pFeatures.Elbow.execute().
-    """
-    elist = []
-    FreeCAD.activeDocument().openTransaction(translate("Transaction", "Insert elbow"))
+def doElbow(
+    rating="SCH-STD",
+    propList=["DN50", 60.3, 3, 90, 45.225],
+    pypeline=None,
+    doOffset=False,
+):
+    """Insert an elbow at the selected port, or at two geometry intersections."""
     selex = _selection_ex()
-    if len(selex) == 0:  # no selection -> insert one elbow at origin
-        elist.append(makeElbow(propList, rating=rating))
-    elif len(selex) == 1 and len(selex[0].SubObjects) == 1:  # one selection -> ...
-               
-        #first, if a an object with ports is selected and edges, faces, or vertices are selected, insert the component at the closest port to the 
-        #first selected object's first selected edge, face, or vertex. If none of those are present, the entire object is selected - insert
-        #the component at the highest number port.
-        selex = _selection_ex()[0]
-        usablePorts = False
-        if hasattr(selex.Object, "Ports"):
-            if hasattr(selex.Object, "PType"):
-                if selex.Object.PType != "Any":
-                    usablePorts = True
-        
-        pos, Z, srcObj, srcPort = getAttachmentPoints()
-        if usablePorts:
-            elb = makeElbow(propList, pos, Z, rating=rating)
-            elist.append(elb)
-            # If requested, shorten a selected pipe by the port-to-base offset
-            # before aligning the elbow.  Port 0 of an Elbow is the insertion
-            # port; the elbow base sits at the center of the bend, so the pipe
-            # must be shortened by the distance from port 0 to the base
-            # (i.e. the length of the Ports[0] vector in local space).
-            if doOffset:
-                pipes = [t for t in fCmd.beams() if hasattr(t, "PType") and t.PType == "Pipe"]
-                if pipes:
-                    pipe = pipes[0]
-                    # Trim the pipe by the distance from the elbow's insertion
-                    # port to its geometric center (the Ports[0] vector length).
-                    port_vec = elb.Ports[0]
-                    rot = elb.Placement.Rotation
-                    trim_length = rot.multVec(port_vec).Length
-                    shortenPipeAtPort(pipe, trim_length, srcPort)
-            FreeCAD.activeDocument().commitTransaction()
-            FreeCAD.activeDocument().recompute()
-            alignTwoPorts(elb, 0, srcObj, srcPort)
-        else:
-            elist.append(makeElbow(propList, pos, Z, rating=rating))
-
-    else:  # multiple selection -> insert one elbow at intersection of two edges or beams or pipes ##
+    is_multi_selection = len(selex) > 1 or (
+        len(selex) == 1 and len(selex[0].SubObjects) != 1
+    )
+    if is_multi_selection:
+        document = FreeCAD.activeDocument()
+        document.openTransaction(translate("Transaction", "Insert elbow"))
+        created = []
         things = []
-        for objEx in selex:
-            if (
-                len(fCmd.beams([objEx.Object])) == 1
-            ):  # if the object is a beam or pipe, append it to the "things"..
-                things.append(objEx.Object)
-            else:  # ..else append its edges
-                for edge in fCmd.edges([objEx]):
-                    things.append(edge)
+        for obj_ex in selex:
+            if len(fCmd.beams([obj_ex.Object])) == 1:
+                things.append(obj_ex.Object)
+            else:
+                things.extend(fCmd.edges([obj_ex]))
             if len(things) >= 2:
                 break
-        try:  # create the feature
-            elb = elist.append(makeElbowBetweenThings(*things[:2], propList=propList))
-        except:
+        try:
+            created.append(makeElbowBetweenThings(*things[:2], propList=propList))
+        except Exception:
             FreeCAD.Console.PrintError("Creation of elbow is failed\n")
-    if pypeline:
-        for e in elist:
-            moveToPyLi(e, pypeline)
-    FreeCAD.activeDocument().commitTransaction()
-    FreeCAD.activeDocument().recompute()
-    return elist
+        if pypeline:
+            for elbow in created:
+                moveToPyLi(elbow, pypeline)
+        document.commitTransaction()
+        document.recompute()
+        return created
+
+    def trim_pipe(elbow, _source, source_port):
+        if not doOffset or source_port is None:
+            return
+        pipes = [t for t in fCmd.beams() if hasattr(t, "PType") and t.PType == "Pipe"]
+        if not pipes:
+            return
+        trim_length = elbow.Placement.Rotation.multVec(elbow.Ports[0]).Length
+        shortenPipeAtPort(pipes[0], trim_length, source_port)
+
+    return _insert_attached(
+        lambda pos, direction: makeElbow(propList, pos, direction, rating=rating),
+        "Insert elbow",
+        pypeline,
+        align_port=0,
+        before_align=trim_pipe,
+    )
 
 
 def makeFlange(propList=[], pos=None, Z=None, doOffset=None, rating="DIN-PN16", fclass=""):
@@ -1186,16 +1162,9 @@ def makeFlange(propList=[], pos=None, Z=None, doOffset=None, rating="DIN-PN16", 
     rot = FreeCAD.Rotation(FreeCAD.Vector(0, 0, 1), Z)
     a.Placement.Rotation = rot.multiply(a.Placement.Rotation)
     if not doOffset:
-        if a.FlangeType == "WN":
-            zpos = -a.T1 + a.trf
-        elif a.FlangeType == "SW":
-            zpos = -a.T1 + a.Y + a.trf
-        elif a.FlangeType == "LJ":
-            zpos = 0
-        elif a.FlangeType == "SO":
-             zpos = -a.trf
-        else: #blind flange
-            zpos = 0
+        from quetzal.features.flange import spec_from_object
+
+        zpos = spec_from_object(a).insertion_offset
         a.Placement = a.Placement.multiply(
             FreeCAD.Placement(FreeCAD.Vector(0, 0, zpos), FreeCAD.Rotation())
         )
@@ -1492,76 +1461,37 @@ def makeTee(propList=[], pos=None, Z=None, insertOnBranch=False, rating="SCH-STD
     return a
 
 
-def doTees(rating="SCH-STD", propList=["DN150", 168.27, 114.3,7.11,6.02,178,156], pypeline=None, insertOnBranch=False, doOffset=False):
-    """
-    propList = [
-       DN (string): nominal diameter (run)
-      OD (float): outside diameter of run
-      OD2 (float): outside diameter of branch
-      thk (float): shell thickness of run
-      thk2 (float): shell thickness of branch
-      C (float): Length of run from centerline
-      M (float): Length of branch from centerline
-      DN2 (string, optional): nominal diameter of branch end (stored as PSizeBranch)
-      Default is "DN50 (SCH-STD)"
+def doTees(
+    rating="SCH-STD",
+    propList=["DN150", 168.27, 114.3, 7.11, 6.02, 178, 156],
+    pypeline=None,
+    insertOnBranch=False,
+    doOffset=False,
+):
+    """Insert a tee at the selected port (or at the origin)."""
+    insertion_port = 2 if insertOnBranch else 0
 
-      pypeline = string
-      insertOnBranch = Boolean
-      doOffset (bool): when True and a pipe is the selected insertion object,
-        shorten the pipe by the distance from its end to the tee base position
-        before inserting the tee.  For a butt-weld Tee the insertion port is
-        Ports[0] (run, -Z, at -C from base) when inserting on the run, or
-        Ports[2] (branch, +Y, at M from base) when inserting on the branch.
-        For a SocketTee the equivalent port vectors are identical in structure.
-    """
-    if insertOnBranch:
-        insertion_port = 2
-    else:
-        insertion_port = 0
-    FreeCAD.activeDocument().openTransaction(translate("Transaction", "Insert tee"))
-    plist = list()
-    selex = _selection_ex()
-    if len(selex) == 0:  # no selection -> insert one tee at origin
-        plist.append(makeTee(propList, None, None, insertOnBranch))
-    else: #something selected. Use the first selected object in the list of selections
-        selex = _selection_ex()[0]
-        usablePorts = False
-        if hasattr(selex.Object, "Ports"):
-            if hasattr(selex.Object, "PType"):
-                if selex.Object.PType != "Any":
-                    usablePorts = True
-        
-        pos, Z, srcObj, srcPort = getAttachmentPoints()
-        if usablePorts:
-            tee = makeTee(propList, pos, Z, insertOnBranch, rating=rating)
-            plist.append(tee)
-            # If requested, shorten a selected pipe by the port-to-base offset
-            # before aligning the tee.  The insertion port vector (Ports[insertion_port])
-            # points from the tee base to the port in local space.  The world
-            # position of the tee base after alignment will be at pos offset by
-            # the inverse of that port vector rotated into world space.
-            if doOffset:
-                pipes = [t for t in fCmd.beams() if hasattr(t, "PType") and t.PType == "Pipe"]
-                if pipes:
-                    pipe = pipes[0]
-                    # Trim the pipe by the distance from the tee's insertion port to its geometric center 
-                    port_vec = tee.Ports[insertion_port]
-                    rot = tee.Placement.Rotation
-                    trim_length = rot.multVec(port_vec).Length
-                    shortenPipeAtPort(pipe, trim_length, srcPort)
-            FreeCAD.activeDocument().commitTransaction()
-            FreeCAD.activeDocument().recompute()
-            alignTwoPorts(tee, insertion_port, srcObj, srcPort)
-        else:
-            plist.append(makeTee(propList, pos, Z, insertOnBranch, rating=rating))
+    def trim_pipe(tee, _source, source_port):
+        if not doOffset or source_port is None:
+            return
+        pipes = [t for t in fCmd.beams() if hasattr(t, "PType") and t.PType == "Pipe"]
+        if not pipes:
+            return
+        port_vec = tee.Ports[insertion_port]
+        trim_length = tee.Placement.Rotation.multVec(port_vec).Length
+        shortenPipeAtPort(pipes[0], trim_length, source_port)
 
-    if pypeline:
-        for p in plist:
-            moveToPyLi(p, pypeline)
-    FreeCAD.activeDocument().commitTransaction()
-    FreeCAD.activeDocument().recompute()
-    return plist
-    
+    return _insert_attached(
+        lambda pos, direction: makeTee(
+            propList, pos, direction, insertOnBranch, rating=rating
+        ),
+        "Insert tee",
+        pypeline,
+        align_port=insertion_port,
+        before_align=trim_pipe,
+    )
+
+
 def makeW():
     edges = fCmd.edges()
     if len(edges) > 1:
@@ -2337,68 +2267,54 @@ def doValves(propList=["DN50", "ball", 72, 50, 40, 150], pypeline=None, pos=0,
     propList  -- see makeValve() for the accepted formats.
     pypeline  -- optional pypeline label to add the valve to.
     pos       -- legacy: position along pipe (0-100 %).  Kept for back-compat.
-                 When a pype-object with ports is selected the new attachment
-                 method (getAttachmentPoints / alignTwoPorts) is used instead.
     flgPropList -- optional list of blind-flange properties for flanged valves.
-                   When supplied the flanged construction path is used.
-                   Elements: [PSize, FlangeType, D, t, f, n, df, drf, trf]
     actuator    -- "Handle" (default) or "Gearbox".  Flanged valves only.
     """
-    color  = 0.05, 0.3, 0.75
-    vlist  = []
-    FreeCAD.activeDocument().openTransaction(translate("Transaction", "Insert valve"))
+    color = (0.05, 0.3, 0.75)
+    vlist = []
 
     if 0 < pos < 100:
-        # -- legacy: split a pipe and insert valve in the gap ----------------
+        # -- legacy: split a pipe and insert the valve in the gap ----------
+        document = FreeCAD.activeDocument()
+        document.openTransaction(translate("Transaction", "Insert valve"))
         pipes = [p for p in _selection() if isPipe(p)]
         if pipes:
-            for p1 in pipes:
+            for pipe in pipes:
                 valve = makeValve(propList, flgPropList=flgPropList, actuator=actuator)
                 vlist.append(valve)
-                p2 = breakTheTubes(
-                    float(p1.Height) * pos / 100,
-                    pipes=[p1],
-                    gap=float(vlist[-1].Height),
+                tail = breakTheTubes(
+                    float(pipe.Height) * pos / 100,
+                    pipes=[pipe],
+                    gap=float(valve.Height),
                 )
-                if p2 and pypeline:
-                    moveToPyLi(p2[0], pypeline)
-                vlist[-1].Placement = p1.Placement
-                vlist[-1].Placement.move(portsDir(p1)[1] * float(p1.Height))
-                _set_shape_color(vlist[-1], color)
-    else:
-        try:
-            selex = _selection_ex()[0]
-            usablePorts = (
-                hasattr(selex.Object, "Ports")
-                and hasattr(selex.Object, "PType")
-                and selex.Object.PType != "Any"
-            )
-            pos_vec, Z_vec, srcObj, srcPort = getAttachmentPoints()
-
-            if usablePorts:
-                valve = makeValve(propList, pos_vec, Z_vec, flgPropList=flgPropList, actuator=actuator)
-                vlist.append(valve)
+                if tail and pypeline:
+                    moveToPyLi(tail[0], pypeline)
+                valve.Placement = pipe.Placement
+                valve.Placement.move(portsDir(pipe)[1] * float(pipe.Height))
                 _set_shape_color(valve, color)
-                FreeCAD.activeDocument().commitTransaction()
-                FreeCAD.activeDocument().recompute()
-                alignTwoPorts(valve, 0, srcObj, srcPort)
-            else:
-                valve = makeValve(propList, pos_vec, Z_vec, flgPropList=flgPropList, actuator=actuator)
-                vlist.append(valve)
-                _set_shape_color(valve, color)
-        except Exception:
-            # Nothing selected -- insert at origin
-            valve = makeValve(propList, flgPropList=flgPropList, actuator=actuator)
-            vlist.append(valve)
-            _set_shape_color(valve, color)
+        document.commitTransaction()
+        document.recompute()
+        if pypeline:
+            for valve in vlist:
+                moveToPyLi(valve, pypeline)
+        return vlist
 
-    if pypeline:
-        for v in vlist:
-            moveToPyLi(v, pypeline)
+    def colorize(valve, _source, _port):
+        _set_shape_color(valve, color)
 
-    FreeCAD.activeDocument().commitTransaction()
-    FreeCAD.activeDocument().recompute()
-    return vlist
+    return _insert_attached(
+        lambda position, direction: makeValve(
+            propList,
+            position,
+            direction,
+            flgPropList=flgPropList,
+            actuator=actuator,
+        ),
+        "Insert valve",
+        pypeline,
+        align_port=0,
+        after_create=colorize,
+    )
 
 
 def makeNozzle(DN="DN50", H=200, OD=60.3, thk=3, D=160, d=62, df=132, f=14, t=15, n=4):
@@ -3011,77 +2927,31 @@ def makeSocketElbow(propList=[], pos=None, Z=None, rating="3000lb"):
     return a
 
 
-def doSocketElbow(rating="3000lb", propList=["DN25", 33.4, 90, 35.0, 5.0, 25.4, 22.0, 5.455, "SW"], pypeline=None, doOffset=False):
-    """
-    Insert a SocketEll fitting, aligning it to the selected port when possible.
+def doSocketElbow(
+    rating="3000lb",
+    propList=["DN25", 33.4, 90, 35.0, 5.0, 25.4, 22.0, 5.455, "SW"],
+    pypeline=None,
+    doOffset=False,
+):
+    """Insert a socket elbow at the selected port (or at the origin)."""
 
-    propList = [
-      PSize     (string): nominal diameter
-      OD        (float):  connecting pipe outside diameter
-      BendAngle (float):  bend angle in degrees
-      A         (float):  dimension from fitting center to outer edge
-      C         (float):  wall thickness in socket
-      D         (float):  bore internal diameter
-      E         (float):  dimension from fitting center to base of socket
-      G         (float):  inner body wall thickness
-      Conn      (string): connection type ("SW" or "TH") ]
-    pypeline = string (optional PypeLine label)
-    doOffset (bool): when True and a pipe is the selected insertion object,
-      shorten the pipe by the distance from its end to the elbow base position
-      before inserting the elbow.  For a SocketEll the insertion port (Ports[0])
-      is at (E, 0, 0) in local space, so the base sits E mm behind the port
-      along the port direction (pFeatures.SocketEll.execute()).
+    def trim_pipe(fitting, _source, source_port):
+        if not doOffset or source_port is None:
+            return
+        pipes = [t for t in fCmd.beams() if hasattr(t, "PType") and t.PType == "Pipe"]
+        if not pipes:
+            return
+        port_vec = fitting.Ports[0]
+        trim_length = fitting.Placement.Rotation.multVec(port_vec).Length
+        shortenPipeAtPort(pipes[0], trim_length, source_port)
 
-      - No selection         -> insert one SocketEll at the origin.
-      - One or more sub-object-> insert at the closest port of the first selected
-                                object and align port[0] of the new fitting
-                                to that port.
-          """
-    
-    elist = list()
-    FreeCAD.activeDocument().openTransaction(translate("Transaction", "Insert socket elbow"))
-    #first, if a an object with ports is selected and edges, faces, or vertices are selected, insert the component at the closest port to the 
-    #first selected object's first selected edge, face, or vertex. If none of those are present, the entire object is selected - insert
-    #the component at the highest number port.
-    selex = _selection_ex()
-    if len(selex) == 0:  # no selection -> insert one elbow at origin
-        elist.append(makeSocketElbow(propList, rating=rating))
-    else: #something selected, insert on first object selected
-        selex = _selection_ex()[0]
-        usablePorts = False
-        if hasattr(selex.Object, "Ports"):
-            if hasattr(selex.Object, "PType"):
-                if selex.Object.PType != "Any":
-                    usablePorts = True
-
-        pos, Z, srcObj, srcPort = getAttachmentPoints()
-        if usablePorts:
-            socketEll = makeSocketElbow(propList, pos, Z, rating=rating)
-            elist.append(socketEll)
-            # If requested, shorten a selected pipe by the port-to-base offset.
-            # For SocketEll, Ports[0] = (E,0,0) in local space; the base is at
-            # the origin, so the pipe must be trimmed to the world position of
-            # the elbow base (i.e. pos minus the rotated port vector).
-            if doOffset:
-                pipes = [t for t in fCmd.beams() if hasattr(t, "PType") and t.PType == "Pipe"]
-                if pipes:
-                    pipe = pipes[0]
-                    port_vec = socketEll.Ports[0]
-                    rot = socketEll.Placement.Rotation
-                    trim_length = rot.multVec(port_vec).Length
-                    shortenPipeAtPort(pipe, trim_length, srcPort)
-            FreeCAD.activeDocument().commitTransaction()
-            FreeCAD.activeDocument().recompute()
-            alignTwoPorts(socketEll, 0, srcObj, srcPort)
-        else:
-            elist.append(makeSocketElbow(propList, pos, Z, rating=rating))
-        
-    if pypeline:
-        for e in elist:
-            moveToPyLi(e, pypeline)
-    FreeCAD.activeDocument().commitTransaction()
-    FreeCAD.activeDocument().recompute()
-    return elist
+    return _insert_attached(
+        lambda pos, direction: makeSocketElbow(propList, pos, direction, rating=rating),
+        "Insert socket elbow",
+        pypeline,
+        align_port=0,
+        before_align=trim_pipe,
+    )
 
 
 def makeSocketTee(propList=[], pos=None, Z=None, insertOnBranch=False, rating="3000lb"):
@@ -3133,81 +3003,37 @@ def makeSocketTee(propList=[], pos=None, Z=None, insertOnBranch=False, rating="3
     return a
 
 
-def doSocketTee(rating="3000lb", propList=["DN25", "DN25", 33.4, 33.4, 35.0, 5.0, 25.4, 22.0, 5.455, "SW"],
-                pypeline=None, insertOnBranch=False, doOffset=False):
-    """
-    Insert a SocketTee fitting, aligning it to the selected port when possible.
-
-    propList = [
-      PSize       (string): nominal diameter of run
-      PSizeBranch (string): nominal diameter of branch
-      OD          (float):  run pipe outside diameter
-      OD2         (float):  branch pipe outside diameter
-      A           (float):  centre to outer face of socket
-      C           (float):  socket boss wall thickness
-      D           (float):  bore internal diameter
-      E           (float):  centre to base of socket
-      G           (float):  inner body wall thickness
-      Conn        (string): connection type ("SW" or "TH") ]
-    pypeline       = string (optional PypeLine label)
-    insertOnBranch = bool   (True -> insert/align on the branch port)
-    doOffset (bool): when True and a pipe is the selected insertion object,
-      shorten the pipe by the distance from its end to the tee base position
-      before inserting the tee.  For a SocketTee the run ports are at +/-E
-      along Z and the branch port is at +E along Y in local space
-      (pFeatures.SocketTee.execute()), so the base sits E mm behind the port.
-
-    Behaviour:
-      - No selection          -> insert at origin.
-      - Ported object selected -> align the insertion port to the selected port
-                                  via alignTwoPorts.
-      - Non-ported geometry   -> insert with insertion port direction matching
-                                  the selected face normal / edge tangent.
-    """
+def doSocketTee(
+    rating="3000lb",
+    propList=["DN25", "DN25", 33.4, 33.4, 35.0, 5.0, 25.4, 22.0, 5.455, "SW"],
+    pypeline=None,
+    insertOnBranch=False,
+    doOffset=False,
+):
+    """Insert a socket tee at the selected port (or at the origin)."""
     insertion_port = 2 if insertOnBranch else 0
-    FreeCAD.activeDocument().openTransaction(translate("Transaction", "Insert socket tee"))
-    plist = []
-    selex = _selection_ex()
-    if len(selex) == 0:  # no selection -> insert one tee at origin
-        plist.append(makeSocketTee(propList, insertOnBranch=insertOnBranch))
-    else: #something selected. Use the first selected object in the list of selections
-        selex = _selection_ex()[0]
-        usablePorts = False
-        if hasattr(selex.Object, "Ports"):
-            if hasattr(selex.Object, "PType"):
-                if selex.Object.PType != "Any":
-                    usablePorts = True
 
-        pos, Z, srcObj, srcPort = getAttachmentPoints()
-        if usablePorts:
-            tee = makeSocketTee(propList, pos, Z, insertOnBranch, rating=rating)
-            plist.append(tee)
-            # If requested, shorten a selected pipe by the port-to-base offset.
-            # For SocketTee, Ports[0] = (0,0,-E) and Ports[2] = (0,E,0) in
-            # local space; the base is at the origin, so the pipe is trimmed
-            # to the world position of the tee base (pos minus rotated port vec).
-            if doOffset:
-                pipes = [t for t in fCmd.beams() if hasattr(t, "PType") and t.PType == "Pipe"]
-                if pipes:
-                    pipe = pipes[0]
-                    port_vec = tee.Ports[insertion_port]
-                    rot = tee.Placement.Rotation
-                    trim_length = rot.multVec(port_vec).Length
-                    shortenPipeAtPort(pipe, trim_length, srcPort)
-            FreeCAD.activeDocument().commitTransaction()
-            FreeCAD.activeDocument().recompute()
-            alignTwoPorts(tee, insertion_port, srcObj, srcPort)
-        else:
-            plist.append(makeSocketTee(propList, pos, Z, insertOnBranch, rating=rating))
+    def trim_pipe(tee, _source, source_port):
+        if not doOffset or source_port is None:
+            return
+        pipes = [t for t in fCmd.beams() if hasattr(t, "PType") and t.PType == "Pipe"]
+        if not pipes:
+            return
+        port_vec = tee.Ports[insertion_port]
+        trim_length = tee.Placement.Rotation.multVec(port_vec).Length
+        shortenPipeAtPort(pipes[0], trim_length, source_port)
 
-    if pypeline:
-        for t in plist:
-            moveToPyLi(t, pypeline)
-    FreeCAD.activeDocument().commitTransaction()
-    FreeCAD.activeDocument().recompute()
-    return plist
+    return _insert_attached(
+        lambda pos, direction: makeSocketTee(
+            propList, pos, direction, insertOnBranch, rating=rating
+        ),
+        "Insert socket tee",
+        pypeline,
+        align_port=insertion_port,
+        before_align=trim_pipe,
+    )
 
-    
+
 def makeSocketCap(propList=[], pos=None, Z=None):
     """Adds a SocketCap object.
     makeSocketCap(propList, pos, Z)
@@ -3247,56 +3073,18 @@ def makeSocketCap(propList=[], pos=None, Z=None):
     return a
 
 
-def doSocketCap(propList=["DN25", 33.4, 26.0, 5.0, 13.0, "SW"],
-                pypeline=None):
-    """
-    Insert a SocketCap fitting, aligning it to the selected port when possible.
+def doSocketCap(
+    propList=["DN25", 33.4, 26.0, 5.0, 13.0, "SW"],
+    pypeline=None,
+):
+    """Insert a socket cap at the selected port (or at the origin)."""
+    return _insert_attached(
+        lambda pos, direction: makeSocketCap(propList, pos, direction),
+        "Insert socket cap",
+        pypeline,
+        align_port=0,
+    )
 
-    propList = [
-      PSize (string): nominal diameter
-      OD    (float):  connecting pipe outside diameter
-      A     (float):  cap height
-      C     (float):  socket boss wall thickness
-      E     (float):  socket depth
-      Conn  (string): connection type ("SW" or "TH") ]
-    pypeline = string (optional PypeLine label)
-
-    Behaviour:
-      - No selection          → insert at origin.
-      - Ported object selected → align port[0] to the selected port
-                                  via alignTwoPorts.
-      - Non-ported geometry   → insert with port[0] direction matching
-                                  the selected face normal / edge tangent.
-    """
-    FreeCAD.activeDocument().openTransaction(translate("Transaction", "Insert socket cap"))
-    plist = []
-    try:
-        selex = _selection_ex()[0]
-        usablePorts = False
-        if hasattr(selex.Object, "Ports"):
-            if hasattr(selex.Object, "PType"):
-                if selex.Object.PType != "Any":
-                    usablePorts = True
-
-        pos, Z, srcObj, srcPort = getAttachmentPoints()
-        if usablePorts:
-            cap = makeSocketCap(propList, pos, Z)
-            plist.append(cap)
-            FreeCAD.activeDocument().commitTransaction()
-            FreeCAD.activeDocument().recompute()
-            alignTwoPorts(cap, 0, srcObj, srcPort)
-        else:
-            plist.append(makeSocketCap(propList, pos, Z))
-    except Exception:
-        # Nothing selected — insert at origin.
-        plist.append(makeSocketCap(propList))
-
-    if pypeline:
-        for t in plist:
-            moveToPyLi(t, pypeline)
-    FreeCAD.activeDocument().commitTransaction()
-    FreeCAD.activeDocument().recompute()
-    return plist
 
 def _makeSocketStraight(fcClass, label, iconName, propList, expectedLen,
                         pos=None, Z=None):
@@ -3332,39 +3120,13 @@ def _makeSocketStraight(fcClass, label, iconName, propList, expectedLen,
 
 
 def _doSocketStraight(makeFn, transactionLabel, propList, pypeline=None):
-    """Insert a socket coupling or union, aligning to the selected port when
-    possible.  Internal helper shared by doSocketCoupling and doSocketUnion.
-    """
-    FreeCAD.activeDocument().openTransaction(
-        translate("Transaction", transactionLabel))
-    plist = []
-    try:
-        selex = _selection_ex()[0]
-        usablePorts = False
-        if hasattr(selex.Object, "Ports"):
-            if hasattr(selex.Object, "PType"):
-                if selex.Object.PType != "Any":
-                    usablePorts = True
-
-        pos, Z, srcObj, srcPort = getAttachmentPoints()
-        if usablePorts:
-            fitting = makeFn(propList, pos, Z)
-            plist.append(fitting)
-            FreeCAD.activeDocument().commitTransaction()
-            FreeCAD.activeDocument().recompute()
-            alignTwoPorts(fitting, 0, srcObj, srcPort)
-        else:
-            plist.append(makeFn(propList, pos, Z))
-    except Exception:
-        # Nothing selected — insert at origin.
-        plist.append(makeFn(propList))
-
-    if pypeline:
-        for t in plist:
-            moveToPyLi(t, pypeline)
-    FreeCAD.activeDocument().commitTransaction()
-    FreeCAD.activeDocument().recompute()
-    return plist
+    """Shared socket coupling/union insertion pipeline."""
+    return _insert_attached(
+        lambda pos, direction: makeFn(propList, pos, direction),
+        transactionLabel,
+        pypeline,
+        align_port=0,
+    )
 
 
 # ── public API: SocketCoupling ────────────────────────────────────────────────

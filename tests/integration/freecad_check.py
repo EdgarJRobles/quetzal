@@ -119,6 +119,11 @@ def check_insertion_flows():
         "bolts": lambda: pCmd.doBolts_Nuts([]),
         "elbow": lambda: pCmd.doElbow("SCH-STD"),
         "valve": lambda: pCmd.doValves(),
+        "socket_elbow": lambda: pCmd.doSocketElbow(),
+        "socket_tee": lambda: pCmd.doSocketTee(),
+        "socket_cap": lambda: pCmd.doSocketCap(),
+        "socket_coupling": lambda: pCmd.doSocketCoupling(),
+        "socket_union": lambda: pCmd.doSocketUnion(),
     }
     flow_document = FreeCAD.newDocument("quetzal_flows")
     try:

@@ -177,8 +177,10 @@ work. Save/reload is checked by the headless integration suite.
 | Feature base class | Migrated to `quetzal.features.base.PypeFeature`; `pFeatures.pypeType` is the same object. |
 | Pipe / Cap / TerminalAdapter | Migrated with property schemas, shape builders and registry entries. |
 | Valve geometry | Six replaceable strategies (`generic`, `flanged`, `sw_th`, `swing_check`, `knife_gate`, `pinch`) selected by pure resolvers; `pFeatures.Valve` is now a ~160-line facade and the 8-mode geometry baseline is unchanged. |
+| Flange geometry | Five builders plus a generic fallback selected at execute time by `FlangeType`; ports/insertion offsets live in `quetzal.domain.flange`; the 6-type geometry baseline is unchanged. |
+| Flange properties | Declared as `PropertySpec` in `quetzal.features.flange.properties` with the original order, groups and docs. |
 | Generic insertion | `FeatureInserter` + `FeatureRegistry` available. |
-| Attached insertion | Shared pipeline for six `do*` flows. |
+| Attached insertion | Shared pipeline for the port-based `do*` flows: pipes, caps, flanges, reducers, gaskets, bolts, elbows, tees, valves and all socket fittings (14 objects in the integration matrix). |
 | Headless support | Selection/view accessors degrade safely; command contract can be validated without a GUI. |
 | Module cycle | `pFeatures` no longer imports `pCmd` at module scope. |
 
@@ -187,16 +189,13 @@ work. Save/reload is checked by the headless integration suite.
 These items are deliberately out of scope for this branch but are the natural
 next steps:
 
-1. Split `Flange` geometry into builders per `FlangeType`.
-2. Move the remaining feature proxies to `PropertySpec` + `FeatureDefinition`
+1. Move the remaining feature proxies to `PropertySpec` + `FeatureDefinition`
    (`Tee`, `Reduct`, `Elbow`, `Gasket`, `Outlet`, socket fittings, ...).
-3. Migrate the remaining `do*` flows (`doElbow`, `doTees`, `doValves`,
-   `doSocket*`, `doBeams`, `doOutlets`) to `_insert_attached`.
-4. Add a command metadata registry so toolbar/menu definitions and
+2. Add a command metadata registry so toolbar/menu definitions and
    `addCommand` calls come from one declarative source.
-5. Introduce a `PreviewService` for the dialog previews (single cache key and
+3. Introduce a `PreviewService` for the dialog previews (single cache key and
    configurable path).
-6. Replace label/name child resolution in `PypeLine2`/`PypeBranch2` with
+4. Replace label/name child resolution in `PypeLine2`/`PypeBranch2` with
    `App::PropertyLinkList` while reading the legacy string lists.
 
 See [SOLID mapping](docs/architecture/solid-mapping.md),

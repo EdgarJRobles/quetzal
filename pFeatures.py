@@ -12,6 +12,13 @@ import Part
 
 from quetzal_config import FREECADVERSION, get_icon_path
 from quetzal.domain.pipe_sizes import PIPE_OUTSIDE_DIAMETERS_MM as pipe_OD
+from quetzal.features.flange import (
+    DEFAULT_FLANGE_BUILDER,
+    FLANGE_BUILDERS,
+    configure_view,
+    spec_from_object,
+)
+from quetzal.features.flange.properties import define_flange_properties
 from quetzal.application.valve import ValveContext
 from quetzal.domain.valve_modes import (
     FLANGE_CONNS as VALVE_FLANGE_CONNS,
@@ -315,6 +322,9 @@ class Flange(pypeType):
       ODp (float): outside diameter of pipe for wn flanges - OPTIONAL -
     """
 
+    shape_builders = FLANGE_BUILDERS
+    default_shape_builder = DEFAULT_FLANGE_BUILDER
+
     def __init__(
         self,
         obj,
@@ -345,110 +355,30 @@ class Flange(pypeType):
         obj.Proxy = self
         obj.PType = "Flange"
         obj.PRating = rating
-        obj.addProperty(
-            "App::PropertyString",
-            "FClass",
-            "Flange",
-            QT_TRANSLATE_NOOP("App::Property", "Flange pressure class"),
-        ).FClass = FClass
         obj.PSize = DN
-        # define specific properties
-        obj.addProperty(
-            "App::PropertyString",
-            "FlangeType",
-            "Flange",
-            QT_TRANSLATE_NOOP("App::Property", "Type of flange"),
-        ).FlangeType = FlangeType
-        obj.addProperty(
-            "App::PropertyLength",
-            "D",
-            "Flange",
-            QT_TRANSLATE_NOOP("App::Property", "Flange diameter"),
-        ).D = D
-        obj.addProperty(
-            "App::PropertyLength",
-            "d",
-            "Flange",
-            QT_TRANSLATE_NOOP("App::Property", "Bore diameter"),
-        ).d = d
-        obj.addProperty(
-            "App::PropertyLength",
-            "df",
-            "Flange",
-            QT_TRANSLATE_NOOP("App::Property", "Bolts distance"),
-        ).df = df
-        obj.addProperty(
-            "App::PropertyLength",
-            "f",
-            "Flange",
-            QT_TRANSLATE_NOOP("App::Property", "Bolts hole diameter"),
-        ).f = f
-        obj.addProperty(
-            "App::PropertyLength",
-            "t",
-            "Flange",
-            QT_TRANSLATE_NOOP("App::Property", "Thickness of flange"),
-        ).t = t
-        obj.addProperty(
-            "App::PropertyInteger",
-            "n",
-            "Flange",
-            QT_TRANSLATE_NOOP("App::Property", "Nr. of bolts"),
-        ).n = n
-        obj.addProperty(
-            "App::PropertyLength",
-            "trf",
-            "Flange2",
-            QT_TRANSLATE_NOOP("App::Property", "Thickness of raised face"),
-        ).trf = trf
-        obj.addProperty(
-            "App::PropertyLength",
-            "drf",
-            "Flange2",
-            QT_TRANSLATE_NOOP("App::Property", "Diameter of raised face"),
-        ).drf = drf
-        obj.addProperty(
-            "App::PropertyLength",
-            "twn",
-            "Flange2",
-            QT_TRANSLATE_NOOP("App::Property", "Length of welding neck"), #Thick part?
-        ).twn = twn
-        obj.addProperty(
-            "App::PropertyLength",
-            "dwn",
-            "Flange2",
-            QT_TRANSLATE_NOOP("App::Property", "Diameter of welding neck"),
-        ).dwn = dwn
-        obj.addProperty(
-            "App::PropertyLength",
-            "ODp",
-            "Flange2",
-            QT_TRANSLATE_NOOP("App::Property", "Outside diameter of pipe"),
-        ).ODp = ODp
-        obj.addProperty(
-            "App::PropertyLength",
-            "R",
-            "Flange",
-            QT_TRANSLATE_NOOP("App::Property", "Flange fillet radius"),
-        ).R = R
-        obj.addProperty(
-            "App::PropertyLength",
-            "T1",
-            "Flange",
-            QT_TRANSLATE_NOOP("App::Property", "Flange neck length"), #neck same OD as pipe?
-        ).T1 = T1
-        obj.addProperty(
-            "App::PropertyLength",
-            "B2",
-            "Flange Socket welding",
-            QT_TRANSLATE_NOOP("App::Property", "Socket diameter"),
-        ).B2 = B2
-        obj.addProperty(
-            "App::PropertyLength",
-            "Y",
-            "Flange Socket welding",
-            QT_TRANSLATE_NOOP("App::Property", "Socket depth"),
-        ).Y = Y
+        define_flange_properties(
+            obj,
+            {
+                "FClass": FClass,
+                "FlangeType": FlangeType,
+                "D": D,
+                "d": d,
+                "df": df,
+                "f": f,
+                "t": t,
+                "n": int(n),
+                "trf": trf,
+                "drf": drf,
+                "twn": twn,
+                "dwn": dwn,
+                "ODp": ODp,
+                "R": R,
+                "T1": T1,
+                "B2": B2,
+                "Y": Y,
+            },
+        )
+
 
     def onChanged(self, fp, prop):
         # FreeCAD.Console.PrintMessage(prop)
@@ -460,114 +390,14 @@ class Flange(pypeType):
         return None
 
     def execute(self, fp):
-       
-        base = Part.Face(Part.Wire(Part.makeCircle(fp.D / 2)))
-        if fp.d > 0:
-            base = base.cut(Part.Face(Part.Wire(Part.makeCircle(fp.d / 2))))
-        # Operation designed to make flange hole cylinders
-        if fp.n > 0:
-            hole = Part.Face(
-                Part.Wire(
-                    Part.makeCircle(
-                        fp.f / 2,
-                        FreeCAD.Vector(fp.df / 2, 0, 0),
-                        FreeCAD.Vector(0, 0, 1),
-                    )
-                )
-            )
-            hole.rotate(FreeCAD.Vector(0, 0, 0), FreeCAD.Vector(0, 0, 1), 360.0 / fp.n / 2)
-            for i in list(range(fp.n)):
-                base = base.cut(hole)
-                hole.rotate(FreeCAD.Vector(0, 0, 0), FreeCAD.Vector(0, 0, 1), 360.0 / fp.n)
-        # creates flange thickness
-        flange = base.extrude(FreeCAD.Vector(0, 0, fp.t))
-        # Tessellation quality is a display setting, and ViewObject is None in
-        # console mode. Setting it unguarded raised AttributeError mid-execute,
-        # which recompute swallows -- so every Flange came back with a NULL
-        # shape and no error, headless.
-        if FreeCAD.GuiUp and fp.ViewObject is not None:
-            fp.ViewObject.Deviation = 0.10
-        if (
-            fp.FlangeType == "SW"
-            or fp.FlangeType == "WN"
-            or fp.FlangeType == "LJ"
-            or fp.FlangeType == "SO"
-        ):
-            # creates flange neck (corrected for raised face addition).
-            # Only when it has real dimensions: ODp/T1 are documented OPTIONAL,
-            # and building a zero-radius zero-height cylinder produced a
-            # degenerate solid that fused into an invalid shape rather than
-            # being skipped.
-            if fp.ODp > 0 and fp.T1 > 0 and fp.ODp > fp.d:
-                nn = Part.makeCylinder(fp.ODp / 2, fp.T1, vO, vZ).cut(
-                    Part.makeCylinder(fp.d / 2, fp.T1, vO, vZ)
-                )
-                flange = flange.fuse(nn)
-            if fp.trf > 0 and fp.drf < fp.D:
-                rf = Part.makeCylinder(fp.drf / 2, fp.trf, vO, vZ * -1).cut(
-                    Part.makeCylinder(fp.d / 2, fp.trf, vO, vZ * -1)
-                )
-                flange = flange.fuse(rf)
-
-        if fp.FlangeType == "WN":
-            try:  # Flange2:welding-neck
-                
-                if fp.dwn > 0 and fp.twn > 0 and fp.ODp > 0:
-                    wn = Part.makeCone(
-                        fp.dwn / 2, fp.ODp / 2, fp.twn, vZ * float(fp.t)
-                    ).cut(Part.makeCylinder(fp.d / 2, fp.twn, vZ * float(fp.t)))
-                    flange = flange.fuse(wn)
-                    flange = flange.removeSplitter()
-                    
-                    flange = flange.makeFillet(fp.R, [flange.Edges[2]])
-                    """ TODO Seems to be an issue with making weld neck chamfer after correcting flange thickness. 
-                    Was previously edge 6 but now appears to not be consistent. Is there a better way to reliably find this edge rather than hard coding an edge number? 
-                    Perhaps create the chamfer before merging with the rest of the flange object. Maybe it just doesn't need to be chamfered - none of the other components are"""
-                    #flange = flange.makeChamfer((fp.ODp - fp.d) / 2 * 0.90, [flange.Edges[7]])
-                    
-                    
-            except:
-                pass
-        elif fp.FlangeType == "LJ":
-            edge = []
-            flange = flange.removeSplitter()
-            if fp.n == 4:
-                edge = flange.Edges[19]
-            if fp.n == 8:
-                edge = flange.Edges[31]
-            if fp.n == 12:
-                edge = flange.Edges[43]
-            if fp.n == 16:
-                edge = flange.Edges[55]
-            if fp.n == 20:
-                edge = flange.Edges[67]
-            flange = flange.makeFillet(fp.R, edge)
-        elif fp.FlangeType == "SW":
-            # creates flange neck
-            if fp.B2 > 0:
-                nn = flange.cut(
-                    Part.makeCylinder(fp.B2 / 2, fp.Y, vZ * float(fp.T1 - fp.trf), vZ * -1)
-                )
-                flange = nn.removeSplitter()
-        elif fp.FlangeType == "BL":
-            # Blind flange: solid disc, no bore, no neck.
-            # Raised face is a solid cylinder (no bore cutout).
-            if fp.trf > 0 and fp.drf > 0 and fp.drf < fp.D:
-                rf = Part.makeCylinder(fp.drf / 2, fp.trf, vO, vZ * -1)
-                flange = flange.fuse(rf)
-        fp.Shape = flange
-        if fp.FlangeType == "WN":
-            fp.Ports = [FreeCAD.Vector(0, 0, -float(fp.trf)), FreeCAD.Vector(0, 0, float(fp.T1))] #weld neck flanges mate with pipe at T1, raised face is at 0,0,-RF thickness
-        elif fp.FlangeType == "SW":
-            fp.Ports = [FreeCAD.Vector(0, 0, -float(fp.trf)), FreeCAD.Vector(0, 0, float(fp.T1)-float(fp.Y)-float(fp.trf))] #Socket weld flanges mate with pipe at Y - RF thickness, raised face is at 0,0,-RF thickness
-        elif fp.FlangeType == "BL": #blind flange
-            fp.Ports = [FreeCAD.Vector(0, 0, -float(fp.trf)), FreeCAD.Vector(0, 0, float(fp.t))] #Blind flange: port 0 at raised face, fictitious port 1 at outer back face
-        elif fp.FlangeType == "SO":
-            fp.Ports = [FreeCAD.Vector(0, 0, -float(fp.trf)), FreeCAD.Vector(0, 0, float(fp.trf))] #slip on flange: port 0 at raised face, port 1 mated to pipe back RF thickness from edge of flange hub (2 * trf back from raised face edge)
-        else: #lap joint
-            fp.Ports = [FreeCAD.Vector(0, 0, 0), FreeCAD.Vector(0, 0, float(fp.trf))] #lap joint flanges should be mated with pipe at 0,0,0. Raised face will be at 0,0,-RF thickness
-        fp.PortDirections = [FreeCAD.Vector(0, 0, -1), FreeCAD.Vector(0, 0, 1)] #Flange face is toward -Z direction, flange weld end faces in +Z direction
-        super(Flange, self).execute(fp)  # perform common operations
+        configure_view(fp)
+        spec = spec_from_object(fp)
+        builder = self.shape_builders.get(fp.FlangeType, self.default_shape_builder)
+        geometry = builder.build(spec)
+        fp.Shape = geometry.shape
+        fp.Ports = list(geometry.ports)
+        fp.PortDirections = list(geometry.directions)
+        super(Flange, self).execute(fp)
 
     #!TODO:this method generate a PartDesign object with sketch nest, pending feature compatibility
 
