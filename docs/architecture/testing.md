@@ -74,6 +74,8 @@ fails. It runs without a GUI and verifies:
     `moveToPyLi` membership and safe purge.
 14. **Preview core** – canonical keys, configurable paths, cache hits, renderer
     errors and re-entrancy (pure unit tests; GUI rendering is manual).
+15. **Outlet/socket schema** – all six proxies build through the integration
+    matrix and expose their `FeatureDefinition` metadata.
 
 ### How the script is executed
 

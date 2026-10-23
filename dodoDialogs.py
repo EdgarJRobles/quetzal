@@ -9,6 +9,7 @@ from PySide.QtCore import *
 from PySide.QtGui import *
 
 from quetzal.domain.errors import CatalogNotFoundError
+from quetzal.domain.preview import PreviewKey
 from quetzal.infrastructure.catalog import default_catalog_repository
 from quetzal.infrastructure.freecad.preview import default_preview_service
 
@@ -413,131 +414,62 @@ class protoPypeForm(QDialog):
             qu.set_size_system(system)
         self.fillSizes()
 
-    def changeSize(self, s):
-        from os import makedirs, listdir
-        from os.path import join
+    def _preview_variant(self):
+        """Optional discriminator for families with repeated sizes (angle, type...)."""
+        return ""
 
-        # Do not attempt a cache lookup or image generation until the form has
-        # a complete selection (grade + size, and secondary size if applicable).
-        # An incomplete selection fires this signal during list population and
-        # would otherwise call self.insert(), creating and then deleting a
-        # document object -- potentially destroying the user's work.
+    def _preview_factory(self):
+        return self.insert
+
+    def _preview_key(self):
         if not self._previewReady():
+            return None
+        idx = self.sizeList.currentIndex()
+        if hasattr(self, "_uniqueSizeList") and 0 <= idx < len(self._uniqueSizeList):
+            size = self._uniqueSizeList[idx]
+        elif 0 <= idx < len(self.pipeDictList):
+            size = self.pipeDictList[idx].get("PSize", "")
+        else:
+            size = self.sizeList.currentText()
+
+        secondary = ""
+        try:
+            if hasattr(self, "_branchList") and hasattr(self, "_branchDictList"):
+                branch_index = self._branchList.currentRow()
+                if 0 <= branch_index < len(self._branchDictList):
+                    secondary = self._branchDictList[branch_index].get("PSizeBranch", "")
+            elif hasattr(self, "_psize2_raw") and hasattr(self, "OD2list"):
+                index = self.OD2list.currentRow()
+                if 0 <= index < len(self._psize2_raw):
+                    secondary = self._psize2_raw[index]
+            elif hasattr(self, "_port2List") and hasattr(self, "_port2DictList"):
+                port_index = self._port2List.currentRow()
+                if 0 <= port_index < len(self._port2DictList):
+                    secondary = self._port2DictList[port_index].get("PSize2", "")
+        except Exception:
+            secondary = ""
+
+        return PreviewKey(
+            family=self.PType,
+            rating=self.ratingList.currentText(),
+            size=str(size),
+            secondary=str(secondary),
+            variant=self._preview_variant(),
+        )
+
+    def changeSize(self, s):
+        key = self._preview_key()
+        if key is None:
             self.labImage.clear()
             return
+        path = self._preview.image_for(key, self._preview_factory())
+        if path is None:
+            self.labImage.clear()
+            return
+        self.gradeimagepath = path.name
+        self.fullimagepath = str(path)
+        self.labImage.setPixmap(QPixmap(str(path)).scaledToWidth(180))
 
-        idx = self.sizeList.currentIndex()
-        # Always use the raw DN PSize for the filename, never the display label
-        # (which may be NPS or carry dimension suffixes).
-        #
-        # For forms with a deduplicated sizeList (_uniqueSizeList exists -- e.g.
-        # Tee, SocketTee, Coupling) the sizeList index maps 1-to-1 to
-        # _uniqueSizeList, NOT to pipeDictList (which has one row per
-        # run+branch combination).  Reading pipeDictList[idx] directly would
-        # pick up a wrong row and produce an incorrect dn_psize.
-        if hasattr(self, "_uniqueSizeList") and 0 <= idx < len(self._uniqueSizeList):
-            dn_psize = self._uniqueSizeList[idx]
-        elif 0 <= idx < len(self.pipeDictList):
-            dn_psize = self.pipeDictList[idx].get("PSize", "")
-        else:
-            dn_psize = self.sizeList.currentText()
-
-        # For two-port fittings (Tee, SocketTee, Reduct, Coupling) the
-        # filename includes the secondary size: <rate><PSize>x<PSize2>.png
-        dn_psize2 = ""
-        try:
-            # Tee / SocketTee: secondary branch list
-            if hasattr(self, "_branchList") and hasattr(self, "_branchDictList"):
-                bi = self._branchList.currentRow()
-                if 0 <= bi < len(self._branchDictList):
-                    dn_psize2 = self._branchDictList[bi].get("PSizeBranch", "")
-            # Reduct: secondary OD2 list stores raw PSize2 strings
-            elif hasattr(self, "_psize2_raw") and hasattr(self, "OD2list"):
-                idx2 = self.OD2list.currentRow()
-                if 0 <= idx2 < len(self._psize2_raw):
-                    dn_psize2 = self._psize2_raw[idx2]
-            # Coupling: secondary port-2 list
-            elif hasattr(self, "_port2List") and hasattr(self, "_port2DictList"):
-                pi = self._port2List.currentRow()
-                if 0 <= pi < len(self._port2DictList):
-                    dn_psize2 = self._port2DictList[pi].get("PSize2", "")
-        except Exception:
-            dn_psize2 = ""
-
-        # Build the full size stem: "DN400" or "DN400xDN150"
-        size_stem = str(dn_psize) + ("x" + str(dn_psize2) if dn_psize2 else "")
-
-        rateselected = self.ratingList.currentText()
-        preview_dir = self.previewSectionsPath + self.PType
-        makedirs(preview_dir, exist_ok=True)
-
-        # Canonical filename: <rating><PSize>[x<PSize2>].png
-        # e.g. SCH-STDDN150xDN100.png
-        canonical_name = str(rateselected) + size_stem + ".png"
-        self.gradeimagepath = canonical_name
-        self.fullimagepath  = join(preview_dir, canonical_name)
-
-        # Cache check: the cached filename stem (everything before ".png") must
-        # match the canonical stem EXACTLY.  A prefix-only check is unsafe
-        # because e.g. "SCH-STDDN40" is a prefix of "SCH-STDDN40xDN65.png",
-        # which would cause a straight-tee selection to display a reducing-tee
-        # image (or vice versa) whenever the larger name happens to sort first.
-        canonical_stem = str(rateselected) + size_stem  # no ".png"
-        cached_path = None
-        if exists(self.fullimagepath):
-            cached_path = self.fullimagepath
-        else:
-            try:
-                for fname in listdir(preview_dir):
-                    if not fname.endswith(".png"):
-                        continue
-                    fname_stem = fname[:-4]  # strip ".png"
-                    if fname_stem == canonical_stem:
-                        cached_path = join(preview_dir, fname)
-                        break
-            except OSError:
-                pass
-
-        if cached_path:
-            self.labImage.setPixmap(QPixmap(cached_path).scaledToWidth(180))
-        else:
-            # 1. Save current selection and camera state
-            saved_sel = FreeCADGui.Selection.getSelectionEx()
-            view = FreeCADGui.ActiveDocument.ActiveView
-            
-            # getCamera() returns the current view parameters as a string
-            saved_camera = view.getCamera() 
-            
-            FreeCADGui.Selection.clearSelection()
-            
-            # 2. Insert the object
-            self.insert()
-            preview_obj = FreeCAD.ActiveDocument.ActiveObject
-            
-            if preview_obj:
-                preview_name = preview_obj.Name
-                preview_obj.Placement = FreeCAD.Placement()
-                FreeCAD.ActiveDocument.recompute()
-                
-                # 3. Capture the profile
-                self.capturePreviewProfile()
-                
-                # 4. Cleanup
-                try:
-                    FreeCAD.ActiveDocument.removeObject(preview_name)
-                except Exception:
-                    pass
-            
-            # Restore view using the saved string
-            view.setCamera(saved_camera)
-            
-            # Restore selection
-            for sx in saved_sel:
-                if not sx.SubElementNames:
-                    FreeCADGui.Selection.addSelection(sx.Object)
-                else:
-                    for sub in sx.SubElementNames:
-                        FreeCADGui.Selection.addSelection(sx.Object, sub)
 
     def findDN(self, DN):
         result = None

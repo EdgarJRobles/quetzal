@@ -22,6 +22,8 @@ from quetzal.features.flange.properties import define_flange_properties
 from quetzal.features.elbow import define_elbow_properties
 from quetzal.features.tee import define_tee_properties
 from quetzal.features.reduct import define_reduct_properties
+from quetzal.features.socket import define_socket_properties
+from quetzal.features.outlet import define_outlet_properties
 from quetzal.application.valve import ValveContext
 from quetzal.application.pype_line import line_group as resolve_line_group
 from quetzal.application.pype_children import (
@@ -37,7 +39,9 @@ from quetzal.domain.valve_modes import (
     property_mode,
 )
 from quetzal.features.valve import strategy_for
+from quetzal.application.feature_registry import FeatureDefinition
 from quetzal.features import (  # noqa: F401 (re-exported)
+    FEATURES,
     Cap,
     Gasket,
     Pipe,
@@ -459,61 +463,26 @@ class SocketEll(pypeType):
     def __init__(self, obj, rating="3000lb", PSize="DN25", OD=33.4, BendAngle=90, A=35.0, C=5.0, D=25.4, E=22.0, G=5.455, Conn="SW"):
         # initialize the parent class
         super(SocketEll, self).__init__(obj)
-        # define common properties
         obj.Proxy = self
         obj.PType = "SocketEll"
         obj.PRating = rating
         obj.PSize = PSize
-        # define specific properties
-        obj.addProperty(
-            "App::PropertyLength",
-            "OD",
+        define_socket_properties(
+            obj,
             "SocketEll",
-            QT_TRANSLATE_NOOP("App::Property", "Pipe OD"),
-        ).OD = OD
-        obj.addProperty(
-            "App::PropertyAngle",
-            "BendAngle",
-            "SocketEll",
-            QT_TRANSLATE_NOOP("App::Property", "Bend Angle"),
-        ).BendAngle = BendAngle
-        obj.addProperty(
-            "App::PropertyLength",
-            "A",
-            "SocketEll",
-            QT_TRANSLATE_NOOP("App::Property", "Center to outer edge"),
-        ).A = A
-        obj.addProperty(
-            "App::PropertyLength",
-            "C",
-            "SocketEll",
-            QT_TRANSLATE_NOOP("App::Property", "Wall thickness in socket"),
-        ).C = C
-        obj.addProperty(
-            "App::PropertyLength",
-            "D",
-            "SocketEll",
-            QT_TRANSLATE_NOOP("App::Property", "Bore internal diameter"),
-        ).D = D
-        obj.addProperty(
-            "App::PropertyLength",
-            "E",
-            "SocketEll",
-            QT_TRANSLATE_NOOP("App::Property", "Center to base of socket"),
-        ).E = E
-        obj.addProperty(
-            "App::PropertyLength",
-            "G",
-            "SocketEll",
-            QT_TRANSLATE_NOOP("App::Property", "Inner body wall thickness"),
-        ).G = G
-        obj.addProperty(
-            "App::PropertyString",
-            "Conn",
-            "SocketEll",
-            QT_TRANSLATE_NOOP("App::Property", "Connection type (SW=Socket Weld, TH=Threaded)"),
-        ).Conn = Conn
+            {
+                "OD": OD,
+                "BendAngle": BendAngle,
+                "A": A,
+                "C": C,
+                "D": D,
+                "E": E,
+                "G": G,
+                "Conn": Conn,
+            },
+        )
         self.execute(obj)
+
 
     def onChanged(self, fp, prop):
         return None
@@ -735,81 +704,29 @@ class SocketTee(pypeType):
                  OD=33.4, OD2=33.4,
                  A=35.0, C=5.0, D=25.4, E=22.0, G=4.55,
                  Conn="SW"):
-        # ── parent class ─────────────────────────────────────────────────────
+        # initialize the parent class
         super(SocketTee, self).__init__(obj)
-
-        # ── common pype properties ────────────────────────────────────────────
-        obj.Proxy   = self
-        obj.PType   = "SocketTee"
+        obj.Proxy = self
+        obj.PType = "SocketTee"
         obj.PRating = rating
-        obj.PSize   = PSize
-
-        # ── specific properties ───────────────────────────────────────────────
-        obj.addProperty(
-            "App::PropertyString",
-            "PSizeBranch",
+        obj.PSize = PSize
+        define_socket_properties(
+            obj,
             "SocketTee",
-            QT_TRANSLATE_NOOP("App::Property", "Nominal diameter of branch"),
-        ).PSizeBranch = PSizeBranch
-
-        obj.addProperty(
-            "App::PropertyLength",
-            "OD",
-            "SocketTee",
-            QT_TRANSLATE_NOOP("App::Property", "Run pipe OD"),
-        ).OD = OD
-
-        obj.addProperty(
-            "App::PropertyLength",
-            "OD2",
-            "SocketTee",
-            QT_TRANSLATE_NOOP("App::Property", "Branch pipe OD"),
-        ).OD2 = OD2
-
-        obj.addProperty(
-            "App::PropertyLength",
-            "A",
-            "SocketTee",
-            QT_TRANSLATE_NOOP("App::Property", "Centre to outer face of socket"),
-        ).A = A
-
-        obj.addProperty(
-            "App::PropertyLength",
-            "C",
-            "SocketTee",
-            QT_TRANSLATE_NOOP("App::Property", "Socket boss wall thickness"),
-        ).C = C
-
-        obj.addProperty(
-            "App::PropertyLength",
-            "D",
-            "SocketTee",
-            QT_TRANSLATE_NOOP("App::Property", "Bore internal diameter"),
-        ).D = D
-
-        obj.addProperty(
-            "App::PropertyLength",
-            "E",
-            "SocketTee",
-            QT_TRANSLATE_NOOP("App::Property", "Centre to base of socket"),
-        ).E = E
-
-        obj.addProperty(
-            "App::PropertyLength",
-            "G",
-            "SocketTee",
-            QT_TRANSLATE_NOOP("App::Property", "Inner body wall thickness"),
-        ).G = G
-
-        obj.addProperty(
-            "App::PropertyString",
-            "Conn",
-            "SocketTee",
-            QT_TRANSLATE_NOOP("App::Property",
-                              "Connection type (SW=Socket Weld, TH=Threaded)"),
-        ).Conn = Conn
-
+            {
+                "PSizeBranch": PSizeBranch,
+                "OD": OD,
+                "OD2": OD2,
+                "A": A,
+                "C": C,
+                "D": D,
+                "E": E,
+                "G": G,
+                "Conn": Conn,
+            },
+        )
         self.execute(obj)
+
 
     def onChanged(self, fp, prop):
         return None
@@ -2176,70 +2093,28 @@ class Outlet(pypeType):
         E         = 0.0,
         carrierOD = 0.0,
     ):
+        # initialize the parent class
         super(Outlet, self).__init__(obj)
-
-        obj.PType   = "Outlet"
-        obj.Proxy   = self
+        obj.PType = "Outlet"
+        obj.Proxy = self
         obj.PRating = rating
-        obj.PSize   = DN
-
-        # ── Geometry properties ───────────────────────────────────────────
-        obj.addProperty(
-            "App::PropertyLength", "OD", "Outlet",
-            QT_TRANSLATE_NOOP("App::Property", "Outside diameter at pipe end"),
-        ).OD = OD
-
-        obj.addProperty(
-            "App::PropertyLength", "thk", "Outlet",
-            QT_TRANSLATE_NOOP("App::Property", "Wall thickness at pipe end"),
-        ).thk = thk
-
-        obj.addProperty(
-            "App::PropertyLength", "A", "Outlet",
-            QT_TRANSLATE_NOOP("App::Property",
-                "Height above run-pipe surface (along fitting axis)"),
-        ).A = A
-
-        obj.addProperty(
-            "App::PropertyLength", "B", "Outlet",
-            QT_TRANSLATE_NOOP("App::Property", "Outer diameter at base attachment"),
-        ).B = B
-
-        obj.addProperty(
-            "App::PropertyLength", "E", "Outlet",
-            QT_TRANSLATE_NOOP("App::Property",
-                "Socket depth  bore steps from ID to OD at this height "
-                "(SocketWeld only)"),
-        ).E = E if E else 0.0
-
-        obj.addProperty(
-            "App::PropertyLength", "CarrierOD", "Outlet",
-            QT_TRANSLATE_NOOP("App::Property",
-                "Outer diameter of the carrier (run) pipe.  When non-zero the "
-                "base of the fitting is shaped to lie flush against the carrier "
-                "pipe surface rather than being cut flat."),
-        ).CarrierOD = carrierOD if carrierOD else 0.0
-
-        # ── Type / style ──────────────────────────────────────────────────
-        obj.addProperty(
-            "App::PropertyString", "EndType", "Outlet",
-            QT_TRANSLATE_NOOP("App::Property",
-                "ButtWeld (tapered body) or SocketWeld (cylindrical body)"),
-        ).EndType = endType
-
-        obj.addProperty(
-            "App::PropertyInteger", "Angle", "Outlet",
-            QT_TRANSLATE_NOOP("App::Property",
-                "Branch angle: 0 = straight, "
-                "45 = lateral "),
-        ).Angle = int(angle)
-
-        obj.addProperty(
-            "App::PropertyString", "Profile", "Outlet",
-            QT_TRANSLATE_NOOP("App::Property", "Section dimensions"),
-        ).Profile = str(OD) + "x" + str(thk)
-
+        obj.PSize = DN
+        define_outlet_properties(
+            obj,
+            {
+                "OD": OD,
+                "thk": thk,
+                "A": A,
+                "B": B,
+                "E": E if E else 0.0,
+                "CarrierOD": carrierOD if carrierOD else 0.0,
+                "EndType": endType,
+                "Angle": int(angle),
+                "Profile": str(OD) + "x" + str(thk),
+            },
+        )
         self.execute(obj)
+
 
     # ------------------------------------------------------------------
     def onChanged(self, fp, prop):
@@ -2439,44 +2314,19 @@ class SocketCap(pypeType):
 
     """
     def __init__(self, obj, PSize="DN25", OD=33.4, A=26.0,C=5.0,E=13.0,Conn="SW"):
+        # initialize the parent class
         super(SocketCap, self).__init__(obj)
         obj.Proxy = self
         obj.PType = "SocketCap"
         obj.PRating = "3000lb"
         obj.PSize = PSize
-        # define specific properties
-        obj.addProperty(
-            "App::PropertyLength",
-            "OD",
+        define_socket_properties(
+            obj,
             "SocketCap",
-            QT_TRANSLATE_NOOP("App::Property", "Pipe OD"),
-        ).OD = OD       
-        obj.addProperty(
-            "App::PropertyLength",
-            "A",
-            "SocketCap",
-            QT_TRANSLATE_NOOP("App::Property", "Cap height"),
-        ).A = A
-        obj.addProperty(
-            "App::PropertyLength",
-            "C",
-            "SocketCap",
-            QT_TRANSLATE_NOOP("App::Property", "Wall thickness in socket"),
-        ).C = C
-
-        obj.addProperty(
-            "App::PropertyLength",
-            "E",
-            "SocketCap",
-            QT_TRANSLATE_NOOP("App::Property", "Socket depth"),
-        ).E = E
-        obj.addProperty(
-            "App::PropertyString",
-            "Conn",
-            "SocketCap",
-            QT_TRANSLATE_NOOP("App::Property", "Connection type (SW=Socket Weld, TH=Threaded)"),
-        ).Conn = Conn
+            {"OD": OD, "A": A, "C": C, "E": E, "Conn": Conn},
+        )
         self.execute(obj)
+
 
     def onChanged(self, fp, prop):
         return None
@@ -2523,74 +2373,28 @@ class SocketCoupling(pypeType):
                  OD=33.4, OD2=33.4,
                  A=35.0, C=5.0, D=25.9, E=22.0,
                  Conn="SW"):
-        # ── parent class ─────────────────────────────────────────────────────
+        # initialize the parent class
         super(SocketCoupling, self).__init__(obj)
-
-        # ── common pype properties ────────────────────────────────────────────
-        obj.Proxy   = self
-        obj.PType   = "SocketCoupling"
+        obj.Proxy = self
+        obj.PType = "SocketCoupling"
         obj.PRating = "3000lb"
-        obj.PSize   = PSize
-
-        # ── specific properties ───────────────────────────────────────────────
-        obj.addProperty(
-            "App::PropertyString",
-            "PSize2",
+        obj.PSize = PSize
+        define_socket_properties(
+            obj,
             "SocketCoupling",
-            QT_TRANSLATE_NOOP("App::Property", "Nominal diameter of port 1"),
-        ).PSize2 = PSize2
-
-        obj.addProperty(
-            "App::PropertyLength",
-            "OD",
-            "SocketCoupling",
-            QT_TRANSLATE_NOOP("App::Property", "Port 0 pipe OD"),
-        ).OD = OD
-
-        obj.addProperty(
-            "App::PropertyLength",
-            "OD2",
-            "SocketCoupling",
-            QT_TRANSLATE_NOOP("App::Property", "Port 1 pipe OD"),
-        ).OD2 = OD2
-
-        obj.addProperty(
-            "App::PropertyLength",
-            "A",
-            "SocketCoupling",
-            QT_TRANSLATE_NOOP("App::Property", "Half-length (center to outer edge)"),
-        ).A = A
-
-        obj.addProperty(
-            "App::PropertyLength",
-            "C",
-            "SocketCoupling",
-            QT_TRANSLATE_NOOP("App::Property", "Socket boss wall thickness"),
-        ).C = C
-
-        obj.addProperty(
-            "App::PropertyLength",
-            "D",
-            "SocketCoupling",
-            QT_TRANSLATE_NOOP("App::Property", "Bore diameter at centre"),
-        ).D = D
-
-        obj.addProperty(
-            "App::PropertyLength",
-            "E",
-            "SocketCoupling",
-            QT_TRANSLATE_NOOP("App::Property", "Socket depth"),
-        ).E = E
-
-        obj.addProperty(
-            "App::PropertyString",
-            "Conn",
-            "SocketCoupling",
-            QT_TRANSLATE_NOOP("App::Property",
-                              "Connection type (SW=Socket Weld, TH=Threaded)"),
-        ).Conn = Conn
-
+            {
+                "PSize2": PSize2,
+                "OD": OD,
+                "OD2": OD2,
+                "A": A,
+                "C": C,
+                "D": D,
+                "E": E,
+                "Conn": Conn,
+            },
+        )
         self.execute(obj)
+
 
     def onChanged(self, fp, prop):
         return None
@@ -2669,60 +2473,19 @@ class SocketUnion(pypeType):
     def __init__(self, obj,
                  PSize="DN25", OD=33.4, A=35.0, C=5.0, D=25.9, E=22.0,
                  Conn="SW"):
-        # ── parent class ─────────────────────────────────────────────────────
+        # initialize the parent class
         super(SocketUnion, self).__init__(obj)
-
-        # ── common pype properties ────────────────────────────────────────────
-        obj.Proxy   = self
-        obj.PType   = "SocketUnion"
+        obj.Proxy = self
+        obj.PType = "SocketUnion"
         obj.PRating = "3000lb"
-        obj.PSize   = PSize
-
-        # ── specific properties ───────────────────────────────────────────────
-        obj.addProperty(
-            "App::PropertyLength",
-            "OD",
+        obj.PSize = PSize
+        define_socket_properties(
+            obj,
             "SocketUnion",
-            QT_TRANSLATE_NOOP("App::Property", "Pipe OD"),
-        ).OD = OD
-
-        obj.addProperty(
-            "App::PropertyLength",
-            "A",
-            "SocketUnion",
-            QT_TRANSLATE_NOOP("App::Property", "Half-length (centre to outer edge)"),
-        ).A = A
-
-        obj.addProperty(
-            "App::PropertyLength",
-            "C",
-            "SocketUnion",
-            QT_TRANSLATE_NOOP("App::Property", "Socket boss wall thickness"),
-        ).C = C
-
-        obj.addProperty(
-            "App::PropertyLength",
-            "D",
-            "SocketUnion",
-            QT_TRANSLATE_NOOP("App::Property", "Bore diameter"),
-        ).D = D
-
-        obj.addProperty(
-            "App::PropertyLength",
-            "E",
-            "SocketUnion",
-            QT_TRANSLATE_NOOP("App::Property", "Socket depth"),
-        ).E = E
-
-        obj.addProperty(
-            "App::PropertyString",
-            "Conn",
-            "SocketUnion",
-            QT_TRANSLATE_NOOP("App::Property",
-                              "Connection type (SW=Socket Weld, TH=Threaded)"),
-        ).Conn = Conn
-
+            {"OD": OD, "A": A, "C": C, "D": D, "E": E, "Conn": Conn},
+        )
         self.execute(obj)
+
 
     def onChanged(self, fp, prop):
         return None
@@ -2795,4 +2558,81 @@ class SocketUnion(pypeType):
             FreeCAD.Vector(0, 0,  1),
         ]
         super(SocketUnion, self).execute(fp)  # perform common operations
+
+# ---------------------------------------------------------------------------
+# Late feature definitions for proxies that must stay in this module for
+# pickle compatibility.  The property schemas are already declarative; these
+# entries give the generic registry the same metadata as migrated features.
+# ---------------------------------------------------------------------------
+
+
+def _create_socket_cap(obj, rating, properties):
+    if len(properties) == 6:
+        SocketCap(obj, *properties)
+    else:
+        SocketCap(obj)
+
+
+def _create_socket_coupling(obj, rating, properties):
+    if len(properties) == 9:
+        SocketCoupling(obj, *properties)
+    else:
+        SocketCoupling(obj)
+
+
+def _create_socket_union(obj, rating, properties):
+    if len(properties) == 7:
+        SocketUnion(obj, *properties)
+    else:
+        SocketUnion(obj)
+
+
+_LEGACY_FEATURES = (
+    FeatureDefinition(
+        key="Outlet",
+        proxy=Outlet,
+        label="Outlet",
+        icon="Quetzal_InsertOutlet",
+        accepted_prop_counts=(9,),
+    ),
+    FeatureDefinition(
+        key="SocketEll",
+        proxy=SocketEll,
+        label="SocketEll",
+        icon="Quetzal_InsertElbow",
+        accepted_prop_counts=(9,),
+    ),
+    FeatureDefinition(
+        key="SocketTee",
+        proxy=SocketTee,
+        label="SocketTee",
+        icon="Quetzal_InsertTee",
+        accepted_prop_counts=(10,),
+    ),
+    FeatureDefinition(
+        key="SocketCap",
+        proxy=SocketCap,
+        label="SocketCap",
+        icon="Quetzal_InsertCap",
+        _create=_create_socket_cap,
+    ),
+    FeatureDefinition(
+        key="SocketCoupling",
+        proxy=SocketCoupling,
+        label="SocketCoupling",
+        icon="Quetzal_InsertCoupling",
+        _create=_create_socket_coupling,
+    ),
+    FeatureDefinition(
+        key="SocketUnion",
+        proxy=SocketUnion,
+        label="SocketUnion",
+        icon="Quetzal_InsertCoupling",
+        _create=_create_socket_union,
+    ),
+)
+
+for _definition in _LEGACY_FEATURES:
+    if _definition.key not in FEATURES:
+        FEATURES.register(_definition)
 

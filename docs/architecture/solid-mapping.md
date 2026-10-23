@@ -88,10 +88,9 @@ No consumer is forced to depend on FreeCAD or Qt to use these.
    construction-dependent.
 2. Existing command classes still repeat `IsActive`/`GetResources`; the
    registry already captures their metadata centrally.
-3. The preview core is shared by the pipe form; the remaining dialogs still
-   use their legacy preview path.
-4. `doBeams` and `doOutlets` keep custom placement logic because they are not
+3. `doBeams` and `doOutlets` keep custom placement logic because they are not
    port-attachment flows (frameline beams and host-surface outlets).
+4. The Valve property schema remains construction-dependent.
 
 The roadmap in [ARCHITECTURE.md](../ARCHITECTURE.md#remaining-roadmap) tracks
 these items.

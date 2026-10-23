@@ -191,27 +191,30 @@ work. Save/reload is checked by the headless integration suite.
 | Feature base class | Migrated to `quetzal.features.base.PypeFeature`; `pFeatures.pypeType` is the same object. |
 | Pipe / Cap / TerminalAdapter / Gasket | Migrated with property schemas, shape builders and registry entries. |
 | Elbow / Tee / Reduct properties | Declared with `PropertySpec` in place, preserving the original order and groups; geometry stays in the existing proxies. |
+| Outlet / socket properties | Declared with `PropertySpec`; late `FeatureDefinition` entries expose them through `FEATURES` while the proxies stay in `pFeatures` for pickle compatibility. |
 | Valve geometry | Six replaceable strategies (`generic`, `flanged`, `sw_th`, `swing_check`, `knife_gate`, `pinch`) selected by pure resolvers; `pFeatures.Valve` is now a ~160-line facade and the 8-mode geometry baseline is unchanged. |
 | Flange geometry | Five builders plus a generic fallback selected at execute time by `FlangeType`; ports/insertion offsets live in `quetzal.domain.flange`; the 6-type geometry baseline is unchanged. |
 | Flange properties | Declared as `PropertySpec` in `quetzal.features.flange.properties` with the original order, groups and docs. |
 | PypeBranch children | `TubesLink`/`CurvesLink` are authoritative; legacy `Tubes`/`Curves` names are still written and migrated on load. |
 | PypeLine group | Resolved through `getParentGroup()` with a unique-label fallback; `moveToPyLi`, color updates and purge no longer use `[0]` lookups. |
-| Preview core | `PreviewKey`/`PreviewService`/`PreviewCache` with configurable addon or user paths, atomic writes, re-entrancy guard and a temporary-scene renderer; the pipe form is wired. |
+| Preview core | `PreviewKey`/`PreviewService`/`PreviewCache` with configurable addon or user paths, atomic writes, re-entrancy guard and a temporary-scene renderer; the base dialog and the pipe form use it, and subclasses that call `super().changeSize()` inherit it. |
 | Generic insertion | `FeatureInserter` + `FeatureRegistry` available. |
 | Attached insertion | Shared pipeline for the port-based `do*` flows: pipes, caps, flanges, reducers, gaskets, bolts, elbows, tees, valves and all socket fittings (14 objects in the integration matrix). |
 | Command metadata | `CommandSpec`/`CommandRegistry` record all 61 commands; `quetzal.ui.layout` is the single ordered source for toolbars, menus, context menus and watchers. `InitGui` and `dodoPM` consume it. |
 | Headless support | Selection/view accessors degrade safely; command contract can be validated without a GUI. |
 | Module cycle | `pFeatures` no longer imports `pCmd` at module scope. |
 
-## Remaining roadmap
+## Optional follow-ups
 
-These items are deliberately out of scope for this branch but are the natural
-next steps:
+The roadmap items are complete. These are optional cleanups rather than
+blocking gaps:
 
-1. Move the remaining feature proxies (`Outlet` and the socket fittings) to
-   `PropertySpec` + `FeatureDefinition`.
-2. Wire the remaining dialogs (base `protoPypeForm`, Elbow/Tee/Valve/...) to
-   the new `PreviewService`; the pipe form is already migrated.
+1. `doBeams` and `doOutlets` keep custom placement logic because they are not
+   port-attachment flows (frameline beams and host-surface outlets).
+2. The legacy command classes still repeat `IsActive`/`GetResources`; the
+   registry already captures their metadata centrally.
+3. The Valve property schema remains construction-dependent; moving it to
+   `PropertySpec` would be a separate persistence-sensitive change.
 
 See [SOLID mapping](docs/architecture/solid-mapping.md),
 [extension guide](docs/architecture/extending.md),

@@ -39,6 +39,10 @@
 - `Gasket` now uses declarative properties and an injectable shape builder.
 - `Elbow`, `Tee` and `Reduct` properties are declared with `PropertySpec`,
   preserving their original order, groups and computed defaults.
+- `Outlet` and the five socket fittings use declarative property schemas and
+  late `FeatureDefinition` entries without moving their pickle-stable classes.
+- The base `protoPypeForm` now renders previews through `PreviewService`
+  (pipe form already migrated), with camera/selection/visibility restoration.
 - Add a `CommandSpec` registry and a single ordered `quetzal.ui.layout` for
   toolbars, menus, context menus and watchers; `InitGui` and the pie menu use
   it instead of duplicated lists.
