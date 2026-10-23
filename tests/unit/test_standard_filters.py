@@ -5,7 +5,11 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from quetzal.application.standard_filters import StandardFilterService
+from quetzal.application.standard_filters import (
+    StandardFilterService,
+    institution_label,
+    standard_label,
+)
 from quetzal.domain.catalog import CsvCatalogRepository
 from quetzal.domain.standards import StandardsCatalog
 
@@ -59,3 +63,10 @@ def test_groups_preserve_institution_and_standard():
         ("ASME", "ASME B36.19M"),
     ]
     assert "SCH-40" in groups[0].ratings
+
+
+def test_ui_labels_for_generic_catalogues():
+    assert institution_label("ASME") == "ASME"
+    assert institution_label("QUETZAL") == "Quetzal / generic"
+    assert standard_label("ASME B36.10M") == "ASME B36.10M"
+    assert standard_label("QUETZAL-GENERIC") == "Generic / vendor"

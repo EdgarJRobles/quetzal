@@ -128,3 +128,13 @@ class StandardFilterService:
         return tuple(
             StandardGroup(inst, std, tuple(ratings)) for (inst, std), ratings in grouped.items()
         )
+
+
+def institution_label(code: str) -> str:
+    """User-facing label for an institution code."""
+    return "Quetzal / generic" if code == "QUETZAL" else code
+
+
+def standard_label(code: str) -> str:
+    """User-facing label for a standard code."""
+    return "Generic / vendor" if code == "QUETZAL-GENERIC" else code
