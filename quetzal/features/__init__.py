@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: LGPL-3.0-or-later
+"""Feature proxies and the registry that exposes them to generic factories."""
+
+from .base import PypeFeature
+from .cap import Cap
+from .catalog import FEATURES
+from .pipe import Pipe
+
+__all__ = ["Cap", "FEATURES", "Pipe", "PypeFeature"]

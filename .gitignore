@@ -5,3 +5,10 @@ pyrightconfig.json
 # Visual Studio temporary files
 .vs/
 *.vsidx
+# Test / tooling artifacts
+.pytest_cache/
+.ruff_cache/
+.ruffcache/
+tests/_scratch/
+*.FCBak
+*.FCStd1
