@@ -17,6 +17,8 @@ Msg = FreeCAD.Console.PrintMessage
 
 class QuetzalWorkbench(Workbench):
     def __init__(self):
+        import os
+
         from quetzal_config import TRANSLATIONSPATH, ICONPATH
 
         # Add translations path
@@ -51,10 +53,12 @@ class QuetzalWorkbench(Workbench):
         This function is called at the first activation of the workbench,
         here is the place to import all the commands.
         """
-        # Import locally too: FreeCAD may keep an InitGui module loaded from a
-        # previous session, and this keeps Initialize self-contained.
+        # Import locally: FreeCAD may keep an InitGui module loaded from a
+        # previous session, and its workbench loader does not always expose
+        # module-level imports inside methods.
         from quetzal.ui import layout as quetzal_layout
 
+        Log = FreeCAD.Console.PrintLog
         QT_TRANSLATE_NOOP = FreeCAD.Qt.QT_TRANSLATE_NOOP
         import CUtils  # noqa: F401
 
@@ -109,6 +113,8 @@ class QuetzalWorkbench(Workbench):
             )
 
     def setWatchers(self):
+        import importlib
+
         from quetzal.ui import layout as quetzal_layout
 
         class QuetzalWatcher:
@@ -144,6 +150,7 @@ class QuetzalWorkbench(Workbench):
         FreeCADGui.Control.addTaskWatcher(watchers)
 
     def Activated(self):
+        Msg = FreeCAD.Console.PrintMessage
         # if hasattr(FreeCADGui, "draftToolBar"):  # patch
         #     FreeCADGui.draftToolBar.Activated()  # patch
         # if hasattr(FreeCADGui, "Snapper"):  # patch
@@ -164,6 +171,7 @@ class QuetzalWorkbench(Workbench):
             FreeCAD.Console.PrintError(f"dodoPM not loaded:\n{e}\n")
 
     def Deactivated(self):
+        Msg = FreeCAD.Console.PrintMessage
         if hasattr(FreeCAD, "__activePypeLine__"):
             del FreeCAD.__activePypeLine__
             Msg("__activePypeLine__ variable deleted\n")
