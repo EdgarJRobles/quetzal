@@ -3,7 +3,7 @@
 import os
 
 import FreeCAD
-import FreeCADGui
+from quetzal_config import addCommand
 
 QT_TRANSLATE_NOOP = FreeCAD.Qt.QT_TRANSLATE_NOOP
 
@@ -31,4 +31,4 @@ class cutListCommand:
         return FreeCAD.ActiveDocument is not None
 
 
-FreeCADGui.addCommand("Quetzal_CreateCutList", cutListCommand())
+addCommand("Quetzal_CreateCutList", cutListCommand())

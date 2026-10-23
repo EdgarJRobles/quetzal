@@ -13,7 +13,6 @@ from __future__ import annotations
 
 import importlib
 import os
-import re
 import sys
 import tempfile
 import traceback
@@ -98,10 +97,18 @@ def check_command_contract():
             missing_icons.append((name, pixmap))
     assert not missing_icons, f"missing icons: {missing_icons}"
 
-    init_gui = (Path(ROOT) / "InitGui.py").read_text(encoding="utf-8")
-    referenced = set(re.findall(r'"(Quetzal_[A-Za-z0-9_]+)"', init_gui))
+    from quetzal.application.command_registry import REGISTRY
+    from quetzal.ui import layout
+
+    referenced = {
+        name for names in layout.GROUPS.values() for name in names
+    }
     orphaned = sorted(referenced - set(registered))
-    assert not orphaned, f"InitGui references unregistered commands: {orphaned}"
+    assert not orphaned, f"Layout references unregistered commands: {orphaned}"
+    layout.validate_registry()
+    assert len(REGISTRY) == len(registered), (
+        f"registry captured {len(REGISTRY)} of {len(registered)} commands"
+    )
 
     return len(registered), len(referenced)
 

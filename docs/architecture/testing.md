@@ -64,6 +64,9 @@ fails. It runs without a GUI and verifies:
    `vO/vX/vY/vZ`.
 10. **Standards metadata** – all 243 catalogues resolve to a family, standard
     and institution; dimensions cover every CSV header.
+11. **Command registry/layout** – 61 unique commands, 60 listed in groups,
+    one macro-only command, every icon exists and every command has a macro
+    source.
 
 ### How the script is executed
 

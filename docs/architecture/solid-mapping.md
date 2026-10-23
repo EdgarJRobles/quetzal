@@ -25,6 +25,8 @@ legacy hotspots remain. It is meant to be updated as the migration advances.
   (`shape_builder_class`) without editing `execute()`.
 - `VALVE_STRATEGIES` maps each connection/rating mode to a strategy; adding a
   valve variant registers a new strategy instead of growing `Valve.execute`.
+- `CommandSpec`/`CommandRegistry` + `quetzal.ui.layout` make a new command one
+  spec plus one layout entry, with duplicate/icon/name validation.
 - `CatalogRepository` can be swapped (CSV, in-memory, future database) without
   changing consumers.
 - `standards/catalog.json` adds institutions, standards, dimensions and series
@@ -83,7 +85,8 @@ No consumer is forced to depend on FreeCAD or Qt to use these.
 1. `Valve` geometry is split, but its property schema is still dynamic and
    construction-dependent.
 2. `PypeLine2`/`PypeBranch2` still resolve children by label/name.
-3. Command classes still repeat `IsActive`/`GetResources`.
+3. Existing command classes still repeat `IsActive`/`GetResources`; the
+   registry already captures their metadata centrally.
 4. Dialog preview code still has two implementations.
 5. `doBeams` and `doOutlets` keep custom placement logic because they are not
    port-attachment flows (frameline beams and host-surface outlets).

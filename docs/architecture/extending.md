@@ -152,18 +152,35 @@ returning a silently empty list.
 
 ## Add a command
 
-The current command registration is still class-based because
-`quetzal_config.addCommand()` records the source of `Activated` for FreeCAD's
-macro recorder. Until the command metadata registry lands (see roadmap):
+Commands are described by a `CommandSpec` and placed in `quetzal.ui.layout`:
 
 1. Create the class in the appropriate command module (`CPipe.py`,
    `CFrame.py`, `CUtils.py` or `cut_list/cut_list_commands.py`).
 2. Return `Pixmap` **without** the `.svg` extension and with an existing
    `iconz/<name>.svg`.
-3. Register it with `quetzal_config.addCommand("Quetzal_<Name>", <Name>())`.
-4. Add the name to the relevant toolbar/menu list in `InitGui.py`.
-5. Run the command contract check; it fails on duplicate names, missing icons
-   and `InitGui` references to unregistered commands.
+3. Register it with `quetzal_config.addCommand("Quetzal_<Name>", <Name>())`:
+   this records a `CommandSpec` (resources + macro source) in the registry.
+4. Add the name to the relevant group in `quetzal/ui/layout.py`; toolbars,
+   menus, context menus and the pie menu read that group.
+5. Run the command contract check; it fails on duplicate names, missing icons,
+   layout/registry mismatches and missing macro source.
+
+A new command can also be declared directly with a module-level handler:
+
+```python
+from quetzal.application.command_registry import CommandSpec
+from quetzal.infrastructure.freecad.commands import register_spec
+
+BLIND_COMMAND = CommandSpec(
+    name="Quetzal_InsertBlind",
+    group="pipe",
+    handler=insert_blind,
+    menu_text=QT_TRANSLATE_NOOP("Quetzal_InsertBlind", "Insert a blind"),
+    tooltip=QT_TRANSLATE_NOOP("Quetzal_InsertBlind", "Insert a blind flange"),
+    icon="Quetzal_InsertFlange",
+)
+register_spec(BLIND_COMMAND)
+```
 
 ```python
 class insertBlind:

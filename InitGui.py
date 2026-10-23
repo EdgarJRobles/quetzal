@@ -1,11 +1,14 @@
 # SPDX-License-Identifier: LGPL-3.0-or-later
 
+import importlib
 import os
 import sys
 
 import FreeCAD
 import FreeCADGui
 from FreeCADGui import ActiveDocument, Workbench
+
+from quetzal.ui import layout as quetzal_layout
 
 
 Log = FreeCAD.Console.PrintLog
@@ -51,40 +54,14 @@ class QuetzalWorkbench(Workbench):
         QT_TRANSLATE_NOOP = FreeCAD.Qt.QT_TRANSLATE_NOOP
         import CUtils  # noqa: F401
 
-        self.utilsList = [
-            "Quetzal_SelectSolids",
-            "Quetzal_QueryModel",
-            "Quetzal_MoveWorkPlane",
-            "Quetzal_OffsetWorkPlane",
-            "Quetzal_RotateWorkPlane",
-            "Quetzal_HackedLine",
-            "Quetzal_MoveHandle",
-            "Quetzal_PressureLossCalculator",
-        ]
+        self.utilsList = list(quetzal_layout.GROUPS["utils"])
         self.appendToolbar(QT_TRANSLATE_NOOP("Workbench", "Utils"), self.utilsList)
         Log("Loading Utils: done\n")
 
         import CFrame  # noqa: F401
         from cut_list.cut_list_commands import cutListCommand  # noqa: F401
 
-        self.frameList = [
-            "Quetzal_FrameIt",
-            "Quetzal_FrameBranchManager",
-            "Quetzal_InsertSection",
-            "Quetzal_SpinSection",
-            "Quetzal_ReverseBeam",
-            "Quetzal_ShiftBeam",
-            "Quetzal_PivotBeam",
-            "Quetzal_LevelBeam",
-            "Quetzal_AlignEdge",
-            "Quetzal_RotateJoin",
-            "Quetzal_AlignFlange",
-            "Quetzal_StretchBeam",
-            "Quetzal_ExtendBeam",
-            "Quetzal_AdjustFrameAngle",
-            "Quetzal_InsertPath",
-            "Quetzal_CreateCutList",
-        ]
+        self.frameList = list(quetzal_layout.GROUPS["frame"])
         self.appendToolbar(QT_TRANSLATE_NOOP("Workbench", "Frame tools"), self.frameList)
         Log("Loading Frame tools: done\n")
 
@@ -99,46 +76,15 @@ class QuetzalWorkbench(Workbench):
             FreeCAD.Console.PrintWarning(
                 "Quetzal: could not register preference page: " + str(e) + "\n")
 
-        self.pypeList = [
-            "Quetzal_InsertPipe",
-            "Quetzal_InsertElbow",
-            "Quetzal_InsertDuctElbow",
-            "Quetzal_InsertTee",
-            "Quetzal_InsertReduct",
-            "Quetzal_InsertDuctReduction",
-            "Quetzal_InsertCap",
-            "Quetzal_InsertCoupling",
-            "Quetzal_InsertValve",
-            "Quetzal_InsertFlange",
-            "Quetzal_InsertGasket",
-            "Quetzal_InsertOutlet",
-            "Quetzal_InsertUBolt",
-            "Quetzal_InsertPypeLine",
-            "Quetzal_InsertBranch",
-            "Quetzal_InsertTank",
-            "Quetzal_InsertTerminalAdapter",
-            "Quetzal_InsertRoute",
-            "Quetzal_BreakPipe",
-            "Quetzal_MateEdges",
-            "Quetzal_Flat",
-            "Quetzal_ExtendIntersection2",
-            "Quetzal_ExtendIntersection1",
-            "Quetzal_MakeHeader",
-            "Quetzal_Laydown",
-            "Quetzal_Raiseup",
-            "Quetzal_Attach2Tube",
-            "Quetzal_Point2Point",
-            "Quetzal_InsertAnyShape",
-            "Quetzal_InsertBeam",
-        ]
-        from dodoPM import toolList
+        self.pypeList = list(quetzal_layout.GROUPS["pipe"])
+        import dodoPM  # noqa: F401  (pie menu side effects)
 
         import DraftTools
         import draftutils.init_tools as it
 
         self.appendToolbar(QT_TRANSLATE_NOOP("Workbench", "Draft snap"),
                            it.get_draft_snap_commands())
-        self.qm = toolList  # ["pipeQM","elbowQM","reductQM"]
+        self.qm = list(quetzal_layout.GROUPS["qm"])
         self.appendToolbar(QT_TRANSLATE_NOOP("Workbench", "Pipe tools"), self.pypeList)
         Log("Loading Pipe tools: done\n")
 
@@ -146,61 +92,48 @@ class QuetzalWorkbench(Workbench):
         self.appendMenu(QT_TRANSLATE_NOOP("Workbench", "Pipe tools"), self.pypeList)
         self.appendMenu(QT_TRANSLATE_NOOP("Workbench", "Utils"), self.utilsList)
         self.appendMenu(QT_TRANSLATE_NOOP("Workbench", "QM Menus"), self.qm)
+        quetzal_layout.validate_registry()
 
     def ContextMenu(self, recipient):
         QT_TRANSLATE_NOOP = FreeCAD.Qt.QT_TRANSLATE_NOOP
-        self.appendContextMenu(QT_TRANSLATE_NOOP("Workbench", "Frames"), self.frameList)
-        self.appendContextMenu(QT_TRANSLATE_NOOP("Workbench", "Pipes"), self.pypeList)
-        self.appendContextMenu(QT_TRANSLATE_NOOP("Workbench", "Utils"), self.utilsList)
+        for surface in quetzal_layout.CONTEXT_MENUS:
+            self.appendContextMenu(
+                QT_TRANSLATE_NOOP("Workbench", surface.label),
+                list(quetzal_layout.GROUPS[surface.group]),
+            )
 
     def setWatchers(self):
         class QuetzalWatcher:
-            def __init__(self,commands,title):
-                QT_TRANSLATE_NOOP = FreeCAD.Qt.QT_TRANSLATE_NOOP
-                self.commands = commands
-                self.title = QT_TRANSLATE_NOOP("Quetzal",title)
+            def __init__(self, commands, title, predicate):
+                self.commands = list(commands)
+                self.title = FreeCAD.Qt.QT_TRANSLATE_NOOP("Quetzal", title)
+                self._predicate = predicate
 
             def shouldShow(self):
-                result:bool
-                if self.title == "No Objects":
-                    if FreeCAD.ActiveDocument is not None and FreeCAD.ActiveDocument.ActiveObject is None:
-                        result=True
-                    else:
-                        result=False
-                elif self.title == "Wire Objects":
-                    if FreeCAD.ActiveDocument is not None and FreeCAD.ActiveDocument.ActiveObject is not None:
-                        try:
-                            obj = FreeCADGui.Selection.getSelection()[0]
-                            isWire = hasattr(obj, "Shape") and obj.Shape.Edges  # type(obj.Shape)==Part.Wire
-                            if isWire:
-                                result=True
-                            else:
-                                result=False
-                        except Exception as e:
-                            result=False
-                    else:
-                        result=False
-                elif self.title == "Tube Objects":
-                    if FreeCAD.ActiveDocument is not None and FreeCAD.ActiveDocument.ActiveObject is not None:
-                        try:
-                            from pCmd import isPipe
-                            obj = FreeCADGui.Selection.getSelection()[0]
-                            if isPipe(obj):
-                                result=True
-                            else:
-                                result=False
-                        except Exception as e:
-                            result=False
-                    else:
-                        result=False
-                return result
-        self.NoObjects=["Quetzal_HackedLine","Quetzal_Point2Point"]
-        self.WireObjects=["Quetzal_FrameBranchManager","Quetzal_InsertPipe","Quetzal_InsertPypeLine","Quetzal_InsertBranch"]
-        self.TubeObjects=["Quetzal_InsertFlange","Quetzal_InsertTerminalAdapter","Quetzal_InsertElbow","Quetzal_InsertTee"]
-        FreeCADGui.Control.addTaskWatcher([
-            QuetzalWatcher(self.NoObjects,"No Objects"),
-            QuetzalWatcher(self.WireObjects,"Wire Objects"),
-            QuetzalWatcher(self.TubeObjects,"Tube Objects")])
+                try:
+                    return bool(self._predicate())
+                except Exception:
+                    return False
+
+        watchers = []
+        for rule in quetzal_layout.WATCHERS:
+            module_name, function_name = rule.predicate.split(":", 1)
+            predicate = getattr(importlib.import_module(module_name), function_name)
+            watchers.append(QuetzalWatcher(rule.commands, rule.title, predicate))
+
+        self.NoObjects = list(quetzal_layout.WATCHERS[0].commands)
+        self.WireObjects = list(quetzal_layout.WATCHERS[1].commands)
+        self.TubeObjects = list(quetzal_layout.WATCHERS[2].commands)
+
+        # Activated() is called on every workbench switch; clear the previous
+        # watchers first so they do not accumulate.
+        clear = getattr(FreeCADGui.Control, "clearTaskWatcher", None)
+        if clear is not None:
+            try:
+                clear()
+            except Exception:
+                pass
+        FreeCADGui.Control.addTaskWatcher(watchers)
 
     def Activated(self):
         # if hasattr(FreeCADGui, "draftToolBar"):  # patch
@@ -223,10 +156,12 @@ class QuetzalWorkbench(Workbench):
             FreeCAD.Console.PrintError(f"dodoPM not loaded:\n{e}\n")
 
     def Deactivated(self):
-        del FreeCAD.__activePypeLine__
-        Msg("__activePypeLine__ variable deleted\n")
-        del FreeCAD.__activeFrameLine__
-        Msg("__activeFrameLine__ variable deleted\n")
+        if hasattr(FreeCAD, "__activePypeLine__"):
+            del FreeCAD.__activePypeLine__
+            Msg("__activePypeLine__ variable deleted\n")
+        if hasattr(FreeCAD, "__activeFrameLine__"):
+            del FreeCAD.__activeFrameLine__
+            Msg("__activeFrameLine__ variable deleted\n")
         # mw=FreeCADGui.getMainWindow()
         # mw.removeAction(FreeCAD.__dodoPMact__)
         # Msg("dodoPM shortcut removed\n")

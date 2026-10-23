@@ -29,6 +29,12 @@
   original order, groups and documentation.
 - The port-based `do*` flows (elbow, tee, valve, socket elbow/tee/cap/coupling/
   union) now share the same transaction/selection/alignment pipeline.
+- Add a `CommandSpec` registry and a single ordered `quetzal.ui.layout` for
+  toolbars, menus, context menus and watchers; `InitGui` and the pie menu use
+  it instead of duplicated lists.
+- Fix the missing macro source for `Quetzal_CreateCutList` and make the macro
+  source extraction robust to blank first lines/pyc-only installs.
+- Clear task watchers before re-adding them on workbench activation.
 - `pFeatures.pypeType` is now `quetzal.features.base.PypeFeature`; the
   `pFeatures <-> pCmd` module import cycle was removed.
 - Six `do*` insertion flows share one transaction/selection/alignment

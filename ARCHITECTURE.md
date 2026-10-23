@@ -112,6 +112,20 @@ canonical units. Adding a standard is a JSON change plus a test, not a new
 
 See [standards and units](docs/architecture/standards-and-units.md) and the
 [metadata README](standards/README.md).
+
+## Command registry and layout
+
+Every command registered through `quetzal_config.addCommand` is recorded as a
+`CommandSpec` (name, group, resources, macro source). `quetzal.ui.layout`
+declares the ordered groups (`utils`, `frame`, `pipe`, `qm`), toolbars, menus,
+context menus and watcher rules. `InitGui` builds its lists from the layout and
+validates that every registered command is listed exactly once (except
+`Quetzal_JoinPype`, which remains macro-only).
+
+New commands can be declared directly with a `CommandSpec` and a module-level
+handler; the registry validates names, icons and duplicates. Existing command
+classes keep their `GetResources`/`Activated` implementation for backward
+compatibility and macro recording.
 `pCmd.makeFeature(key, ...)` can build any registered feature without adding a
 new factory function.
 
@@ -181,6 +195,7 @@ work. Save/reload is checked by the headless integration suite.
 | Flange properties | Declared as `PropertySpec` in `quetzal.features.flange.properties` with the original order, groups and docs. |
 | Generic insertion | `FeatureInserter` + `FeatureRegistry` available. |
 | Attached insertion | Shared pipeline for the port-based `do*` flows: pipes, caps, flanges, reducers, gaskets, bolts, elbows, tees, valves and all socket fittings (14 objects in the integration matrix). |
+| Command metadata | `CommandSpec`/`CommandRegistry` record all 61 commands; `quetzal.ui.layout` is the single ordered source for toolbars, menus, context menus and watchers. `InitGui` and `dodoPM` consume it. |
 | Headless support | Selection/view accessors degrade safely; command contract can be validated without a GUI. |
 | Module cycle | `pFeatures` no longer imports `pCmd` at module scope. |
 
@@ -191,11 +206,9 @@ next steps:
 
 1. Move the remaining feature proxies to `PropertySpec` + `FeatureDefinition`
    (`Tee`, `Reduct`, `Elbow`, `Gasket`, `Outlet`, socket fittings, ...).
-2. Add a command metadata registry so toolbar/menu definitions and
-   `addCommand` calls come from one declarative source.
-3. Introduce a `PreviewService` for the dialog previews (single cache key and
+2. Introduce a `PreviewService` for the dialog previews (single cache key and
    configurable path).
-4. Replace label/name child resolution in `PypeLine2`/`PypeBranch2` with
+3. Replace label/name child resolution in `PypeLine2`/`PypeBranch2` with
    `App::PropertyLinkList` while reading the legacy string lists.
 
 See [SOLID mapping](docs/architecture/solid-mapping.md),
