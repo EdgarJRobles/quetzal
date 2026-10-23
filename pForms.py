@@ -17,6 +17,7 @@ from PySide.QtGui import *
 import dodoDialogs
 import fCmd
 import pCmd
+from quetzal.domain.pipe_sizes import PIPE_OUTSIDE_DIAMETERS_MM as pipe_OD
 from PySide.QtWidgets import QCheckBox
 
 pq = FreeCAD.Units.parseQuantity
@@ -27,38 +28,19 @@ try:
 except Exception:
     qu = None
 
-mw = FreeCADGui.getMainWindow()
-x = mw.x() + int(mw.width() / 20)  # 100
-y = max(300, int(mw.height() / 3))  # 350
-pFormsSettings = QSettings("quetzal","pForms")
+# FreeCADCmd exposes FreeCADGui without a main window.  Keep the module
+# importable headlessly so command/form metadata can be tested without a GUI.
+_get_main_window = getattr(FreeCADGui, "getMainWindow", None)
+mw = _get_main_window() if _get_main_window else None
+if mw is not None:
+    x = mw.x() + int(mw.width() / 20)  # 100
+    y = max(300, int(mw.height() / 3))  # 350
+else:
+    x, y = 100, 350
+pFormsSettings = QSettings("quetzal", "pForms")
 
 # Nominal pipe OD lookup (mm) used by insertFlangeForm for WN bore calculation.
-pipe_OD = {
-    "DN6" : 10.29,
-    "DN8" : 13.72,
-    "DN10" : 17.14,
-    "DN15" : 21.34,
-    "DN20" : 26.67,
-    "DN25" : 33.4,
-    "DN32" : 42.16,
-    "DN40" : 48.26,
-    "DN50" : 60.32,
-    "DN65" : 73.02,
-    "DN80" : 88.9,
-    "DN90" : 101.6,
-    "DN100" : 114.3,
-    "DN125" : 141.3,
-    "DN150" : 168.27,
-    "DN200" : 219.07,
-    "DN250" : 273.05,
-    "DN300" : 323.85,
-    "DN350" : 355.6,
-    "DN400" : 406.4,
-    "DN450" : 457.2,
-    "DN500" : 508,
-    "DN550" : 558.8,
-    "DN600" : 609.6,
-}
+# Nominal OD table lives in quetzal.domain.pipe_sizes.
 
 def _autoSelectSizeOnly(form):
     """Attempt to select the size in form.sizeList that matches the PSize (and

@@ -302,10 +302,8 @@ class _InsertCouplingUnionCmd:
     """FreeCAD Gui command — opens the coupling/union insertion dialog."""
 
     def GetResources(self):
-        # Re-use the generic fitting icon; replace with a dedicated one if available.
-        from quetzal_config import ICONPATH
         return {
-            "Pixmap":  "Quetzal_CouplingUnion.svg",
+            "Pixmap":  "Quetzal_CouplingUnion",
             "MenuText": QT_TRANSLATE_NOOP("Quetzal", "Insert Coupling / Union"),
             "ToolTip":  QT_TRANSLATE_NOOP(
                 "Quetzal",
@@ -903,6 +901,7 @@ class capQM:
 
 addCommand("Quetzal_CapQM", capQM())
 
+
 class teeQM:
 
     def IsActive(self):
@@ -914,7 +913,7 @@ class teeQM:
     def Activated(self):
         import dodoPM
 
-        dodoPM.cqm.show()
+        dodoPM.tqm.show()
 
     def GetResources(self):
         return {
@@ -923,4 +922,4 @@ class teeQM:
         }
 
 
-addCommand("Quetzal_CapQM", capQM())
+addCommand("Quetzal_TeeQM", teeQM())

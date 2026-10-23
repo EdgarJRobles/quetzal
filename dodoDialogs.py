@@ -1,14 +1,15 @@
 # SPDX-License-Identifier: LGPL-3.0-or-later
 
-import csv
-from os import listdir, mkdir
+from os import listdir
 from os.path import abspath, dirname, join, exists
 
 import FreeCAD
 import FreeCADGui
 from PySide.QtCore import *
 from PySide.QtGui import *
-from pFeatures import Flange
+
+from quetzal.domain.errors import CatalogNotFoundError
+from quetzal.infrastructure.catalog import default_catalog_repository
 
 translate = FreeCAD.Qt.translate
 
@@ -288,24 +289,25 @@ class protoPypeForm(QDialog):
         return temp_ptypelist
 
     def fillSizes(self):
+        """Populate the size combo from the shared catalogue repository."""
         self.sizeList.clear()
-        for fileName in self.fileList:
-            if fileName == self.PType + "_" + self.PRating + ".csv":
-                f = open(join(dirname(abspath(__file__)), "tablez", fileName), "r", encoding="utf-8-sig")
-                reader = csv.DictReader(f, delimiter=";")
-                self.pipeDictList = [DNx for DNx in reader]
-                f.close()
-                for row in self.pipeDictList:
-                    if qu:
-                        s = qu.format_size_label(row)
-                    else:
-                        s = row["PSize"]
-                        if "OD" in row.keys():
-                            s += " - " + row["OD"]
-                        if "thk" in row.keys():
-                            s += "x" + row["thk"]
-                    self.sizeList.addItem(s)
-                break
+        try:
+            table = default_catalog_repository().get_table(self.PType, self.PRating)
+        except CatalogNotFoundError as exc:
+            self.pipeDictList = []
+            FreeCAD.Console.PrintWarning(f"{exc}\n")
+            return
+        self.pipeDictList = table.to_dicts()
+        for row in self.pipeDictList:
+            if qu:
+                label = qu.format_size_label(row)
+            else:
+                label = row["PSize"]
+                if "OD" in row.keys():
+                    label += " - " + row["OD"]
+                if "thk" in row.keys():
+                    label += "x" + row["thk"]
+            self.sizeList.addItem(label)
 
     def changeRating(self, s):
         """Handle a rating (grade) selection change.
