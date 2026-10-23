@@ -67,6 +67,9 @@ fails. It runs without a GUI and verifies:
 11. **Command registry/layout** – 61 unique commands, 60 listed in groups,
     one macro-only command, every icon exists and every command has a macro
     source.
+12. **PypeBranch links** – children are created as `TubesLink`/`CurvesLink`,
+    survive a label rename and save/reload, and legacy name lists migrate on
+    recompute.
 
 ### How the script is executed
 

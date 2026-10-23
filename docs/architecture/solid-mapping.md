@@ -10,6 +10,7 @@ legacy hotspots remain. It is meant to be updated as the migration advances.
 | `pFeatures.pypeType` registered properties, resolved the nearest port and imported `pCmd`. | `quetzal.features.base.PypeFeature` registers the common contract and uses pure port maths from `quetzal.domain.ports`. |
 | `pFeatures.Pipe` mixed property registration, parent-group length adjustment, shape construction and port bookkeeping. | `Pipe` keeps the lifecycle; `PipeShapeBuilder` owns geometry; `PropertySpec` owns property registration; parent-group adjustment is an isolated function. |
 | `pFeatures.TerminalAdapter` imported `pCmd` just to build a hexagon. | `TerminalAdapter` uses `quetzal.features.shapes.make_regular_polygon`; geometry is isolated in `TerminalAdapterShapeBuilder`. |
+| `PypeBranch2` resolved children by string names. | Links are authoritative (`ChildrenSchema=1`), legacy names are read/migrated and dual-written. |
 | `Flange.execute` mixed five type branches, magic edge indices, ports and view settings. | `FLANGE_BUILDERS` selects a builder by `FlangeType`; ports/insertion offsets are pure domain rules; `configure_view` is separate. |
 | `pCmd.readTable()` opened files directly. | `CsvCatalogRepository` owns file resolution, encoding, parsing and caching. |
 | `pCmd.ViewProvider` lived next to geometry factories. | `quetzal.infrastructure.freecad.view_provider` owns GUI concerns. |
@@ -84,7 +85,7 @@ No consumer is forced to depend on FreeCAD or Qt to use these.
 
 1. `Valve` geometry is split, but its property schema is still dynamic and
    construction-dependent.
-2. `PypeLine2`/`PypeBranch2` still resolve children by label/name.
+2. `PypeLine2` still resolves its group by label (PypeBranch links are done).
 3. Existing command classes still repeat `IsActive`/`GetResources`; the
    registry already captures their metadata centrally.
 4. Dialog preview code still has two implementations.

@@ -189,10 +189,11 @@ work. Save/reload is checked by the headless integration suite.
 | Catalogue + OD table | Migrated to domain; `pCmd.readTable`, `protoPypeForm.fillSizes`, `pFeatures.pipe_OD` and `pForms.pipe_OD` use it. |
 | Standards + units | Migrated to domain metadata (`standards/catalog.json`): 10 institutions, 26 standards, 86 dimensions and 19 catalogue families; all 243 CSV files are classified and unit-normalised. |
 | Feature base class | Migrated to `quetzal.features.base.PypeFeature`; `pFeatures.pypeType` is the same object. |
-| Pipe / Cap / TerminalAdapter | Migrated with property schemas, shape builders and registry entries. |
+| Pipe / Cap / TerminalAdapter / Gasket | Migrated with property schemas, shape builders and registry entries. |
 | Valve geometry | Six replaceable strategies (`generic`, `flanged`, `sw_th`, `swing_check`, `knife_gate`, `pinch`) selected by pure resolvers; `pFeatures.Valve` is now a ~160-line facade and the 8-mode geometry baseline is unchanged. |
 | Flange geometry | Five builders plus a generic fallback selected at execute time by `FlangeType`; ports/insertion offsets live in `quetzal.domain.flange`; the 6-type geometry baseline is unchanged. |
 | Flange properties | Declared as `PropertySpec` in `quetzal.features.flange.properties` with the original order, groups and docs. |
+| PypeBranch children | `TubesLink`/`CurvesLink` are authoritative; legacy `Tubes`/`Curves` names are still written and migrated on load. |
 | Generic insertion | `FeatureInserter` + `FeatureRegistry` available. |
 | Attached insertion | Shared pipeline for the port-based `do*` flows: pipes, caps, flanges, reducers, gaskets, bolts, elbows, tees, valves and all socket fittings (14 objects in the integration matrix). |
 | Command metadata | `CommandSpec`/`CommandRegistry` record all 61 commands; `quetzal.ui.layout` is the single ordered source for toolbars, menus, context menus and watchers. `InitGui` and `dodoPM` consume it. |
@@ -205,11 +206,11 @@ These items are deliberately out of scope for this branch but are the natural
 next steps:
 
 1. Move the remaining feature proxies to `PropertySpec` + `FeatureDefinition`
-   (`Tee`, `Reduct`, `Elbow`, `Gasket`, `Outlet`, socket fittings, ...).
+   (`Tee`, `Reduct`, `Elbow`, `Outlet`, socket fittings, ...).
 2. Introduce a `PreviewService` for the dialog previews (single cache key and
    configurable path).
-3. Replace label/name child resolution in `PypeLine2`/`PypeBranch2` with
-   `App::PropertyLinkList` while reading the legacy string lists.
+3. Replace the remaining `PypeLine2` group lookup by label with a parent-group
+   helper and a unique-group fallback.
 
 See [SOLID mapping](docs/architecture/solid-mapping.md),
 [extension guide](docs/architecture/extending.md),

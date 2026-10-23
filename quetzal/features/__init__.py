@@ -4,7 +4,8 @@
 from .base import PypeFeature
 from .cap import Cap
 from .catalog import FEATURES
+from .gasket import Gasket
 from .pipe import Pipe
 from .terminal_adapter import TerminalAdapter
 
-__all__ = ["Cap", "FEATURES", "Pipe", "PypeFeature", "TerminalAdapter"]
+__all__ = ["Cap", "FEATURES", "Gasket", "Pipe", "PypeFeature", "TerminalAdapter"]

@@ -20,6 +20,13 @@ from quetzal.features.flange import (
 )
 from quetzal.features.flange.properties import define_flange_properties
 from quetzal.application.valve import ValveContext
+from quetzal.application.pype_children import (
+    branch_children,
+    clear_branch_children,
+    ensure_branch_schema,
+    migrate_branch_children,
+    set_branch_children,
+)
 from quetzal.domain.valve_modes import (
     FLANGE_CONNS as VALVE_FLANGE_CONNS,
     geometry_mode,
@@ -28,6 +35,7 @@ from quetzal.domain.valve_modes import (
 from quetzal.features.valve import strategy_for
 from quetzal.features import (  # noqa: F401 (re-exported)
     Cap,
+    Gasket,
     Pipe,
     PypeFeature as pypeType,
     TerminalAdapter,
@@ -1703,11 +1711,8 @@ class ViewProviderPypeBranch:
         return None
 
     def claimChildren(self):
-        children = [
-            FreeCAD.ActiveDocument.getObject(name)
-            for name in self.Object.Tubes + self.Object.Curves
-        ]
-        return children
+        tubes, curves = branch_children(self.Object)
+        return tubes + curves
 
     def onDelete(self, feature, subelements):  # subelements is a tuple of strings
         return True
@@ -1923,6 +1928,8 @@ class PypeBranch2(pypeType):  # use AttachExtensionPython
             "PypeBranch",
             QT_TRANSLATE_NOOP("App::Property", "The curves of the branch."),
         )
+        ensure_branch_schema(obj)
+        obj.ChildrenSchema = 1
         obj.addProperty(
             "App::PropertyLink",
             "Base",
@@ -1934,6 +1941,9 @@ class PypeBranch2(pypeType):  # use AttachExtensionPython
         else:
             FreeCAD.Console.PrintError("Base not valid\n")
 
+    def onDocumentRestored(self, fp):
+        migrate_branch_children(fp)
+
     def onChanged(self, fp, prop):
         if (
             prop == "Base"
@@ -1943,224 +1953,99 @@ class PypeBranch2(pypeType):  # use AttachExtensionPython
         ):
             self.purge(fp)
             self.redraw(fp)
-        if prop == "BendRadius" and hasattr(fp, "Curves"):
-            BR = fp.BendRadius
-            for curve in [FreeCAD.ActiveDocument.getObject(name) for name in fp.Curves]:
-                curve.BendRadius = BR
-        if prop == "OD" and hasattr(fp, "Tubes") and hasattr(fp, "Curves"):
-            OD = fp.OD
-            for obj in [FreeCAD.ActiveDocument.getObject(name) for name in fp.Tubes + fp.Curves]:
-                if obj.PType == "Elbow":
-                    obj.BendRadius = OD * 0.75
-                obj.OD = OD
-            fp.BendRadius = OD * 0.75
-        if prop == "thk" and hasattr(fp, "Tubes") and hasattr(fp, "Curves"):
-            thk = fp.thk
-            for obj in [FreeCAD.ActiveDocument.getObject(name) for name in fp.Tubes + fp.Curves]:
-                if hasattr(obj, "thk"):
-                    obj.thk = thk
+        elif prop == "BendRadius" and hasattr(fp, "CurvesLink"):
+            for curve in branch_children(fp)[1]:
+                if curve is not None:
+                    curve.BendRadius = fp.BendRadius
+        elif prop == "OD" and hasattr(fp, "BendRadius") and hasattr(fp, "TubesLink"):
+            for obj in sum(branch_children(fp), []):
+                if obj is None:
+                    continue
+                if getattr(obj, "PType", "") == "Elbow":
+                    obj.BendRadius = fp.BendRadius
+                obj.OD = fp.OD
+            fp.BendRadius = fp.OD * 0.75
+        elif prop == "thk" and hasattr(fp, "TubesLink"):
+            for obj in sum(branch_children(fp), []):
+                if obj is not None and hasattr(obj, "thk"):
+                    obj.thk = fp.thk
 
     def execute(self, fp):
-        if len(fp.Tubes) != len(fp.Base.Shape.Edges):
+        ensure_branch_schema(fp)
+        migrate_branch_children(fp)
+        base = getattr(fp, "Base", None)
+        if base is None or not hasattr(base, "Shape"):
+            return
+        tubes, _ = branch_children(fp)
+        if len(tubes) != len(base.Shape.Edges):
             self.purge(fp)
             self.redraw(fp)
-            return
 
     def redraw(self, fp):
         import pCmd
-        from math import tan, degrees
+        from math import degrees, tan
 
-        tubes = list()
-        curves = list()
-        if fp.Base:
-            for i in range(len(fp.Base.Shape.Edges)):
-                e = fp.Base.Shape.Edges[i]
-                L = e.Length
-                R = float(fp.BendRadius)
-                offset = 0
-                # ---Create the tube---
-                if i > 0:
-                    alfa = e.tangentAt(0).getAngle(fp.Base.Shape.Edges[i - 1].tangentAt(0)) / 2
-                    L -= R * tan(alfa)
-                    offset = R * tan(alfa)
-                if i < (len(fp.Base.Shape.Edges) - 1):
-                    alfa = e.tangentAt(0).getAngle(fp.Base.Shape.Edges[i + 1].tangentAt(0)) / 2
-                    L -= R * tan(alfa)
-                eSupport = "Edge" + str(i + 1)
-                t = pCmd.makePipe(fp.PRating,[fp.PSize, float(fp.OD), float(fp.thk), L])
-                t.PRating = fp.PRating
-                t.PSize = fp.PSize
-                t.AttachmentSupport = [(fp.Base, eSupport)]
-                t.MapMode = "NormalToEdge"
-                t.MapReversed = True
-                t.AttachmentOffset = FreeCAD.Placement(
-                    FreeCAD.Vector(0, 0, offset), FreeCAD.Rotation()
+        tubes = []
+        curves = []
+        if not getattr(fp, "Base", None):
+            return
+        for i in range(len(fp.Base.Shape.Edges)):
+            edge = fp.Base.Shape.Edges[i]
+            length = edge.Length
+            radius = float(fp.BendRadius)
+            offset = 0
+            if i > 0:
+                alfa = edge.tangentAt(0).getAngle(
+                    fp.Base.Shape.Edges[i - 1].tangentAt(0)
+                ) / 2
+                length -= radius * tan(alfa)
+                offset = radius * tan(alfa)
+            if i < (len(fp.Base.Shape.Edges) - 1):
+                alfa = edge.tangentAt(0).getAngle(
+                    fp.Base.Shape.Edges[i + 1].tangentAt(0)
+                ) / 2
+                length -= radius * tan(alfa)
+            support = "Edge" + str(i + 1)
+            tube = pCmd.makePipe(
+                fp.PRating, [fp.PSize, float(fp.OD), float(fp.thk), length]
+            )
+            tube.PRating = fp.PRating
+            tube.PSize = fp.PSize
+            tube.AttachmentSupport = [(fp.Base, support)]
+            tube.MapMode = "NormalToEdge"
+            tube.MapReversed = True
+            tube.AttachmentOffset = FreeCAD.Placement(
+                FreeCAD.Vector(0, 0, offset), FreeCAD.Rotation()
+            )
+            tubes.append(tube)
+            if i > 0:
+                previous = fp.Base.Shape.Edges[i - 1]
+                alfa = degrees(previous.tangentAt(0).getAngle(edge.tangentAt(0)))
+                elbow = pCmd.makeElbow(
+                    [fp.PSize, float(fp.OD), float(fp.thk), alfa, radius]
                 )
-                tubes.append(t.Name)
-                # ---Create the curve---
-                if i > 0:
-                    e0 = fp.Base.Shape.Edges[i - 1]
-                    alfa = degrees(e0.tangentAt(0).getAngle(e.tangentAt(0)))
-                    c = pCmd.makeElbow([fp.PSize, float(fp.OD), float(fp.thk), alfa, R])
-                    c.PRating = fp.PRating
-                    c.PSize = fp.PSize
-                    O = "Vertex" + str(i + 1)
-                    c.MapReversed = False
-                    c.AttachmentSupport = [(fp.Base, O)]
-                    c.MapMode = "Translate"
-                    pCmd.placeTheElbow(c, e0.tangentAt(0), e.tangentAt(0))
-                    curves.append(c.Name)
-            fp.Tubes = tubes
-            fp.Curves = curves
-            objs = [FreeCAD.ActiveDocument.getObject(name) for name in fp.Tubes + fp.Curves]
-            # FreeCAD.Console.PrintMessage(objs)
-            # fp.addObjects(objs)
-            # for obj in objs:
-            #     obj.Proxy.execute(obj)
+                elbow.PRating = fp.PRating
+                elbow.PSize = fp.PSize
+                elbow.MapReversed = False
+                elbow.AttachmentSupport = [(fp.Base, "Vertex" + str(i + 1))]
+                elbow.MapMode = "Translate"
+                pCmd.placeTheElbow(elbow, previous.tangentAt(0), edge.tangentAt(0))
+                curves.append(elbow)
+        set_branch_children(fp, tubes, curves)
 
     def purge(self, fp):
-        if hasattr(fp, "Tubes"):
-            fp.removeObjects([FreeCAD.ActiveDocument.getObject(name) for name in fp.Tubes])
-            for name in fp.Tubes:
-                FreeCAD.ActiveDocument.removeObject(name)
-            fp.Tubes = []
-        if hasattr(fp, "Curves"):
-            fp.removeObjects([FreeCAD.ActiveDocument.getObject(name) for name in fp.Curves])
-            for name in fp.Curves:
-                FreeCAD.ActiveDocument.removeObject(name)
-            fp.Curves = []
-
-class Gasket(pypeType):
-    """Class for object PType="Gasket"
-    Pipe(obj, rating, [PSize="DN50", FClass = "150lb", IRID = 55.6, SEID = 69.9, SEOD = 85.9,CROD = 104.9 ,SEthk=4.5, Rthk = 3.2])
-      obj: the "App::FeaturePython object"
-      PSize (string): nominal diameter
-      FClass (string): Flange class
-      IRID (float): Inner Ring inner diameter
-      SEID (float): Sealing element inner diameter
-      SEOD (float): Sealing element outer diameter
-      CROD (float): Centering ring outer diameter
-      SEthk (float): Sealing element thickness
-      Rthk (float): Inner and centering ring thickness
-      """
-
-    def __init__(self, obj, rating, DN="DN50", FClass = "150lb", IRID = 55.6, SEID = 69.9, SEOD = 85.9,CROD = 104.9 ,SEthk=4.5, Rthk = 3.2):
-        # initialize the parent class
-        super(Gasket, self).__init__(obj)
-        # define common properties
-        obj.PType = "Gasket"
-        obj.Proxy = self
-        obj.PRating = rating #note that gaskets do not have a typical pipe schedule, but we will use this to match the other pipe objects. rating will equal flange class
-        obj.PSize = DN
-        # define specific properties
-        obj.addProperty(
-            "App::PropertyString",
-            "FClass",
-            "Gasket",
-            QT_TRANSLATE_NOOP("App::Property", "Flange class / pressure rating"),
-        ).FClass = FClass
-        obj.addProperty(
-            "App::PropertyLength",
-            "IRID",
-            "Gasket",
-            QT_TRANSLATE_NOOP("App::Property", "Inner ring inner diameter"),
-        ).IRID = IRID
-        obj.addProperty(
-            "App::PropertyLength",
-            "SEID",
-            "Gasket",
-            QT_TRANSLATE_NOOP("App::Property", "Sealing element inner diameter"),
-        ).SEID = SEID
-        obj.addProperty(
-            "App::PropertyLength",
-            "SEOD",
-            "Gasket",
-            QT_TRANSLATE_NOOP("App::Property", "Sealing element outer diameter"),
-        ).SEOD = SEOD
-        obj.addProperty(
-            "App::PropertyLength",
-            "CROD",
-            "Gasket",
-            QT_TRANSLATE_NOOP("App::Property", "Centering ring outer diameter"),
-        ).CROD = CROD
-        obj.addProperty(
-            "App::PropertyLength",
-            "SEthk",
-            "Gasket",
-            QT_TRANSLATE_NOOP("App::Property", "Sealing element thickness"),
-        ).SEthk = SEthk
-        obj.addProperty(
-            "App::PropertyLength",
-            "Rthk",
-            "Gasket",
-            QT_TRANSLATE_NOOP("App::Property", "Inner and centering ring thickness"),
-        ).Rthk = Rthk
-
-        self.execute(obj)
-
-    def onChanged(self, fp, prop):
-        # Sealing element must be thicker than or equal to the rings
-        if prop == "Rthk" and hasattr(fp, "SEthk") and fp.Rthk > fp.SEthk:
-            FreeCAD.Console.PrintError(
-                "Gasket: Ring thickness (Rthk) must not exceed sealing element "
-                "thickness (SEthk)\n"
-            )
-        return None
-
-    def execute(self, fp):
-        # Validate dimensions before attempting geometry construction
-        if not (fp.IRID > 0 and fp.SEID > fp.IRID and fp.SEOD > fp.SEID
-                and fp.CROD > fp.SEOD and fp.SEthk > 0 and fp.Rthk > 0):
-            FreeCAD.Console.PrintError(
-                "Gasket: invalid dimensions -- shape not updated\n"
-            )
-            return
-
-        # Ring vertical offset so all three rings are centered on the mid-plane
-        # The sealing element spans 0 -> SEthk.
-        # The thinner rings are centered at SEthk/2.
-        ring_offset = (float(fp.SEthk) - float(fp.Rthk)) / 2.0
-
-        # Inner ring: IRID/2 -> SEID/2, height Rthk, centered vertically
-        inner_ring = Part.makeCylinder(
-            fp.SEID / 2, fp.Rthk, FreeCAD.Vector(0, 0, ring_offset), vZ
-        ).cut(
-            Part.makeCylinder(
-                fp.IRID / 2, fp.Rthk, FreeCAD.Vector(0, 0, ring_offset), vZ
-            )
-        )
-
-        # Sealing element: SEID/2 -> SEOD/2, height SEthk
-        sealing_element = Part.makeCylinder(
-            fp.SEOD / 2, fp.SEthk, vO, vZ
-        ).cut(
-            Part.makeCylinder(fp.SEID / 2, fp.SEthk, vO, vZ)
-        )
-
-        # Centering ring: SEOD/2 -> CROD/2, height Rthk, centered vertically
-        centering_ring = Part.makeCylinder(
-            fp.CROD / 2, fp.Rthk, FreeCAD.Vector(0, 0, ring_offset), vZ
-        ).cut(
-            Part.makeCylinder(
-                fp.SEOD / 2, fp.Rthk, FreeCAD.Vector(0, 0, ring_offset), vZ
-            )
-        )
-
-        gasket = inner_ring.fuse(sealing_element).fuse(centering_ring)
-        gasket = gasket.removeSplitter()
-        fp.Shape = gasket
-
-        # Ports at each face of the sealing element, pointing outward
-        fp.Ports = [
-            FreeCAD.Vector(0, 0, 0),
-            FreeCAD.Vector(0, 0, float(fp.SEthk)),
-        ]
-        fp.PortDirections = [
-            FreeCAD.Vector(0, 0, -1),
-            FreeCAD.Vector(0, 0, 1),
-        ]
-
-        super(Gasket, self).execute(fp)  # perform common operations
+        tubes, curves = branch_children(fp)
+        for obj in tubes + curves:
+            if obj is None:
+                continue
+            try:
+                fp.removeObjects([obj])
+            except Exception:
+                pass
+            document = getattr(obj, "Document", None)
+            if document is not None and document.getObject(obj.Name) is not None:
+                document.removeObject(obj.Name)
+        clear_branch_children(fp)
 
 
 class Bolts_Nuts(pypeType):

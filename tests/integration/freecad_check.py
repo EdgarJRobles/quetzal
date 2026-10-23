@@ -16,7 +16,6 @@ import os
 import sys
 import tempfile
 import traceback
-from pathlib import Path
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 INTEGRATION_DIR = os.path.join(ROOT, "tests", "integration")
@@ -28,6 +27,7 @@ if ROOT not in sys.path:
 
 import FreeCAD  # noqa: E402
 import FreeCADGui  # noqa: E402
+import Part  # noqa: E402
 
 import pCmd  # noqa: E402
 import pFeatures  # noqa: E402
@@ -100,9 +100,7 @@ def check_command_contract():
     from quetzal.application.command_registry import REGISTRY
     from quetzal.ui import layout
 
-    referenced = {
-        name for names in layout.GROUPS.values() for name in names
-    }
+    referenced = {name for names in layout.GROUPS.values() for name in names}
     orphaned = sorted(referenced - set(registered))
     assert not orphaned, f"Layout references unregistered commands: {orphaned}"
     layout.validate_registry()
@@ -216,6 +214,63 @@ def check_standards_contract():
     return len(filenames), len(catalog.standards), len(catalog.institutions)
 
 
+def check_pype_branch_links():
+    """PypeBranch children migrate from names to LinkLists and survive reload."""
+
+    document = FreeCAD.newDocument("quetzal_branch")
+    path = None
+    try:
+        base = document.addObject("Part::Feature", "Base")
+        base.Shape = Part.Wire(
+            Part.makePolygon(
+                [
+                    FreeCAD.Vector(0, 0, 0),
+                    FreeCAD.Vector(1000, 0, 0),
+                    FreeCAD.Vector(1000, 1000, 0),
+                ]
+            )
+        )
+        branch = document.addObject("Part::FeaturePython", "Branch")
+        pFeatures.PypeBranch2(branch, "SCH-STD", base, "DN50", 60.32, 3, 45.24)
+        document.recompute()
+        assert branch.ChildrenSchema == 1
+        assert len(branch.TubesLink) == 2, "branch lost its tubes"
+        assert len(branch.CurvesLink) == 1, "branch lost its elbow"
+
+        first = branch.TubesLink[0]
+        first.Label = "RenamedPipe"
+        document.recompute()
+        assert branch.TubesLink[0] is first, "link identity lost after rename"
+
+        # Simulate a legacy document: names only, no authoritative links.
+        branch.ChildrenSchema = 0
+        branch.TubesLink = []
+        branch.CurvesLink = []
+        document.recompute()
+        assert branch.ChildrenSchema == 1, "legacy children were not migrated"
+        assert len(branch.TubesLink) == 2
+        assert len(branch.CurvesLink) == 1
+
+        handle, path = tempfile.mkstemp(suffix=".FCStd", dir=ROOT)
+        os.close(handle)
+        document.saveAs(path)
+        FreeCAD.closeDocument(document.Name)
+        reopened = FreeCAD.openDocument(path)
+        reopened.recompute()
+        reloaded = reopened.getObject("Branch")
+        assert reloaded is not None
+        assert reloaded.ChildrenSchema == 1
+        assert len(reloaded.TubesLink) == 2
+        assert len(reloaded.CurvesLink) == 1
+        FreeCAD.closeDocument(reopened.Name)
+        return 3
+    finally:
+        if FreeCAD.ActiveDocument is document:
+            FreeCAD.closeDocument(document.Name)
+        if path and os.path.exists(path):
+            os.remove(path)
+
+
 def main():
     print(f"FreeCAD {FreeCAD.Version()[0]}.{FreeCAD.Version()[1]}", flush=True)
     document = FreeCAD.newDocument("quetzal_integration")
@@ -261,7 +316,7 @@ def main():
         check(f"pFeatures.{attr} exists", lambda attr=attr: getattr(pFeatures, attr))
 
     # Generic registry entries produce the same classes.
-    for key in ("Pipe", "Cap", "TerminalAdapter"):
+    for key in ("Pipe", "Cap", "TerminalAdapter", "Gasket"):
         check(f"registry {key}", lambda key=key: FEATURES.get(key))
 
     def reads_every_catalogue():
@@ -314,6 +369,10 @@ def main():
     constant_count = check("module constants unchanged", check_module_constants)
     if constant_count:
         print(f"     shared vectors checked: {constant_count}", flush=True)
+
+    branch_count = check("PypeBranch link migration", check_pype_branch_links)
+    if branch_count:
+        print(f"     branch child groups checked: {branch_count}", flush=True)
 
     standards_counts = check("standards metadata contract", check_standards_contract)
     if standards_counts:
