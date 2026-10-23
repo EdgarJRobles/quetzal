@@ -88,8 +88,8 @@ No consumer is forced to depend on FreeCAD or Qt to use these.
    construction-dependent.
 2. Existing command classes still repeat `IsActive`/`GetResources`; the
    registry already captures their metadata centrally.
-3. `doBeams` and `doOutlets` keep custom placement logic because they are not
-   port-attachment flows (frameline beams and host-surface outlets).
+3. `doOutlets` keeps custom host-surface placement; it is not a
+   port-attachment flow.
 4. The Valve property schema remains construction-dependent.
 
 The roadmap in [ARCHITECTURE.md](../ARCHITECTURE.md#remaining-roadmap) tracks

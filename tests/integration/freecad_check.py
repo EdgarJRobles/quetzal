@@ -129,6 +129,7 @@ def check_insertion_flows():
         "socket_cap": lambda: pCmd.doSocketCap(),
         "socket_coupling": lambda: pCmd.doSocketCoupling(),
         "socket_union": lambda: pCmd.doSocketUnion(),
+        "outlet": lambda: pCmd.doOutlets(),
     }
     flow_document = FreeCAD.newDocument("quetzal_flows")
     try:

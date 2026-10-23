@@ -2565,58 +2565,30 @@ def makeBeam(propList=[], pos=None, Z=None):
 
 def doBeams(propList=[], frameline=None):
     """Insert one or more Beam objects at the current selection.
-    propList: see makeBeam() for element order.
-    frameline: label of a FrameLine group to add the beam to (optional).
 
-    Selection behaviour mirrors doPipes():
-      - ported object selected -> snap Port[0] to that port
-      - straight edge selected -> align along edge, set Height to edge length
-      - curved edge selected   -> align to edge axis at centre of curvature
-      - vertex selected        -> place at vertex, default orientation
-      - nothing selected       -> place at origin
+    Uses the shared insertion transaction.  Beams are not port-aligned here
+    (the legacy ``FType`` check never matched), but a selected straight edge
+    still overrides the beam length.
     """
-    FreeCAD.activeDocument().openTransaction(translate("Transaction", "Insert beam"))
-    blist = []
-    try:
-        selex = _selection_ex()[0]
-        usablePorts = (
-            hasattr(selex.Object, "Ports")
-            and hasattr(selex.Object, "FType")
-            and selex.Object.FType != "Any"
-        )
 
-        pos, Z, srcObj, srcPort = getAttachmentPoints()
+    def make(position, direction):
+        beam = makeBeam(propList, position, direction)
+        selex = _selection_ex()
+        if selex:
+            edges = fCmd.edges([selex[0]])
+            if edges and edges[0].curvatureAt(0) == 0:
+                beam.Height = edges[0].Length
+        return beam
 
-        # If a straight edge was selected, override Height to match edge length
-        edgeLen = None
-        eds = fCmd.edges([selex])
-        if eds and eds[0].curvatureAt(0) == 0:
-            edgeLen = eds[0].Length
-
-        if usablePorts:
-            beam = makeBeam(propList, pos, Z)
-            if edgeLen is not None:
-                beam.Height = edgeLen
-            blist.append(beam)
-            FreeCAD.activeDocument().commitTransaction()
-            FreeCAD.activeDocument().recompute()
-            alignTwoPorts(beam, 0, srcObj, srcPort)
-        else:
-            beam = makeBeam(propList, pos, Z)
-            if edgeLen is not None:
-                beam.Height = edgeLen
-            blist.append(beam)
-
-    except Exception:
-        blist.append(makeBeam(propList))
-
+    created = _insert_attached(
+        make,
+        "Insert beam",
+        align_port=None,
+    )
     if frameline:
-        for b in blist:
-            _moveToFrameLine(b, frameline)
-
-    FreeCAD.activeDocument().commitTransaction()
-    FreeCAD.activeDocument().recompute()
-    return blist
+        for beam in created:
+            _moveToFrameLine(beam, frameline)
+    return created
 
 
 def _moveToFrameLine(obj, flName):

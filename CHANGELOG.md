@@ -43,6 +43,7 @@
   late `FeatureDefinition` entries without moving their pickle-stable classes.
 - The base `protoPypeForm` now renders previews through `PreviewService`
   (pipe form already migrated), with camera/selection/visibility restoration.
+- `doBeams` uses the shared insertion transaction.
 - Add a `CommandSpec` registry and a single ordered `quetzal.ui.layout` for
   toolbars, menus, context menus and watchers; `InitGui` and the pie menu use
   it instead of duplicated lists.

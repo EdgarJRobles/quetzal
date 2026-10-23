@@ -209,8 +209,8 @@ work. Save/reload is checked by the headless integration suite.
 The roadmap items are complete. These are optional cleanups rather than
 blocking gaps:
 
-1. `doBeams` and `doOutlets` keep custom placement logic because they are not
-   port-attachment flows (frameline beams and host-surface outlets).
+1. `doOutlets` keeps custom host-surface placement; `doBeams` now uses the
+   shared transaction but neither is a port-attachment flow.
 2. The legacy command classes still repeat `IsActive`/`GetResources`; the
    registry already captures their metadata centrally.
 3. The Valve property schema remains construction-dependent; moving it to
