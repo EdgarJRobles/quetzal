@@ -38,6 +38,7 @@ from numpy.random import randint
 import pCmd
 from quetzal_config import FREECADVERSION, get_icon_path
 from quetzal.infrastructure.standard_filters import default_standard_filter_service
+from quetzal.application.standard_filters import institution_label, standard_label
 from uCmd import label3D
 import ShpstData
 
@@ -417,14 +418,14 @@ class insertSectForm(QWidget):
         self.ratingList = QListWidget()
         self.ratingList.setMaximumWidth(100)
         self.ratingList.itemClicked.connect(self.changeRating)
-        self.institutionCombo.currentTextChanged.connect(self._refresh_section_standards)
-        self.standardCombo.currentTextChanged.connect(self._refresh_section_ratings)
-        institutions = self._filters.institutions("Section")
+        self.institutionCombo.currentIndexChanged.connect(self._refresh_section_standards)
+        self.standardCombo.currentIndexChanged.connect(self._refresh_section_ratings)
         self.institutionCombo.blockSignals(True)
-        self.institutionCombo.addItems(institutions)
+        self.institutionCombo.addItem("All institutions", None)
+        for code in self._filters.institutions("Section"):
+            self.institutionCombo.addItem(institution_label(code), code)
         self.institutionCombo.blockSignals(False)
         self._refresh_section_standards()
-        self.ratingList.setCurrentRow(0)
         self.secondCol.layout().addWidget(self.ratingList)
         self.btn1 = QPushButton("Insert")
         self.btn1.setMaximumWidth(100)
@@ -434,20 +435,24 @@ class insertSectForm(QWidget):
         self.show()
 
     def _refresh_section_standards(self):
-        standards = self._filters.standards(
-            "Section", self.institutionCombo.currentText()
-        )
+        current = self.standardCombo.currentData()
+        institution = self.institutionCombo.currentData()
+        standards = self._filters.standards("Section", institution)
         self.standardCombo.blockSignals(True)
         self.standardCombo.clear()
-        self.standardCombo.addItems(standards)
+        self.standardCombo.addItem("All standards", None)
+        for code in standards:
+            self.standardCombo.addItem(standard_label(code), code)
+        index = self.standardCombo.findData(current)
+        self.standardCombo.setCurrentIndex(index if index >= 0 else 0)
         self.standardCombo.blockSignals(False)
         self._refresh_section_ratings()
 
     def _refresh_section_ratings(self):
         ratings = self._filters.ratings(
             "Section",
-            self.institutionCombo.currentText(),
-            self.standardCombo.currentText(),
+            self.institutionCombo.currentData(),
+            self.standardCombo.currentData(),
         )
         if not ratings:
             return
@@ -1059,21 +1064,27 @@ class frameBranchForm(dodoDialogs.protoTypeDialog):
         self.form.verticalLayout_5.insertWidget(1, QLabel("Standard:"))
         self.form.verticalLayout_2.insertWidget(0, self.institutionCombo)
         self.form.verticalLayout_2.insertWidget(1, self.standardCombo)
-        institutions = self._filters.institutions("Section")
         self.institutionCombo.blockSignals(True)
-        self.institutionCombo.addItems(institutions)
+        self.institutionCombo.addItem("All institutions", None)
+        for code in self._filters.institutions("Section"):
+            self.institutionCombo.addItem(institution_label(code), code)
         self.institutionCombo.blockSignals(False)
-        self.institutionCombo.currentTextChanged.connect(self._refresh_frame_standards)
-        self.standardCombo.currentTextChanged.connect(self._refresh_frame_ratings)
+        self.institutionCombo.currentIndexChanged.connect(self._refresh_frame_standards)
+        self.standardCombo.currentIndexChanged.connect(self._refresh_frame_ratings)
         self._refresh_frame_standards()
 
     def _refresh_frame_standards(self):
+        current = self.standardCombo.currentData()
         standards = self._filters.standards(
-            "Section", self.institutionCombo.currentText()
+            "Section", self.institutionCombo.currentData()
         )
         self.standardCombo.blockSignals(True)
         self.standardCombo.clear()
-        self.standardCombo.addItems(standards)
+        self.standardCombo.addItem("All standards", None)
+        for code in standards:
+            self.standardCombo.addItem(standard_label(code), code)
+        index = self.standardCombo.findData(current)
+        self.standardCombo.setCurrentIndex(index if index >= 0 else 0)
         self.standardCombo.blockSignals(False)
         self._refresh_frame_ratings()
 
@@ -1083,8 +1094,9 @@ class frameBranchForm(dodoDialogs.protoTypeDialog):
         self.form.Rate_comboBox.blockSignals(True)
         self.form.Rate_comboBox.clear()
         self.form.Rate_comboBox.addItems(ratings)
-        if current in ratings:
-            self.form.Rate_comboBox.setCurrentText(current)
+        preferred = current or settings.value("LastRateApplied")
+        if preferred in ratings:
+            self.form.Rate_comboBox.setCurrentText(preferred)
         elif ratings:
             self.form.Rate_comboBox.setCurrentIndex(0)
         self.form.Rate_comboBox.addItem("<by sketch>")
@@ -1092,20 +1104,27 @@ class frameBranchForm(dodoDialogs.protoTypeDialog):
         self.fillSizes()
 
     def fillRatings(self):
-        """Return only Section series mapped to an international standard."""
-        ratings = list(
-            self._filters.ratings(
-                "Section",
-                self.institutionCombo.currentText(),
-                self.standardCombo.currentText(),
-            )
-        )
-        self.BIM_PropList = ArchProfile.readPresets()
-        for preset in self.BIM_PropList:
-            if preset[1] in ratings:
-                continue
-            if preset[1] in self._filters.ratings("Section"):
-                ratings.append(preset[1])
+        """Return every Section series plus the BIM presets.
+
+        With an active institution/standard filter only the matching CSV
+        ratings (and matching BIM presets) are returned; with "All" the full
+        original set is available again.
+        """
+        institution = self.institutionCombo.currentData()
+        standard = self.standardCombo.currentData()
+        ratings = list(self._filters.ratings("Section", institution, standard))
+        all_presets = ArchProfile.readPresets()
+        self.BIM_PropList = all_presets
+        if institution is None and standard is None:
+            for preset in all_presets:
+                if preset[1] not in ratings:
+                    ratings.append(preset[1])
+        else:
+            for preset in all_presets:
+                if preset[1] in ratings:
+                    continue
+                if preset[1] in self._filters.ratings("Section"):
+                    ratings.append(preset[1])
         return ratings
 
     def fillSizes(self):

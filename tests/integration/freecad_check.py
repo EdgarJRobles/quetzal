@@ -310,10 +310,17 @@ def check_standard_filters():
     from quetzal.infrastructure.standard_filters import default_standard_filter_service
 
     filters = default_standard_filter_service()
-    pipe_institutions = filters.institutions("Pipe", pattern=r"^SCH-")
-    assert pipe_institutions == ("ASME",)
-    pipe_standards = filters.standards("Pipe", pattern=r"^SCH-")
-    assert set(pipe_standards) == {"ASME B36.10M", "ASME B36.19M"}
+    pipe_institutions = filters.institutions("Pipe")
+    assert pipe_institutions == ("ASME", "ASTM", "QUETZAL")
+    pipe_standards = filters.standards("Pipe")
+    assert set(pipe_standards) == {
+        "ASME B36.10M",
+        "ASME B36.19M",
+        "ASTM A615",
+        "QUETZAL-GENERIC",
+    }
+    assert "ConduitEMT-LIGHT" in filters.ratings("Pipe")
+    assert "REBARS" in filters.ratings("Pipe")
     carbon = filters.ratings("Pipe", "ASME", "ASME B36.10M", pattern=r"^SCH-")
     stainless = filters.ratings("Pipe", "ASME", "ASME B36.19M", pattern=r"^SCH-")
     assert "SCH-40" in carbon and "SCH-40S" in stainless
@@ -322,7 +329,7 @@ def check_standard_filters():
     assert "Conduit" not in " ".join(filters.ratings("Pipe", pattern=r"^SCH-"))
 
     section_standards = filters.standards("Section")
-    assert set(section_standards) == {"EN 10365", "ASTM A615"}
+    assert set(section_standards) == {"EN 10365", "ASTM A615", "QUETZAL-GENERIC"}
     assert filters.ratings("Section", "EN", "EN 10365") == ("HEA", "IPE", "UPN")
     assert filters.ratings("Section", "ASTM", "ASTM A615") == ("REBARS",)
     return len(pipe_standards), len(section_standards)

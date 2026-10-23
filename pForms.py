@@ -19,6 +19,7 @@ import fCmd
 import pCmd
 from quetzal.domain.preview import PreviewKey
 from quetzal.infrastructure.standard_filters import default_standard_filter_service
+from quetzal.application.standard_filters import institution_label, standard_label
 from quetzal.domain.pipe_sizes import PIPE_OUTSIDE_DIAMETERS_MM as pipe_OD
 from PySide.QtWidgets import QCheckBox
 
@@ -154,10 +155,11 @@ class insertPipeForm(dodoDialogs.protoPypeForm):
             QLabel(translate("insertPipeForm", "Institution:")),
             self.institutionList,
         )
-        institutions = self._filters.institutions("Pipe", pattern=r"^SCH-")
-        self.institutionList.addItems(institutions)
-        self.institutionList.currentTextChanged.connect(self._refresh_pipe_standards)
-        self.combostandart.currentTextChanged.connect(self._refresh_pipe_ratings)
+        self.institutionList.addItem(translate("insertPipeForm", "All institutions"), None)
+        for code in self._filters.institutions("Pipe"):
+            self.institutionList.addItem(institution_label(code), code)
+        self.institutionList.currentIndexChanged.connect(self._refresh_pipe_standards)
+        self.combostandart.currentIndexChanged.connect(self._refresh_pipe_ratings)
         self._refresh_pipe_standards()
 
         self.edit1 = QLineEdit()
@@ -193,32 +195,36 @@ class insertPipeForm(dodoDialogs.protoPypeForm):
         pass  # Base changeRating handles blockSignals, fillSizes, and PSize preservation.
 
     def _refresh_pipe_standards(self):
-        standards = self._filters.standards(
-            "Pipe", self.institutionList.currentText(), pattern=r"^SCH-"
-        )
+        current = self.combostandart.currentData()
+        institution = self.institutionList.currentData()
+        standards = self._filters.standards("Pipe", institution)
         self.combostandart.blockSignals(True)
         self.combostandart.clear()
-        self.combostandart.addItems(standards)
+        self.combostandart.addItem(translate("insertPipeForm", "All standards"), None)
+        for code in standards:
+            self.combostandart.addItem(standard_label(code), code)
+        index = self.combostandart.findData(current)
+        self.combostandart.setCurrentIndex(index if index >= 0 else 0)
         self.combostandart.blockSignals(False)
         self._refresh_pipe_ratings()
 
     def _refresh_pipe_ratings(self):
         ratings = self._filters.ratings(
             "Pipe",
-            self.institutionList.currentText(),
-            self.combostandart.currentText(),
-            pattern=r"^SCH-",
+            self.institutionList.currentData(),
+            self.combostandart.currentData(),
         )
         if not ratings:
             return
         self.PRatingsList = list(ratings)
+        preferred = "SCH-STD" if "SCH-STD" in ratings else 0
         self.ratingList.blockSignals(True)
         self.ratingList.clear()
         self.ratingList.addItems(ratings)
-        self.ratingList.setCurrentIndex(0)
+        self.ratingList.setCurrentIndex(preferred if isinstance(preferred, int) else ratings.index(preferred))
         self.ratingList.blockSignals(False)
-        self.PRating = ratings[0]
-        self.changeRating(ratings[0])
+        self.PRating = self.ratingList.currentText()
+        self.changeRating(self.PRating)
 
     def changeSize(self, s):
         """Render the pipe preview through the shared PreviewService."""

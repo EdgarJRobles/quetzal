@@ -42,8 +42,9 @@ class StandardFilterService:
         institution: Optional[str] = None,
         standard: Optional[str] = None,
         pattern: Optional[str] = None,
+        include_generic: bool = True,
     ) -> Tuple[Tuple[str, str, str], ...]:
-        """Return ``(institution, standard, rating)`` for mapped series."""
+        """Return ``(institution, standard, rating)`` for catalogue series."""
 
         catalog = self._catalog_data()
         regex = re.compile(pattern) if pattern else None
@@ -52,7 +53,7 @@ class StandardFilterService:
             if regex is not None and regex.search(rating) is None:
                 continue
             series = catalog.series(family, rating)
-            if series.classification != "mapped":
+            if series.classification != "mapped" and not include_generic:
                 continue
             if institution and series.institution != institution:
                 continue
@@ -61,20 +62,39 @@ class StandardFilterService:
             result.append((series.institution, series.standard, rating))
         return tuple(result)
 
-    def institutions(self, family: str, pattern: Optional[str] = None) -> Tuple[str, ...]:
-        return tuple(dict.fromkeys(item[0] for item in self.mappings(family, pattern=pattern)))
+    def institutions(
+        self,
+        family: str,
+        pattern: Optional[str] = None,
+        include_generic: bool = True,
+    ) -> Tuple[str, ...]:
+        values = list(
+            dict.fromkeys(
+                item[0]
+                for item in self.mappings(family, pattern=pattern, include_generic=include_generic)
+            )
+        )
+        return tuple(sorted(values, key=lambda code: (code == "QUETZAL", code)))
 
     def standards(
         self,
         family: str,
         institution: Optional[str] = None,
         pattern: Optional[str] = None,
+        include_generic: bool = True,
     ) -> Tuple[str, ...]:
-        return tuple(
+        values = list(
             dict.fromkeys(
-                item[1] for item in self.mappings(family, institution=institution, pattern=pattern)
+                item[1]
+                for item in self.mappings(
+                    family,
+                    institution=institution,
+                    pattern=pattern,
+                    include_generic=include_generic,
+                )
             )
         )
+        return tuple(sorted(values, key=lambda code: (code == "QUETZAL-GENERIC", code)))
 
     def ratings(
         self,
@@ -82,11 +102,16 @@ class StandardFilterService:
         institution: Optional[str] = None,
         standard: Optional[str] = None,
         pattern: Optional[str] = None,
+        include_generic: bool = True,
     ) -> Tuple[str, ...]:
         return tuple(
             item[2]
             for item in self.mappings(
-                family, institution=institution, standard=standard, pattern=pattern
+                family,
+                institution=institution,
+                standard=standard,
+                pattern=pattern,
+                include_generic=include_generic,
             )
         )
 
@@ -95,6 +120,7 @@ class StandardFilterService:
         family: str,
         institution: Optional[str] = None,
         pattern: Optional[str] = None,
+        include_generic: bool = True,
     ) -> Tuple[StandardGroup, ...]:
         grouped: Dict[Tuple[str, str], list] = {}
         for inst, std, rating in self.mappings(family, institution=institution, pattern=pattern):

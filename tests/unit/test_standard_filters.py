@@ -21,12 +21,16 @@ def service():
 
 def test_pipe_schedules_are_limited_to_asme_standards():
     filters = service()
-    institutions = filters.institutions("Pipe", pattern=r"^SCH-")
-    assert institutions == ("ASME",)
-    assert filters.standards("Pipe", pattern=r"^SCH-") == (
+    assert filters.institutions("Pipe") == ("ASME", "ASTM", "QUETZAL")
+    assert set(filters.standards("Pipe")) == {
         "ASME B36.10M",
         "ASME B36.19M",
-    )
+        "ASTM A615",
+        "QUETZAL-GENERIC",
+    }
+    assert len(filters.ratings("Pipe")) == 24
+    assert "ConduitEMT-LIGHT" in filters.ratings("Pipe")
+    assert "REBARS" in filters.ratings("Pipe")
     carbon = filters.ratings("Pipe", "ASME", "ASME B36.10M", pattern=r"^SCH-")
     assert "SCH-40" in carbon
     assert "SCH-10S" not in carbon
@@ -38,14 +42,14 @@ def test_pipe_schedules_are_limited_to_asme_standards():
 
 def test_section_series_are_limited_to_international_standards():
     filters = service()
-    assert set(filters.institutions("Section")) == {"ASTM", "EN"}
-    assert set(filters.standards("Section")) == {"ASTM A615", "EN 10365"}
+    assert set(filters.institutions("Section")) == {"ASTM", "EN", "QUETZAL"}
+    assert set(filters.standards("Section")) == {"ASTM A615", "EN 10365", "QUETZAL-GENERIC"}
     en = filters.ratings("Section", "EN", "EN 10365")
     assert en == ("HEA", "IPE", "UPN")
     astm = filters.ratings("Section", "ASTM", "ASTM A615")
     assert astm == ("REBARS",)
-    assert "RH" not in filters.ratings("Section")
-    assert "TSLOT" not in filters.ratings("Section")
+    assert "RH" in filters.ratings("Section")
+    assert "TSLOT" in filters.ratings("Section")
 
 
 def test_groups_preserve_institution_and_standard():

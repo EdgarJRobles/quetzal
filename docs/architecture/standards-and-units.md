@@ -187,15 +187,15 @@ that fits an existing dimension set.
 ## Dialog filters
 
 `StandardFilterService` (in `quetzal/application/standard_filters.py`) turns the
-metadata into UI-ready lists:
+metadata into UI-ready lists. All original catalogue series remain available:
 
-- pipe form: institution `ASME`, standards `ASME B36.10M` and
-  `ASME B36.19M`, only ratings matching `^SCH-`;
-- frame section form and frame branch form: institutions `EN`/`ASTM`,
-  standards `EN 10365`/`ASTM A615`, only mapped section series
-  (`HEA`, `IPE`, `UPN`, `REBARS`);
-- generic/vendor rows (`Conduit`, `RH`, `TSLOT`, ...) are not offered in these
-  selectors.
+- default **All institutions / All standards** shows the complete original set;
+- pipe form: `ASME` (`B36.10M`, `B36.19M`) for `SCH-*`, `ASTM` (`A615`) for
+  `REBARS`, and `Quetzal / generic` (`Generic / vendor`) for `Conduit*`;
+- frame section/branch forms: `EN` (`EN 10365`) for `HEA`/`IPE`/`UPN`,
+  `ASTM` (`A615`) for `REBARS`, and `Quetzal / generic` for `RH`/`TSLOT`;
+- frame branch form also keeps the BIM preset ratings when **All** is selected,
+  so profile families that only exist in `ArchProfile` are not lost.
 
 Changing the institution refreshes the standard list; changing the standard
 refreshes the rating list. The actual CSV data and the insertion commands are
