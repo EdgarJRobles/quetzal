@@ -3,6 +3,7 @@
 
 from .feature_registry import FeatureDefinition, FeatureRegistry
 from .insertion import DocumentPort, FeatureInserter, InMemoryDocument
+from .valve import ValveContext
 
 __all__ = [
     "DocumentPort",
@@ -10,4 +11,5 @@ __all__ = [
     "FeatureInserter",
     "FeatureRegistry",
     "InMemoryDocument",
+    "ValveContext",
 ]

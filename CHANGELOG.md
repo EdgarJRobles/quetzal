@@ -21,6 +21,8 @@
 - `Pipe`, `Cap` and `TerminalAdapter` now use declarative properties,
   injectable shape builders and the generic insertion service; `pFeatures`
   re-exports them for compatibility.
+- `Valve` geometry is split into six strategies with pure mode resolvers;
+  the public `pFeatures.Valve` facade and its 8-mode geometry are unchanged.
 - `pFeatures.pypeType` is now `quetzal.features.base.PypeFeature`; the
   `pFeatures <-> pCmd` module import cycle was removed.
 - Six `do*` insertion flows share one transaction/selection/alignment

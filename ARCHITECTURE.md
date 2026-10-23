@@ -176,6 +176,7 @@ work. Save/reload is checked by the headless integration suite.
 | Standards + units | Migrated to domain metadata (`standards/catalog.json`): 10 institutions, 26 standards, 86 dimensions and 19 catalogue families; all 243 CSV files are classified and unit-normalised. |
 | Feature base class | Migrated to `quetzal.features.base.PypeFeature`; `pFeatures.pypeType` is the same object. |
 | Pipe / Cap / TerminalAdapter | Migrated with property schemas, shape builders and registry entries. |
+| Valve geometry | Six replaceable strategies (`generic`, `flanged`, `sw_th`, `swing_check`, `knife_gate`, `pinch`) selected by pure resolvers; `pFeatures.Valve` is now a ~160-line facade and the 8-mode geometry baseline is unchanged. |
 | Generic insertion | `FeatureInserter` + `FeatureRegistry` available. |
 | Attached insertion | Shared pipeline for six `do*` flows. |
 | Headless support | Selection/view accessors degrade safely; command contract can be validated without a GUI. |
@@ -186,18 +187,16 @@ work. Save/reload is checked by the headless integration suite.
 These items are deliberately out of scope for this branch but are the natural
 next steps:
 
-1. Split the `Valve` god class into strategies per connection type while
-   keeping `Valve` as the public facade.
-2. Split `Flange` geometry into builders per `FlangeType`.
-3. Move the remaining feature proxies to `PropertySpec` + `FeatureDefinition`
+1. Split `Flange` geometry into builders per `FlangeType`.
+2. Move the remaining feature proxies to `PropertySpec` + `FeatureDefinition`
    (`Tee`, `Reduct`, `Elbow`, `Gasket`, `Outlet`, socket fittings, ...).
-4. Migrate the remaining `do*` flows (`doElbow`, `doTees`, `doValves`,
+3. Migrate the remaining `do*` flows (`doElbow`, `doTees`, `doValves`,
    `doSocket*`, `doBeams`, `doOutlets`) to `_insert_attached`.
-5. Add a command metadata registry so toolbar/menu definitions and
+4. Add a command metadata registry so toolbar/menu definitions and
    `addCommand` calls come from one declarative source.
-6. Introduce a `PreviewService` for the dialog previews (single cache key and
+5. Introduce a `PreviewService` for the dialog previews (single cache key and
    configurable path).
-7. Replace label/name child resolution in `PypeLine2`/`PypeBranch2` with
+6. Replace label/name child resolution in `PypeLine2`/`PypeBranch2` with
    `App::PropertyLinkList` while reading the legacy string lists.
 
 See [SOLID mapping](docs/architecture/solid-mapping.md),

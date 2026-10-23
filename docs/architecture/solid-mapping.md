@@ -22,6 +22,8 @@ legacy hotspots remain. It is meant to be updated as the migration advances.
   `addProperty(...)` code.
 - `ShapeBuilder` classes can be replaced on a subclass
   (`shape_builder_class`) without editing `execute()`.
+- `VALVE_STRATEGIES` maps each connection/rating mode to a strategy; adding a
+  valve variant registers a new strategy instead of growing `Valve.execute`.
 - `CatalogRepository` can be swapped (CSV, in-memory, future database) without
   changing consumers.
 - `standards/catalog.json` adds institutions, standards, dimensions and series
@@ -77,8 +79,8 @@ No consumer is forced to depend on FreeCAD or Qt to use these.
 
 ## Known legacy hotspots (not claimed as solved)
 
-1. `Valve` still has six geometry strategies and a construction-dependent
-   property schema.
+1. `Valve` geometry is split, but its property schema is still dynamic and
+   construction-dependent.
 2. `Flange` still has magic edge indices and GUI code in `execute()`.
 3. `PypeLine2`/`PypeBranch2` still resolve children by label/name.
 4. Command classes still repeat `IsActive`/`GetResources`; metadata and
