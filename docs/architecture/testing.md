@@ -28,7 +28,11 @@ What is covered:
 - vector/port math;
 - `FeatureDefinition` validation, duplicate registration;
 - `FeatureInserter` placement, label translation, view attachment and the
-  legacy property-count fallback.
+  legacy property-count fallback;
+- unit conversions and dimension safety;
+- DN/NPS identity parsing and display;
+- standards metadata validation, classification of every bundled CSV and
+  unit-aware row normalisation.
 
 ## Integration checks
 
@@ -54,6 +58,12 @@ fails. It runs without a GUI and verifies:
 7. **Insertion flows** – `doPipes`, `doCaps`, `doTees`, `doFlanges`,
    `doReduct`, `doGaskets`, `doBolts_Nuts`, `doElbow` and `doValves` create
    valid objects with no GUI selection.
+8. **Valve/Flange baselines** – 8 Valve modes and 6 Flange types pinned to
+   volume, area, bounding box, ports and serialized properties.
+9. **Shared-vector stability** – the duct builders must not mutate
+   `vO/vX/vY/vZ`.
+10. **Standards metadata** – all 243 catalogues resolve to a family, standard
+    and institution; dimensions cover every CSV header.
 
 ### How the script is executed
 

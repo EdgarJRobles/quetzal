@@ -1,0 +1,1107 @@
+{
+  "schema_version": 1,
+  "institutions": [
+    {
+      "code": "ASME",
+      "name": "American Society of Mechanical Engineers",
+      "region": "US",
+      "website": "https://www.asme.org",
+      "description": "Boiler and pressure vessel, piping and flange standards."
+    },
+    {
+      "code": "ANSI",
+      "name": "American National Standards Institute",
+      "region": "US",
+      "website": "https://www.ansi.org",
+      "description": "Accredited standards developer; ASME B16 series are ANSI-approved."
+    },
+    {
+      "code": "API",
+      "name": "American Petroleum Institute",
+      "region": "US",
+      "website": "https://www.api.org",
+      "description": "Oil and gas industry equipment standards."
+    },
+    {
+      "code": "ASTM",
+      "name": "ASTM International",
+      "region": "US",
+      "website": "https://www.astm.org",
+      "description": "Materials, structural steel and test standards."
+    },
+    {
+      "code": "DIN",
+      "name": "Deutsches Institut für Normung",
+      "region": "DE",
+      "website": "https://www.din.de",
+      "description": "German national standards body."
+    },
+    {
+      "code": "EN",
+      "name": "European Committee for Standardization (CEN)",
+      "region": "EU",
+      "website": "https://www.cencenelec.eu",
+      "description": "European harmonised standards."
+    },
+    {
+      "code": "ISO",
+      "name": "International Organization for Standardization",
+      "region": "INT",
+      "website": "https://www.iso.org",
+      "description": "International standards."
+    },
+    {
+      "code": "MSS",
+      "name": "Manufacturers Standardization Society",
+      "region": "US",
+      "website": "https://www.mss.org",
+      "description": "Valves, fittings and piping components."
+    },
+    {
+      "code": "SMACNA",
+      "name": "Sheet Metal and Air Conditioning Contractors' National Association",
+      "region": "US",
+      "website": "https://www.smacna.org",
+      "description": "HVAC duct construction standards."
+    },
+    {
+      "code": "QUETZAL",
+      "name": "Quetzal generic catalogue",
+      "region": "INT",
+      "website": "https://github.com/EdgarJRobles/quetzal",
+      "description": "Vendor or generic data without a single applicable standard."
+    }
+  ],
+  "standards": [
+    {
+      "code": "ASME B16.5",
+      "institution": "ASME",
+      "title": "Pipe Flanges and Flanged Fittings: NPS 1/2 through NPS 24",
+      "scope": "flanges",
+      "notes": "Pressure classes 150, 300, 600, 900, 1500 and 2500 lb."
+    },
+    {
+      "code": "ASME B16.47",
+      "institution": "ASME",
+      "title": "Large Diameter Steel Flanges: NPS 26 through NPS 60",
+      "scope": "flanges",
+      "notes": "Included for completeness; bundled tables stop at NPS 24."
+    },
+    {
+      "code": "ASME B16.9",
+      "institution": "ASME",
+      "title": "Factory-Made Wrought Buttwelding Fittings",
+      "scope": "buttweld fittings",
+      "notes": "Elbows, tees, caps and reducers."
+    },
+    {
+      "code": "ASME B16.11",
+      "institution": "ASME",
+      "title": "Forged Fittings, Socket-Welding and Threaded",
+      "scope": "forged fittings",
+      "notes": "3000, 6000 and 9000 lb socket-weld families."
+    },
+    {
+      "code": "ASME B16.20",
+      "institution": "ASME",
+      "title": "Metallic Gaskets for Pipe Flanges",
+      "scope": "gaskets",
+      "notes": "Spiral-wound, jacketed and ring-joint gaskets."
+    },
+    {
+      "code": "ASME B16.21",
+      "institution": "ASME",
+      "title": "Nonmetallic Flat Gaskets for Pipe Flanges",
+      "scope": "gaskets",
+      "notes": "Flat nonmetallic gasket dimensions."
+    },
+    {
+      "code": "ASME B16.34",
+      "institution": "ASME",
+      "title": "Valves: Flanged, Threaded, and Welding End",
+      "scope": "valves",
+      "notes": "Pressure-temperature ratings and valve body dimensions."
+    },
+    {
+      "code": "ASME B18.2.1",
+      "institution": "ASME",
+      "title": "Square and Hex Bolts and Screws",
+      "scope": "bolting",
+      "notes": "Bolt dimensions used by flange bolting tables."
+    },
+    {
+      "code": "ASME B36.10M",
+      "institution": "ASME",
+      "title": "Welded and Seamless Wrought Steel Pipe",
+      "scope": "pipe",
+      "notes": "Metric outside diameters and wall thicknesses for carbon steel schedules."
+    },
+    {
+      "code": "ASME B36.19M",
+      "institution": "ASME",
+      "title": "Stainless Steel Pipe",
+      "scope": "pipe",
+      "notes": "Stainless steel schedules (5S, 10S, 40S, 80S)."
+    },
+    {
+      "code": "API 6D",
+      "institution": "API",
+      "title": "Specification for Pipeline and Piping Valves",
+      "scope": "valves",
+      "notes": "Pipeline valve requirements; used as related standard."
+    },
+    {
+      "code": "API 608",
+      "institution": "API",
+      "title": "Metal Ball Valves: Flanged, Threaded, and Welding End",
+      "scope": "valves",
+      "notes": "Threaded ball valves."
+    },
+    {
+      "code": "DIN 1626",
+      "institution": "DIN",
+      "title": "Welded Steel Pipes and Tubes",
+      "scope": "pipe/fittings",
+      "notes": "DIN steel pipe dimensions."
+    },
+    {
+      "code": "DIN 2527",
+      "institution": "DIN",
+      "title": "Blind Flanges",
+      "scope": "flanges",
+      "notes": "DIN blind flange dimensions."
+    },
+    {
+      "code": "DIN 2543",
+      "institution": "DIN",
+      "title": "Slip-On Flanges PN 16",
+      "scope": "flanges",
+      "notes": "DIN PN16 slip-on flange dimensions."
+    },
+    {
+      "code": "DIN 2544",
+      "institution": "DIN",
+      "title": "Slip-On Flanges PN 25",
+      "scope": "flanges",
+      "notes": "DIN PN25 slip-on flange dimensions."
+    },
+    {
+      "code": "DIN 2545",
+      "institution": "DIN",
+      "title": "Slip-On Flanges PN 40",
+      "scope": "flanges",
+      "notes": "DIN PN40 slip-on flange dimensions."
+    },
+    {
+      "code": "EN 1092-1",
+      "institution": "EN",
+      "title": "Flanges and Their Joints - Circular Flanges for Pipes, Valves, Fittings and Accessories - Part 1: Steel Flanges",
+      "scope": "flanges",
+      "notes": "PN-designated steel flanges."
+    },
+    {
+      "code": "EN 10365",
+      "institution": "EN",
+      "title": "Hot Rolled Steel Channels, I and H Sections",
+      "scope": "structural",
+      "notes": "HEA, IPE and UPN section dimensions."
+    },
+    {
+      "code": "ISO 6708",
+      "institution": "ISO",
+      "title": "Pipework Components - Definition and Selection of DN (Nominal Size)",
+      "scope": "nominal size",
+      "notes": "Defines the DN designation; not a dimensional table."
+    },
+    {
+      "code": "ISO 7005-1",
+      "institution": "ISO",
+      "title": "Metallic Flanges - Part 1: Steel Flanges",
+      "scope": "flanges",
+      "notes": "International flange dimensions aligned with EN 1092-1."
+    },
+    {
+      "code": "ASTM A6",
+      "institution": "ASTM",
+      "title": "Standard Specification for General Requirements for Rolled Structural Steel Bars, Plates, Shapes, and Sheet Piling",
+      "scope": "structural",
+      "notes": "W and S structural shape practice."
+    },
+    {
+      "code": "ASTM A615",
+      "institution": "ASTM",
+      "title": "Standard Specification for Deformed and Plain Carbon-Steel Bars for Concrete Reinforcement",
+      "scope": "reinforcement",
+      "notes": "Rebar sizes and properties."
+    },
+    {
+      "code": "MSS SP-97",
+      "institution": "MSS",
+      "title": "Integrally Reinforced Forged Branch Outlet Fittings",
+      "scope": "outlets",
+      "notes": "Weldolet, sockolet and threadolet dimensions."
+    },
+    {
+      "code": "SMACNA HVAC",
+      "institution": "SMACNA",
+      "title": "HVAC Duct Construction Standards - Metal and Flexible",
+      "scope": "ducting",
+      "notes": "Rectangular duct elbows and transitions."
+    },
+    {
+      "code": "QUETZAL-GENERIC",
+      "institution": "QUETZAL",
+      "title": "Quetzal generic catalogue",
+      "scope": "generic",
+      "notes": "Vendor or generic data without a single applicable standard."
+    }
+  ],
+  "dimensions": {
+    "PSize": {
+      "unit": "nominal",
+      "description": "Nominal pipe or profile size (DN or NPS)",
+      "required": true
+    },
+    "PSize2": {
+      "unit": "nominal",
+      "description": "Nominal size at the secondary end",
+      "aliases": [
+        "PSize_2"
+      ]
+    },
+    "PSizeBranch": {
+      "unit": "nominal",
+      "description": "Nominal size of the branch"
+    },
+    "SSize": {
+      "unit": "text",
+      "description": "Structural section designation (e.g. IPE200)"
+    },
+    "OD": {
+      "unit": "mm",
+      "description": "Outside diameter"
+    },
+    "OD2": {
+      "unit": "mm",
+      "description": "Outside diameter at the secondary end"
+    },
+    "thk": {
+      "unit": "mm",
+      "description": "Wall thickness"
+    },
+    "thk2": {
+      "unit": "mm",
+      "description": "Wall thickness at the secondary end"
+    },
+    "H": {
+      "unit": "mm",
+      "description": "Height or length dimension"
+    },
+    "Height": {
+      "unit": "mm",
+      "description": "Overall height/length"
+    },
+    "Length": {
+      "unit": "mm",
+      "description": "Length"
+    },
+    "L": {
+      "unit": "mm",
+      "description": "Overall length"
+    },
+    "A": {
+      "unit": "mm",
+      "description": "Center-to-end or geometric dimension A"
+    },
+    "B": {
+      "unit": "mm",
+      "description": "Dimension B"
+    },
+    "C": {
+      "unit": "mm",
+      "description": "Center-to-end or geometric dimension C"
+    },
+    "D": {
+      "unit": "mm",
+      "description": "Outside diameter or flange diameter"
+    },
+    "d": {
+      "unit": "mm",
+      "description": "Bore or inside diameter"
+    },
+    "df": {
+      "unit": "mm",
+      "description": "Bolt circle diameter"
+    },
+    "f": {
+      "unit": "mm",
+      "description": "Bolt hole diameter"
+    },
+    "t": {
+      "unit": "mm",
+      "description": "Thickness"
+    },
+    "n": {
+      "unit": "1",
+      "description": "Number of bolts or holes"
+    },
+    "trf": {
+      "unit": "mm",
+      "description": "Raised-face thickness"
+    },
+    "drf": {
+      "unit": "mm",
+      "description": "Raised-face diameter"
+    },
+    "twn": {
+      "unit": "mm",
+      "description": "Weld-neck length"
+    },
+    "dwn": {
+      "unit": "mm",
+      "description": "Weld-neck diameter"
+    },
+    "ODp": {
+      "unit": "mm",
+      "description": "Pipe outside diameter at the hub/neck"
+    },
+    "R": {
+      "unit": "mm",
+      "description": "Fillet or bend radius"
+    },
+    "T1": {
+      "unit": "mm",
+      "description": "Neck/hub height"
+    },
+    "B2": {
+      "unit": "mm",
+      "description": "Socket bore diameter"
+    },
+    "Y": {
+      "unit": "mm",
+      "description": "Socket depth"
+    },
+    "B1*": {
+      "unit": "mm",
+      "description": "Auxiliary socket dimension B1"
+    },
+    "BD": {
+      "unit": "mm",
+      "description": "Boss diameter"
+    },
+    "kg": {
+      "unit": "kg",
+      "description": "Mass"
+    },
+    "BendAngle": {
+      "unit": "deg",
+      "description": "Bend angle"
+    },
+    "BendRadius": {
+      "unit": "mm",
+      "description": "Centerline bend radius"
+    },
+    "E": {
+      "unit": "mm",
+      "description": "Engagement depth or dimension E"
+    },
+    "G": {
+      "unit": "mm",
+      "description": "Gap or dimension G"
+    },
+    "M": {
+      "unit": "mm",
+      "description": "Branch length from centerline"
+    },
+    "Conn": {
+      "unit": "text",
+      "description": "Connection type or pressure class"
+    },
+    "FlangeType": {
+      "unit": "text",
+      "description": "Flange facing/connection type"
+    },
+    "FClass": {
+      "unit": "text",
+      "description": "Flange pressure class"
+    },
+    "VType": {
+      "unit": "text",
+      "description": "Valve type"
+    },
+    "ODBody": {
+      "unit": "mm",
+      "description": "Valve body outside diameter"
+    },
+    "ID": {
+      "unit": "mm",
+      "description": "Inside diameter"
+    },
+    "Kv": {
+      "unit": "m3/h/bar",
+      "description": "Flow coefficient Kv"
+    },
+    "BottomH": {
+      "unit": "mm",
+      "description": "Body envelope below the centerline"
+    },
+    "TopH": {
+      "unit": "mm",
+      "description": "Body envelope above the centerline"
+    },
+    "WheelD": {
+      "unit": "mm",
+      "description": "Handwheel diameter"
+    },
+    "W": {
+      "unit": "mm",
+      "description": "Width"
+    },
+    "H1": {
+      "unit": "mm",
+      "description": "Inlet height"
+    },
+    "H2": {
+      "unit": "mm",
+      "description": "Outlet height"
+    },
+    "W1": {
+      "unit": "mm",
+      "description": "Inlet width"
+    },
+    "W2": {
+      "unit": "mm",
+      "description": "Outlet width"
+    },
+    "OffsetX": {
+      "unit": "mm",
+      "description": "Transition offset in X"
+    },
+    "OffsetY": {
+      "unit": "mm",
+      "description": "Transition offset in Y"
+    },
+    "dBolt": {
+      "unit": "mm",
+      "description": "Bolt diameter"
+    },
+    "dNut": {
+      "unit": "mm",
+      "description": "Nut diameter"
+    },
+    "lBolt": {
+      "unit": "mm",
+      "description": "Bolt length"
+    },
+    "tNut": {
+      "unit": "mm",
+      "description": "Nut thickness"
+    },
+    "Material": {
+      "unit": "text",
+      "description": "Material name"
+    },
+    "e_abs": {
+      "unit": "mm",
+      "description": "Absolute roughness"
+    },
+    "Source": {
+      "unit": "text",
+      "description": "Vendor or source URL"
+    },
+    "Standart": {
+      "unit": "text",
+      "description": "Section standard/designation",
+      "aliases": [
+        "standart"
+      ]
+    },
+    "stype": {
+      "unit": "text",
+      "description": "Profile type code"
+    },
+    "ta": {
+      "unit": "mm",
+      "description": "Web thickness"
+    },
+    "tf": {
+      "unit": "mm",
+      "description": "Flange thickness"
+    },
+    "slot_width": {
+      "unit": "mm",
+      "description": "Slot width"
+    },
+    "slot_depth": {
+      "unit": "mm",
+      "description": "Slot depth"
+    },
+    "ClampFamily": {
+      "unit": "text",
+      "description": "Clamp family"
+    },
+    "ProductCode": {
+      "unit": "text",
+      "description": "Vendor product code"
+    },
+    "Bolt": {
+      "unit": "text",
+      "description": "Bolt size"
+    },
+    "Tail": {
+      "unit": "text",
+      "description": "Clamp tail type"
+    },
+    "TorqueNm": {
+      "unit": "Nm",
+      "description": "Installation torque"
+    },
+    "V": {
+      "unit": "mm",
+      "description": "Clamp dimension V"
+    },
+    "X": {
+      "unit": "mm",
+      "description": "Clamp dimension X"
+    },
+    "T": {
+      "unit": "mm",
+      "description": "Clamp dimension T"
+    },
+    "Ang": {
+      "unit": "deg",
+      "description": "Outlet angle"
+    },
+    "IRID": {
+      "unit": "mm",
+      "description": "Inner-ring inner diameter"
+    },
+    "SEID": {
+      "unit": "mm",
+      "description": "Sealing-element inner diameter"
+    },
+    "SEOD": {
+      "unit": "mm",
+      "description": "Sealing-element outer diameter"
+    },
+    "CROD": {
+      "unit": "mm",
+      "description": "Centering-ring outer diameter"
+    },
+    "SEthk": {
+      "unit": "mm",
+      "description": "Sealing-element thickness"
+    },
+    "Rthk": {
+      "unit": "mm",
+      "description": "Ring thickness"
+    },
+    "ldrf": {
+      "unit": "mm",
+      "description": "Lap-joint raised-face diameter"
+    },
+    "ltrf": {
+      "unit": "mm",
+      "description": "Lap-joint raised-face thickness"
+    },
+    "t1": {
+      "unit": "mm",
+      "description": "Auxiliary thickness t1"
+    },
+    "Stype": {
+      "unit": "text",
+      "description": "Profile type code",
+      "aliases": [
+        "stype"
+      ]
+    },
+    "SW": {
+      "unit": "mm",
+      "description": "Support width"
+    }
+  },
+  "families": {
+    "Pipe": {
+      "prefix": "Pipe",
+      "description": "Pipe outside diameter and wall thickness",
+      "dimensions": [
+        "PSize",
+        "OD",
+        "thk"
+      ],
+      "rules": [
+        {
+          "match": "^SCH-(5S|10S|40S|80S)$",
+          "standard": "ASME B36.19M",
+          "notes": "Stainless steel schedule"
+        },
+        {
+          "match": "^SCH-",
+          "standard": "ASME B36.10M",
+          "notes": "Carbon steel schedule"
+        },
+        {
+          "match": "^Conduit",
+          "standard": "QUETZAL-GENERIC",
+          "notes": "Electrical conduit; not an ASME pipe schedule"
+        },
+        {
+          "match": "^REBARS$",
+          "standard": "ASTM A615",
+          "notes": "Reinforcement bar data stored in the pipe family"
+        }
+      ]
+    },
+    "Elbow": {
+      "prefix": "Elbow",
+      "description": "Buttweld, socket-weld and DIN elbows",
+      "dimensions": [
+        "PSize",
+        "OD",
+        "thk",
+        "BendAngle",
+        "BendRadius",
+        "A",
+        "C",
+        "D",
+        "E",
+        "G",
+        "Conn"
+      ],
+      "rules": [
+        {
+          "match": "^(3000|6000|9000)lb_SW$",
+          "standard": "ASME B16.11",
+          "notes": "Forged socket-weld elbow"
+        },
+        {
+          "match": "^DIN_1626_90$",
+          "standard": "DIN 1626",
+          "notes": "DIN steel pipe elbow"
+        },
+        {
+          "match": "^Conduit",
+          "standard": "QUETZAL-GENERIC",
+          "notes": "Electrical conduit elbow"
+        },
+        {
+          "match": "^SCH-",
+          "standard": "ASME B16.9",
+          "notes": "Buttweld elbow"
+        }
+      ]
+    },
+    "Tee": {
+      "prefix": "Tee",
+      "description": "Buttweld, socket-weld and reducing tees",
+      "dimensions": [
+        "PSize",
+        "PSizeBranch",
+        "OD",
+        "OD2",
+        "thk",
+        "thk2",
+        "A",
+        "C",
+        "D",
+        "E",
+        "G",
+        "M",
+        "Conn"
+      ],
+      "rules": [
+        {
+          "match": "^(3000|6000|9000)lb_SW$",
+          "standard": "ASME B16.11",
+          "notes": "Forged socket-weld tee"
+        },
+        {
+          "match": "^SCH-",
+          "standard": "ASME B16.9",
+          "notes": "Buttweld tee"
+        }
+      ]
+    },
+    "Cap": {
+      "prefix": "Cap",
+      "description": "Buttweld and socket-weld caps",
+      "dimensions": [
+        "PSize",
+        "OD",
+        "thk",
+        "A",
+        "C",
+        "E",
+        "Conn"
+      ],
+      "rules": [
+        {
+          "match": "^(3000|6000|9000)lb_SW$",
+          "standard": "ASME B16.11",
+          "notes": "Forged socket-weld cap"
+        },
+        {
+          "match": "^SCH-",
+          "standard": "ASME B16.9",
+          "notes": "Buttweld cap"
+        }
+      ]
+    },
+    "Reduct": {
+      "prefix": "Reduct",
+      "description": "Concentric and eccentric reducers",
+      "dimensions": [
+        "PSize",
+        "PSize2",
+        "OD",
+        "OD2",
+        "thk",
+        "thk2",
+        "H",
+        "Source"
+      ],
+      "rules": [
+        {
+          "match": "^SCH-",
+          "standard": "ASME B16.9",
+          "notes": "Buttweld reducer"
+        }
+      ]
+    },
+    "Flange": {
+      "prefix": "Flange",
+      "description": "ASME, DIN and PN flanges",
+      "dimensions": [
+        "PSize",
+        "FlangeType",
+        "D",
+        "d",
+        "df",
+        "f",
+        "t",
+        "n",
+        "trf",
+        "drf",
+        "twn",
+        "dwn",
+        "ODp",
+        "R",
+        "T1",
+        "B2",
+        "Y",
+        "FClass",
+        "BD",
+        "B1*",
+        "kg",
+        "ldrf",
+        "ltrf",
+        "t1"
+      ],
+      "rules": [
+        {
+          "match": "^ASME-(?P<connection>[A-Z]+)-(?P<face>[A-Z]+)-(?P<pressure_class>[0-9]+lb)$",
+          "standard": "ASME B16.5",
+          "notes": "ASME B16.5 flange"
+        },
+        {
+          "match": "^DIN-PN(?P<pressure_class>[0-9]+)$",
+          "standard": "DIN 2543",
+          "notes": "DIN PN16 slip-on flange"
+        },
+        {
+          "match": "^PN(?P<pressure_class>[0-9]+)-WN$",
+          "standard": "EN 1092-1",
+          "notes": "PN weld-neck flange",
+          "fields": {
+            "connection": "WN",
+            "face": "RF"
+          }
+        },
+        {
+          "match": "^PN(?P<pressure_class>[0-9]+)-RF$",
+          "standard": "EN 1092-1",
+          "notes": "PN raised-face flange",
+          "fields": {
+            "face": "RF"
+          }
+        }
+      ]
+    },
+    "Valve": {
+      "prefix": "Valve",
+      "description": "Ball, gate, check, plug, knife-gate and pinch valves",
+      "dimensions": [
+        "PSize",
+        "VType",
+        "ODBody",
+        "ID",
+        "H",
+        "OD",
+        "E",
+        "Conn",
+        "Kv",
+        "BottomH",
+        "TopH",
+        "WheelD"
+      ],
+      "rules": [
+        {
+          "match": "^(Ball|Gate|Check|Plug)_",
+          "standard": "ASME B16.34",
+          "notes": "Valve pressure-temperature and body standard; see also API 6D"
+        },
+        {
+          "match": "^Ball-Threaded$",
+          "standard": "API 608",
+          "notes": "Threaded metal ball valve"
+        }
+      ]
+    },
+    "Gasket": {
+      "prefix": "Gasket",
+      "description": "Spiral-wound and ring-joint gaskets",
+      "dimensions": [
+        "PSize",
+        "IRID",
+        "SEID",
+        "SEOD",
+        "CROD",
+        "SEthk",
+        "Rthk"
+      ],
+      "rules": [
+        {
+          "match": ".*",
+          "standard": "ASME B16.20",
+          "notes": "Metallic gasket dimensions"
+        }
+      ]
+    },
+    "Bolt": {
+      "prefix": "Bolt",
+      "description": "Flange bolting",
+      "dimensions": [
+        "PSize",
+        "dBolt",
+        "dNut",
+        "df",
+        "lBolt",
+        "n",
+        "tNut"
+      ],
+      "rules": [
+        {
+          "match": ".*",
+          "standard": "ASME B18.2.1",
+          "notes": "Bolt dimensions; nut dimensions are normally ASME B18.2.2"
+        }
+      ]
+    },
+    "Section": {
+      "prefix": "Section",
+      "description": "Structural sections and reinforcement",
+      "dimensions": [
+        "Standart",
+        "SSize",
+        "stype",
+        "H",
+        "W",
+        "ta",
+        "tf",
+        "slot_width",
+        "slot_depth"
+      ],
+      "rules": [
+        {
+          "match": "^(HEA|IPE|UPN)$",
+          "standard": "EN 10365",
+          "notes": "European hot-rolled section"
+        },
+        {
+          "match": "^REBARS$",
+          "standard": "ASTM A615",
+          "notes": "Reinforcement bar"
+        }
+      ]
+    },
+    "Beam": {
+      "prefix": "Beam",
+      "description": "Structural beams",
+      "dimensions": [
+        "PSize",
+        "Stype",
+        "H",
+        "W",
+        "ta",
+        "tf"
+      ],
+      "rules": [
+        {
+          "match": "^HEA$",
+          "standard": "EN 10365",
+          "notes": "European HEA section"
+        },
+        {
+          "match": "^(S|W)$",
+          "standard": "ASTM A6",
+          "notes": "US structural shape practice"
+        }
+      ]
+    },
+    "Clamp": {
+      "prefix": "Clamp",
+      "description": "Pipe and beam clamps",
+      "dimensions": [
+        "PSize",
+        "ClampFamily",
+        "ProductCode",
+        "Bolt",
+        "C",
+        "H",
+        "T",
+        "Tail",
+        "TorqueNm",
+        "V",
+        "W",
+        "X",
+        "Y",
+        "d",
+        "Source"
+      ]
+    },
+    "Outlet": {
+      "prefix": "Outlet",
+      "description": "Weldolet, sockolet and threadolet outlets",
+      "dimensions": [
+        "PSize",
+        "OD",
+        "thk",
+        "A",
+        "B",
+        "E",
+        "Ang",
+        "Conn"
+      ],
+      "rules": [
+        {
+          "match": ".*",
+          "standard": "MSS SP-97",
+          "notes": "Integrally reinforced branch outlet"
+        }
+      ]
+    },
+    "Coupling": {
+      "prefix": "Coupling",
+      "description": "Socket-weld and threaded couplings",
+      "dimensions": [
+        "PSize",
+        "PSize2",
+        "OD",
+        "OD2",
+        "A",
+        "C",
+        "D",
+        "E",
+        "Conn"
+      ],
+      "rules": [
+        {
+          "match": ".*",
+          "standard": "ASME B16.11",
+          "notes": "Forged coupling"
+        }
+      ]
+    },
+    "Union": {
+      "prefix": "Union",
+      "description": "Socket-weld and threaded unions",
+      "dimensions": [
+        "PSize",
+        "OD",
+        "A",
+        "C",
+        "D",
+        "E",
+        "Conn"
+      ],
+      "rules": [
+        {
+          "match": ".*",
+          "standard": "ASME B16.11",
+          "notes": "Forged union"
+        }
+      ],
+      "headerless_columns": [
+        "PSize",
+        "OD",
+        "A",
+        "C",
+        "D",
+        "E",
+        "Conn"
+      ]
+    },
+    "TerminalAdapter": {
+      "prefix": "TerminalAdapter",
+      "description": "PVC conduit terminal adapter",
+      "dimensions": [
+        "PSize",
+        "OD",
+        "OD2",
+        "L",
+        "SW"
+      ]
+    },
+    "DuctElbow": {
+      "prefix": "DuctElbow",
+      "description": "Rectangular HVAC duct elbow",
+      "dimensions": [
+        "PSize",
+        "W",
+        "H",
+        "thk",
+        "BendAngle",
+        "BendRadius",
+        "Source"
+      ],
+      "rules": [
+        {
+          "match": "^Rectangular$",
+          "standard": "SMACNA HVAC",
+          "notes": "Rectangular duct construction"
+        }
+      ]
+    },
+    "DuctReduction": {
+      "prefix": "DuctReduction",
+      "description": "Rectangular HVAC duct transition",
+      "dimensions": [
+        "PSize",
+        "W1",
+        "H1",
+        "W2",
+        "H2",
+        "thk",
+        "Length",
+        "OffsetX",
+        "OffsetY",
+        "Source"
+      ],
+      "rules": [
+        {
+          "match": "^Rectangular$",
+          "standard": "SMACNA HVAC",
+          "notes": "Rectangular duct construction"
+        }
+      ]
+    },
+    "roughness": {
+      "prefix": "roughness",
+      "description": "Absolute roughness of materials",
+      "dimensions": [
+        "Material",
+        "e_abs"
+      ]
+    }
+  }
+}

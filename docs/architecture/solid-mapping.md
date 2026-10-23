@@ -24,6 +24,8 @@ legacy hotspots remain. It is meant to be updated as the migration advances.
   (`shape_builder_class`) without editing `execute()`.
 - `CatalogRepository` can be swapped (CSV, in-memory, future database) without
   changing consumers.
+- `standards/catalog.json` adds institutions, standards, dimensions and series
+  rules without touching feature or dialog code.
 
 ## Liskov Substitution Principle (LSP)
 
@@ -40,6 +42,8 @@ legacy hotspots remain. It is meant to be updated as the migration advances.
 Small protocols replace large implicit contracts:
 
 - `CatalogRepository`: `get_table`, `read_file`, `ratings`, `families`.
+- `StandardsRepository`: one `load()` method returning a validated catalogue.
+- `DimensionSpec`: one `normalize(value, source_unit)` contract for all units.
 - `DocumentPort`: `add_object`, `place`, `attach_view`.
 - `ViewFactory`: one `attach(view_object, icon)` method.
 - `ShapeBuilder`: one `build(fp)` method.
@@ -53,6 +57,8 @@ No consumer is forced to depend on FreeCAD or Qt to use these.
   the feature modules.
 - `dodoDialogs.protoPypeForm.fillSizes` depends on the catalogue protocol
   instead of opening CSV files.
+- Catalogue consumers can depend on `StandardsRepository` rather than on the
+  JSON file location; unit conversion is injected through dimension metadata.
 - `pFeatures` no longer imports `pCmd` at module scope. The remaining
   behavioural calls (`PypeLine2.update`, `PypeBranch2.redraw`) use local
   imports so importing the feature module no longer loads the command layer.
@@ -63,6 +69,9 @@ No consumer is forced to depend on FreeCAD or Qt to use these.
 | --- | --- |
 | `tests/unit/test_domain_catalog.py` | Repository parsing, caching, traversal protection, errors. |
 | `tests/unit/test_domain_sizes.py` | Single OD table, immutable lookup, port maths. |
+| `tests/unit/test_domain_units.py` | Length/mass/pressure/angle conversions and dimension checks. |
+| `tests/unit/test_domain_nominal_sizes.py` | DN/NPS identity mapping and display. |
+| `tests/unit/test_domain_standards.py` | Metadata validation, 243-file classification, unit normalisation and metadata-only extension. |
 | `tests/unit/test_feature_registry.py` | Registry validation, property count fallback, insertion service placement/labels. |
 | `tests/integration/freecad_check.py` | 22 feature proxies, 243 catalogues, save/reload, 61 command contracts, 9 headless insertion flows. |
 

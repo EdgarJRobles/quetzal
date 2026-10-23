@@ -67,8 +67,10 @@ Discussion in the FreeCAD Forum:
 
 Quetzal now has a layered core under `quetzal/` (domain, application,
 infrastructure and features) while keeping the historical `pFeatures`/`pCmd`
-API for existing documents and macros. See [ARCHITECTURE.md](./ARCHITECTURE.md)
-for the dependency rules and the migration roadmap.
+API for existing documents and macros. International standards, dimensions and
+units are described in `standards/catalog.json` and exposed through
+`quetzal.domain.standards`. See [ARCHITECTURE.md](./ARCHITECTURE.md) for the
+dependency rules, the standards layer and the migration roadmap.
 
 Run the fast tests with `python3 -m pytest`. For the headless FreeCAD checks:
 

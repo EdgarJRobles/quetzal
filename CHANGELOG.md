@@ -10,7 +10,11 @@
 - `FeatureDefinition`/`FeatureRegistry` so features can be added by
   registration instead of editing factory chains.
 - Headless integration suite covering 22 features, 243 catalogues, document
-  save/reload, 61 commands and 9 insertion flows.
+  save/reload, 61 commands, 9 insertion flows and the standards metadata.
+- Standards and units layer: 10 institutions, 26 international standards,
+  86 dimensions and 19 catalogue families in `standards/catalog.json`.
+- `Unit`/`Quantity` conversions and ISO 6708 DN/NPS identities in the domain.
+- Unit-aware catalogue classification and row normalisation.
 
 ### Changed
 
@@ -32,6 +36,8 @@
 - Use `Quetzal_CouplingUnion` without the `.svg` suffix so the icon resolves.
 - Avoid headless `AttributeError` on `FreeCADGui.Selection`/`ViewObject`.
 - Return the created object from `pCmd.makeTerminalAdapter` instead of `None`.
+- Stop mutating the shared `vO/vX/vY/vZ` vectors in the duct builders, which
+  corrupted geometry created later in the session.
 
 ## [1.7.8] - 2025-12-13
 

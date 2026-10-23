@@ -187,6 +187,23 @@ def check_module_constants():
     return len(before)
 
 
+def check_standards_contract():
+    """The bundled standards metadata must cover every catalogue table."""
+
+    from quetzal.infrastructure.standards import default_standards_repository, standards_dir
+
+    catalog = default_standards_repository().load()
+    filenames = sorted(path.name for path in tablez_dir().glob("*.csv"))
+    issues = catalog.validate_files(filenames)
+    assert not issues, f"unclassified catalogues: {issues}"
+    for filename in filenames:
+        series = catalog.series_for_file(filename)
+        catalog.standard(series.standard)
+        catalog.institution(series.institution)
+    assert (standards_dir() / "catalog.json").is_file()
+    return len(filenames), len(catalog.standards), len(catalog.institutions)
+
+
 def main():
     print(f"FreeCAD {FreeCAD.Version()[0]}.{FreeCAD.Version()[1]}", flush=True)
     document = FreeCAD.newDocument("quetzal_integration")
@@ -285,6 +302,14 @@ def main():
     constant_count = check("module constants unchanged", check_module_constants)
     if constant_count:
         print(f"     shared vectors checked: {constant_count}", flush=True)
+
+    standards_counts = check("standards metadata contract", check_standards_contract)
+    if standards_counts:
+        print(
+            "     catalogues/standards/institutions: "
+            f"{standards_counts[0]}/{standards_counts[1]}/{standards_counts[2]}",
+            flush=True,
+        )
 
     if FAILURES:
         print(f"\n{len(FAILURES)} failure(s)", flush=True)

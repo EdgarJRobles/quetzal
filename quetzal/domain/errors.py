@@ -23,3 +23,11 @@ class FeatureRegistrationError(QuetzalError):
 
     def __init__(self, message: str) -> None:
         super().__init__(message)
+
+
+class UnitConversionError(QuetzalError):
+    """Raised when units are unknown or belong to different dimensions."""
+
+
+class StandardsError(QuetzalError):
+    """Raised when standards metadata is invalid or cannot be resolved."""

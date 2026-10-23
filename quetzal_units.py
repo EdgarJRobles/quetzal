@@ -14,22 +14,10 @@ from PySide.QtGui  import (QWidget, QVBoxLayout, QHBoxLayout, QGroupBox,
 
 translate = FreeCAD.Qt.translate
 
-# ---- DN <-> NPS mapping (ASME B36.10 / ISO 6708) ---------------------------
-
-_DN_TO_NPS = {
-    'DN6':    '1/8',    'DN8':    '1/4',    'DN10':   '3/8',
-    'DN15':   '1/2',    'DN20':   '3/4',    'DN25':   '1',
-    'DN32':   '1-1/4',  'DN40':   '1-1/2',  'DN50':   '2',
-    'DN65':   '2-1/2',  'DN80':   '3',      'DN90':   '3-1/2',
-    'DN100':  '4',      'DN125':  '5',      'DN150':  '6',
-    'DN200':  '8',      'DN250':  '10',     'DN300':  '12',
-    'DN350':  '14',     'DN400':  '16',     'DN450':  '18',
-    'DN500':  '20',     'DN550':  '22',     'DN600':  '24',
-    'DN650':  '26',     'DN700':  '28',     'DN750':  '30',
-    'DN800':  '32',     'DN850':  '34',     'DN900':  '36',
-    'DN1000': '40',     'DN1050': '42',     'DN1200': '48',
-}
-_NPS_TO_DN = {v: k for k, v in _DN_TO_NPS.items()}
+# ---- DN <-> NPS mapping (single source: quetzal.domain.nominal_sizes) ------
+from quetzal.domain.nominal_sizes import DN_TO_NPS as _DN_TO_NPS
+from quetzal.domain.nominal_sizes import NPS_TO_DN as _NPS_TO_DN  # noqa: F401
+from quetzal.domain.nominal_sizes import display as _display_nominal
 
 # FreeCAD unit schemas that are imperial (US customary / Imperial decimal /
 # Building US / Imperial for CNC)
@@ -87,9 +75,7 @@ def format_psize(dn_string, system=None):
     if system is None:
         system = get_size_system()
     if system == 1:
-        nps = _DN_TO_NPS.get(dn_string)
-        if nps:
-            return 'NPS ' + nps
+        return _display_nominal(dn_string, 1)
     return dn_string
 
 

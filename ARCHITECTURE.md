@@ -25,6 +25,8 @@ flowchart LR
         Catalog[CatalogRepository]
         Sizes[Pipe sizes]
         Ports[Port / Vec3]
+        Standards[Standards catalog]
+        Units[Units / Quantity]
     end
 
     subgraph Application["quetzal.application (no FreeCAD)"]
@@ -34,6 +36,7 @@ flowchart LR
 
     subgraph Infra["quetzal.infrastructure"]
         Csv[CsvCatalogRepository]
+        StdJson[JsonStandardsRepository]
         Doc[FreeCADDocumentAdapter]
         Props[PropertySpec]
         View[ViewProvider]
@@ -67,7 +70,10 @@ domain and on protocols. FreeCAD-specific code lives in
 | `quetzal/domain/catalog.py` | `CatalogTable`, `CatalogRepository` protocol, CSV and in-memory adapters, safe file resolution. |
 | `quetzal/domain/pipe_sizes.py` | Single immutable outside-diameter table and lookup helpers. |
 | `quetzal/domain/ports.py` | `Vec3`, `Port`, nearest-port calculation. |
-| `quetzal/domain/errors.py` | `QuetzalError`, `CatalogNotFoundError`, `FeatureRegistrationError`. |
+| `quetzal/domain/units.py` | `Unit`, `Quantity` and type-safe conversions to canonical mm, kg, bar, ° and N·m. |
+| `quetzal/domain/nominal_sizes.py` | DN/NPS identities following ISO 6708 (a lookup, not a length conversion). |
+| `quetzal/domain/standards.py` | Institutions, standards, dimension metadata, series rules and unit-aware row normalisation. |
+| `quetzal/domain/errors.py` | `QuetzalError`, `CatalogNotFoundError`, `FeatureRegistrationError`, `UnitConversionError`, `StandardsError`. |
 
 ### Application
 
@@ -81,6 +87,7 @@ domain and on protocols. FreeCAD-specific code lives in
 | Module | Responsibility |
 | --- | --- |
 | `quetzal/infrastructure/catalog.py` | Process-wide CSV repository rooted at `<addon>/tablez`. |
+| `quetzal/infrastructure/standards.py` | Process-wide standards repository rooted at `<addon>/standards/catalog.json`. |
 | `quetzal/infrastructure/freecad/properties.py` | `PropertySpec` and `define_properties()` to replace property boilerplate. |
 | `quetzal/infrastructure/freecad/document.py` | `FreeCADDocumentAdapter` implementing `DocumentPort`. |
 | `quetzal/infrastructure/freecad/view_provider.py` | Icon-only `ViewProvider` and `FreeCADViewFactory`. |
@@ -94,6 +101,17 @@ properties as `PropertySpec` tuples and delegate shape construction to a
 
 `quetzal/features/catalog.py` registers the migrated features (`Pipe`, `Cap`,
 `TerminalAdapter`) in `FEATURES`.
+
+## Standards and units
+
+Catalogue classification is metadata-driven: `standards/catalog.json` maps
+`Family_Rating.csv` files to institutions, standards, dimensions and units.
+`StandardsCatalog` validates the metadata at load time and normalises rows to
+canonical units. Adding a standard is a JSON change plus a test, not a new
+`if/elif` branch in the feature or dialog code.
+
+See [standards and units](docs/architecture/standards-and-units.md) and the
+[metadata README](standards/README.md).
 `pCmd.makeFeature(key, ...)` can build any registered feature without adding a
 new factory function.
 
@@ -155,6 +173,7 @@ work. Save/reload is checked by the headless integration suite.
 | Area | Status |
 | --- | --- |
 | Catalogue + OD table | Migrated to domain; `pCmd.readTable`, `protoPypeForm.fillSizes`, `pFeatures.pipe_OD` and `pForms.pipe_OD` use it. |
+| Standards + units | Migrated to domain metadata (`standards/catalog.json`): 10 institutions, 26 standards, 86 dimensions and 19 catalogue families; all 243 CSV files are classified and unit-normalised. |
 | Feature base class | Migrated to `quetzal.features.base.PypeFeature`; `pFeatures.pypeType` is the same object. |
 | Pipe / Cap / TerminalAdapter | Migrated with property schemas, shape builders and registry entries. |
 | Generic insertion | `FeatureInserter` + `FeatureRegistry` available. |
@@ -182,5 +201,6 @@ next steps:
    `App::PropertyLinkList` while reading the legacy string lists.
 
 See [SOLID mapping](docs/architecture/solid-mapping.md),
-[extension guide](docs/architecture/extending.md) and
+[extension guide](docs/architecture/extending.md),
+[standards and units](docs/architecture/standards-and-units.md) and
 [testing guide](docs/architecture/testing.md).
