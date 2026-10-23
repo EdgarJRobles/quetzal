@@ -37,6 +37,8 @@
   atomic image writes and a temporary-scene renderer that restores camera,
   selection and visibility; the pipe form now uses it.
 - `Gasket` now uses declarative properties and an injectable shape builder.
+- `Elbow`, `Tee` and `Reduct` properties are declared with `PropertySpec`,
+  preserving their original order, groups and computed defaults.
 - Add a `CommandSpec` registry and a single ordered `quetzal.ui.layout` for
   toolbars, menus, context menus and watchers; `InitGui` and the pie menu use
   it instead of duplicated lists.

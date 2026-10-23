@@ -19,6 +19,9 @@ from quetzal.features.flange import (
     spec_from_object,
 )
 from quetzal.features.flange.properties import define_flange_properties
+from quetzal.features.elbow import define_elbow_properties
+from quetzal.features.tee import define_tee_properties
+from quetzal.features.reduct import define_reduct_properties
 from quetzal.application.valve import ValveContext
 from quetzal.application.pype_line import line_group as resolve_line_group
 from quetzal.application.pype_children import (
@@ -68,49 +71,23 @@ class Elbow(pypeType):
         # initialize the parent class
         super(Elbow, self).__init__(obj)
         # define common properties
-        obj.Proxy=self
+        obj.Proxy = self
         obj.PType = "Elbow"
         obj.PRating = rating
         obj.PSize = DN
-        # define specific properties
-        obj.addProperty(
-            "App::PropertyLength",
-            "OD",
-            "Elbow",
-            QT_TRANSLATE_NOOP("App::Property", "Outside diameter"),
-        ).OD = OD
-        obj.addProperty(
-            "App::PropertyLength",
-            "thk",
-            "Elbow",
-            QT_TRANSLATE_NOOP("App::Property", "Wall thickness"),
-        ).thk = thk
-        obj.addProperty(
-            "App::PropertyLength",
-            "ID",
-            "Elbow",
-            QT_TRANSLATE_NOOP("App::Property", "Inside diameter"),
-        ).ID = obj.OD - 2 * obj.thk
-        obj.addProperty(
-            "App::PropertyAngle",
-            "BendAngle",
-            "Elbow",
-            QT_TRANSLATE_NOOP("App::Property", "Bend Angle"),
-        ).BendAngle = BA
-        obj.addProperty(
-            "App::PropertyLength",
-            "BendRadius",
-            "Elbow",
-            QT_TRANSLATE_NOOP("App::Property", "Bend Radius"),
-        ).BendRadius = BR
-        obj.addProperty(
-            "App::PropertyString",
-            "Profile",
-            "Elbow",
-            QT_TRANSLATE_NOOP("App::Property", "Section dim."),
-        ).Profile = str(obj.OD) + "x" + str(obj.thk)
-        # obj.Ports=[FreeCAD.Vector(1,0,0),FreeCAD.Vector(0,1,0)]
+        define_elbow_properties(
+            obj,
+            {
+                "OD": OD,
+                "thk": thk,
+                "ID": float(OD) - 2 * float(thk),
+                "BendAngle": BA,
+                "BendRadius": BR,
+                "Profile": str(OD) + "x" + str(thk),
+            },
+        )
         self.execute(obj)
+
 
     def onChanged(self, fp, prop):
         if prop == "ID" and fp.ID < fp.OD:
@@ -604,90 +581,32 @@ class Tee(pypeType):
       DN2 (string): nominal diameter of branch end; stored as PSizeBranch property
     """
     def __init__(self, obj, rating="SCH-STD", DN="DN150", OD=168.27, OD2=168.27,thk=7.11,thk2=7.11,C=178.0,M=178.0,DN2=""):
-         # initialize the parent class
+        # initialize the parent class
         super(Tee, self).__init__(obj)
-         # define common properties
+        # define common properties
         obj.Proxy = self
         obj.PType = "Tee"
         obj.PRating = rating
         obj.PSize = DN
-        # define specific properties
-        obj.addProperty(
-            "App::PropertyString",
-            "PSizeBranch",
-            "Tee",
-            QT_TRANSLATE_NOOP("App::Property", "Nominal diameter of branch end"),
-        ).PSizeBranch = DN2
-        obj.addProperty(
-            "App::PropertyLength",
-            "OD",
-            "Tee",
-            QT_TRANSLATE_NOOP("App::Property", "Run diameter"),
-        ).OD
-        obj.addProperty(
-            "App::PropertyLength",
-            "OD2",
-            "Tee",
-            QT_TRANSLATE_NOOP("App::Property", "Branch diameter"),
-        ).OD2
-        obj.addProperty(
-            "App::PropertyLength",
-            "thk",
-            "Tee",
-            QT_TRANSLATE_NOOP("App::Property", "Run Wall thickness"),
-        ).thk
-        obj.addProperty(
-            "App::PropertyLength",
-            "thk2",
-            "Tee",
-            QT_TRANSLATE_NOOP("App::Property", "Branch Wall thickness"),
-        ).thk2
-        obj.addProperty(
-            "App::PropertyLength",
-            "C",
-            "Tee",
-            QT_TRANSLATE_NOOP("App::Property", "Run half length"),
-        ).C
-        obj.addProperty(
-            "App::PropertyLength",
-            "M",
-            "Tee",
-            QT_TRANSLATE_NOOP("App::Property", "Branch length"),
-        ).M
-        obj.addProperty(
-            "App::PropertyLength",
-            "offset",
-            "Tee",
-            QT_TRANSLATE_NOOP("App::Property", "Straight tee offset length"),
-        ).offset
-        #If branch diameter is equal to run, set branch OD, thickness, and length to be equal to branch's
-        if not thk2:
-            obj.thk2 = thk
-        else:
-            obj.thk2 = thk2
-
-        if not OD2:
-            obj.OD2 = OD
-        else:
-            obj.OD2 = OD2
-
-        if not M:
-            obj.M = C
-        else:
-            obj.M = M
-        obj.OD = OD
-        obj.thk = thk
-        obj.C = C
-
-        obj.offset = 1.0 #mm offset for straight tee 
-        
-        obj.addProperty(
-            "App::PropertyString",
-            "Profile",
-            "Tee",
-            QT_TRANSLATE_NOOP("App::Property", "Run and Branch Size"),
-        ).Profile = str(obj.OD) + "x" + str(obj.OD2)
+        branch_od = OD2 if OD2 else OD
+        branch_thk = thk2 if thk2 else thk
+        branch_length = M if M else C
+        define_tee_properties(
+            obj,
+            {
+                "PSizeBranch": DN2,
+                "OD": OD,
+                "OD2": branch_od,
+                "thk": thk,
+                "thk2": branch_thk,
+                "C": C,
+                "M": branch_length,
+                "offset": 1.0,
+                "Profile": str(OD) + "x" + str(branch_od),
+            },
+        )
         self.execute(obj)
+
 
     def onChanged(self, fp, prop):
         return None
@@ -1002,73 +921,25 @@ class Reduct(pypeType):
         obj.PType = "Reduct"
         obj.PRating = rating
         obj.PSize = DN
-        # define specific properties
-        obj.addProperty(
-            "App::PropertyString",
-            "PSize2",
-            "Reduct",
-            QT_TRANSLATE_NOOP("App::Property", "Nominal diameter (minor end)"),
-        ).PSize2 = DN2
-        obj.addProperty(
-            "App::PropertyLength",
-            "OD",
-            "Reduct",
-            QT_TRANSLATE_NOOP("App::Property", "Major diameter"),
-        ).OD = OD
-        obj.addProperty(
-            "App::PropertyLength",
-            "OD2",
-            "Reduct",
-            QT_TRANSLATE_NOOP("App::Property", "Minor diameter"),
-        ).OD2 = OD2
-        obj.addProperty(
-            "App::PropertyLength",
-            "thk",
-            "Reduct",
-            QT_TRANSLATE_NOOP("App::Property", "Wall thickness"),
-        ).thk = thk
-        obj.addProperty(
-            "App::PropertyLength",
-            "thk2",
-            "Reduct",
-            QT_TRANSLATE_NOOP("App::Property", "Wall thickness"),
+        minor_thk = thk2 if thk2 else thk
+        calc_h = not bool(H)
+        height = 3 * (float(OD) - float(OD2)) if calc_h else float(H)
+        define_reduct_properties(
+            obj,
+            {
+                "PSize2": DN2,
+                "OD": OD,
+                "OD2": OD2,
+                "thk": thk,
+                "thk2": minor_thk,
+                "calcH": calc_h,
+                "Height": height,
+                "Profile": str(OD) + "x" + str(OD2),
+                "conc": conc,
+            },
         )
-        if not thk2:
-            obj.thk2 = thk
-        else:
-            obj.thk2 = thk2
-        obj.addProperty(
-            "App::PropertyBool",
-            "calcH",
-            "Reduct",
-            QT_TRANSLATE_NOOP("App::Property", "Make the length variable"),
-        )
-        obj.addProperty(
-            "App::PropertyLength",
-            "Height",
-            "Reduction",
-            QT_TRANSLATE_NOOP("App::Property", "Length of reduction"),
-        )
-        if not H:
-            obj.calcH = True
-            obj.Height = 3 * (obj.OD - obj.OD2)
-        else:
-            obj.calcH = False
-            obj.Height = float(H)
-        obj.addProperty(
-            "App::PropertyString",
-            "Profile",
-            "Reduct",
-            QT_TRANSLATE_NOOP("App::Property", "Section dim."),
-        ).Profile = str(obj.OD) + "x" + str(obj.OD2)
-        obj.addProperty(
-            "App::PropertyBool",
-            "conc",
-            "Reduct",
-            QT_TRANSLATE_NOOP("App::Property", "Concentric or Eccentric"),
-        ).conc = conc
-
         self.execute(obj)
+
 
     def onChanged(self, fp, prop):
         return None

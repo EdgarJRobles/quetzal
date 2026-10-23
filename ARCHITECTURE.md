@@ -190,6 +190,7 @@ work. Save/reload is checked by the headless integration suite.
 | Standards + units | Migrated to domain metadata (`standards/catalog.json`): 10 institutions, 26 standards, 86 dimensions and 19 catalogue families; all 243 CSV files are classified and unit-normalised. |
 | Feature base class | Migrated to `quetzal.features.base.PypeFeature`; `pFeatures.pypeType` is the same object. |
 | Pipe / Cap / TerminalAdapter / Gasket | Migrated with property schemas, shape builders and registry entries. |
+| Elbow / Tee / Reduct properties | Declared with `PropertySpec` in place, preserving the original order and groups; geometry stays in the existing proxies. |
 | Valve geometry | Six replaceable strategies (`generic`, `flanged`, `sw_th`, `swing_check`, `knife_gate`, `pinch`) selected by pure resolvers; `pFeatures.Valve` is now a ~160-line facade and the 8-mode geometry baseline is unchanged. |
 | Flange geometry | Five builders plus a generic fallback selected at execute time by `FlangeType`; ports/insertion offsets live in `quetzal.domain.flange`; the 6-type geometry baseline is unchanged. |
 | Flange properties | Declared as `PropertySpec` in `quetzal.features.flange.properties` with the original order, groups and docs. |
@@ -207,13 +208,10 @@ work. Save/reload is checked by the headless integration suite.
 These items are deliberately out of scope for this branch but are the natural
 next steps:
 
-1. Move the remaining feature proxies to `PropertySpec` + `FeatureDefinition`
-   (`Tee`, `Reduct`, `Elbow`, `Outlet`, socket fittings, ...).
+1. Move the remaining feature proxies (`Outlet` and the socket fittings) to
+   `PropertySpec` + `FeatureDefinition`.
 2. Wire the remaining dialogs (base `protoPypeForm`, Elbow/Tee/Valve/...) to
    the new `PreviewService`; the pipe form is already migrated.
-3. Migrate the remaining feature proxies (Elbow, Tee, Reduct, Outlet, socket
-   fittings) to `PropertySpec`/`FeatureDefinition` and finish the
-   `PreviewService` migration for dialog previews.
 
 See [SOLID mapping](docs/architecture/solid-mapping.md),
 [extension guide](docs/architecture/extending.md),
