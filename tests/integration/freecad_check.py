@@ -20,6 +20,10 @@ import traceback
 from pathlib import Path
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+INTEGRATION_DIR = os.path.join(ROOT, "tests", "integration")
+for _path in (ROOT, INTEGRATION_DIR):
+    if _path not in sys.path:
+        sys.path.insert(0, _path)
 if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
 
@@ -132,6 +136,57 @@ def check_insertion_flows():
         FreeCAD.closeDocument(flow_document.Name)
 
 
+def check_feature_baselines():
+    """Pin Valve/Flange geometry and properties against pre-refactor snapshots."""
+
+    import baseline_cases as baselines
+
+    baseline_document = FreeCAD.newDocument("quetzal_baselines")
+    try:
+        checked = 0
+        expected_valves = baselines.load_baseline("valve")
+        for name, kwargs in baselines.VALVE_CASES.items():
+            obj = baseline_document.addObject("Part::FeaturePython", f"V_{name}")
+            pFeatures.Valve(obj, **kwargs)
+            baseline_document.recompute()
+            baselines.assert_matches(
+                f"Valve.{name}", baselines.snapshot(obj), expected_valves[name]
+            )
+            checked += 1
+
+        expected_flanges = baselines.load_baseline("flange")
+        for name, (rating, properties, fclass) in baselines.FLANGE_CASES.items():
+            obj = baseline_document.addObject("Part::FeaturePython", f"F_{name}")
+            pFeatures.Flange(obj, rating, *properties, FClass=fclass)
+            baseline_document.recompute()
+            baselines.assert_matches(
+                f"Flange.{name}", baselines.snapshot(obj), expected_flanges[name]
+            )
+            checked += 1
+        return checked
+    finally:
+        FreeCAD.closeDocument(baseline_document.Name)
+
+
+def check_module_constants():
+    """Feature geometry must not mutate the shared vO/vX/vY/vZ vectors."""
+
+    constants = (pFeatures.vO, pFeatures.vX, pFeatures.vY, pFeatures.vZ)
+    before = [tuple(vector) for vector in constants]
+    document = FreeCAD.newDocument("quetzal_constants")
+    try:
+        elbow = document.addObject("Part::FeaturePython", "DuctElbow")
+        pFeatures.DuctElbow(elbow, "Rectangular")
+        reduction = document.addObject("Part::FeaturePython", "DuctReduction")
+        pFeatures.DuctReduction(reduction, "Rectangular")
+        document.recompute()
+    finally:
+        FreeCAD.closeDocument(document.Name)
+    after = [tuple(vector) for vector in constants]
+    assert before == after, f"module vectors mutated: {before} -> {after}"
+    return len(before)
+
+
 def main():
     print(f"FreeCAD {FreeCAD.Version()[0]}.{FreeCAD.Version()[1]}", flush=True)
     document = FreeCAD.newDocument("quetzal_integration")
@@ -223,6 +278,14 @@ def main():
     if flow_count:
         print(f"     objects created by flows: {flow_count}", flush=True)
 
+    baseline_count = check("Valve/Flange baselines", check_feature_baselines)
+    if baseline_count:
+        print(f"     baseline cases checked: {baseline_count}", flush=True)
+
+    constant_count = check("module constants unchanged", check_module_constants)
+    if constant_count:
+        print(f"     shared vectors checked: {constant_count}", flush=True)
+
     if FAILURES:
         print(f"\n{len(FAILURES)} failure(s)", flush=True)
         return 1
@@ -230,5 +293,13 @@ def main():
     return 0
 
 
-if __name__ in ("__main__", os.path.splitext(os.path.basename(__file__))[0]):
+def _is_direct_execution() -> bool:
+    """FreeCADCmd imports scripts as a module, so __name__ is the file stem."""
+    if __name__ == "__main__":
+        return True
+    script = os.path.abspath(__file__)
+    return any(os.path.abspath(arg) == script for arg in sys.argv[1:])
+
+
+if _is_direct_execution():
     sys.exit(main())

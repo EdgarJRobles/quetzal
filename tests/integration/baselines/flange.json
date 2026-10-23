@@ -1,0 +1,404 @@
+{
+  "BL_150lb": {
+    "area": 48346.047886,
+    "bbox": [
+      -76.2,
+      -76.2,
+      -1.6,
+      76.2,
+      76.2,
+      19.05
+    ],
+    "dirs": [
+      [
+        0.0,
+        0.0,
+        -1.0
+      ],
+      [
+        0.0,
+        0.0,
+        1.0
+      ]
+    ],
+    "ports": [
+      [
+        0.0,
+        0.0,
+        -1.6
+      ],
+      [
+        0.0,
+        0.0,
+        19.05
+      ]
+    ],
+    "props": {
+      "AttacherEngine": "Engine 3D",
+      "AttacherType": "Attacher::AttachEngine3D",
+      "AttachmentOffset": "Placement [Pos=(0,0,0), Yaw-Pitch-Roll=(0,0,0)]",
+      "AttachmentSupport": "[]",
+      "B2": "0.0 mm",
+      "D": "152.4 mm",
+      "FClass": "150lb",
+      "FlangeType": "BL",
+      "Kv": "0.0",
+      "MapMode": "Deactivated",
+      "MapPathParameter": "0.0",
+      "MapReversed": "False",
+      "ODp": "0.0 mm",
+      "PRating": "No rating",
+      "PSize": "DN50",
+      "PType": "Flange",
+      "R": "0.0 mm",
+      "T1": "0.0 mm",
+      "Y": "0.0 mm",
+      "d": "0.0 mm",
+      "df": "120.65 mm",
+      "drf": "91.95 mm",
+      "dwn": "0.0 mm",
+      "f": "19.05 mm",
+      "n": "4",
+      "t": "19.05 mm",
+      "trf": "1.6 mm",
+      "twn": "0.0 mm"
+    },
+    "valid": true,
+    "volume": 336405.858011
+  },
+  "LJ_150lb": {
+    "area": 47652.514949,
+    "bbox": [
+      -76.2,
+      -76.2,
+      0.0,
+      76.2,
+      76.2,
+      25.4
+    ],
+    "dirs": [
+      [
+        0.0,
+        0.0,
+        -1.0
+      ],
+      [
+        0.0,
+        0.0,
+        1.0
+      ]
+    ],
+    "ports": [
+      [
+        0.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        0.0
+      ]
+    ],
+    "props": {
+      "AttacherEngine": "Engine 3D",
+      "AttacherType": "Attacher::AttachEngine3D",
+      "AttachmentOffset": "Placement [Pos=(0,0,0), Yaw-Pitch-Roll=(0,0,0)]",
+      "AttachmentSupport": "[]",
+      "B2": "0.0 mm",
+      "D": "152.4 mm",
+      "FClass": "150lb",
+      "FlangeType": "LJ",
+      "Kv": "0.0",
+      "MapMode": "Deactivated",
+      "MapPathParameter": "0.0",
+      "MapReversed": "False",
+      "ODp": "77.72 mm",
+      "PRating": "No rating",
+      "PSize": "DN50",
+      "PType": "Flange",
+      "R": "7.87 mm",
+      "T1": "25.4 mm",
+      "Y": "0.0 mm",
+      "d": "62.48 mm",
+      "df": "120.65 mm",
+      "drf": "0.0 mm",
+      "dwn": "0.0 mm",
+      "f": "19.05 mm",
+      "n": "4",
+      "t": "19.05 mm",
+      "trf": "0.0 mm",
+      "twn": "0.0 mm"
+    },
+    "valid": true,
+    "volume": 275274.21952
+  },
+  "SO_150lb": {
+    "area": 49119.576484,
+    "bbox": [
+      -76.2,
+      -76.2,
+      -1.6,
+      76.2,
+      76.2,
+      25.4
+    ],
+    "dirs": [
+      [
+        0.0,
+        0.0,
+        -1.0
+      ],
+      [
+        0.0,
+        0.0,
+        1.0
+      ]
+    ],
+    "ports": [
+      [
+        0.0,
+        0.0,
+        -1.6
+      ],
+      [
+        0.0,
+        0.0,
+        1.6
+      ]
+    ],
+    "props": {
+      "AttacherEngine": "Engine 3D",
+      "AttacherType": "Attacher::AttachEngine3D",
+      "AttachmentOffset": "Placement [Pos=(0,0,0), Yaw-Pitch-Roll=(0,0,0)]",
+      "AttachmentSupport": "[]",
+      "B2": "0.0 mm",
+      "D": "152.4 mm",
+      "FClass": "150lb",
+      "FlangeType": "SO",
+      "Kv": "0.0",
+      "MapMode": "Deactivated",
+      "MapPathParameter": "0.0",
+      "MapReversed": "False",
+      "ODp": "77.72 mm",
+      "PRating": "No rating",
+      "PSize": "DN50",
+      "PType": "Flange",
+      "R": "0.0 mm",
+      "T1": "25.4 mm",
+      "Y": "0.0 mm",
+      "d": "61.98 mm",
+      "df": "120.65 mm",
+      "drf": "91.95 mm",
+      "dwn": "0.0 mm",
+      "f": "19.05 mm",
+      "n": "4",
+      "t": "19.05 mm",
+      "trf": "1.6 mm",
+      "twn": "0.0 mm"
+    },
+    "valid": true,
+    "volume": 285068.683298
+  },
+  "SO_DIN_PN16": {
+    "area": 53543.341692,
+    "bbox": [
+      -82.5,
+      -82.5,
+      0.0,
+      82.5,
+      82.5,
+      20.0
+    ],
+    "dirs": [
+      [
+        0.0,
+        0.0,
+        -1.0
+      ],
+      [
+        0.0,
+        0.0,
+        1.0
+      ]
+    ],
+    "ports": [
+      [
+        0.0,
+        0.0,
+        -0.0
+      ],
+      [
+        0.0,
+        0.0,
+        0.0
+      ]
+    ],
+    "props": {
+      "AttacherEngine": "Engine 3D",
+      "AttacherType": "Attacher::AttachEngine3D",
+      "AttachmentOffset": "Placement [Pos=(0,0,0), Yaw-Pitch-Roll=(0,0,0)]",
+      "AttachmentSupport": "[]",
+      "B2": "0.0 mm",
+      "D": "165.0 mm",
+      "FClass": "PN16",
+      "FlangeType": "SO",
+      "Kv": "0.0",
+      "MapMode": "Deactivated",
+      "MapPathParameter": "0.0",
+      "MapReversed": "False",
+      "ODp": "0.0 mm",
+      "PRating": "No rating",
+      "PSize": "DN50",
+      "PType": "Flange",
+      "R": "0.0 mm",
+      "T1": "0.0 mm",
+      "Y": "0.0 mm",
+      "d": "61.5 mm",
+      "df": "125.0 mm",
+      "drf": "0.0 mm",
+      "dwn": "0.0 mm",
+      "f": "18.0 mm",
+      "n": "4",
+      "t": "20.0 mm",
+      "trf": "0.0 mm",
+      "twn": "0.0 mm"
+    },
+    "valid": true,
+    "volume": 347880.335504
+  },
+  "SW_150lb": {
+    "area": 52222.98622,
+    "bbox": [
+      -76.2,
+      -76.2,
+      -1.6,
+      76.2,
+      76.2,
+      25.4
+    ],
+    "dirs": [
+      [
+        0.0,
+        0.0,
+        -1.0
+      ],
+      [
+        0.0,
+        0.0,
+        1.0
+      ]
+    ],
+    "ports": [
+      [
+        0.0,
+        0.0,
+        -1.6
+      ],
+      [
+        0.0,
+        0.0,
+        6.27
+      ]
+    ],
+    "props": {
+      "AttacherEngine": "Engine 3D",
+      "AttacherType": "Attacher::AttachEngine3D",
+      "AttachmentOffset": "Placement [Pos=(0,0,0), Yaw-Pitch-Roll=(0,0,0)]",
+      "AttachmentSupport": "[]",
+      "B2": "61.98 mm",
+      "D": "152.4 mm",
+      "FClass": "150lb",
+      "FlangeType": "SW",
+      "Kv": "0.0",
+      "MapMode": "Deactivated",
+      "MapPathParameter": "0.0",
+      "MapReversed": "False",
+      "ODp": "77.72 mm",
+      "PRating": "No rating",
+      "PSize": "DN50",
+      "PType": "Flange",
+      "R": "0.0 mm",
+      "T1": "25.4 mm",
+      "Y": "17.53 mm",
+      "d": "52.58 mm",
+      "df": "120.65 mm",
+      "drf": "91.95 mm",
+      "dwn": "0.0 mm",
+      "f": "19.05 mm",
+      "n": "4",
+      "t": "19.05 mm",
+      "trf": "1.6 mm",
+      "twn": "0.0 mm"
+    },
+    "valid": true,
+    "volume": 293078.096862
+  },
+  "WN_150lb": {
+    "area": 62067.6319,
+    "bbox": [
+      -76.2,
+      -76.2,
+      -1.6,
+      76.2,
+      76.2,
+      63.5
+    ],
+    "dirs": [
+      [
+        0.0,
+        0.0,
+        -1.0
+      ],
+      [
+        0.0,
+        0.0,
+        1.0
+      ]
+    ],
+    "ports": [
+      [
+        0.0,
+        0.0,
+        -1.6
+      ],
+      [
+        0.0,
+        0.0,
+        63.5
+      ]
+    ],
+    "props": {
+      "AttacherEngine": "Engine 3D",
+      "AttacherType": "Attacher::AttachEngine3D",
+      "AttachmentOffset": "Placement [Pos=(0,0,0), Yaw-Pitch-Roll=(0,0,0)]",
+      "AttachmentSupport": "[]",
+      "B2": "0.0 mm",
+      "D": "152.4 mm",
+      "FClass": "150lb",
+      "FlangeType": "WN",
+      "Kv": "0.0",
+      "MapMode": "Deactivated",
+      "MapPathParameter": "0.0",
+      "MapReversed": "False",
+      "ODp": "60.45 mm",
+      "PRating": "SCH-STD",
+      "PSize": "DN50",
+      "PType": "Flange",
+      "R": "7.87 mm",
+      "T1": "63.5 mm",
+      "Y": "0.0 mm",
+      "d": "52.5018 mm",
+      "df": "120.65 mm",
+      "drf": "91.95 mm",
+      "dwn": "77.72 mm",
+      "f": "19.05 mm",
+      "n": "4",
+      "t": "19.05 mm",
+      "trf": "1.6 mm",
+      "twn": "35.56 mm"
+    },
+    "valid": true,
+    "volume": 356837.450553
+  }
+}

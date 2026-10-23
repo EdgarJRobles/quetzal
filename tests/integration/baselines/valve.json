@@ -1,0 +1,450 @@
+{
+  "flanged_ball": {
+    "area": 214882.455311,
+    "bbox": [
+      -76.2,
+      -76.2,
+      -101.5,
+      76.2,
+      112.7,
+      203.0
+    ],
+    "dirs": [
+      [
+        0.0,
+        0.0,
+        1.0
+      ],
+      [
+        0.0,
+        0.0,
+        -1.0
+      ]
+    ],
+    "ports": [
+      [
+        0.0,
+        0.0,
+        101.5
+      ],
+      [
+        0.0,
+        0.0,
+        -101.5
+      ]
+    ],
+    "props": {
+      "Actuator": "Handle",
+      "AttacherEngine": "Engine 3D",
+      "AttacherType": "Attacher::AttachEngine3D",
+      "AttachmentOffset": "Placement [Pos=(0,0,0), Yaw-Pitch-Roll=(0,0,0)]",
+      "AttachmentSupport": "[]",
+      "BottomH": "49.0 mm",
+      "Conn": "150lb",
+      "FlgD": "152.4 mm",
+      "FlgDf": "120.65 mm",
+      "FlgDrf": "91.95 mm",
+      "FlgF": "19.05 mm",
+      "FlgN": "4",
+      "FlgTrf": "1.6 mm",
+      "Flgt": "19.05 mm",
+      "Height": "203.0 mm",
+      "Kv": "10000.0",
+      "MapMode": "Deactivated",
+      "MapPathParameter": "0.0",
+      "MapReversed": "False",
+      "ODBody": "72.0 mm",
+      "PRating": "Ball_LongPatternRF",
+      "PSize": "DN50",
+      "PType": "Valve",
+      "TopH": "108.0 mm"
+    },
+    "valid": true,
+    "volume": 2270531.518539
+  },
+  "flanged_swing": {
+    "area": 180253.309047,
+    "bbox": [
+      -76.2,
+      -76.2,
+      -101.5,
+      76.2,
+      111.66,
+      101.5
+    ],
+    "dirs": [
+      [
+        0.0,
+        0.0,
+        1.0
+      ],
+      [
+        0.0,
+        0.0,
+        -1.0
+      ]
+    ],
+    "ports": [
+      [
+        0.0,
+        0.0,
+        101.5
+      ],
+      [
+        0.0,
+        0.0,
+        -101.5
+      ]
+    ],
+    "props": {
+      "Actuator": "Handle",
+      "AttacherEngine": "Engine 3D",
+      "AttacherType": "Attacher::AttachEngine3D",
+      "AttachmentOffset": "Placement [Pos=(0,0,0), Yaw-Pitch-Roll=(0,0,0)]",
+      "AttachmentSupport": "[]",
+      "BottomH": "49.0 mm",
+      "Conn": "150lb",
+      "FlgD": "152.4 mm",
+      "FlgDf": "120.65 mm",
+      "FlgDrf": "91.95 mm",
+      "FlgF": "19.05 mm",
+      "FlgN": "4",
+      "FlgTrf": "1.6 mm",
+      "Flgt": "19.05 mm",
+      "Height": "203.0 mm",
+      "Kv": "0.0",
+      "MapMode": "Deactivated",
+      "MapPathParameter": "0.0",
+      "MapReversed": "False",
+      "ODBody": "72.0 mm",
+      "PRating": "Check_Swing_FullPortRF",
+      "PSize": "DN50",
+      "PType": "Valve",
+      "TopH": "108.0 mm"
+    },
+    "valid": true,
+    "volume": 1494585.752174
+  },
+  "knife_gate": {
+    "area": 56999.857656,
+    "bbox": [
+      -51.0,
+      -51.0,
+      -37.342531,
+      51.0,
+      184.7,
+      37.342531
+    ],
+    "dirs": [
+      [
+        0.0,
+        0.0,
+        -1.0
+      ],
+      [
+        0.0,
+        0.0,
+        1.0
+      ]
+    ],
+    "ports": [
+      [
+        0.0,
+        0.0,
+        -24.0
+      ],
+      [
+        0.0,
+        0.0,
+        24.0
+      ]
+    ],
+    "props": {
+      "AttacherEngine": "Engine 3D",
+      "AttacherType": "Attacher::AttachEngine3D",
+      "AttachmentOffset": "Placement [Pos=(0,0,0), Yaw-Pitch-Roll=(0,0,0)]",
+      "AttachmentSupport": "[]",
+      "Height": "48.0 mm",
+      "ID": "50.0 mm",
+      "Kv": "287.0",
+      "MapMode": "Deactivated",
+      "MapPathParameter": "0.0",
+      "MapReversed": "False",
+      "ODBody": "102.0 mm",
+      "PRating": "KnifeGate_Handwheel",
+      "PSize": "DN50",
+      "PType": "Valve"
+    },
+    "valid": true,
+    "volume": 366356.959787
+  },
+  "legacy_ball": {
+    "area": 17245.955268,
+    "bbox": [
+      -36.0,
+      -36.0,
+      -20.0,
+      36.0,
+      36.0,
+      20.0
+    ],
+    "dirs": [
+      [
+        0.0,
+        0.0,
+        -1.0
+      ],
+      [
+        0.0,
+        0.0,
+        1.0
+      ]
+    ],
+    "ports": [
+      [
+        0.0,
+        0.0,
+        -20.0
+      ],
+      [
+        0.0,
+        0.0,
+        20.0
+      ]
+    ],
+    "props": {
+      "AttacherEngine": "Engine 3D",
+      "AttacherType": "Attacher::AttachEngine3D",
+      "AttachmentOffset": "Placement [Pos=(0,0,0), Yaw-Pitch-Roll=(0,0,0)]",
+      "AttachmentSupport": "[]",
+      "Height": "40.0 mm",
+      "ID": "50.0 mm",
+      "Kv": "150.0",
+      "MapMode": "Deactivated",
+      "MapPathParameter": "0.0",
+      "MapReversed": "False",
+      "ODBody": "72.0 mm",
+      "PRating": "ball",
+      "PSize": "DN50",
+      "PType": "Valve"
+    },
+    "valid": true,
+    "volume": 85884.987322
+  },
+  "legacy_globe": {
+    "area": 17245.955268,
+    "bbox": [
+      -36.0,
+      -36.0,
+      -20.0,
+      36.0,
+      36.0,
+      20.0
+    ],
+    "dirs": [
+      [
+        0.0,
+        0.0,
+        -1.0
+      ],
+      [
+        0.0,
+        0.0,
+        1.0
+      ]
+    ],
+    "ports": [
+      [
+        0.0,
+        0.0,
+        -20.0
+      ],
+      [
+        0.0,
+        0.0,
+        20.0
+      ]
+    ],
+    "props": {
+      "AttacherEngine": "Engine 3D",
+      "AttacherType": "Attacher::AttachEngine3D",
+      "AttachmentOffset": "Placement [Pos=(0,0,0), Yaw-Pitch-Roll=(0,0,0)]",
+      "AttachmentSupport": "[]",
+      "Height": "40.0 mm",
+      "ID": "50.0 mm",
+      "Kv": "150.0",
+      "MapMode": "Deactivated",
+      "MapPathParameter": "0.0",
+      "MapReversed": "False",
+      "ODBody": "72.0 mm",
+      "PRating": "globe",
+      "PSize": "DN50",
+      "PType": "Valve"
+    },
+    "valid": true,
+    "volume": 85884.987322
+  },
+  "pinch": {
+    "area": 195598.540134,
+    "bbox": [
+      -82.5,
+      -82.5,
+      -97.5,
+      82.5,
+      197.9,
+      97.5
+    ],
+    "dirs": [
+      [
+        0.0,
+        0.0,
+        -1.0
+      ],
+      [
+        0.0,
+        0.0,
+        1.0
+      ]
+    ],
+    "ports": [
+      [
+        0.0,
+        0.0,
+        -97.5
+      ],
+      [
+        0.0,
+        0.0,
+        97.5
+      ]
+    ],
+    "props": {
+      "AttacherEngine": "Engine 3D",
+      "AttacherType": "Attacher::AttachEngine3D",
+      "AttachmentOffset": "Placement [Pos=(0,0,0), Yaw-Pitch-Roll=(0,0,0)]",
+      "AttachmentSupport": "[]",
+      "Height": "195.0 mm",
+      "ID": "50.0 mm",
+      "Kv": "0.0",
+      "MapMode": "Deactivated",
+      "MapPathParameter": "0.0",
+      "MapReversed": "False",
+      "ODBody": "165.0 mm",
+      "PRating": "Pinch_Manual",
+      "PSize": "DN50",
+      "PType": "Valve"
+    },
+    "valid": true,
+    "volume": 2825143.204318
+  },
+  "socket_weld": {
+    "area": 26204.469978,
+    "bbox": [
+      -41.569219,
+      -36.0,
+      -20.0,
+      41.569219,
+      72.5,
+      50.0
+    ],
+    "dirs": [
+      [
+        0.0,
+        0.0,
+        1.0
+      ],
+      [
+        0.0,
+        0.0,
+        -1.0
+      ]
+    ],
+    "ports": [
+      [
+        0.0,
+        0.0,
+        12.0
+      ],
+      [
+        0.0,
+        0.0,
+        -12.0
+      ]
+    ],
+    "props": {
+      "AttacherEngine": "Engine 3D",
+      "AttacherType": "Attacher::AttachEngine3D",
+      "AttachmentOffset": "Placement [Pos=(0,0,0), Yaw-Pitch-Roll=(0,0,0)]",
+      "AttachmentSupport": "[]",
+      "Conn": "SW",
+      "E": "8.0 mm",
+      "Height": "40.0 mm",
+      "Kv": "150.0",
+      "MapMode": "Deactivated",
+      "MapPathParameter": "0.0",
+      "MapReversed": "False",
+      "OD": "60.32 mm",
+      "ODBody": "72.0 mm",
+      "PRating": "ball",
+      "PSize": "DN50",
+      "PType": "Valve"
+    },
+    "valid": true,
+    "volume": 85259.849366
+  },
+  "threaded": {
+    "area": 26204.469978,
+    "bbox": [
+      -41.569219,
+      -36.0,
+      -20.0,
+      41.569219,
+      72.5,
+      50.0
+    ],
+    "dirs": [
+      [
+        0.0,
+        0.0,
+        1.0
+      ],
+      [
+        0.0,
+        0.0,
+        -1.0
+      ]
+    ],
+    "ports": [
+      [
+        0.0,
+        0.0,
+        12.0
+      ],
+      [
+        0.0,
+        0.0,
+        -12.0
+      ]
+    ],
+    "props": {
+      "AttacherEngine": "Engine 3D",
+      "AttacherType": "Attacher::AttachEngine3D",
+      "AttachmentOffset": "Placement [Pos=(0,0,0), Yaw-Pitch-Roll=(0,0,0)]",
+      "AttachmentSupport": "[]",
+      "Conn": "TH",
+      "E": "8.0 mm",
+      "Height": "40.0 mm",
+      "Kv": "150.0",
+      "MapMode": "Deactivated",
+      "MapPathParameter": "0.0",
+      "MapReversed": "False",
+      "OD": "60.32 mm",
+      "ODBody": "72.0 mm",
+      "PRating": "ball",
+      "PSize": "DN50",
+      "PType": "Valve"
+    },
+    "valid": true,
+    "volume": 85259.849366
+  }
+}

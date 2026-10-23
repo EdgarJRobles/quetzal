@@ -274,8 +274,11 @@ class DuctElbow:
         ]
 
     def _rect_wire(self, center, xdir, ydir, width, height):
-        x = xdir.normalize().multiply(width / 2)
-        y = ydir.normalize().multiply(height / 2)
+        # FreeCAD's normalize()/multiply() mutate in place.  Copy the input
+        # vectors first: callers pass the module-level vX/vY/vZ constants, and
+        # mutating those corrupted every feature created afterwards.
+        x = FreeCAD.Vector(xdir).normalize().multiply(width / 2)
+        y = FreeCAD.Vector(ydir).normalize().multiply(height / 2)
         pts = [
             center - x - y,
             center + x - y,
@@ -1369,8 +1372,11 @@ class DuctReduction:
         fp.PortDirections = [FreeCAD.Vector(0, 0, -1), FreeCAD.Vector(0, 0, 1)]
 
     def _rect_wire(self, center, xdir, ydir, width, height):
-        x = xdir.normalize().multiply(width / 2)
-        y = ydir.normalize().multiply(height / 2)
+        # FreeCAD's normalize()/multiply() mutate in place.  Copy the input
+        # vectors first: callers pass the module-level vX/vY/vZ constants, and
+        # mutating those corrupted every feature created afterwards.
+        x = FreeCAD.Vector(xdir).normalize().multiply(width / 2)
+        y = FreeCAD.Vector(ydir).normalize().multiply(height / 2)
         pts = [
             center - x - y,
             center + x - y,
