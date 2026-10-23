@@ -37,6 +37,7 @@ from DraftGeomUtils import findIntersection
 from numpy.random import randint
 import pCmd
 from quetzal_config import FREECADVERSION, get_icon_path
+from quetzal.infrastructure.standard_filters import default_standard_filter_service
 from uCmd import label3D
 import ShpstData
 
@@ -401,17 +402,28 @@ class insertSectForm(QWidget):
         self.sectDictList = []
         self.fileList = listdir(join(dirname(abspath(__file__)), "tablez"))
         self.fillSizes()
-        self.PRatingsList = [
-            s.lstrip("Section_").rstrip(".csv") for s in self.fileList if s.startswith("Section")
-        ]
+        self._filters = default_standard_filter_service()
+        self.PRatingsList = list(self._filters.ratings("Section"))
         self.secondCol = QWidget()
         self.secondCol.setLayout(QVBoxLayout())
+        self.institutionCombo = QComboBox()
+        self.standardCombo = QComboBox()
+        self.secondCol.layout().addWidget(QLabel("Institution:"))
+        self.secondCol.layout().addWidget(self.institutionCombo)
+        self.secondCol.layout().addWidget(QLabel("Standard:"))
+        self.secondCol.layout().addWidget(self.standardCombo)
         self.lab1 = QLabel("Section types:")
         self.secondCol.layout().addWidget(self.lab1)
         self.ratingList = QListWidget()
         self.ratingList.setMaximumWidth(100)
-        self.ratingList.addItems(self.PRatingsList)
         self.ratingList.itemClicked.connect(self.changeRating)
+        self.institutionCombo.currentTextChanged.connect(self._refresh_section_standards)
+        self.standardCombo.currentTextChanged.connect(self._refresh_section_ratings)
+        institutions = self._filters.institutions("Section")
+        self.institutionCombo.blockSignals(True)
+        self.institutionCombo.addItems(institutions)
+        self.institutionCombo.blockSignals(False)
+        self._refresh_section_standards()
         self.ratingList.setCurrentRow(0)
         self.secondCol.layout().addWidget(self.ratingList)
         self.btn1 = QPushButton("Insert")
@@ -420,6 +432,33 @@ class insertSectForm(QWidget):
         self.secondCol.layout().addWidget(self.btn1)
         self.mainHL.addWidget(self.secondCol)
         self.show()
+
+    def _refresh_section_standards(self):
+        standards = self._filters.standards(
+            "Section", self.institutionCombo.currentText()
+        )
+        self.standardCombo.blockSignals(True)
+        self.standardCombo.clear()
+        self.standardCombo.addItems(standards)
+        self.standardCombo.blockSignals(False)
+        self._refresh_section_ratings()
+
+    def _refresh_section_ratings(self):
+        ratings = self._filters.ratings(
+            "Section",
+            self.institutionCombo.currentText(),
+            self.standardCombo.currentText(),
+        )
+        if not ratings:
+            return
+        self.PRatingsList = list(ratings)
+        self.ratingList.blockSignals(True)
+        self.ratingList.clear()
+        self.ratingList.addItems(ratings)
+        preferred = ratings.index("IPE") if "IPE" in ratings else 0
+        self.ratingList.setCurrentRow(preferred)
+        self.ratingList.blockSignals(False)
+        self.changeRating(self.ratingList.item(preferred))
 
     def fillSizes(self):
         self.sizeList.clear()
@@ -481,10 +520,7 @@ class frameBranchForm(dodoDialogs.protoTypeDialog):
         self.form.editTail.setValidator(QDoubleValidator())
         self.form.editTail.editingFinished.connect(self.changeTailOffset)
         self.form.editLength.setValidator(QDoubleValidator())
-        QuetzalRatings = self.fillRatings()
-        self.form.Rate_comboBox.addItems(QuetzalRatings)
-        self.form.Rate_comboBox.setCurrentText(settings.value("LastRateApplied"))
-        self.form.Rate_comboBox.addItems(["<by sketch>"])
+        self._setup_frame_filters()
         self.form.Rate_comboBox.currentIndexChanged.connect(self.fillSizes)
         self.form.Sizes_comboBox.currentIndexChanged.connect(self.on_currentIndexChanged)
         self.form.btnRemove.clicked.connect(self.removeBeams)
@@ -1015,19 +1051,62 @@ class frameBranchForm(dodoDialogs.protoTypeDialog):
             self.form.dialAngle.setValue(0)
             self.form.lab1.setText("<no item selected>")
 
+    def _setup_frame_filters(self):
+        self._filters = default_standard_filter_service()
+        self.institutionCombo = QComboBox()
+        self.standardCombo = QComboBox()
+        self.form.verticalLayout_5.insertWidget(0, QLabel("Institution:"))
+        self.form.verticalLayout_5.insertWidget(1, QLabel("Standard:"))
+        self.form.verticalLayout_2.insertWidget(0, self.institutionCombo)
+        self.form.verticalLayout_2.insertWidget(1, self.standardCombo)
+        institutions = self._filters.institutions("Section")
+        self.institutionCombo.blockSignals(True)
+        self.institutionCombo.addItems(institutions)
+        self.institutionCombo.blockSignals(False)
+        self.institutionCombo.currentTextChanged.connect(self._refresh_frame_standards)
+        self.standardCombo.currentTextChanged.connect(self._refresh_frame_ratings)
+        self._refresh_frame_standards()
+
+    def _refresh_frame_standards(self):
+        standards = self._filters.standards(
+            "Section", self.institutionCombo.currentText()
+        )
+        self.standardCombo.blockSignals(True)
+        self.standardCombo.clear()
+        self.standardCombo.addItems(standards)
+        self.standardCombo.blockSignals(False)
+        self._refresh_frame_ratings()
+
+    def _refresh_frame_ratings(self):
+        current = self.form.Rate_comboBox.currentText()
+        ratings = list(self.fillRatings())
+        self.form.Rate_comboBox.blockSignals(True)
+        self.form.Rate_comboBox.clear()
+        self.form.Rate_comboBox.addItems(ratings)
+        if current in ratings:
+            self.form.Rate_comboBox.setCurrentText(current)
+        elif ratings:
+            self.form.Rate_comboBox.setCurrentIndex(0)
+        self.form.Rate_comboBox.addItem("<by sketch>")
+        self.form.Rate_comboBox.blockSignals(False)
+        self.fillSizes()
+
     def fillRatings(self):
-        """
-        Fill standard section profiles name into ratings list
-        """
-        tablez = listdir(join(dirname(abspath(__file__)), "tablez"))
-        files = [name for name in tablez if name.startswith("Section")]
+        """Return only Section series mapped to an international standard."""
+        ratings = list(
+            self._filters.ratings(
+                "Section",
+                self.institutionCombo.currentText(),
+                self.standardCombo.currentText(),
+            )
+        )
         self.BIM_PropList = ArchProfile.readPresets()
-        "Avoid to add dublicated ratings names in widget"
-        QuetzalRatings = [s.lstrip("Section_").rstrip(".csv") for s in files]
-        for rating in self.BIM_PropList:
-            if rating[1] not in QuetzalRatings:
-                QuetzalRatings.append(rating[1])
-        return QuetzalRatings
+        for preset in self.BIM_PropList:
+            if preset[1] in ratings:
+                continue
+            if preset[1] in self._filters.ratings("Section"):
+                ratings.append(preset[1])
+        return ratings
 
     def fillSizes(self):
         """

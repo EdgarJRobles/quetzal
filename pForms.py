@@ -18,6 +18,7 @@ import dodoDialogs
 import fCmd
 import pCmd
 from quetzal.domain.preview import PreviewKey
+from quetzal.infrastructure.standard_filters import default_standard_filter_service
 from quetzal.domain.pipe_sizes import PIPE_OUTSIDE_DIAMETERS_MM as pipe_OD
 from PySide.QtWidgets import QCheckBox
 
@@ -145,6 +146,20 @@ class insertPipeForm(dodoDialogs.protoPypeForm):
             x,
             y,
         )
+        # Pipe schedules are grouped by issuing institution and standard.
+        self._filters = default_standard_filter_service()
+        self.institutionList = QComboBox()
+        self.secondCol.layout().insertRow(
+            0,
+            QLabel(translate("insertPipeForm", "Institution:")),
+            self.institutionList,
+        )
+        institutions = self._filters.institutions("Pipe", pattern=r"^SCH-")
+        self.institutionList.addItems(institutions)
+        self.institutionList.currentTextChanged.connect(self._refresh_pipe_standards)
+        self.combostandart.currentTextChanged.connect(self._refresh_pipe_ratings)
+        self._refresh_pipe_standards()
+
         self.edit1 = QLineEdit()
         _unit_hint = qu.get_length_unit() if qu else "mm"
         self.edit1.setPlaceholderText(
@@ -176,6 +191,34 @@ class insertPipeForm(dodoDialogs.protoPypeForm):
 
     def onRatingChanged(self, s):
         pass  # Base changeRating handles blockSignals, fillSizes, and PSize preservation.
+
+    def _refresh_pipe_standards(self):
+        standards = self._filters.standards(
+            "Pipe", self.institutionList.currentText(), pattern=r"^SCH-"
+        )
+        self.combostandart.blockSignals(True)
+        self.combostandart.clear()
+        self.combostandart.addItems(standards)
+        self.combostandart.blockSignals(False)
+        self._refresh_pipe_ratings()
+
+    def _refresh_pipe_ratings(self):
+        ratings = self._filters.ratings(
+            "Pipe",
+            self.institutionList.currentText(),
+            self.combostandart.currentText(),
+            pattern=r"^SCH-",
+        )
+        if not ratings:
+            return
+        self.PRatingsList = list(ratings)
+        self.ratingList.blockSignals(True)
+        self.ratingList.clear()
+        self.ratingList.addItems(ratings)
+        self.ratingList.setCurrentIndex(0)
+        self.ratingList.blockSignals(False)
+        self.PRating = ratings[0]
+        self.changeRating(ratings[0])
 
     def changeSize(self, s):
         """Render the pipe preview through the shared PreviewService."""

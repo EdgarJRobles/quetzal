@@ -184,6 +184,23 @@ unsupported schema versions.
 No feature, command or dialog code needs to change for a new standard family
 that fits an existing dimension set.
 
+## Dialog filters
+
+`StandardFilterService` (in `quetzal/application/standard_filters.py`) turns the
+metadata into UI-ready lists:
+
+- pipe form: institution `ASME`, standards `ASME B36.10M` and
+  `ASME B36.19M`, only ratings matching `^SCH-`;
+- frame section form and frame branch form: institutions `EN`/`ASTM`,
+  standards `EN 10365`/`ASTM A615`, only mapped section series
+  (`HEA`, `IPE`, `UPN`, `REBARS`);
+- generic/vendor rows (`Conduit`, `RH`, `TSLOT`, ...) are not offered in these
+  selectors.
+
+Changing the institution refreshes the standard list; changing the standard
+refreshes the rating list. The actual CSV data and the insertion commands are
+unchanged.
+
 ## Compatibility notes
 
 - **DN/NPS are labels, not conversions.** `NPS 2` and `DN50` are related by

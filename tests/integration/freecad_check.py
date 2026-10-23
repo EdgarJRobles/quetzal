@@ -304,6 +304,30 @@ def check_pypeline_group():
         FreeCAD.closeDocument(document.Name)
 
 
+def check_standard_filters():
+    """Pipe and frame forms must expose only mapped institution/standard rows."""
+
+    from quetzal.infrastructure.standard_filters import default_standard_filter_service
+
+    filters = default_standard_filter_service()
+    pipe_institutions = filters.institutions("Pipe", pattern=r"^SCH-")
+    assert pipe_institutions == ("ASME",)
+    pipe_standards = filters.standards("Pipe", pattern=r"^SCH-")
+    assert set(pipe_standards) == {"ASME B36.10M", "ASME B36.19M"}
+    carbon = filters.ratings("Pipe", "ASME", "ASME B36.10M", pattern=r"^SCH-")
+    stainless = filters.ratings("Pipe", "ASME", "ASME B36.19M", pattern=r"^SCH-")
+    assert "SCH-40" in carbon and "SCH-40S" in stainless
+    assert "SCH-10S" not in carbon
+    assert "REBARS" not in filters.ratings("Pipe", pattern=r"^SCH-")
+    assert "Conduit" not in " ".join(filters.ratings("Pipe", pattern=r"^SCH-"))
+
+    section_standards = filters.standards("Section")
+    assert set(section_standards) == {"EN 10365", "ASTM A615"}
+    assert filters.ratings("Section", "EN", "EN 10365") == ("HEA", "IPE", "UPN")
+    assert filters.ratings("Section", "ASTM", "ASTM A615") == ("REBARS",)
+    return len(pipe_standards), len(section_standards)
+
+
 def main():
     print(f"FreeCAD {FreeCAD.Version()[0]}.{FreeCAD.Version()[1]}", flush=True)
     document = FreeCAD.newDocument("quetzal_integration")
@@ -410,6 +434,13 @@ def main():
     branch_count = check("PypeBranch link migration", check_pype_branch_links)
     if branch_count:
         print(f"     branch child groups checked: {branch_count}", flush=True)
+
+    filter_counts = check("institution/standard filters", check_standard_filters)
+    if filter_counts:
+        print(
+            f"     pipe/section standards: {filter_counts[0]}/{filter_counts[1]}",
+            flush=True,
+        )
 
     standards_counts = check("standards metadata contract", check_standards_contract)
     if standards_counts:

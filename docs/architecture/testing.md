@@ -76,6 +76,8 @@ fails. It runs without a GUI and verifies:
     errors and re-entrancy (pure unit tests; GUI rendering is manual).
 15. **Outlet/socket schema** – all six proxies build through the integration
     matrix and expose their `FeatureDefinition` metadata.
+16. **Institution/standard filters** – pipe schedules resolve only to ASME
+    B36.10M/B36.19M and frame series only to EN 10365/ASTM A615.
 
 ### How the script is executed
 

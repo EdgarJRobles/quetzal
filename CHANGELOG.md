@@ -44,6 +44,9 @@
 - The base `protoPypeForm` now renders previews through `PreviewService`
   (pipe form already migrated), with camera/selection/visibility restoration.
 - `doBeams` uses the shared insertion transaction.
+- Pipe and frame dialogs now show only mapped schedules/sections, grouped by
+  institution and international standard (ASME B36.10M/B36.19M, EN 10365,
+  ASTM A615); vendor/generic rows are excluded from those selectors.
 - Add a `CommandSpec` registry and a single ordered `quetzal.ui.layout` for
   toolbars, menus, context menus and watchers; `InitGui` and the pie menu use
   it instead of duplicated lists.

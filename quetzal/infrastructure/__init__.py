@@ -3,10 +3,12 @@
 
 from .catalog import default_catalog_repository, tablez_dir
 from .preview_paths import PreviewCache, PreviewPaths
+from .standard_filters import default_standard_filter_service
 from .standards import default_standards_repository, standards_dir
 
 __all__ = [
     "default_catalog_repository",
+    "default_standard_filter_service",
     "default_standards_repository",
     "PreviewCache",
     "PreviewPaths",

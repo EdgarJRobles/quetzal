@@ -188,6 +188,7 @@ work. Save/reload is checked by the headless integration suite.
 | --- | --- |
 | Catalogue + OD table | Migrated to domain; `pCmd.readTable`, `protoPypeForm.fillSizes`, `pFeatures.pipe_OD` and `pForms.pipe_OD` use it. |
 | Standards + units | Migrated to domain metadata (`standards/catalog.json`): 10 institutions, 26 standards, 86 dimensions and 19 catalogue families; all 243 CSV files are classified and unit-normalised. |
+| Dialog filters | Pipe and frame forms list only mapped series, grouped by institution and international standard: ASME B36.10M/B36.19M for schedules, EN 10365/ASTM A615 for sections. |
 | Feature base class | Migrated to `quetzal.features.base.PypeFeature`; `pFeatures.pypeType` is the same object. |
 | Pipe / Cap / TerminalAdapter / Gasket | Migrated with property schemas, shape builders and registry entries. |
 | Elbow / Tee / Reduct properties | Declared with `PropertySpec` in place, preserving the original order and groups; geometry stays in the existing proxies. |
