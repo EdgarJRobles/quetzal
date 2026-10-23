@@ -7,10 +7,8 @@ import Part
 import fCmd
 import pFeatures
 from DraftVecUtils import rounded
-from quetzal_config import get_icon_path
 
 from quetzal.application.insertion import FeatureInserter
-from quetzal.domain.catalog import CatalogRepository
 from quetzal.domain.ports import Vec3
 from quetzal.features import FEATURES
 from quetzal.infrastructure.catalog import default_catalog_repository

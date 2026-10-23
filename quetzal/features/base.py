@@ -92,7 +92,6 @@ class PypeFeature:
         if not point and FreeCADGui.ActiveDocument:
             try:
                 selex = FreeCADGui.Selection.getSelectionEx()
-                target = selex[0].Object
                 so = selex[0].SubObjects[0]
             except Exception:
                 FreeCAD.Console.PrintError("No geometry selected\n")

@@ -47,7 +47,7 @@ class CapShapeBuilder:
             )
         )
         cap = cut.makeThickness(
-            [f for f in cut.Faces if type(f.Surface) == Part.Plane],
+            [f for f in cut.Faces if type(f.Surface) is Part.Plane],
             -thickness,
             1.0e-3,
         )

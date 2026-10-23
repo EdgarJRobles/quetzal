@@ -7,15 +7,12 @@ __license__ = "LGPL 3"
 objs = ["Pipe", "Elbow","DuctReduction", "DuctElbow", "Reduct", "Cap", "Flange", "Tee", "Ubolt", "Valve"]
 metaObjs = ["PypeLine", "PypeBranch"]
 
-from os.path import abspath, dirname, join
-
 import FreeCAD
-import FreeCADGui
 import Part
 
 from quetzal_config import FREECADVERSION, get_icon_path
 from quetzal.domain.pipe_sizes import PIPE_OUTSIDE_DIAMETERS_MM as pipe_OD
-from quetzal.features import Cap, Pipe, PypeFeature as pypeType
+from quetzal.features import Cap, Pipe, PypeFeature as pypeType  # noqa: F401 (re-exported)
 
 QT_TRANSLATE_NOOP = FreeCAD.Qt.QT_TRANSLATE_NOOP
 translate = FreeCAD.Qt.translate
