@@ -62,8 +62,6 @@ def make(name, factory, require_shape=True, require_ptype=True):
     return build
 
 
-
-
 def check_command_contract():
     """Every registered command must be unique and point to an existing icon."""
 
@@ -104,8 +102,6 @@ def check_command_contract():
     return len(registered), len(referenced)
 
 
-
-
 def check_insertion_flows():
     """The legacy ``do*`` command flows must build valid objects headlessly."""
 
@@ -115,9 +111,7 @@ def check_insertion_flows():
         "tee": lambda: pCmd.doTees("SCH-STD", ["DN50", 60.32, 60.32, 3, 3, 100, 100]),
         "flange": lambda: pCmd.doFlanges("DIN-PN16"),
         "reduct": lambda: pCmd.doReduct("SCH-STD", ["DN50", 60.32, 48.3, 3, 3, 100]),
-        "gasket": lambda: pCmd.doGaskets(
-            ["DN50", "150lb", 55.6, 69.9, 85.9, 104.9, 4.5, 3.2]
-        ),
+        "gasket": lambda: pCmd.doGaskets(["DN50", "150lb", 55.6, 69.9, 85.9, 104.9, 4.5, 3.2]),
         "bolts": lambda: pCmd.doBolts_Nuts([]),
         "elbow": lambda: pCmd.doElbow("SCH-STD"),
         "valve": lambda: pCmd.doValves(),
@@ -183,7 +177,7 @@ def main():
         check(f"pFeatures.{attr} exists", lambda attr=attr: getattr(pFeatures, attr))
 
     # Generic registry entries produce the same classes.
-    for key in ("Pipe", "Cap"):
+    for key in ("Pipe", "Cap", "TerminalAdapter"):
         check(f"registry {key}", lambda key=key: FEATURES.get(key))
 
     def reads_every_catalogue():

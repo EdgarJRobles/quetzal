@@ -118,18 +118,16 @@ def _port_directions(obj: Any) -> List[Any]:
     """World-space port directions with the legacy fallbacks."""
 
     if hasattr(obj, "PortDirections") and obj.PortDirections:
-        return [
-            obj.Placement.Rotation.multVec(d).normalize()
-            for d in obj.PortDirections
-        ]
+        return [obj.Placement.Rotation.multVec(d).normalize() for d in obj.PortDirections]
     if getattr(obj, "PType", "") in TWO_WAY_TYPES:
-        return [obj.Placement.Rotation.multVec(v) for v in (FreeCAD.Vector(0, 0, -1), FreeCAD.Vector(0, 0, 1))]
+        return [
+            obj.Placement.Rotation.multVec(v)
+            for v in (FreeCAD.Vector(0, 0, -1), FreeCAD.Vector(0, 0, 1))
+        ]
     directions = []
     for port in getattr(obj, "Ports", []):
         if port.Length:
             directions.append(obj.Placement.Rotation.multVec(port).normalize())
         else:
-            directions.append(
-                obj.Placement.Rotation.multVec(FreeCAD.Vector(0, 0, -1)).normalize()
-            )
+            directions.append(obj.Placement.Rotation.multVec(FreeCAD.Vector(0, 0, -1)).normalize())
     return directions

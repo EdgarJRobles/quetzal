@@ -12,7 +12,12 @@ import Part
 
 from quetzal_config import FREECADVERSION, get_icon_path
 from quetzal.domain.pipe_sizes import PIPE_OUTSIDE_DIAMETERS_MM as pipe_OD
-from quetzal.features import Cap, Pipe, PypeFeature as pypeType  # noqa: F401 (re-exported)
+from quetzal.features import (  # noqa: F401 (re-exported)
+    Cap,
+    Pipe,
+    PypeFeature as pypeType,
+    TerminalAdapter,
+)
 
 QT_TRANSLATE_NOOP = FreeCAD.Qt.QT_TRANSLATE_NOOP
 translate = FreeCAD.Qt.translate
@@ -25,67 +30,6 @@ vZ = FreeCAD.Vector(0, 0, 1)
 
 ################ CLASSES ###########################
 
-
-class TerminalAdapter(pypeType):
-    """Class for objet Ptype="TerminalAdapter"
-      obj: the "App::FeaturePython" object
-      PSize (string): nominal diameter
-      OD (float): outside diameter
-      L (float): Overall length
-      SW (float): Support width
-    """
-    def __init__(self,obj,rating,DN="PCV-1/2",OD=21.3,L=33.2,SW=18.7, OD2=21.33):
-        super(TerminalAdapter,self).__init__(obj)
-        obj.Proxy = self
-        obj.PType = "TerminalAdapter"
-        obj.PRating =rating
-        obj.PSize = DN
-        obj.addProperty(
-            "App::PropertyLength",
-            "OD",
-            "TerminalAdapter",
-            QT_TRANSLATE_NOOP("App::Property", "Outside diameter"),
-        ).OD = OD
-        obj.addProperty(
-            "App::PropertyLength",
-            "L",
-            "TerminalAdapter",
-            QT_TRANSLATE_NOOP("App::Property", "Overall length"),
-        ).L = L
-        obj.addProperty(
-            "App::PropertyLength",
-            "SW",
-            "TerminalAdapter",
-            QT_TRANSLATE_NOOP("App::Property", "Support width"),
-        ).SW = SW
-        obj.addProperty(
-            "App::PropertyLength",
-            "OD2",
-            "TerminalAdapter",
-            QT_TRANSLATE_NOOP("App::Property", "Outside thread side"),
-        ).OD2 = OD2
-        self.execute(obj)
-    def onChanged(self, fp,prop):
-        pass
-    def execute(self, fp):
-        import pCmd
-        from math import tan
-        polygonthickness = fp.SW/5
-        threadthickness = fp.L-fp.SW
-        cyl1=Part.makeCylinder(fp.OD/2,fp.SW-polygonthickness,FreeCAD.Vector(0,0,-polygonthickness),FreeCAD.Vector(0,0,-1))
-        pwire=pCmd.makeRegularPolygon(6,(fp.OD*1.2)/2)
-        polygonf=Part.Face(pwire)
-        extrpoly=polygonf.extrude(FreeCAD.Vector(0,0,-polygonthickness))
-        result=cyl1.fuse(extrpoly)
-        cone2=Part.makeCone(fp.OD2/2,(fp.OD2/2-(tan(0.0312396483)*threadthickness)),threadthickness,FreeCAD.Vector(0,0,-polygonthickness),FreeCAD.Vector(0,0,1),360)
-        result2=cone2.fuse(result)
-        filletres=result2.makeFillet(2.5,[result2.Edges[16],result2.Edges[12],result2.Edges[9],result2.Edges[10],result2.Edges[14],result2.Edges[18]])
-        cyl2=Part.makeCylinder((fp.OD/3),fp.SW,FreeCAD.Vector(0,0,-polygonthickness),FreeCAD.Vector(0,0,-1))
-        cutres=filletres.cut(cyl2)
-        cone3=Part.makeCone(fp.OD2/2*0.8,(fp.OD2/2-(tan(0.0312396483)*threadthickness))*0.8,threadthickness,FreeCAD.Vector(0,0,-polygonthickness),FreeCAD.Vector(0,0,1),360)
-        cutres2=cutres.cut(cone3)
-        fp.Shape = cutres2
-        super(TerminalAdapter, self).execute(fp)  # perform common operations
 
 class Elbow(pypeType):
     """Class for object PType="Elbow"

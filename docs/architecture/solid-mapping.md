@@ -9,6 +9,7 @@ legacy hotspots remain. It is meant to be updated as the migration advances.
 | --- | --- |
 | `pFeatures.pypeType` registered properties, resolved the nearest port and imported `pCmd`. | `quetzal.features.base.PypeFeature` registers the common contract and uses pure port maths from `quetzal.domain.ports`. |
 | `pFeatures.Pipe` mixed property registration, parent-group length adjustment, shape construction and port bookkeeping. | `Pipe` keeps the lifecycle; `PipeShapeBuilder` owns geometry; `PropertySpec` owns property registration; parent-group adjustment is an isolated function. |
+| `pFeatures.TerminalAdapter` imported `pCmd` just to build a hexagon. | `TerminalAdapter` uses `quetzal.features.shapes.make_regular_polygon`; geometry is isolated in `TerminalAdapterShapeBuilder`. |
 | `pCmd.readTable()` opened files directly. | `CsvCatalogRepository` owns file resolution, encoding, parsing and caching. |
 | `pCmd.ViewProvider` lived next to geometry factories. | `quetzal.infrastructure.freecad.view_provider` owns GUI concerns. |
 | Every `do*` flow had its own selection/transaction/alignment logic. | Six flows share `_insert_attached()`; the remaining ones are listed in the roadmap. |

@@ -84,6 +84,4 @@ def test_inserter_places_labels_and_attaches_view():
     assert document.created == [("Part::FeaturePython", "Pipe")]
     assert obj.Label == "T:Tube"
     assert document.views == [(obj, "Quetzal_InsertPipe")]
-    assert document.placements == [
-        (obj, Vec3(10, 20, 30), Vec3(0, 1, 0), Vec3(0, 0, 1))
-    ]
+    assert document.placements == [(obj, Vec3(10, 20, 30), Vec3(0, 1, 0), Vec3(0, 0, 1))]

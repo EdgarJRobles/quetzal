@@ -14,9 +14,9 @@
 
 ### Changed
 
-- `Pipe` and `Cap` now use declarative properties, injectable shape builders
-  and the generic insertion service; `pFeatures` re-exports them for
-  compatibility.
+- `Pipe`, `Cap` and `TerminalAdapter` now use declarative properties,
+  injectable shape builders and the generic insertion service; `pFeatures`
+  re-exports them for compatibility.
 - `pFeatures.pypeType` is now `quetzal.features.base.PypeFeature`; the
   `pFeatures <-> pCmd` module import cycle was removed.
 - Six `do*` insertion flows share one transaction/selection/alignment
@@ -31,6 +31,7 @@
   `Quetzal_CapQM` registration.
 - Use `Quetzal_CouplingUnion` without the `.svg` suffix so the icon resolves.
 - Avoid headless `AttributeError` on `FreeCADGui.Selection`/`ViewObject`.
+- Return the created object from `pCmd.makeTerminalAdapter` instead of `None`.
 
 ## [1.7.8] - 2025-12-13
 

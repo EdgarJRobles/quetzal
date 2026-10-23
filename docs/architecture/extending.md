@@ -73,7 +73,7 @@ Register it in `quetzal/features/catalog.py`:
 ```python
 from .blind import BLIND_FEATURE
 
-for _definition in (PIPE_FEATURE, CAP_FEATURE, BLIND_FEATURE):
+for _definition in (PIPE_FEATURE, CAP_FEATURE, TERMINAL_ADAPTER_FEATURE, BLIND_FEATURE):
     FEATURES.register(_definition)
 ```
 
@@ -83,13 +83,13 @@ documents can resolve `pFeatures.Blind`:
 ```python
 from .blind import Blind
 
-__all__ = ["Blind", "Cap", "FEATURES", "Pipe", "PypeFeature"]
+__all__ = ["Blind", "Cap", "FEATURES", "Pipe", "PypeFeature", "TerminalAdapter"]
 ```
 
 Expose it in `pFeatures.py` with the other compatibility imports:
 
 ```python
-from quetzal.features import Blind, Cap, Pipe, PypeFeature as pypeType
+from quetzal.features import Blind, Cap, Pipe, PypeFeature as pypeType, TerminalAdapter
 ```
 
 No new branch is needed in `pCmd`: any registered feature can be created with

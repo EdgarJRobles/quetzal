@@ -75,7 +75,9 @@ class CatalogTable:
 
         matches = []
         for row in self.rows:
-            if all(row.get(key, "").strip() == str(value).strip() for key, value in criteria.items()):
+            if all(
+                row.get(key, "").strip() == str(value).strip() for key, value in criteria.items()
+            ):
                 matches.append(row)
         return tuple(matches)
 
@@ -197,17 +199,15 @@ class CsvCatalogRepository:
 class InMemoryCatalogRepository:
     """Test double for :class:`CatalogRepository`."""
 
-    def __init__(self, tables: Optional[Mapping[Tuple[str, str], Sequence[Mapping[str, str]]]] = None):
+    def __init__(
+        self, tables: Optional[Mapping[Tuple[str, str], Sequence[Mapping[str, str]]]] = None
+    ):
         self._tables: Dict[Tuple[str, str], CatalogTable] = {}
         for (family, rating), rows in (tables or {}).items():
-            self._tables[(family, rating)] = CatalogTable.from_rows(
-                f"{family}_{rating}.csv", rows
-            )
+            self._tables[(family, rating)] = CatalogTable.from_rows(f"{family}_{rating}.csv", rows)
 
     def add(self, family: str, rating: str, rows: Sequence[Mapping[str, str]]) -> None:
-        self._tables[(family, rating)] = CatalogTable.from_rows(
-            f"{family}_{rating}.csv", rows
-        )
+        self._tables[(family, rating)] = CatalogTable.from_rows(f"{family}_{rating}.csv", rows)
 
     def get_table(self, family: str, rating: str) -> CatalogTable:
         try:

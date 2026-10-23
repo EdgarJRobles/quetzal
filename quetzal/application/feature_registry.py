@@ -79,9 +79,7 @@ class FeatureRegistry:
                 f"Expected FeatureDefinition, got {type(definition).__name__}"
             )
         if definition.key in self._definitions and not replace:
-            raise FeatureRegistrationError(
-                f"Feature {definition.key!r} is already registered"
-            )
+            raise FeatureRegistrationError(f"Feature {definition.key!r} is already registered")
         self._definitions[definition.key] = definition
         return definition
 

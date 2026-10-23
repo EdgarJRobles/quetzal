@@ -88,11 +88,12 @@ domain and on protocols. FreeCAD-specific code lives in
 ### Features
 
 `quetzal/features/base.py` provides `PypeFeature`, the replacement for the old
-`pFeatures.pypeType`. Migrated features (`Pipe`, `Cap`) declare their
+`pFeatures.pypeType`. Migrated features (`Pipe`, `Cap`, `TerminalAdapter`) declare their
 properties as `PropertySpec` tuples and delegate shape construction to a
 `ShapeBuilder` returning `FeatureGeometry` (shape, ports, directions).
 
-`quetzal/features/catalog.py` registers the migrated features in `FEATURES`.
+`quetzal/features/catalog.py` registers the migrated features (`Pipe`, `Cap`,
+`TerminalAdapter`) in `FEATURES`.
 `pCmd.makeFeature(key, ...)` can build any registered feature without adding a
 new factory function.
 
@@ -145,7 +146,7 @@ These are intentionally preserved and covered by tests:
   ordering;
 - all 61 command names, their icon names and toolbar/menu references.
 
-`Pipe` and `Cap` moved to `quetzal.features`, but `pFeatures` re-exports the
+`Pipe`, `Cap` and `TerminalAdapter` moved to `quetzal.features`, but `pFeatures` re-exports the
 same classes, so old documents and `from pFeatures import Pipe` continue to
 work. Save/reload is checked by the headless integration suite.
 
@@ -155,7 +156,7 @@ work. Save/reload is checked by the headless integration suite.
 | --- | --- |
 | Catalogue + OD table | Migrated to domain; `pCmd.readTable`, `protoPypeForm.fillSizes`, `pFeatures.pipe_OD` and `pForms.pipe_OD` use it. |
 | Feature base class | Migrated to `quetzal.features.base.PypeFeature`; `pFeatures.pypeType` is the same object. |
-| Pipe / Cap | Migrated with property schemas, shape builders and registry entries. |
+| Pipe / Cap / TerminalAdapter | Migrated with property schemas, shape builders and registry entries. |
 | Generic insertion | `FeatureInserter` + `FeatureRegistry` available. |
 | Attached insertion | Shared pipeline for six `do*` flows. |
 | Headless support | Selection/view accessors degrade safely; command contract can be validated without a GUI. |

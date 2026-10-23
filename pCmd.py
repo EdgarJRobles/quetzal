@@ -874,6 +874,7 @@ def makeTerminalAdapter(rating,propList=[],pos=None,Z=None):
     a.Placement.Base = pos
     rot = FreeCAD.Rotation(FreeCAD.Vector(0, 0, 1), -Z)
     a.Placement.Rotation = rot.multiply(a.Placement.Rotation)
+    return a
 
 
 def makeElbow(propList=[], pos=None, Z=None, rating="SCH-STD"):
@@ -2509,15 +2510,12 @@ def flatten(p1=None, p2=None, c=None):
         FreeCAD.Console.PrintError("Intersection point not found\n")
 
 
-def makeRegularPolygon(n,r):
-    """
-    make a Wire with polygon shape
-    n : number of sides.
-    r : circunscrit radius
-    """
-    from math import cos, sin, pi
-    vecs = [FreeCAD.Vector(cos(2*pi*i/n)*r, sin(2*pi*i/n)*r) for i in range(n+1)]
-    return Part.makePolygon(vecs)
+def makeRegularPolygon(n, r):
+    """Return a closed regular-polygon wire (kept for backwards compatibility)."""
+    from quetzal.features.shapes import make_regular_polygon
+
+    return make_regular_polygon(n, r)
+
 
 def makeGasket(propList=[], pos=None, Z=None):
     """Add a Gasket object.
