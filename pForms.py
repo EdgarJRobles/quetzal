@@ -667,6 +667,23 @@ class insertElbowForm(dodoDialogs.protoPypeForm):
         final_port_pos = self.lastElbow.Placement.multVec(self.lastElbow.Ports[port])
         self.lastElbow.Placement.move(initial_port_pos - final_port_pos)
 
+    def _preview_variant(self):
+        if not hasattr(self, "edit1"):
+            return ""
+        text = self.edit1.text().strip()
+        if text:
+            try:
+                return f"BA{float(text):g}"
+            except ValueError:
+                pass
+        index = self.sizeList.currentIndex()
+        if 0 <= index < len(self.pipeDictList):
+            try:
+                return f"BA{float(self.pipeDictList[index].get('BendAngle', 0)):g}"
+            except (TypeError, ValueError):
+                pass
+        return ""
+
     def changeSize(self, s):
         super().changeSize(s)
 
@@ -4438,6 +4455,11 @@ class insertOutletForm(dodoDialogs.protoPypeForm):
             obj.Angle   = propList[7]
             obj.E       = propList[8]
         FreeCAD.activeDocument().recompute()
+
+    def _preview_variant(self):
+        if not hasattr(self, "_angBG"):
+            return ""
+        return f"Ang{self._angBG.checkedId()}"
 
     def changeSize(self, s):
         # _posGroup and other position widgets are built after the initial

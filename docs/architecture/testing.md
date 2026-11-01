@@ -82,7 +82,9 @@ fails. It runs without a GUI and verifies:
     are tested without Qt.
 18. **Catalogue presenter** – rating options keep institution/standard and size
     options expose plain rows for pipe/section families.
-19. **Institution/standard filters** – all 24 pipe types and all Section
+19. **Preview variants** – `PreviewKey` variants keep elbow/outlet angle
+    previews distinct.
+20. **Institution/standard filters** – all 24 pipe types and all Section
     families resolve to their institution/standard, including generic types;
     strict ASME/EN/ASTM selections still narrow the lists.
 

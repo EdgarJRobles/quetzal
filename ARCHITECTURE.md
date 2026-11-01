@@ -138,6 +138,10 @@ without Qt. The pipe form uses it for the length field and reports issues via
 values. `insertSectForm` already reads its section sizes through it; the
 presenter has no Qt or FreeCAD dependency.
 
+Forms can override `_preview_variant()` to distinguish cache keys; the elbow
+form uses `BA<angle>` and the outlet form uses `Ang<angle>` so 45°/90°/0°
+previews no longer overwrite each other.
+
 ## Command registry and layout
 
 Every command registered through `quetzal_config.addCommand` is recorded as a
