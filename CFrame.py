@@ -13,8 +13,10 @@ import FreeCAD
 import FreeCADGui
 
 from pCmd import fCmd
-from quetzal_config import addCommand
-from quetzal.infrastructure.freecad.form_commands import register_form_command
+from quetzal.infrastructure.freecad.form_commands import (
+    register_form_command,
+    register_legacy_command,
+)
 
 QT_TRANSLATE_NOOP = FreeCAD.Qt.QT_TRANSLATE_NOOP
 translate = FreeCAD.Qt.translate
@@ -586,20 +588,20 @@ class insertSection:
 # ---------------------------------------------------------------------------
 # Adds the commands to the FreeCAD command manager
 # ---------------------------------------------------------------------------
-addCommand("Quetzal_FrameIt", frameIt())
-addCommand("Quetzal_SpinSection", spinSect())
-addCommand("Quetzal_ReverseBeam", reverseBeam())
+register_legacy_command("Quetzal_FrameIt", frameIt(), "frame")
+register_legacy_command("Quetzal_SpinSection", spinSect(), "frame")
+register_legacy_command("Quetzal_ReverseBeam", reverseBeam(), "frame")
 # addCommand('fillFrame',fillFrame())
-addCommand("Quetzal_AlignFlange", alignFlange())
-addCommand("Quetzal_ShiftBeam", shiftBeam())
-addCommand("Quetzal_LevelBeam", levelBeam())
-addCommand("Quetzal_AlignEdge", alignEdge())
-addCommand("Quetzal_PivotBeam", pivotBeam())
-addCommand("Quetzal_StretchBeam", stretchBeam())
-addCommand("Quetzal_ExtendBeam", extend())
-addCommand("Quetzal_AdjustFrameAngle", adjustFrameAngle())
-addCommand("Quetzal_RotateJoin", rotJoin())
-addCommand("Quetzal_InsertPath", insertPath())
+register_legacy_command("Quetzal_AlignFlange", alignFlange(), "frame")
+register_legacy_command("Quetzal_ShiftBeam", shiftBeam(), "frame")
+register_legacy_command("Quetzal_LevelBeam", levelBeam(), "frame")
+register_legacy_command("Quetzal_AlignEdge", alignEdge(), "frame")
+register_legacy_command("Quetzal_PivotBeam", pivotBeam(), "frame")
+register_legacy_command("Quetzal_StretchBeam", stretchBeam(), "frame")
+register_legacy_command("Quetzal_ExtendBeam", extend(), "frame")
+register_legacy_command("Quetzal_AdjustFrameAngle", adjustFrameAngle(), "frame")
+register_legacy_command("Quetzal_RotateJoin", rotJoin(), "frame")
+register_legacy_command("Quetzal_InsertPath", insertPath(), "frame")
 # addCommand('FrameLineManager',FrameLineManager())
 register_form_command("Quetzal_InsertSection", insertSection(), "frame")
 register_form_command("Quetzal_FrameBranchManager", FrameBranchManager(), "frame")

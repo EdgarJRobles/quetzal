@@ -10,8 +10,10 @@ import FreeCAD
 import FreeCADGui
 import Quetzal_tooltips
 
-from quetzal_config import addCommand
-from quetzal.infrastructure.freecad.form_commands import register_form_command
+from quetzal.infrastructure.freecad.form_commands import (
+    register_form_command,
+    register_legacy_command,
+)
 
 QT_TRANSLATE_NOOP = FreeCAD.Qt.QT_TRANSLATE_NOOP
 # translate = FreeCAD.Qt.translate
@@ -770,17 +772,17 @@ register_form_command("Quetzal_InsertBranch", insertBranch(), "pipe")
 register_form_command("Quetzal_InsertTank", insertTank(), "pipe")
 register_form_command("Quetzal_InsertRoute", insertRoute(), "pipe")
 register_form_command("Quetzal_BreakPipe", breakPipe(), "pipe")
-addCommand("Quetzal_MateEdges", mateEdges())
-addCommand("Quetzal_JoinPype", joinPype())
-addCommand("Quetzal_Attach2Tube", attach2tube())
-addCommand("Quetzal_Flat", flat())
-addCommand("Quetzal_ExtendIntersection2", extend2intersection())
-addCommand("Quetzal_ExtendIntersection1", extend1intersection())
-addCommand("Quetzal_Laydown", laydown())
-addCommand("Quetzal_Raiseup", raiseup())
-addCommand("Quetzal_Point2Point", point2point())
-addCommand("Quetzal_InsertAnyShape", insertAnyz())
-addCommand("Quetzal_MakeHeader", makeHeader())
+register_legacy_command("Quetzal_MateEdges", mateEdges(), "pipe")
+register_legacy_command("Quetzal_JoinPype", joinPype(), "pipe")
+register_legacy_command("Quetzal_Attach2Tube", attach2tube(), "pipe")
+register_legacy_command("Quetzal_Flat", flat(), "pipe")
+register_legacy_command("Quetzal_ExtendIntersection2", extend2intersection(), "pipe")
+register_legacy_command("Quetzal_ExtendIntersection1", extend1intersection(), "pipe")
+register_legacy_command("Quetzal_Laydown", laydown(), "pipe")
+register_legacy_command("Quetzal_Raiseup", raiseup(), "pipe")
+register_legacy_command("Quetzal_Point2Point", point2point(), "pipe")
+register_legacy_command("Quetzal_InsertAnyShape", insertAnyz(), "pipe")
+register_legacy_command("Quetzal_MakeHeader", makeHeader(), "pipe")
 register_form_command("Quetzal_InsertTerminalAdapter", insertTerminalAdapter(), "pipe")
 register_form_command("Quetzal_InsertBeam", insertBeam(), "pipe")
 
@@ -806,7 +808,7 @@ class pipeQM:
         }
 
 
-addCommand("Quetzal_PipeQM", pipeQM())
+register_legacy_command("Quetzal_PipeQM", pipeQM(), "pipe")
 
 
 # Quick Menu section
@@ -832,7 +834,7 @@ class elbowQM:
         }
 
 
-addCommand("Quetzal_ElbowQM", elbowQM())
+register_legacy_command("Quetzal_ElbowQM", elbowQM(), "pipe")
 
 
 class flangeQM:
@@ -855,7 +857,7 @@ class flangeQM:
         }
 
 
-addCommand("Quetzal_FlangeQM", flangeQM())
+register_legacy_command("Quetzal_FlangeQM", flangeQM(), "pipe")
 
 
 class valveQM:
@@ -878,7 +880,7 @@ class valveQM:
         }
 
 
-addCommand("Quetzal_ValveQM", valveQM())
+register_legacy_command("Quetzal_ValveQM", valveQM(), "pipe")
 
 
 class capQM:
@@ -901,7 +903,7 @@ class capQM:
         }
 
 
-addCommand("Quetzal_CapQM", capQM())
+register_legacy_command("Quetzal_CapQM", capQM(), "pipe")
 
 
 class teeQM:
@@ -924,4 +926,4 @@ class teeQM:
         }
 
 
-addCommand("Quetzal_TeeQM", teeQM())
+register_legacy_command("Quetzal_TeeQM", teeQM(), "pipe")

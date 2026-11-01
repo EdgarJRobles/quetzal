@@ -95,8 +95,8 @@ fails. It runs without a GUI and verifies:
     roles without opening a dialog.
 25. **Registry-wired forms** – CPipe/CFrame form commands resolve through the
     lazy registry and keep the 61-command layout valid.
-26. **Declarative utils commands** – the eight `CUtils` specs register and keep
-    the layout valid.
+26. **Declarative commands** – CUtils uses handlers; CPipe/CFrame register every
+    command through `register_spec`, including the pie menus.
 24. **Institution/standard filters** – all 24 pipe types and all Section
     families resolve to their institution/standard, including generic types;
     strict ASME/EN/ASTM selections still narrow the lists.

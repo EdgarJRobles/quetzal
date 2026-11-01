@@ -23,3 +23,10 @@ def register_form_command(name: str, legacy, group: str, source: str = ""):
         command=None,
     )
     return register_spec(spec, replace=True)
+
+
+def register_legacy_command(name: str, legacy, group: str, source: str = ""):
+    """Register a non-form legacy command through CommandSpec metadata."""
+
+    spec = CommandSpec.from_legacy(name, legacy, group, source)
+    return register_spec(spec, replace=True)

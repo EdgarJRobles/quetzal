@@ -96,6 +96,7 @@ def register_default_forms() -> FormRegistry:
         ("Quetzal_InsertRoute", "pForms:insertRouteForm", "pipe"),
         ("Quetzal_InsertBeam", "pForms:insertBeamForm", "pipe"),
         ("Quetzal_BreakPipe", "pForms:breakForm", "pipe"),
+        ("Quetzal_JoinPype", "pForms:joinForm", "pipe"),
         ("Quetzal_InsertSection", "fFeatures:insertSectForm", "frame"),
         ("Quetzal_FrameBranchManager", "fFeatures:frameBranchForm", "frame"),
     )
