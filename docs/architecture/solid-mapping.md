@@ -104,6 +104,7 @@ No consumer is forced to depend on FreeCAD or Qt to use these.
 6. `doOutlets` still has custom placement logic.
 7. Pipe, elbow, tee, flange and cap use insertion requests; valve, gasket,
    reducer, outlet and coupling forms still call `pCmd` directly.
+8. `CUtils` is declarative; `CPipe`/`CFrame` still use command classes.
 
 The roadmap in [ARCHITECTURE.md](../ARCHITECTURE.md#remaining-roadmap) tracks
 these items.

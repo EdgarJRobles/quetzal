@@ -151,6 +151,10 @@ are not lost.
 `FittingInsertRequest`/`FittingInserter` do the same for elbow, tee, flange
 and cap forms, dispatching to the existing `pCmd` functions.
 
+`CUtils` is now fully declarative: its eight commands are `CommandSpec` objects
+with module-level handlers, registered through `register_spec`; no
+`GetResources`/`IsActive` classes remain in that module.
+
 `quetzal.ui.forms` adds a lazy `FormRegistry`/`FormSpec`: commands open dialogs
 by command name, and factories are imported only when the command is activated.
 `Quetzal_InsertPipe` is already migrated; the remaining command classes can be

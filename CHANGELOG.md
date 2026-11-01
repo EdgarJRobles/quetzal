@@ -63,6 +63,7 @@
   call from `insertPipeForm`.
 - Add `FittingInsertRequest`/`FittingInserter` for elbow, tee, flange and cap,
   with a single dispatch adapter and reporter-based error handling.
+- Migrate all eight `CUtils` commands to declarative `CommandSpec` handlers.
 - Pipe and frame dialogs group every original series by institution and
   international standard, with All/All defaults. ASME schedules, ASTM A615
   rebars, Quetzal conduit, EN 10365/ASTM A615/generic sections and the BIM
