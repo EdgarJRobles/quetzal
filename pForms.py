@@ -23,6 +23,7 @@ from quetzal.infrastructure.freecad.workbench_state import (
     set_active_pype_line,
 )
 from quetzal.application.standard_filters import institution_label, standard_label
+from quetzal.application.validation import FieldRule, FormValidator
 from quetzal.domain.pipe_sizes import PIPE_OUTSIDE_DIAMETERS_MM as pipe_OD
 from PySide.QtWidgets import QCheckBox
 
@@ -152,6 +153,9 @@ class insertPipeForm(dodoDialogs.protoPypeForm):
         )
         # Pipe schedules are grouped by issuing institution and standard.
         self._filters = self.services.standard_filters
+        self._validator = FormValidator(
+            (FieldRule("length", "Length", kind="number", minimum=0.1),)
+        )
         self.institutionList = QComboBox()
         self.secondCol.layout().insertRow(
             0,
@@ -267,15 +271,32 @@ class insertPipeForm(dodoDialogs.protoPypeForm):
             pCmd.rotateTheTubeAx(self.lastPipe, FreeCAD.Vector(1, 0, 0), 180)
 
 
+    def _validated_length(self, empty_value=None):
+        text = self.edit1.text().strip()
+        if not text:
+            return self.H if empty_value is None else empty_value
+        try:
+            value = float(pq(text))
+        except Exception:
+            self.services.reporter.error("Length must be a number")
+            return None
+        result = self._validator.validate({"length": value})
+        if not result.ok:
+            self.services.reporter.error(result.first_message)
+            return None
+        return value
+
     def insert(self):  # insert the pipe
         self.lastPipe = None
         idx = self.sizeList.currentIndex()
         if idx < 0 or idx >= len(self.pipeDictList):
             return
+        length = self._validated_length()
+        if length is None:
+            return
         size_selected = self.pipeDictList[idx]
         rating = self.ratingList.currentText()
-        if self.edit1.text():
-            self.H = float(pq(self.edit1.text()))
+        self.H = length
         self.sli.setValue(100)
         propList = [
             size_selected["PSize"],
@@ -294,10 +315,10 @@ class insertPipeForm(dodoDialogs.protoPypeForm):
 
     def apply(self):
         self.lastPipe = None
-        if self.edit1.text():
-            self.H = float(pq(self.edit1.text()))
-        else:
-            self.H = 200.0
+        length = self._validated_length(200.0)
+        if length is None:
+            return
+        self.H = length
         self.sli.setValue(100)
         idx = self.sizeList.currentIndex()
         if idx < 0 or idx >= len(self.pipeDictList):

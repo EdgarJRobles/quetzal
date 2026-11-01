@@ -31,6 +31,8 @@ legacy hotspots remain. It is meant to be updated as the migration advances.
   spec plus one layout entry, with duplicate/icon/name validation.
 - `FormServices` centralizes the UI dependencies in one dataclass; forms can be
   constructed with fakes for presenter tests.
+- `FieldRule`/`FormValidator` describe validation as data, so a new field rule
+  does not require new branching code in the form.
 - `CatalogRepository` can be swapped (CSV, in-memory, future database) without
   changing consumers.
 - `standards/catalog.json` adds institutions, standards, dimensions and series

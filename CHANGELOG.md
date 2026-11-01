@@ -49,6 +49,8 @@
 - Replace direct `FreeCAD.__activePypeLine__`/`__activeFrameLine__` access in
   the UI with `WorkbenchState`, keeping a compatibility bridge for macros.
 - Add a `UserReporter` port and use it for catalogue warnings in the base form.
+- Add `FormValidator`/`FieldRule` and validate the pipe length with clear user
+  messages instead of parsing exceptions.
 - Pipe and frame dialogs group every original series by institution and
   international standard, with All/All defaults. ASME schedules, ASTM A615
   rebars, Quetzal conduit, EN 10365/ASTM A615/generic sections and the BIM

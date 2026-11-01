@@ -78,7 +78,9 @@ fails. It runs without a GUI and verifies:
     matrix and expose their `FeatureDefinition` metadata.
 16. **UI services/state** – `WorkbenchState` and the legacy FreeCAD attributes
     stay in sync; `FormServices` is constructible with test doubles.
-17. **Institution/standard filters** – all 24 pipe types and all Section
+17. **Validation** – required/numeric/bounds/choice rules and custom validators
+    are tested without Qt.
+18. **Institution/standard filters** – all 24 pipe types and all Section
     families resolve to their institution/standard, including generic types;
     strict ASME/EN/ASTM selections still narrow the lists.
 

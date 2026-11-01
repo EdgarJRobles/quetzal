@@ -129,6 +129,10 @@ the injected services. `WorkbenchState` replaces direct reads/writes of
 `FreeCAD.__activePypeLine__`/`__activeFrameLine__`; a compatibility adapter
 keeps the legacy attributes in sync for external macros.
 
+`FormValidator`/`FieldRule` provide declarative numeric/required/choice checks
+without Qt. The pipe form uses it for the length field and reports issues via
+`UserReporter` instead of raising or silently returning.
+
 ## Command registry and layout
 
 Every command registered through `quetzal_config.addCommand` is recorded as a
