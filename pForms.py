@@ -142,7 +142,7 @@ class insertPipeForm(dodoDialogs.protoPypeForm):
     Available one button to reverse the orientation of the last or selected tubes.
     """
 
-    def __init__(self):
+    def __init__(self, services=None):
         super(insertPipeForm, self).__init__(
             translate("insertPipeForm", "Insert pipes"),
             "Pipe",
@@ -150,6 +150,7 @@ class insertPipeForm(dodoDialogs.protoPypeForm):
             "pipe.svg",
             x,
             y,
+            services=services,
         )
         # Pipe schedules are grouped by issuing institution and standard.
         self._filters = self.services.standard_filters

@@ -99,6 +99,8 @@ No consumer is forced to depend on FreeCAD or Qt to use these.
 3. `doOutlets` keeps custom host-surface placement; it is not a
    port-attachment flow.
 4. The Valve property schema remains construction-dependent.
+5. The form registry is in place, but most command classes still open dialogs
+   directly; migration is incremental.
 
 The roadmap in [ARCHITECTURE.md](../ARCHITECTURE.md#remaining-roadmap) tracks
 these items.

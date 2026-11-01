@@ -42,9 +42,10 @@ class insertPipe:
             return True
 
     def Activated(self):
-        import pForms
+        from quetzal.infrastructure.form_services import default_form_services
+        from quetzal.ui.forms import open_form
 
-        pipForm = pForms.insertPipeForm()
+        open_form("Quetzal_InsertPipe", default_form_services())
 
     def GetResources(self):
         return {

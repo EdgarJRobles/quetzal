@@ -84,7 +84,9 @@ fails. It runs without a GUI and verifies:
     options expose plain rows for pipe/section families.
 19. **Preview variants** – `PreviewKey` variants keep elbow/outlet angle
     previews distinct.
-20. **Institution/standard filters** – all 24 pipe types and all Section
+20. **Form registry** – lazy factories, duplicate protection and injected
+    services are tested without Qt.
+21. **Institution/standard filters** – all 24 pipe types and all Section
     families resolve to their institution/standard, including generic types;
     strict ASME/EN/ASTM selections still narrow the lists.
 

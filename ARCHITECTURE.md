@@ -142,6 +142,11 @@ Forms can override `_preview_variant()` to distinguish cache keys; the elbow
 form uses `BA<angle>` and the outlet form uses `Ang<angle>` so 45°/90°/0°
 previews no longer overwrite each other.
 
+`quetzal.ui.forms` adds a lazy `FormRegistry`/`FormSpec`: commands open dialogs
+by command name, and factories are imported only when the command is activated.
+`Quetzal_InsertPipe` is already migrated; the remaining command classes can be
+switched without touching the form layout.
+
 ## Command registry and layout
 
 Every command registered through `quetzal_config.addCommand` is recorded as a
