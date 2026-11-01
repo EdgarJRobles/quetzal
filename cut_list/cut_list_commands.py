@@ -1,34 +1,28 @@
 # SPDX-License-Identifier: LGPL-3.0-or-later
 
-import os
-
 import FreeCAD
-from quetzal_config import addCommand
+
+from quetzal.application.command_registry import CommandSpec
+from quetzal.infrastructure.freecad.commands import register_spec
+
+from . import cut_list_ui
 
 QT_TRANSLATE_NOOP = FreeCAD.Qt.QT_TRANSLATE_NOOP
 
-from . import RESOURCE_PATH, cut_list_ui
+
+def create_cut_list():
+    cut_list_ui.openCutListDialog()
 
 
-class cutListCommand:
-    toolbarName = "Cut List"
-    commandName = "createCutList"
-
-    def GetResources(self):
-        return {
-            "MenuText": QT_TRANSLATE_NOOP("Quetzal_CreateCutList", "createCutList"),
-            "ToolTip": QT_TRANSLATE_NOOP(
-                "Quetzal_CreateCutList", "Create a new Cut List from Quetzal Beams"
-            ),
-            "Pixmap": "Quetzal_CreateCutList",
-        }
-
-    def Activated(self):
-        cut_list_ui.openCutListDialog()
-
-    def IsActive(self):
-        """If there is no active document we can't do anything."""
-        return FreeCAD.ActiveDocument is not None
-
-
-addCommand("Quetzal_CreateCutList", cutListCommand())
+register_spec(
+    CommandSpec(
+        name="Quetzal_CreateCutList",
+        group="frame",
+        handler=create_cut_list,
+        menu_text=QT_TRANSLATE_NOOP("Quetzal_CreateCutList", "createCutList"),
+        tooltip=QT_TRANSLATE_NOOP(
+            "Quetzal_CreateCutList", "Create a new Cut List from Quetzal Beams"
+        ),
+        icon="Quetzal_CreateCutList",
+    )
+)

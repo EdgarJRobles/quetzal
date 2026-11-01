@@ -163,10 +163,11 @@ with module-level handlers, registered through `register_spec`; no
 
 `quetzal.ui.forms` adds a lazy `FormRegistry`/`FormSpec`: commands open dialogs
 by command name, and factories are imported only when the command is activated.
-All `CPipe`/`CFrame` commands are now registered through `CommandSpec`:
-form commands use `register_form_command` (lazy `open_form`), and non-form
-commands use `register_legacy_command` (handler from the legacy class). Neither
-module calls `quetzal_config.addCommand` anymore.
+All live commands are now registered through `CommandSpec`: form commands use
+`register_form_command` (lazy `open_form`), non-form commands use
+`register_legacy_command` or module-level handlers, and `CUtils`/`cut_list` are
+fully declarative. No command module calls `quetzal_config.addCommand` anymore;
+that helper remains only for backwards compatibility with external macros.
 
 ## Command registry and layout
 

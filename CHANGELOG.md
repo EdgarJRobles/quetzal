@@ -63,6 +63,8 @@
   `register_form_command` bridge.
 - Register the remaining CPipe/CFrame commands (including the pie menus) through
   `CommandSpec`; those modules no longer call `addCommand`.
+- Convert the cut-list command to `CommandSpec`; every live command is now
+  registered through the metadata registry.
 - Add a lazy `FormRegistry`/`FormSpec` so commands open forms by name; migrate
   `Quetzal_InsertPipe` and inject `FormServices` through the registry.
 - Add `SectionCatalogPresenter` so frame forms merge CSV sections with BIM
