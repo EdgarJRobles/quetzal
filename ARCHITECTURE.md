@@ -163,8 +163,9 @@ with module-level handlers, registered through `register_spec`; no
 
 `quetzal.ui.forms` adds a lazy `FormRegistry`/`FormSpec`: commands open dialogs
 by command name, and factories are imported only when the command is activated.
-`Quetzal_InsertPipe` is already migrated; the remaining command classes can be
-switched without touching the form layout.
+All `CPipe`/`CFrame` form commands are registered through the
+`register_form_command` bridge, so their dialogs resolve lazily even while the
+legacy classes still provide metadata.
 
 ## Command registry and layout
 

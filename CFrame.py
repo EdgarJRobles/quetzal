@@ -14,6 +14,7 @@ import FreeCADGui
 
 from pCmd import fCmd
 from quetzal_config import addCommand
+from quetzal.infrastructure.freecad.form_commands import register_form_command
 
 QT_TRANSLATE_NOOP = FreeCAD.Qt.QT_TRANSLATE_NOOP
 translate = FreeCAD.Qt.translate
@@ -600,5 +601,5 @@ addCommand("Quetzal_AdjustFrameAngle", adjustFrameAngle())
 addCommand("Quetzal_RotateJoin", rotJoin())
 addCommand("Quetzal_InsertPath", insertPath())
 # addCommand('FrameLineManager',FrameLineManager())
-addCommand("Quetzal_InsertSection", insertSection())
-addCommand("Quetzal_FrameBranchManager", FrameBranchManager())
+register_form_command("Quetzal_InsertSection", insertSection(), "frame")
+register_form_command("Quetzal_FrameBranchManager", FrameBranchManager(), "frame")

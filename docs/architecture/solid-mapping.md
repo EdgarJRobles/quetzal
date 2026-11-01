@@ -103,7 +103,8 @@ No consumer is forced to depend on FreeCAD or Qt to use these.
    directly; migration is incremental.
 6. `doOutlets` still has custom placement logic.
 7. All pForms insertion paths use the pipe/fitting request ports.
-8. `CUtils` is declarative; `CPipe`/`CFrame` still use command classes.
+8. `CUtils` is declarative; CPipe/CFrame form commands use the registry bridge,
+   while their non-form commands still use command classes.
 
 The roadmap in [ARCHITECTURE.md](../ARCHITECTURE.md#remaining-roadmap) tracks
 these items.

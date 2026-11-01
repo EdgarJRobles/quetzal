@@ -11,6 +11,7 @@ import FreeCADGui
 import Quetzal_tooltips
 
 from quetzal_config import addCommand
+from quetzal.infrastructure.freecad.form_commands import register_form_command
 
 QT_TRANSLATE_NOOP = FreeCAD.Qt.QT_TRANSLATE_NOOP
 # translate = FreeCAD.Qt.translate
@@ -748,27 +749,27 @@ class insertOutlet:
                         "(Butt weld/socket weld|Straight/45 lateral)"),
         }
 
-addCommand("Quetzal_InsertOutlet", insertOutlet())
+register_form_command("Quetzal_InsertOutlet", insertOutlet(), "pipe")
 # ---------------------------------------------------------------------------
 # Adds the commands to the FreeCAD command manager
 # ---------------------------------------------------------------------------
-addCommand("Quetzal_InsertPipe", insertPipe())
-addCommand("Quetzal_InsertElbow", insertElbow())
-addCommand("Quetzal_InsertDuctElbow", insertDuctElbow())
-addCommand("Quetzal_InsertReduct", insertReduct())
-addCommand("Quetzal_InsertDuctReduction", insertDuctReduction())
-addCommand("Quetzal_InsertCap", insertCap())
-addCommand("Quetzal_InsertTee", insertTee())
-addCommand("Quetzal_InsertValve", insertValve())
-addCommand("Quetzal_InsertFlange", insertFlange())
-addCommand("Quetzal_InsertGasket", insertGasket())
-addCommand("Quetzal_InsertCoupling", _InsertCouplingUnionCmd())
-addCommand("Quetzal_InsertUBolt", insertUbolt())
-addCommand("Quetzal_InsertPypeLine", insertPypeLine())
-addCommand("Quetzal_InsertBranch", insertBranch())
-addCommand("Quetzal_InsertTank", insertTank())
-addCommand("Quetzal_InsertRoute", insertRoute())
-addCommand("Quetzal_BreakPipe", breakPipe())
+register_form_command("Quetzal_InsertPipe", insertPipe(), "pipe")
+register_form_command("Quetzal_InsertElbow", insertElbow(), "pipe")
+register_form_command("Quetzal_InsertDuctElbow", insertDuctElbow(), "pipe")
+register_form_command("Quetzal_InsertReduct", insertReduct(), "pipe")
+register_form_command("Quetzal_InsertDuctReduction", insertDuctReduction(), "pipe")
+register_form_command("Quetzal_InsertCap", insertCap(), "pipe")
+register_form_command("Quetzal_InsertTee", insertTee(), "pipe")
+register_form_command("Quetzal_InsertValve", insertValve(), "pipe")
+register_form_command("Quetzal_InsertFlange", insertFlange(), "pipe")
+register_form_command("Quetzal_InsertGasket", insertGasket(), "pipe")
+register_form_command("Quetzal_InsertCoupling", _InsertCouplingUnionCmd(), "pipe")
+register_form_command("Quetzal_InsertUBolt", insertUbolt(), "pipe")
+register_form_command("Quetzal_InsertPypeLine", insertPypeLine(), "pipe")
+register_form_command("Quetzal_InsertBranch", insertBranch(), "pipe")
+register_form_command("Quetzal_InsertTank", insertTank(), "pipe")
+register_form_command("Quetzal_InsertRoute", insertRoute(), "pipe")
+register_form_command("Quetzal_BreakPipe", breakPipe(), "pipe")
 addCommand("Quetzal_MateEdges", mateEdges())
 addCommand("Quetzal_JoinPype", joinPype())
 addCommand("Quetzal_Attach2Tube", attach2tube())
@@ -780,8 +781,8 @@ addCommand("Quetzal_Raiseup", raiseup())
 addCommand("Quetzal_Point2Point", point2point())
 addCommand("Quetzal_InsertAnyShape", insertAnyz())
 addCommand("Quetzal_MakeHeader", makeHeader())
-addCommand("Quetzal_InsertTerminalAdapter", insertTerminalAdapter())
-addCommand("Quetzal_InsertBeam", insertBeam())
+register_form_command("Quetzal_InsertTerminalAdapter", insertTerminalAdapter(), "pipe")
+register_form_command("Quetzal_InsertBeam", insertBeam(), "pipe")
 
 ### QkMenus ###
 class pipeQM:

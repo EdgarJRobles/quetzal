@@ -93,7 +93,9 @@ fails. It runs without a GUI and verifies:
 23. **Preview variant contract** – forms expose a stable variant suffix.
 24. **Catalogue Qt models** – rating/size models expose presenter rows and
     roles without opening a dialog.
-25. **Declarative utils commands** – the eight `CUtils` specs register and keep
+25. **Registry-wired forms** – CPipe/CFrame form commands resolve through the
+    lazy registry and keep the 61-command layout valid.
+26. **Declarative utils commands** – the eight `CUtils` specs register and keep
     the layout valid.
 24. **Institution/standard filters** – all 24 pipe types and all Section
     families resolve to their institution/standard, including generic types;

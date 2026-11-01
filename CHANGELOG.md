@@ -59,6 +59,8 @@
   `preview_variant()` hook on the form base.
 - Add `RatingListModel`/`SizeListModel` Qt models backed by the catalogue
   presenters.
+- Route all CPipe/CFrame form commands through the lazy form registry with the
+  `register_form_command` bridge.
 - Add a lazy `FormRegistry`/`FormSpec` so commands open forms by name; migrate
   `Quetzal_InsertPipe` and inject `FormServices` through the registry.
 - Add `SectionCatalogPresenter` so frame forms merge CSV sections with BIM
