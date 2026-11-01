@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: LGPL-3.0-or-later
 
 from os import listdir
+from typing import Optional
 from os.path import abspath, dirname, join, exists
 
 import FreeCAD
@@ -118,7 +119,7 @@ class protoPypeForm(QDialog):
         x=100,
         y=350,
         preview_service=None,
-        services: FormServices | None = None,
+        services: Optional[FormServices] = None,
     ):
         """
         __init__(self,winTitle='Title', PType='Pipe', PRating='SCH-STD')
