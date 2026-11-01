@@ -282,6 +282,13 @@ class protoPypeForm(QDialog):
         rating = self.ratingList.currentText()
         return size_selected,rating
 
+    def _insert_fitting(self, request):
+        try:
+            return self.services.fitting_inserter.insert(request)
+        except Exception as exc:
+            self.services.reporter.error(str(exc))
+            return None
+
     def setCurrentPL(self, PLName=None):
         if self.existingObjs.currentText() not in ["<none>", "<new>"]:
             set_active_pype_line(self.existingObjs.currentText())

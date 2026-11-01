@@ -3,7 +3,7 @@
 
 from __future__ import annotations
 
-from quetzal.application.insertion_requests import PipeInsertRequest
+from quetzal.application.insertion_requests import FittingInsertRequest, PipeInsertRequest
 
 
 def test_pipe_request_is_immutable_and_defaults_pypeline():
@@ -16,3 +16,11 @@ def test_pipe_request_is_immutable_and_defaults_pypeline():
         pass
     else:
         raise AssertionError("request should be immutable")
+
+
+def test_fitting_request_has_kind_props_and_options():
+    request = FittingInsertRequest("elbow", ("DN50", 60.32), rating="SCH-STD")
+    assert request.kind == "elbow"
+    assert request.props == ("DN50", 60.32)
+    assert request.options == {}
+    assert request.pypeline is None

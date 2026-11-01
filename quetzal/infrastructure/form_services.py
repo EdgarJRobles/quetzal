@@ -10,6 +10,7 @@ from ..application.form_services import FormServices
 from ..application.workbench_state import default_workbench_state
 from .freecad.preview import default_preview_service
 from .catalog import default_catalog_repository
+from .freecad.fitting_inserter import FreeCADFittingInserter
 from .freecad.pipe_inserter import FreeCADPipeInserter
 from .freecad.reporting import FreeCADReporter
 from .freecad.section_presenter import default_section_presenter
@@ -23,6 +24,7 @@ def default_form_services() -> FormServices:
     return FormServices(
         catalog=catalog,
         pipe_inserter=FreeCADPipeInserter(),
+        fitting_inserter=FreeCADFittingInserter(),
         catalog_presenter=CatalogPresenter(catalog, filters),
         section_presenter=default_section_presenter(),
         standard_filters=filters,

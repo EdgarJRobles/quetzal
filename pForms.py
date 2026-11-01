@@ -24,7 +24,10 @@ from quetzal.infrastructure.freecad.workbench_state import (
 )
 from quetzal.application.standard_filters import institution_label, standard_label
 from quetzal.application.validation import FieldRule, FormValidator
-from quetzal.application.insertion_requests import PipeInsertRequest
+from quetzal.application.insertion_requests import (
+    FittingInsertRequest,
+    PipeInsertRequest,
+)
 from quetzal.domain.pipe_sizes import PIPE_OUTSIDE_DIAMETERS_MM as pipe_OD
 from PySide.QtWidgets import QCheckBox
 
@@ -553,9 +556,16 @@ class insertElbowForm(dodoDialogs.protoPypeForm):
                     size_selected.get("Conn", "SW"),
                 ]
                 rating = self.ratingList.currentText()
-                self.lastElbow = pCmd.doSocketElbow(
-                    rating, propList, get_active_pype_line(),
-                    doOffset=doOffset)[-1]
+                self.lastElbow = self._insert_fitting(
+                    FittingInsertRequest(
+                        "socket_elbow",
+                        tuple(propList),
+                        rating=rating,
+                        options={"doOffset": doOffset},
+                    )
+                )
+                if self.lastElbow is None:
+                    return
             else:
                 propList = [
                     size_selected["PSize"],
@@ -567,9 +577,16 @@ class insertElbowForm(dodoDialogs.protoPypeForm):
                 if self.edit2.text():
                     propList[-1] = float(pq(self.edit2.text()))
                 rating = self.ratingList.currentText()
-                self.lastElbow = pCmd.doElbow(
-                    rating, propList, get_active_pype_line(),
-                    doOffset=doOffset)[-1]
+                self.lastElbow = self._insert_fitting(
+                    FittingInsertRequest(
+                        "elbow",
+                        tuple(propList),
+                        rating=rating,
+                        options={"doOffset": doOffset},
+                    )
+                )
+                if self.lastElbow is None:
+                    return
 
             FreeCAD.activeDocument().recompute()
         finally:
@@ -1000,9 +1017,19 @@ class insertTeeForm(dodoDialogs.protoPypeForm):
                 size_selected.get("Conn", "SW"),
             ]
             rating = self.ratingList.currentText()
-            self.lastTee = pCmd.doSocketTee(
-                rating, propList, get_active_pype_line(),
-                insertOnBranch, doOffset=doOffset)[-1]
+            self.lastTee = self._insert_fitting(
+                FittingInsertRequest(
+                    "socket_tee",
+                    tuple(propList),
+                    rating=rating,
+                    options={
+                        "insert_on_branch": insertOnBranch,
+                        "doOffset": doOffset,
+                    },
+                )
+            )
+            if self.lastTee is None:
+                return
         else:
             # ── Butt-weld tee ────────────────────────────────────────────
             propList = [
@@ -1016,9 +1043,19 @@ class insertTeeForm(dodoDialogs.protoPypeForm):
                 size_selected.get("PSizeBranch", ""),
             ]
             rating = self.ratingList.currentText()
-            self.lastTee = pCmd.doTees(
-                rating, propList, get_active_pype_line(),
-                insertOnBranch, doOffset=doOffset)[-1]
+            self.lastTee = self._insert_fitting(
+                FittingInsertRequest(
+                    "tee",
+                    tuple(propList),
+                    rating=rating,
+                    options={
+                        "insert_on_branch": insertOnBranch,
+                        "doOffset": doOffset,
+                    },
+                )
+            )
+            if self.lastTee is None:
+                return
 
         FreeCAD.activeDocument().recompute()
         FreeCADGui.Selection.clearSelection()
@@ -1583,14 +1620,20 @@ class insertFlangeForm(dodoDialogs.protoPypeForm):
                 rating = self._schedNames[sched_row] if sched_row >= 0 and self._schedNames else "SCH-STD"
             else:
                 rating = "No rating"
-            self.lastFlange = pCmd.doFlanges(
-                rating,
-                propList,
-                pypeline=get_active_pype_line(),
-                doOffset=self.offsetoption,
-                attachFace=attachFace,
-                fclass=fclass,
-            )[-1]
+            self.lastFlange = self._insert_fitting(
+                FittingInsertRequest(
+                    "flange",
+                    tuple(propList),
+                    rating=rating,
+                    options={
+                        "doOffset": self.offsetoption,
+                        "attachFace": attachFace,
+                        "fclass": fclass,
+                    },
+                )
+            )
+            if self.lastFlange is None:
+                return
             FreeCAD.activeDocument().recompute()
             FreeCADGui.Selection.clearSelection()
             FreeCADGui.Selection.addSelection(self.lastFlange)
@@ -2288,12 +2331,20 @@ class insertCapForm(dodoDialogs.protoPypeForm):
                     float(pq(size_selected["E"])),
                     size_selected.get("Conn", "SW"),
                 ]
-                self.lastCap = pCmd.doSocketCap(propList, get_active_pype_line())[-1]
+                self.lastCap = self._insert_fitting(
+                    FittingInsertRequest("socket_cap", tuple(propList))
+                )
+                if self.lastCap is None:
+                    return
             else:
                 # ── Butt-weld cap ────────────────────────────────────────────
                 propList = [size_selected["PSize"], float(pq(size_selected["OD"])), float(pq(size_selected["thk"]))]
                 rating = self.ratingList.currentText()
-                self.lastCap = pCmd.doCaps(rating, propList, get_active_pype_line())[-1]
+                self.lastCap = self._insert_fitting(
+                    FittingInsertRequest("cap", tuple(propList), rating=rating)
+                )
+                if self.lastCap is None:
+                    return
 
             FreeCAD.activeDocument().recompute()
             FreeCADGui.Selection.clearSelection()

@@ -380,6 +380,25 @@ def check_pipe_inserter():
         FreeCAD.closeDocument(document.Name)
 
 
+def check_fitting_inserter():
+    """The fitting port dispatches to the existing pCmd implementation."""
+
+    from quetzal.application.insertion_requests import FittingInsertRequest
+    from quetzal.infrastructure.freecad.fitting_inserter import FreeCADFittingInserter
+
+    document = FreeCAD.newDocument("quetzal_fitting_inserter")
+    try:
+        cap = FreeCADFittingInserter().insert(
+            FittingInsertRequest("cap", ("DN50", 60.32, 3.0), rating="SCH-STD")
+        )
+        document.recompute()
+        assert cap.PType == "Cap"
+        assert cap.Shape.isValid()
+        return 1
+    finally:
+        FreeCAD.closeDocument(document.Name)
+
+
 def main():
     print(f"FreeCAD {FreeCAD.Version()[0]}.{FreeCAD.Version()[1]}", flush=True)
     document = FreeCAD.newDocument("quetzal_integration")
@@ -486,6 +505,10 @@ def main():
     branch_count = check("PypeBranch link migration", check_pype_branch_links)
     if branch_count:
         print(f"     branch child groups checked: {branch_count}", flush=True)
+
+    fitting_count = check("fitting inserter adapter", check_fitting_inserter)
+    if fitting_count:
+        print(f"     fitting insertions checked: {fitting_count}", flush=True)
 
     inserter_count = check("pipe inserter adapter", check_pipe_inserter)
     if inserter_count:

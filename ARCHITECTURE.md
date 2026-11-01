@@ -148,6 +148,8 @@ are not lost.
 
 `PipeInsertRequest`/`PipeInserter` move the pipe insertion call out of
 `insertPipeForm`; the FreeCAD adapter lives in the infrastructure layer.
+`FittingInsertRequest`/`FittingInserter` do the same for elbow, tee, flange
+and cap forms, dispatching to the existing `pCmd` functions.
 
 `quetzal.ui.forms` adds a lazy `FormRegistry`/`FormSpec`: commands open dialogs
 by command name, and factories are imported only when the command is activated.
