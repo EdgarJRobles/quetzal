@@ -517,8 +517,9 @@ import dodoDialogs
 class frameBranchForm(dodoDialogs.protoTypeDialog):
     "dialog for framebranches"
 
-    def __init__(self):
+    def __init__(self, services=None):
         super(frameBranchForm, self).__init__("fbranch.ui")
+        self.services: FormServices = services or default_form_services()
         self.LocalSizesDict = []  # list (sizes) of properties (dictionaries) of the current type of section
         self.form.editAngle.setValidator(QDoubleValidator())
         self.form.editAngle.editingFinished.connect(self.changeAngle)
