@@ -148,9 +148,9 @@ are not lost.
 
 `PipeInsertRequest`/`PipeInserter` move the pipe insertion call out of
 `insertPipeForm`; the FreeCAD adapter lives in the infrastructure layer.
-`FittingInsertRequest`/`FittingInserter` do the same for elbow, tee, flange,
-cap, valve, gasket and bolt forms, dispatching to the existing `pCmd`
-functions.
+`FittingInsertRequest`/`FittingInserter` do the same for every pForms insertion
+path: elbow, tee, flange, cap, valve, gasket, bolts, reducer, outlet,
+coupling/union and beam. Forms no longer call `pCmd.do*` directly.
 
 `CUtils` is now fully declarative: its eight commands are `CommandSpec` objects
 with module-level handlers, registered through `register_spec`; no

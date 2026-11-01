@@ -2014,10 +2014,21 @@ class insertReductForm(dodoDialogs.protoPypeForm):
         FreeCAD.activeDocument().openTransaction(translate("Transaction", "Insert reduction"))
 
         rating = self.ratingList.currentText()
-        if self.cb1.isChecked():
-            self.lastReduct = pCmd.doReduct(rating, propList, get_active_pype_line(), pos, Z, False, insertOnSmallerEnd)[-1]
-        else:
-            self.lastReduct = pCmd.doReduct(rating, propList, get_active_pype_line(), pos, Z, True, insertOnSmallerEnd)[-1]
+        self.lastReduct = self._insert_fitting(
+            FittingInsertRequest(
+                "reduct",
+                tuple(propList),
+                rating=rating,
+                options={
+                    "pos": pos,
+                    "Z": Z,
+                    "conc": not self.cb1.isChecked(),
+                    "smaller_end": insertOnSmallerEnd,
+                },
+            )
+        )
+        if self.lastReduct is None:
+            return
 
         FreeCAD.activeDocument().commitTransaction()
         FreeCAD.activeDocument().recompute()
@@ -4025,7 +4036,11 @@ class insertBeamForm(dodoDialogs.protoPypeForm):
                 float(pq(size_selected["tf"])),
                 self.H,                 # beam length
             ]
-            self.lastBeam = pCmd.doBeams(propList)
+            self.lastBeam = self._insert_fitting(
+                FittingInsertRequest("beam", tuple(propList))
+            )
+            if self.lastBeam is None:
+                return
         finally:
             self.sizeList.blockSignals(False)
 
@@ -4490,12 +4505,19 @@ class insertOutletForm(dodoDialogs.protoPypeForm):
             phi_use   = self._phi   if self._srcObj is not None else None
             alpha_use = self._alpha if self._srcObj is not None else 0.0
 
-            result = pCmd.doOutlets(propList, pl,
-                                    srcObj=self._srcObj,
-                                    t=t_use, phi_deg=phi_use,
-                                    alpha_deg=alpha_use)
-            if result:
-                self.lastOutlet = result[-1]
+            self.lastOutlet = self._insert_fitting(
+                FittingInsertRequest(
+                    "outlet",
+                    tuple(propList),
+                    pypeline=pl,
+                    options={
+                        "srcObj": self._srcObj,
+                        "t": t_use,
+                        "phi_deg": phi_use,
+                        "alpha_deg": alpha_use,
+                    },
+                )
+            )
 
             FreeCAD.activeDocument().recompute()
             FreeCADGui.Selection.clearSelection()
@@ -4776,8 +4798,11 @@ class insertCouplingUnionForm(dodoDialogs.protoPypeForm):
                     float(pq(size_selected["E"])),
                     size_selected.get("Conn", "SW"),
                 ]
-                self.lastFitting = pCmd.doSocketCoupling(
-                    propList, get_active_pype_line())[-1]
+                self.lastFitting = self._insert_fitting(
+                    FittingInsertRequest("socket_coupling", tuple(propList))
+                )
+                if self.lastFitting is None:
+                    return
             else:
                 # Union: use the row selected from the primary list.
                 idx = self.sizeList.currentIndex()
@@ -4795,8 +4820,11 @@ class insertCouplingUnionForm(dodoDialogs.protoPypeForm):
                     float(pq(size_selected["E"])),
                     size_selected.get("Conn", "SW"),
                 ]
-                self.lastFitting = pCmd.doSocketUnion(
-                    propList, get_active_pype_line())[-1]
+                self.lastFitting = self._insert_fitting(
+                    FittingInsertRequest("socket_union", tuple(propList))
+                )
+                if self.lastFitting is None:
+                    return
 
             FreeCAD.activeDocument().recompute()
             FreeCADGui.Selection.clearSelection()

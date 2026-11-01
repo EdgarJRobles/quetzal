@@ -60,6 +60,31 @@ class FreeCADFittingInserter:
             created = pCmd.doGaskets(list(request.props), pypeline=pypeline)
         elif kind == "bolts":
             created = pCmd.doBolts_Nuts(list(request.props), pypeline=pypeline)
+        elif kind == "reduct":
+            created = pCmd.doReduct(
+                request.rating,
+                list(request.props),
+                pypeline,
+                options.pop("pos"),
+                options.pop("Z"),
+                options.pop("conc"),
+                options.pop("smaller_end"),
+            )
+        elif kind == "socket_coupling":
+            created = pCmd.doSocketCoupling(list(request.props), pypeline)
+        elif kind == "socket_union":
+            created = pCmd.doSocketUnion(list(request.props), pypeline)
+        elif kind == "beam":
+            created = pCmd.doBeams(list(request.props))
+        elif kind == "outlet":
+            created = pCmd.doOutlets(
+                list(request.props),
+                pypeline,
+                srcObj=options.pop("srcObj", None),
+                t=options.pop("t", None),
+                phi_deg=options.pop("phi_deg", None),
+                alpha_deg=options.pop("alpha_deg", 0.0),
+            )
         else:
             raise ValueError(f"Unsupported fitting kind: {kind!r}")
 

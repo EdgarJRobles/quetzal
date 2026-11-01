@@ -62,8 +62,8 @@
 - Add `PipeInsertRequest`/`PipeInserter` and remove the direct `pCmd.doPipes`
   call from `insertPipeForm`.
 - Add `FittingInsertRequest`/`FittingInserter` for elbow, tee, flange, cap,
-  valve, gasket and bolts, with a single dispatch adapter and reporter-based
-  error handling.
+  valve, gasket, bolts, reducer, outlet, coupling/union and beam, with a single
+  dispatch adapter and reporter-based error handling.
 - Migrate all eight `CUtils` commands to declarative `CommandSpec` handlers.
 - Pipe and frame dialogs group every original series by institution and
   international standard, with All/All defaults. ASME schedules, ASTM A615
