@@ -55,6 +55,8 @@
   loading out of `insertSectForm`.
 - Preview keys for elbows and outlets include the bend/outlet angle, avoiding
   cache collisions between 45° and 90°/0° images.
+- Add the explicit `PreviewVariantProvider` contract and a public
+  `preview_variant()` hook on the form base.
 - Add a lazy `FormRegistry`/`FormSpec` so commands open forms by name; migrate
   `Quetzal_InsertPipe` and inject `FormServices` through the registry.
 - Add `SectionCatalogPresenter` so frame forms merge CSV sections with BIM
