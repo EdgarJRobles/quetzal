@@ -472,10 +472,12 @@ class insertSectForm(QWidget):
 
     def fillSizes(self):
         self.sizeList.clear()
-        options = self.services.catalog_presenter.sizes("Section", self.SType)
+        options = self.services.section_presenter.sizes(
+            self.SType, include_bim=False
+        )
         self.sectDictList = [dict(option.row) for option in options]
-        for row in self.sectDictList:
-            self.sizeList.addItem(row.get("SSize", ""))
+        for option in options:
+            self.sizeList.addItem(option.label)
 
     def changeRating(self, item):
         self.SType = item.text()
@@ -1150,32 +1152,12 @@ class frameBranchForm(dodoDialogs.protoTypeDialog):
             ]
             self.form.Sizes_comboBox.addItems(obj2D)
         else:
-            temp_sizelist = list()
-            "Retrieved ratings from BIM csv library"
-            for profilesizes in self.BIM_PropList:
-                if (
-                    profilesizes[1] == self.form.Rate_comboBox.currentText()
-                    and profilesizes[2] not in temp_sizelist
-                ):
-                    # FreeCAD.Console.PrintMessage(profilesizes[2]+'\r\n')
-                    temp_sizelist.append(profilesizes[2])
-            "Add BIM list to listSizes"
-            self.form.Sizes_comboBox.addItems(temp_sizelist)
-            self.form.Sizes_comboBox.setCurrentText(settings.value("LastSizeApplied"))
-            "Retrieved profiles sizes from quetzal tablez"
-            # "Create file name based on rating selection"
-            # "Open quetzal CSV file based on rating selection"
-            fileName = "Section_" + self.SType + ".csv"
-            filepath = join(dirname(abspath(__file__)), "tablez", fileName)
-            if isfile(filepath):
-                f = open(filepath, "r")
-                reader = csv.DictReader(f, delimiter=";")
-                self.LocalSizesDict = [x for x in reader]
-                for row1 in self.LocalSizesDict:
-                    s1 = row1["SSize"]
-                    # FreeCAD.Console.PrintMessage(s1+"\r\n")
-                    self.form.Sizes_comboBox.addItem(s1)
-                f.close()
+            options = self.services.section_presenter.sizes(self.SType, include_bim=True)
+            self.LocalSizesDict = [dict(option.row) for option in options if option.source == "csv"]
+            self.form.Sizes_comboBox.addItems([option.label for option in options])
+            last = settings.value("LastSizeApplied")
+            if last in [option.label for option in options]:
+                self.form.Sizes_comboBox.setCurrentText(last)
 
     def addBeams(self):
         # find selected FB

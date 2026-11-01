@@ -101,6 +101,7 @@ No consumer is forced to depend on FreeCAD or Qt to use these.
 4. The Valve property schema remains construction-dependent.
 5. The form registry is in place, but most command classes still open dialogs
    directly; migration is incremental.
+6. `doOutlets` still has custom placement logic.
 
 The roadmap in [ARCHITECTURE.md](../ARCHITECTURE.md#remaining-roadmap) tracks
 these items.

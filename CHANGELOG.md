@@ -57,6 +57,8 @@
   cache collisions between 45° and 90°/0° images.
 - Add a lazy `FormRegistry`/`FormSpec` so commands open forms by name; migrate
   `Quetzal_InsertPipe` and inject `FormServices` through the registry.
+- Add `SectionCatalogPresenter` so frame forms merge CSV sections with BIM
+  presets and handle preset-only ratings such as `SHS`.
 - Pipe and frame dialogs group every original series by institution and
   international standard, with All/All defaults. ASME schedules, ASTM A615
   rebars, Quetzal conduit, EN 10365/ASTM A615/generic sections and the BIM

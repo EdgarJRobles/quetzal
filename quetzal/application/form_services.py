@@ -12,6 +12,7 @@ from dataclasses import dataclass
 from ..domain.catalog import CatalogRepository
 from .catalog_presenter import CatalogPresenter
 from .preview import PreviewService
+from .section_catalog import SectionCatalogPresenter
 from .reporting import UserReporter
 from .standard_filters import StandardFilterService
 from .workbench_state import WorkbenchState
@@ -21,6 +22,7 @@ from .workbench_state import WorkbenchState
 class FormServices:
     catalog: CatalogRepository
     catalog_presenter: CatalogPresenter
+    section_presenter: SectionCatalogPresenter
     standard_filters: StandardFilterService
     preview: PreviewService
     state: WorkbenchState

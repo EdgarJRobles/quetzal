@@ -11,6 +11,7 @@ from ..application.workbench_state import default_workbench_state
 from .freecad.preview import default_preview_service
 from .catalog import default_catalog_repository
 from .freecad.reporting import FreeCADReporter
+from .freecad.section_presenter import default_section_presenter
 from .standard_filters import default_standard_filter_service
 
 
@@ -21,6 +22,7 @@ def default_form_services() -> FormServices:
     return FormServices(
         catalog=catalog,
         catalog_presenter=CatalogPresenter(catalog, filters),
+        section_presenter=default_section_presenter(),
         standard_filters=filters,
         preview=default_preview_service(),
         state=default_workbench_state(),
