@@ -88,8 +88,8 @@ fails. It runs without a GUI and verifies:
     services are tested without Qt.
 21. **Section presenter** – CSV and BIM rows merge without duplicates and
     preset-only ratings remain available.
-22. **Insertion adapters** – the pipe and fitting ports create valid pipes and
-    caps with the requested properties.
+22. **Insertion adapters** – the pipe and fitting ports create valid pipes,
+    caps and report failures through the reporter.
 23. **Declarative utils commands** – the eight `CUtils` specs register and keep
     the layout valid.
 24. **Institution/standard filters** – all 24 pipe types and all Section

@@ -3239,9 +3239,18 @@ class insertValveForm(dodoDialogs.protoPypeForm):
                 # Read actuator choice from radio buttons (default to "Handle")
                 actuator = "Gearbox" if (hasattr(self, "rbGearbox") and
                                          self.rbGearbox.isChecked()) else "Handle"
-                self.lastValve = pCmd.doValves(
-                    propList, get_active_pype_line(),
-                    flgPropList=flgPropList, actuator=actuator)[-1]
+                self.lastValve = self._insert_fitting(
+                    FittingInsertRequest(
+                        "valve",
+                        tuple(propList),
+                        options={
+                            "flgPropList": flgPropList,
+                            "actuator": actuator,
+                        },
+                    )
+                )
+                if self.lastValve is None:
+                    return
             elif self._isSocketConn():
                 # [DN, VType, OD, ODBody, H, E, Conn, Kv]
                 propList = [
@@ -3254,7 +3263,11 @@ class insertValveForm(dodoDialogs.protoPypeForm):
                     r["conn"],
                     float(pq(r.get("kv", "0"))),
                 ]
-                self.lastValve = pCmd.doValves(propList, get_active_pype_line())[-1]
+                self.lastValve = self._insert_fitting(
+                    FittingInsertRequest("valve", tuple(propList))
+                )
+                if self.lastValve is None:
+                    return
             else:
                 # [DN, VType, ODBody, ID, H, Kv]
                 propList = [
@@ -3271,11 +3284,19 @@ class insertValveForm(dodoDialogs.protoPypeForm):
                         if hasattr(p, "PType") and p.PType == "Pipe"
                     ]
                     if pipes:
-                        self.lastValve = pCmd.doValves(
-                            propList, get_active_pype_line(),
-                            self.sli.value())[-1]
+                        self.lastValve = self._insert_fitting(
+                            FittingInsertRequest(
+                                "valve",
+                                tuple(propList),
+                                options={"pos": self.sli.value()},
+                            )
+                        )
                         return
-                self.lastValve = pCmd.doValves(propList, get_active_pype_line())[-1]
+                self.lastValve = self._insert_fitting(
+                    FittingInsertRequest("valve", tuple(propList))
+                )
+                if self.lastValve is None:
+                    return
         finally:
             self.sizeList.blockSignals(False)
 
@@ -3839,10 +3860,11 @@ class insertGasketForm(dodoDialogs.protoPypeForm):
                     float(pq(size_selected["SEthk"])),
                     float(pq(size_selected["Rthk"])),
                 ]
-                self.lastGasket = pCmd.doGaskets(
-                    propList,
-                    pypeline=get_active_pype_line(),
+                self.lastGasket = self._insert_fitting(
+                    FittingInsertRequest("gasket", tuple(propList))
                 )
+                if self.lastGasket is None:
+                    return
 
             if insert_bolts:
                 bolt_row = self._getBoltRow()
@@ -3860,10 +3882,11 @@ class insertGasketForm(dodoDialogs.protoPypeForm):
                         float(pq(bolt_row["lBolt"])),
                         sethk,
                     ]
-                    self.lastBolts = pCmd.doBolts_Nuts(
-                        bolt_propList,
-                        pypeline=get_active_pype_line(),
+                    self.lastBolts = self._insert_fitting(
+                        FittingInsertRequest("bolts", tuple(bolt_propList))
                     )
+                    if self.lastBolts is None:
+                        return
         finally:
             self.sizeList.blockSignals(False)
 

@@ -48,6 +48,18 @@ class FreeCADFittingInserter:
             created = pCmd.doSocketCap(list(request.props), pypeline)
         elif kind == "cap":
             created = pCmd.doCaps(request.rating, list(request.props), pypeline)
+        elif kind == "valve":
+            created = pCmd.doValves(
+                list(request.props),
+                pypeline,
+                options.pop("pos", 0),
+                flgPropList=options.pop("flgPropList", None),
+                actuator=options.pop("actuator", "Handle"),
+            )
+        elif kind == "gasket":
+            created = pCmd.doGaskets(list(request.props), pypeline=pypeline)
+        elif kind == "bolts":
+            created = pCmd.doBolts_Nuts(list(request.props), pypeline=pypeline)
         else:
             raise ValueError(f"Unsupported fitting kind: {kind!r}")
 
