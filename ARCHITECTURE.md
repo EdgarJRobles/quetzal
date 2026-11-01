@@ -146,6 +146,9 @@ previews no longer overwrite each other.
 is now used by both section/frame forms, so preset-only ratings such as `SHS`
 are not lost.
 
+`PipeInsertRequest`/`PipeInserter` move the pipe insertion call out of
+`insertPipeForm`; the FreeCAD adapter lives in the infrastructure layer.
+
 `quetzal.ui.forms` adds a lazy `FormRegistry`/`FormSpec`: commands open dialogs
 by command name, and factories are imported only when the command is activated.
 `Quetzal_InsertPipe` is already migrated; the remaining command classes can be

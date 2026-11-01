@@ -11,6 +11,7 @@ from dataclasses import dataclass
 
 from ..domain.catalog import CatalogRepository
 from .catalog_presenter import CatalogPresenter
+from .insertion_requests import PipeInserter
 from .preview import PreviewService
 from .section_catalog import SectionCatalogPresenter
 from .reporting import UserReporter
@@ -21,6 +22,7 @@ from .workbench_state import WorkbenchState
 @dataclass(frozen=True)
 class FormServices:
     catalog: CatalogRepository
+    pipe_inserter: PipeInserter
     catalog_presenter: CatalogPresenter
     section_presenter: SectionCatalogPresenter
     standard_filters: StandardFilterService

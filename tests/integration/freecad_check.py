@@ -360,6 +360,26 @@ def check_workbench_state():
     return 2
 
 
+def check_pipe_inserter():
+    """The form-facing pipe inserter creates the same document object."""
+
+    from quetzal.application.insertion_requests import PipeInsertRequest
+    from quetzal.infrastructure.freecad.pipe_inserter import FreeCADPipeInserter
+
+    document = FreeCAD.newDocument("quetzal_pipe_inserter")
+    try:
+        pipe = FreeCADPipeInserter().insert_pipe(
+            PipeInsertRequest("SCH-STD", "DN50", 60.32, 3.0, 250.0)
+        )
+        document.recompute()
+        assert pipe.PType == "Pipe"
+        assert float(pipe.Height) == 250.0
+        assert pipe.Shape.isValid()
+        return 1
+    finally:
+        FreeCAD.closeDocument(document.Name)
+
+
 def main():
     print(f"FreeCAD {FreeCAD.Version()[0]}.{FreeCAD.Version()[1]}", flush=True)
     document = FreeCAD.newDocument("quetzal_integration")
@@ -466,6 +486,10 @@ def main():
     branch_count = check("PypeBranch link migration", check_pype_branch_links)
     if branch_count:
         print(f"     branch child groups checked: {branch_count}", flush=True)
+
+    inserter_count = check("pipe inserter adapter", check_pipe_inserter)
+    if inserter_count:
+        print(f"     pipe insertions checked: {inserter_count}", flush=True)
 
     state_count = check("workbench state bridge", check_workbench_state)
     if state_count:

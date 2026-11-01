@@ -35,6 +35,7 @@ def test_null_reporter_is_silent():
 def test_form_services_is_a_dependency_container():
     services = FormServices(
         catalog=object(),
+        pipe_inserter=object(),
         catalog_presenter=object(),
         section_presenter=object(),
         standard_filters=object(),

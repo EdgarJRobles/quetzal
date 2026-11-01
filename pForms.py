@@ -24,6 +24,7 @@ from quetzal.infrastructure.freecad.workbench_state import (
 )
 from quetzal.application.standard_filters import institution_label, standard_label
 from quetzal.application.validation import FieldRule, FormValidator
+from quetzal.application.insertion_requests import PipeInsertRequest
 from quetzal.domain.pipe_sizes import PIPE_OUTSIDE_DIAMETERS_MM as pipe_OD
 from PySide.QtWidgets import QCheckBox
 
@@ -299,14 +300,18 @@ class insertPipeForm(dodoDialogs.protoPypeForm):
         rating = self.ratingList.currentText()
         self.H = length
         self.sli.setValue(100)
-        propList = [
-            size_selected["PSize"],
-            float(pq(size_selected["OD"])),
-            float(pq(size_selected["thk"])),
-            self.H,
-        ]
-        # INSERT PIPES
-        self.lastPipe = pCmd.doPipes(rating, propList, get_active_pype_line())[-1]
+        request = PipeInsertRequest(
+            rating=rating,
+            psize=size_selected["PSize"],
+            od=float(pq(size_selected["OD"])),
+            thk=float(pq(size_selected["thk"])),
+            height=self.H,
+        )
+        try:
+            self.lastPipe = self.services.pipe_inserter.insert_pipe(request)
+        except Exception as exc:
+            self.services.reporter.error(str(exc))
+            return
         self.H = float(self.lastPipe.Height)
         self.edit1.setText(str(float(self.H)))
         # TODO: SET PRATING

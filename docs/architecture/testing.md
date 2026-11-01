@@ -88,7 +88,9 @@ fails. It runs without a GUI and verifies:
     services are tested without Qt.
 21. **Section presenter** – CSV and BIM rows merge without duplicates and
     preset-only ratings remain available.
-22. **Institution/standard filters** – all 24 pipe types and all Section
+22. **Pipe insertion adapter** – the form port creates a valid pipe with the
+    requested height.
+23. **Institution/standard filters** – all 24 pipe types and all Section
     families resolve to their institution/standard, including generic types;
     strict ASME/EN/ASTM selections still narrow the lists.
 
