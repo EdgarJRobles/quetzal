@@ -5,6 +5,7 @@ from __future__ import annotations
 
 from functools import lru_cache
 
+from ..application.catalog_presenter import CatalogPresenter
 from ..application.form_services import FormServices
 from ..application.workbench_state import default_workbench_state
 from .freecad.preview import default_preview_service
@@ -15,9 +16,12 @@ from .standard_filters import default_standard_filter_service
 
 @lru_cache(maxsize=1)
 def default_form_services() -> FormServices:
+    catalog = default_catalog_repository()
+    filters = default_standard_filter_service()
     return FormServices(
-        catalog=default_catalog_repository(),
-        standard_filters=default_standard_filter_service(),
+        catalog=catalog,
+        catalog_presenter=CatalogPresenter(catalog, filters),
+        standard_filters=filters,
         preview=default_preview_service(),
         state=default_workbench_state(),
         reporter=FreeCADReporter(),

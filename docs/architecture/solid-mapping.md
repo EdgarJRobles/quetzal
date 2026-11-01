@@ -33,6 +33,8 @@ legacy hotspots remain. It is meant to be updated as the migration advances.
   constructed with fakes for presenter tests.
 - `FieldRule`/`FormValidator` describe validation as data, so a new field rule
   does not require new branching code in the form.
+- `CatalogPresenter` turns catalogue tables into `RatingOption`/`SizeOption`
+  values, so forms do not parse CSV rows or build labels themselves.
 - `CatalogRepository` can be swapped (CSV, in-memory, future database) without
   changing consumers.
 - `standards/catalog.json` adds institutions, standards, dimensions and series

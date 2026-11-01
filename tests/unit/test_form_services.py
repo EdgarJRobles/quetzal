@@ -35,6 +35,7 @@ def test_null_reporter_is_silent():
 def test_form_services_is_a_dependency_container():
     services = FormServices(
         catalog=object(),
+        catalog_presenter=object(),
         standard_filters=object(),
         preview=object(),
         state=WorkbenchState(active_pype_line="PL"),

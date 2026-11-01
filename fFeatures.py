@@ -407,7 +407,6 @@ class insertSectForm(QWidget):
         self.sizeList.setMaximumWidth(120)
         self.firstCol.layout().addWidget(self.sizeList)
         self.sectDictList = []
-        self.fileList = listdir(join(dirname(abspath(__file__)), "tablez"))
         self.fillSizes()
         self._filters = self.services.standard_filters
         self.PRatingsList = list(self._filters.ratings("Section"))
@@ -473,15 +472,10 @@ class insertSectForm(QWidget):
 
     def fillSizes(self):
         self.sizeList.clear()
-        for fileName in self.fileList:
-            if fileName == "Section_" + self.SType + ".csv":
-                f = open(join(dirname(abspath(__file__)), "tablez", fileName), "r")
-                reader = csv.DictReader(f, delimiter=";")
-                self.sectDictList = [x for x in reader]
-                f.close()
-                for row in self.sectDictList:
-                    s = row["SSize"]
-                    self.sizeList.addItem(s)
+        options = self.services.catalog_presenter.sizes("Section", self.SType)
+        self.sectDictList = [dict(option.row) for option in options]
+        for row in self.sectDictList:
+            self.sizeList.addItem(row.get("SSize", ""))
 
     def changeRating(self, item):
         self.SType = item.text()

@@ -119,6 +119,7 @@ Forms receive a small `FormServices` container instead of importing concrete
 singletons:
 
 * `catalog` – the CSV catalogue repository;
+* `catalog_presenter` – UI-ready rating/size rows;
 * `standard_filters` – institution/standard rating filters;
 * `preview` – the shared `PreviewService`;
 * `state` – an explicit `WorkbenchState`;
@@ -132,6 +133,10 @@ keeps the legacy attributes in sync for external macros.
 `FormValidator`/`FieldRule` provide declarative numeric/required/choice checks
 without Qt. The pipe form uses it for the length field and reports issues via
 `UserReporter` instead of raising or silently returning.
+
+`CatalogPresenter` converts catalogue tables into `RatingOption`/`SizeOption`
+values. `insertSectForm` already reads its section sizes through it; the
+presenter has no Qt or FreeCAD dependency.
 
 ## Command registry and layout
 

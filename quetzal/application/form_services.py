@@ -10,6 +10,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from ..domain.catalog import CatalogRepository
+from .catalog_presenter import CatalogPresenter
 from .preview import PreviewService
 from .reporting import UserReporter
 from .standard_filters import StandardFilterService
@@ -19,6 +20,7 @@ from .workbench_state import WorkbenchState
 @dataclass(frozen=True)
 class FormServices:
     catalog: CatalogRepository
+    catalog_presenter: CatalogPresenter
     standard_filters: StandardFilterService
     preview: PreviewService
     state: WorkbenchState
