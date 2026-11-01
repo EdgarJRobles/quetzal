@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg width="64" height="64" viewBox="0 0 64 64" version="1.1" xmlns="http://www.w3.org/2000/svg">
+  <title>Quetzal - Isometric from PCF</title>
+  <path d="M 4,4 H 22 L 30,12 V 40 H 4 Z" fill="#f2f2f2" stroke="#3a3a3a" stroke-width="2" stroke-linejoin="round"/>
+  <text x="17" y="30" font-family="sans-serif" font-size="9" font-weight="bold" text-anchor="middle" fill="#1f5fa8">PCF</text>
+  <rect x="26" y="24" width="34" height="36" rx="2" fill="#f2f2f2" stroke="#3a3a3a" stroke-width="2"/>
+  <polyline points="31,52 41,46 41,33 54,40" fill="none" stroke="#1f5fa8" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+  <circle cx="41" cy="46" r="2.2" fill="#1f5fa8"/>
+</svg>

@@ -50,6 +50,8 @@ class QuetzalWorkbench(Workbench):
         """
         QT_TRANSLATE_NOOP = FreeCAD.Qt.QT_TRANSLATE_NOOP
         import CUtils  # noqa: F401
+        from pcf import pcf_commands  # noqa: F401
+        from iso import iso_commands  # noqa: F401
 
         self.utilsList = [
             "Quetzal_SelectSolids",
@@ -60,6 +62,11 @@ class QuetzalWorkbench(Workbench):
             "Quetzal_HackedLine",
             "Quetzal_MoveHandle",
             "Quetzal_PressureLossCalculator",
+            "Quetzal_ImportPCF",
+            "Quetzal_ExportPCF",
+            "Quetzal_CreateIso",
+            "Quetzal_IsoFromPCF",
+            "Quetzal_UpdateIso",
         ]
         self.appendToolbar(QT_TRANSLATE_NOOP("Workbench", "Utils"), self.utilsList)
         Log("Loading Utils: done\n")
@@ -108,6 +115,7 @@ class QuetzalWorkbench(Workbench):
             "Quetzal_InsertDuctReduction",
             "Quetzal_InsertCap",
             "Quetzal_InsertCoupling",
+            "Quetzal_InsertBushing",
             "Quetzal_InsertValve",
             "Quetzal_InsertFlange",
             "Quetzal_InsertGasket",

@@ -63,14 +63,14 @@ AAA_BBB.cvs
 | ASME-WN-RF-150lb |
 | ASME-WN-RF-300lb |
 
-Variables Implemented in each CVS table:
+Variables Implemented in each CSV table:
 
 | Variable | Description | Implemented in table |
 | --------------- | --------------- | --------------- |
 | Psize | Section designation | All |
-| Psize2 | nominal diameter of port 1 (opposite end, +Z) | SocketCoupling |
+| Psize2 | nominal diameter of port 1 (opposite end, +Z) | SocketCoupling, Bushing |
 | OD | Outer diameter | Pipe, Reduct, Elbow, Coupling, TerminalAdapter, Outlet|
-| OD2 | Minor outer diameter | Reduct, TerminalAdapter |
+| OD2 | Minor outer diameter | Reduct, TerminalAdapter, Bushing |
 | BendAngle | Bend angle | Elbow, SocketCap |
 | BendRadio | Bend radio | Elbow |
 | thk | Wall thickness | Pipe, Reduct, Outlet, Cap |
@@ -88,14 +88,20 @@ Variables Implemented in each CVS table:
 | CROD | Centering ring outer diameter | Gasket |
 | SEthk | Sealing element thickness | Gasket |
 | Rthk | Inner and centering ring thickness | Gasket |
-| L | Overall length | TerminalAdapter |
+| L | Overall length; male end length, hex to tip (Bushing, Plug) | TerminalAdapter, Bushing, Plug |
+| L2 | Female thread engagement (socket depth) | Bushing |
+| F | Hex width across flats | Bushing, Plug |
 | SW | Support width | Outlet, TerminalAdapter |
 | A | Height above run-pipe surface (along fitting axis) | Outlet, Cap |
 | B | Outer diameter at base attachment | Outlet |
 | C |  | Outlet |
 | E | Socket depth bore steps from ID to OD at this height | Outlet, SocketCap |
-| Conn | ConnectionType | SocketCap, Cap |
+| Conn | ConnectionType | SocketCap, Cap, Bushing, Plug |
 | Conc | Concentric or excentric connection | Reduct |
+| E2 | Socket / thread engagement at port 1 when it differs from E | Valve (socket x threaded) |
+| Conn2 | Connection type at port 1 when it differs from Conn | Valve (socket x threaded) |
+| TopH | Upper envelope from centerline; gate valves: to the stem top, gate open | Valve (flanged) |
+| WheelD | Handwheel diameter (0 = 0.9 x face-to-face length) | Valve (flanged gate) |
 
 Section profile type [Stype] summary table:
 

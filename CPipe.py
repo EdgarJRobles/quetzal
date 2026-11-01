@@ -320,6 +320,26 @@ class _InsertCouplingUnionCmd:
         import pForms
         pForms.insertCouplingUnionForm()
 
+class _InsertBushingPlugCmd:
+    """FreeCAD Gui command — opens the hex bushing/plug insertion dialog."""
+
+    def GetResources(self):
+        return {
+            "Pixmap":  "Quetzal_BushingPlug.svg",
+            "MenuText": QT_TRANSLATE_NOOP("Quetzal", "Insert Bushing / Plug"),
+            "ToolTip":  QT_TRANSLATE_NOOP(
+                "Quetzal",
+                Quetzal_tooltips.bushing_plug_tooltip),
+            "Accel":    "",
+        }
+
+    def IsActive(self):
+        return FreeCAD.activeDocument() is not None
+
+    def Activated(self):
+        import pForms
+        pForms.insertBushingPlugForm()
+
 
 
 
@@ -764,6 +784,7 @@ addCommand("Quetzal_InsertValve", insertValve())
 addCommand("Quetzal_InsertFlange", insertFlange())
 addCommand("Quetzal_InsertGasket", insertGasket())
 addCommand("Quetzal_InsertCoupling", _InsertCouplingUnionCmd())
+addCommand("Quetzal_InsertBushing", _InsertBushingPlugCmd())
 addCommand("Quetzal_InsertUBolt", insertUbolt())
 addCommand("Quetzal_InsertPypeLine", insertPypeLine())
 addCommand("Quetzal_InsertBranch", insertBranch())

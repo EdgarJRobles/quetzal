@@ -169,7 +169,8 @@ def getSelectedPortDimensions():
     connecting pipe OD and OD-based matching would produce wrong results.
     The affected types are:
       - Outlet with EndType "SocketWeld" or "ThreadedEnd"
-      - SocketCap, SocketEll, SocketTee, SocketCoupling, SocketUnion
+      - SocketCap, SocketEll, SocketTee, SocketCoupling, SocketUnion,
+        HexBushing, HexPlug
         (Conn property is always SW or TH)
       - Valve with Conn SW or TH
       - Flange with FlangeType BL, SW, SO, or LJ
@@ -232,8 +233,13 @@ def getSelectedPortDimensions():
 
         # ── Socket/threaded fittings: Conn is always SW or TH ─────────────
         if ptype in ("SocketCap", "SocketEll", "SocketTee",
-                     "SocketCoupling", "SocketUnion"):
+                     "SocketCoupling", "SocketUnion", "HexPlug"):
             return None, None, None, psize
+        if ptype == "HexBushing":
+            # the small (female) end is the one a new fitting normally joins
+            if _closest_port(obj, sx) == 0:
+                return None, None, None, psize
+            return None, None, None, obj.PSize2
 
         # ── Valve: suppress OD when SW or TH ──────────────────────────────
         if ptype == "Valve":
@@ -1692,7 +1698,7 @@ def makePypeLine2(
     # create the pypeLine group
     if not pl:
         a = FreeCAD.ActiveDocument.addObject("Part::FeaturePython", lab)
-        pFeatures.PypeLine2(a, DN, PRating, OD, thk, BR, lab)
+        pFeatures.PypeLine2(a, PRating, DN, OD, thk, BR, lab)
         if FreeCAD.GuiUp:
             pFeatures.ViewProviderPypeLine(a.ViewObject)  # a.ViewObject.Proxy=0
             a.ViewObject.ShapeColor = color
@@ -2319,6 +2325,10 @@ def makeValve(propList=[], pos=None, Z=None, flgPropList=None, actuator="Handle"
       E       (float) : socket / thread engagement depth
       Conn    (string): "SW" or "TH"
       Kv      (float) : flow factor  [optional]
+      E2      (float) : engagement depth at port 1 (-Z)  [optional, = E]
+      Conn2   (string): "SW" or "TH" at port 1  [optional, = Conn]
+      Gate and globe valves (VType Gate_* / Globe_*) are drawn with a
+      horizontal handwheel.
 
     propList elements for the flanged path:
       DN      (string): nominal diameter
@@ -2328,6 +2338,8 @@ def makeValve(propList=[], pos=None, Z=None, flgPropList=None, actuator="Handle"
       Conn    (string): pressure class, e.g. "150lb"
       BottomH (float) : lower body envelope from centerline [optional]
       TopH    (float) : upper body envelope from centerline [optional]
+                        (gate valves: centerline to stem top, gate open)
+      WheelD  (float) : handwheel diameter, gate valves [optional, 0 = 0.9 H]
 
     flgPropList — list of blind-flange properties read from the matching
       Flange_ASME-BL-RF-<Conn>.csv table.  Elements in order:
@@ -2335,7 +2347,11 @@ def makeValve(propList=[], pos=None, Z=None, flgPropList=None, actuator="Handle"
       (Same column order as the CSV, matching the Flange __init__ signature.)
       When provided the flanged construction path is used automatically.
 
-    actuator -- "Handle" (default) or "Gearbox".  Applies to flanged valves only.
+    actuator -- "Handle" (default), "Handle-closed", or "Gearbox".  Applies to
+      flanged and SW/TH valves; "Gearbox" is drawn for flanged valves only.
+      Flanged gate and globe valves take "Handwheel", "Handwheel-closed",
+      "Gearbox" or "Gearbox-closed" ("Handle" is drawn as a handwheel);
+      flanged globe valves also "Pneumatic" or "Pneumatic-closed".
 
     pos (Vector): insertion point; default = origin
     Z   (Vector): flow-axis direction; default = (0,0,1)
@@ -2357,6 +2373,7 @@ def makeValve(propList=[], pos=None, Z=None, flgPropList=None, actuator="Handle"
         Conn  = str(propList[4]) if len(propList) > 4 else "150lb"
         bottomH = float(propList[5]) if len(propList) > 5 else 0.0
         topH    = float(propList[6]) if len(propList) > 6 else 0.0
+        wheelD  = float(propList[7]) if len(propList) > 7 else 0.0
         # flgPropList: [PSize, FlangeType, D, t, f, n, df, drf, trf]
         flgD   = float(flgPropList[2]) if len(flgPropList) > 2 else 0.0
         flgt   = float(flgPropList[3]) if len(flgPropList) > 3 else 0.0
@@ -2368,18 +2385,22 @@ def makeValve(propList=[], pos=None, Z=None, flgPropList=None, actuator="Handle"
         pFeatures.Valve(a, DN=DN, VType=VType, H=H, Kv=Kv, Conn=Conn,
                         flgD=flgD, flgt=flgt, flgdrf=flgdrf, flgtrf=flgtrf,
                         flgdf=flgdf, flgf=flgf, flgn=flgn,
-                        actuator=actuator, bottomH=bottomH, topH=topH)
+                        actuator=actuator, bottomH=bottomH, topH=topH,
+                        wheelD=wheelD)
     elif propList:
         # Detect socket/threaded variant by the presence of a "Conn" field.
         # Convention: propList for the SW/TH path carries Conn as element [6]
         # (after DN, VType, OD, ODBody, H, E).
         if len(propList) >= 7 and isinstance(propList[6], str) and \
                 propList[6] in ("SW", "TH"):
-            # [DN, VType, OD, ODBody, H, E, Conn, (Kv)]
+            # [DN, VType, OD, ODBody, H, E, Conn, (Kv, E2, Conn2)]
             DN, VType, OD, ODBody, H, E, Conn = propList[:7]
             Kv = float(propList[7]) if len(propList) >= 8 else 0.0
+            E2 = float(propList[8]) if len(propList) >= 9 and propList[8] else E
+            Conn2 = propList[9] if len(propList) >= 10 and propList[9] else Conn
             pFeatures.Valve(a, DN=DN, VType=VType, ODBody=ODBody, H=H, Kv=Kv,
-                            OD=OD, E=E, Conn=Conn)
+                            OD=OD, E=E, Conn=Conn, actuator=actuator,
+                            E2=E2, Conn2=Conn2)
         else:
             # Legacy path: [DN, VType, ODBody, ID, H, (Kv)]
             pFeatures.Valve(a, *propList)
@@ -2401,7 +2422,7 @@ def makeValve(propList=[], pos=None, Z=None, flgPropList=None, actuator="Handle"
 
 
 def doValves(propList=["DN50", "ball", 72, 50, 40, 150], pypeline=None, pos=0,
-             flgPropList=None, actuator="Handle"):
+             flgPropList=None, actuator="Handle", port=0):
     """Insert one or more Valve objects.
 
     propList  -- see makeValve() for the accepted formats.
@@ -2412,7 +2433,15 @@ def doValves(propList=["DN50", "ball", 72, 50, 40, 150], pypeline=None, pos=0,
     flgPropList -- optional list of blind-flange properties for flanged valves.
                    When supplied the flanged construction path is used.
                    Elements: [PSize, FlangeType, D, t, f, n, df, drf, trf]
-    actuator    -- "Handle" (default) or "Gearbox".  Flanged valves only.
+    actuator    -- "Handle" (default), "Handle-closed", or "Gearbox" (flanged only).
+                   Flanged gate and globe valves: "Handwheel",
+                   "Handwheel-closed", "Gearbox" or "Gearbox-closed";
+                   flanged globe valves also "Pneumatic" or
+                   "Pneumatic-closed".
+    port        -- valve port mated to the selected port: 0 (default) or 1.
+                   On swing check and globe valves port 0 is the inlet
+                   ("connect to back") and port 1 the outlet ("connect to
+                   front").
     """
     color  = 0.05, 0.3, 0.75
     vlist  = []
@@ -2451,7 +2480,7 @@ def doValves(propList=["DN50", "ball", 72, 50, 40, 150], pypeline=None, pos=0,
                 valve.ViewObject.ShapeColor = color
                 FreeCAD.activeDocument().commitTransaction()
                 FreeCAD.activeDocument().recompute()
-                alignTwoPorts(valve, 0, srcObj, srcPort)
+                alignTwoPorts(valve, port, srcObj, srcPort)
             else:
                 valve = makeValve(propList, pos_vec, Z_vec, flgPropList=flgPropList, actuator=actuator)
                 vlist.append(valve)
@@ -2867,9 +2896,9 @@ def makeOutlet(propList=[], pos=None, rot=None, carrierOD=0.0):
       [3]  thk      float  wall thickness at pipe end    (mm)
       [4]  A        float  height above run-pipe surface (mm)
       [5]  B        float  outer diameter at base        (mm)
-      [6]  endType  str    "BW" or "SW"  (from CSV Conn column)
+      [6]  endType  str    "BW", "SW" or "TH"  (from CSV Conn column)
       [7]  angle    int    0 (straight) | 45 (lateral)
-      [8]  E        float  socket depth (SW only)
+      [8]  E        float  height of the socket / thread bottom (SW and TH only)
 
     pos       : FreeCAD.Vector    - world position of the fitting base
     rot       : FreeCAD.Rotation  - full world rotation (replaces the old Z-only arg)
@@ -3313,7 +3342,7 @@ def doSocketTee(rating="3000lb", propList=["DN25", "DN25", 33.4, 33.4, 35.0, 5.0
     plist = []
     selex = FreeCADGui.Selection.getSelectionEx()
     if len(selex) == 0:  # no selection -> insert one tee at origin
-        plist.append(makeSocketTee(propList, insertOnBranch=insertOnBranch))
+        plist.append(makeSocketTee(propList, insertOnBranch=insertOnBranch, rating=rating))
     else: #something selected. Use the first selected object in the list of selections
         selex = FreeCADGui.Selection.getSelectionEx()[0]
         usablePorts = False
@@ -3605,3 +3634,65 @@ def doSocketUnion(propList=["DN25", 33.4, 35.0, 5.0, 25.9, 22.0, "SW"],
     """
     return _doSocketStraight(
         makeSocketUnion, "Insert socket union", propList, pypeline)
+
+
+# ── public API: HexBushing / HexPlug ─────────────────────────────────────────
+
+def makeHexBushing(propList=[], pos=None, Z=None):
+    """Add a HexBushing object.
+    makeHexBushing(propList, pos, Z)
+      propList is one optional list with 10 elements:
+        PSize  (string): nominal diameter of the male (large) end, port 0
+        PSize2 (string): nominal diameter of the female (small) end, port 1
+        OD     (float):  large pipe OD
+        OD2    (float):  small pipe OD
+        F      (float):  hex width across flats
+        C      (float):  hex height
+        L      (float):  male end length (hex to tip)
+        L2     (float):  female thread engagement
+        D      (float):  through-bore diameter
+        Conn   (string): connection type ("TH")
+      pos (vector): world position of port[0] (male thread tip); default = 0,0,0
+      Z   (vector): desired outward direction of port[0]; default = 0,0,1
+    Remember: property PRating must be defined afterwards.
+    """
+    return _makeSocketStraight(
+        pFeatures.HexBushing, "HexBushing",
+        "Quetzal_BushingPlug", propList, 10, pos, Z)
+
+
+def doHexBushing(propList=["DN25", "DN15", 33.4, 21.34, 35.0, 6.0, 19.0, 10.84, 15.34, "TH"],
+                 pypeline=None):
+    """Insert a HexBushing, aligning its male end (port 0) to the selected port
+    when possible.  propList as for makeHexBushing.
+    pypeline = string (optional PypeLine label)
+    """
+    return _doSocketStraight(
+        makeHexBushing, "Insert hex bushing", propList, pypeline)
+
+
+def makeHexPlug(propList=[], pos=None, Z=None):
+    """Add a HexPlug object.
+    makeHexPlug(propList, pos, Z)
+      propList is one optional list with 6 elements:
+        PSize (string): nominal diameter
+        OD    (float):  pipe OD
+        F     (float):  hex width across flats
+        C     (float):  hex height
+        L     (float):  male end length (hex to tip)
+        Conn  (string): connection type ("TH")
+      pos (vector): world position of port[0] (male thread tip); default = 0,0,0
+      Z   (vector): desired outward direction of port[0]; default = 0,0,1
+    Remember: property PRating must be defined afterwards.
+    """
+    return _makeSocketStraight(
+        pFeatures.HexPlug, "HexPlug",
+        "Quetzal_BushingPlug", propList, 6, pos, Z)
+
+
+def doHexPlug(propList=["DN25", 33.4, 35.0, 10.0, 19.0, "TH"], pypeline=None):
+    """Insert a HexPlug, aligning it to the selected port when possible.
+    propList as for makeHexPlug.
+    pypeline = string (optional PypeLine label)
+    """
+    return _doSocketStraight(makeHexPlug, "Insert hex plug", propList, pypeline)
