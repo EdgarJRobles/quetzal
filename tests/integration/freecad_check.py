@@ -428,6 +428,21 @@ def check_catalog_models():
     return ratings.rowCount(), sizes.rowCount()
 
 
+
+
+def check_cut_list_registration():
+    """Importing the cut-list module registers its declarative command."""
+
+    import cut_list.cut_list_commands  # noqa: F401
+    from quetzal.application.command_registry import REGISTRY
+
+    assert "Quetzal_CreateCutList" in REGISTRY
+    spec = REGISTRY.get("Quetzal_CreateCutList")
+    assert spec.group == "frame"
+    assert spec.handler is not None
+    return 1
+
+
 def main():
     print(f"FreeCAD {FreeCAD.Version()[0]}.{FreeCAD.Version()[1]}", flush=True)
     document = FreeCAD.newDocument("quetzal_integration")
@@ -534,6 +549,10 @@ def main():
     branch_count = check("PypeBranch link migration", check_pype_branch_links)
     if branch_count:
         print(f"     branch child groups checked: {branch_count}", flush=True)
+
+    cut_count = check("cut-list command registration", check_cut_list_registration)
+    if cut_count:
+        print(f"     cut-list specs checked: {cut_count}", flush=True)
 
     model_counts = check("catalogue Qt models", check_catalog_models)
     if model_counts:

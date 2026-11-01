@@ -67,7 +67,7 @@ class QuetzalWorkbench(Workbench):
         Log("Loading Utils: done\n")
 
         import CFrame  # noqa: F401
-        from cut_list.cut_list_commands import cutListCommand  # noqa: F401
+        import cut_list.cut_list_commands  # noqa: F401
 
         self.frameList = list(quetzal_layout.GROUPS["frame"])
         self.appendToolbar(QT_TRANSLATE_NOOP("Workbench", "Frame tools"), self.frameList)
