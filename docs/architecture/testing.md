@@ -91,7 +91,9 @@ fails. It runs without a GUI and verifies:
 22. **Insertion adapters** – the pipe and fitting ports cover every pForms
     insertion path and report failures through the reporter.
 23. **Preview variant contract** – forms expose a stable variant suffix.
-24. **Declarative utils commands** – the eight `CUtils` specs register and keep
+24. **Catalogue Qt models** – rating/size models expose presenter rows and
+    roles without opening a dialog.
+25. **Declarative utils commands** – the eight `CUtils` specs register and keep
     the layout valid.
 24. **Institution/standard filters** – all 24 pipe types and all Section
     families resolve to their institution/standard, including generic types;

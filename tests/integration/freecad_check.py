@@ -399,6 +399,35 @@ def check_fitting_inserter():
         FreeCAD.closeDocument(document.Name)
 
 
+def check_catalog_models():
+    """Qt list models expose the presenter options without a dialog."""
+
+    from quetzal.application.catalog_presenter import CatalogPresenter
+    from quetzal.application.section_catalog import SectionCatalogPresenter
+    from quetzal.application.standard_filters import StandardFilterService
+    from pathlib import Path
+
+    from quetzal.domain.catalog import CsvCatalogRepository
+    from quetzal.domain.standards import StandardsCatalog
+    from quetzal.ui.catalog_models import RatingListModel, SizeListModel
+
+    root = Path(ROOT)
+    catalog = CsvCatalogRepository(root / "tablez")
+    filters = StandardFilterService(
+        catalog, StandardsCatalog.from_json(root / "standards" / "catalog.json")
+    )
+    presenter = CatalogPresenter(catalog, filters)
+    ratings = RatingListModel(presenter.ratings("Pipe"))
+    sizes = SizeListModel(presenter.sizes("Pipe", "SCH-40"))
+    assert ratings.rowCount() == 24
+    assert ratings.data(ratings.index(0, 0), ratings.CodeRole)
+    assert sizes.rowCount() > 0
+    section = SectionCatalogPresenter(presenter, lambda: [])
+    section_sizes = SizeListModel(section.sizes("IPE", include_bim=False))
+    assert section_sizes.rowCount() > 0
+    return ratings.rowCount(), sizes.rowCount()
+
+
 def main():
     print(f"FreeCAD {FreeCAD.Version()[0]}.{FreeCAD.Version()[1]}", flush=True)
     document = FreeCAD.newDocument("quetzal_integration")
@@ -505,6 +534,13 @@ def main():
     branch_count = check("PypeBranch link migration", check_pype_branch_links)
     if branch_count:
         print(f"     branch child groups checked: {branch_count}", flush=True)
+
+    model_counts = check("catalogue Qt models", check_catalog_models)
+    if model_counts:
+        print(
+            f"     model rows checked: {model_counts[0]}/{model_counts[1]}",
+            flush=True,
+        )
 
     fitting_count = check("fitting inserter adapter", check_fitting_inserter)
     if fitting_count:

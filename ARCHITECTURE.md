@@ -143,6 +143,10 @@ Forms implement the `PreviewVariantProvider` contract through
 uses `BA<angle>` and the outlet form uses `Ang<angle>` so 45°/90°/0° previews
 no longer overwrite each other.
 
+`quetzal.ui.catalog_models` exposes `RatingListModel`/`SizeListModel` for
+Qt views, backed by the presenter options and without duplicating catalogue
+logic in the widgets.
+
 `SectionCatalogPresenter` adds the BIM preset rows on top of the CSV sizes and
 is now used by both section/frame forms, so preset-only ratings such as `SHS`
 are not lost.
