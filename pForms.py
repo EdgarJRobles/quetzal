@@ -18,7 +18,10 @@ import dodoDialogs
 import fCmd
 import pCmd
 from quetzal.domain.preview import PreviewKey
-from quetzal.infrastructure.standard_filters import default_standard_filter_service
+from quetzal.infrastructure.freecad.workbench_state import (
+    get_active_pype_line,
+    set_active_pype_line,
+)
 from quetzal.application.standard_filters import institution_label, standard_label
 from quetzal.domain.pipe_sizes import PIPE_OUTSIDE_DIAMETERS_MM as pipe_OD
 from PySide.QtWidgets import QCheckBox
@@ -148,7 +151,7 @@ class insertPipeForm(dodoDialogs.protoPypeForm):
             y,
         )
         # Pipe schedules are grouped by issuing institution and standard.
-        self._filters = default_standard_filter_service()
+        self._filters = self.services.standard_filters
         self.institutionList = QComboBox()
         self.secondCol.layout().insertRow(
             0,
@@ -281,7 +284,7 @@ class insertPipeForm(dodoDialogs.protoPypeForm):
             self.H,
         ]
         # INSERT PIPES
-        self.lastPipe = pCmd.doPipes(rating, propList, FreeCAD.__activePypeLine__)[-1]
+        self.lastPipe = pCmd.doPipes(rating, propList, get_active_pype_line())[-1]
         self.H = float(self.lastPipe.Height)
         self.edit1.setText(str(float(self.H)))
         # TODO: SET PRATING
@@ -524,7 +527,7 @@ class insertElbowForm(dodoDialogs.protoPypeForm):
                 ]
                 rating = self.ratingList.currentText()
                 self.lastElbow = pCmd.doSocketElbow(
-                    rating, propList, FreeCAD.__activePypeLine__,
+                    rating, propList, get_active_pype_line(),
                     doOffset=doOffset)[-1]
             else:
                 propList = [
@@ -538,7 +541,7 @@ class insertElbowForm(dodoDialogs.protoPypeForm):
                     propList[-1] = float(pq(self.edit2.text()))
                 rating = self.ratingList.currentText()
                 self.lastElbow = pCmd.doElbow(
-                    rating, propList, FreeCAD.__activePypeLine__,
+                    rating, propList, get_active_pype_line(),
                     doOffset=doOffset)[-1]
 
             FreeCAD.activeDocument().recompute()
@@ -954,7 +957,7 @@ class insertTeeForm(dodoDialogs.protoPypeForm):
             ]
             rating = self.ratingList.currentText()
             self.lastTee = pCmd.doSocketTee(
-                rating, propList, FreeCAD.__activePypeLine__,
+                rating, propList, get_active_pype_line(),
                 insertOnBranch, doOffset=doOffset)[-1]
         else:
             # ── Butt-weld tee ────────────────────────────────────────────
@@ -970,7 +973,7 @@ class insertTeeForm(dodoDialogs.protoPypeForm):
             ]
             rating = self.ratingList.currentText()
             self.lastTee = pCmd.doTees(
-                rating, propList, FreeCAD.__activePypeLine__,
+                rating, propList, get_active_pype_line(),
                 insertOnBranch, doOffset=doOffset)[-1]
 
         FreeCAD.activeDocument().recompute()
@@ -1539,7 +1542,7 @@ class insertFlangeForm(dodoDialogs.protoPypeForm):
             self.lastFlange = pCmd.doFlanges(
                 rating,
                 propList,
-                pypeline=FreeCAD.__activePypeLine__,
+                pypeline=get_active_pype_line(),
                 doOffset=self.offsetoption,
                 attachFace=attachFace,
                 fclass=fclass,
@@ -1925,9 +1928,9 @@ class insertReductForm(dodoDialogs.protoPypeForm):
 
         rating = self.ratingList.currentText()
         if self.cb1.isChecked():
-            self.lastReduct = pCmd.doReduct(rating, propList, FreeCAD.__activePypeLine__, pos, Z, False, insertOnSmallerEnd)[-1]
+            self.lastReduct = pCmd.doReduct(rating, propList, get_active_pype_line(), pos, Z, False, insertOnSmallerEnd)[-1]
         else:
-            self.lastReduct = pCmd.doReduct(rating, propList, FreeCAD.__activePypeLine__, pos, Z, True, insertOnSmallerEnd)[-1]
+            self.lastReduct = pCmd.doReduct(rating, propList, get_active_pype_line(), pos, Z, True, insertOnSmallerEnd)[-1]
 
         FreeCAD.activeDocument().commitTransaction()
         FreeCAD.activeDocument().recompute()
@@ -2241,12 +2244,12 @@ class insertCapForm(dodoDialogs.protoPypeForm):
                     float(pq(size_selected["E"])),
                     size_selected.get("Conn", "SW"),
                 ]
-                self.lastCap = pCmd.doSocketCap(propList, FreeCAD.__activePypeLine__)[-1]
+                self.lastCap = pCmd.doSocketCap(propList, get_active_pype_line())[-1]
             else:
                 # ── Butt-weld cap ────────────────────────────────────────────
                 propList = [size_selected["PSize"], float(pq(size_selected["OD"])), float(pq(size_selected["thk"]))]
                 rating = self.ratingList.currentText()
-                self.lastCap = pCmd.doCaps(rating, propList, FreeCAD.__activePypeLine__)[-1]
+                self.lastCap = pCmd.doCaps(rating, propList, get_active_pype_line())[-1]
 
             FreeCAD.activeDocument().recompute()
             FreeCADGui.Selection.clearSelection()
@@ -2472,7 +2475,7 @@ class insertPypeLineForm(dodoDialogs.protoPypeForm):
         if f:
             if self.existingObjs.currentText() != translate("insertPypeLineForm", "<new>"):
                 group = FreeCAD.activeDocument().getObjectsByLabel(
-                    FreeCAD.__activePypeLine__ + "_pieces"
+                    get_active_pype_line() + "_pieces"
                 )[0]
                 fields = ["Label", "PType", "PSize", "Volume", "Height"]
                 rows = list()
@@ -2655,10 +2658,10 @@ class breakForm(QDialog):
         except:
             None
         self.combo.currentIndexChanged.connect(self.setCurrentPL)
-        if FreeCAD.__activePypeLine__ and FreeCAD.__activePypeLine__ in [
+        if get_active_pype_line() and get_active_pype_line() in [
             self.combo.itemText(i) for i in range(self.combo.count())
         ]:
-            self.combo.setCurrentIndex(self.combo.findText(FreeCAD.__activePypeLine__))
+            self.combo.setCurrentIndex(self.combo.findText(get_active_pype_line()))
         self.edit1 = QLineEdit("0")
         self.edit1.setAlignment(Qt.AlignCenter)
         self.edit1.editingFinished.connect(self.updateSlider)
@@ -2698,9 +2701,9 @@ class breakForm(QDialog):
             translate("breakForm", "<none>"),
             translate("breakForm", "<new>"),
         ]:
-            FreeCAD.__activePypeLine__ = self.combo.currentText()
+            set_active_pype_line(self.combo.currentText())
         else:
-            FreeCAD.__activePypeLine__ = None
+            set_active_pype_line(None)
 
     def getL(self):
         l = [p.Height for p in fCmd.beams() if pCmd.isPipe(p)]
@@ -3142,7 +3145,7 @@ class insertValveForm(dodoDialogs.protoPypeForm):
                 actuator = "Gearbox" if (hasattr(self, "rbGearbox") and
                                          self.rbGearbox.isChecked()) else "Handle"
                 self.lastValve = pCmd.doValves(
-                    propList, FreeCAD.__activePypeLine__,
+                    propList, get_active_pype_line(),
                     flgPropList=flgPropList, actuator=actuator)[-1]
             elif self._isSocketConn():
                 # [DN, VType, OD, ODBody, H, E, Conn, Kv]
@@ -3156,7 +3159,7 @@ class insertValveForm(dodoDialogs.protoPypeForm):
                     r["conn"],
                     float(pq(r.get("kv", "0"))),
                 ]
-                self.lastValve = pCmd.doValves(propList, FreeCAD.__activePypeLine__)[-1]
+                self.lastValve = pCmd.doValves(propList, get_active_pype_line())[-1]
             else:
                 # [DN, VType, ODBody, ID, H, Kv]
                 propList = [
@@ -3174,10 +3177,10 @@ class insertValveForm(dodoDialogs.protoPypeForm):
                     ]
                     if pipes:
                         self.lastValve = pCmd.doValves(
-                            propList, FreeCAD.__activePypeLine__,
+                            propList, get_active_pype_line(),
                             self.sli.value())[-1]
                         return
-                self.lastValve = pCmd.doValves(propList, FreeCAD.__activePypeLine__)[-1]
+                self.lastValve = pCmd.doValves(propList, get_active_pype_line())[-1]
         finally:
             self.sizeList.blockSignals(False)
 
@@ -3743,7 +3746,7 @@ class insertGasketForm(dodoDialogs.protoPypeForm):
                 ]
                 self.lastGasket = pCmd.doGaskets(
                     propList,
-                    pypeline=FreeCAD.__activePypeLine__,
+                    pypeline=get_active_pype_line(),
                 )
 
             if insert_bolts:
@@ -3764,7 +3767,7 @@ class insertGasketForm(dodoDialogs.protoPypeForm):
                     ]
                     self.lastBolts = pCmd.doBolts_Nuts(
                         bolt_propList,
-                        pypeline=FreeCAD.__activePypeLine__,
+                        pypeline=get_active_pype_line(),
                     )
         finally:
             self.sizeList.blockSignals(False)
@@ -4651,7 +4654,7 @@ class insertCouplingUnionForm(dodoDialogs.protoPypeForm):
                     size_selected.get("Conn", "SW"),
                 ]
                 self.lastFitting = pCmd.doSocketCoupling(
-                    propList, FreeCAD.__activePypeLine__)[-1]
+                    propList, get_active_pype_line())[-1]
             else:
                 # Union: use the row selected from the primary list.
                 idx = self.sizeList.currentIndex()
@@ -4670,7 +4673,7 @@ class insertCouplingUnionForm(dodoDialogs.protoPypeForm):
                     size_selected.get("Conn", "SW"),
                 ]
                 self.lastFitting = pCmd.doSocketUnion(
-                    propList, FreeCAD.__activePypeLine__)[-1]
+                    propList, get_active_pype_line())[-1]
 
             FreeCAD.activeDocument().recompute()
             FreeCADGui.Selection.clearSelection()

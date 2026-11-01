@@ -156,8 +156,9 @@ class QuetzalWorkbench(Workbench):
         # if hasattr(FreeCADGui, "Snapper"):  # patch
         #     FreeCADGui.Snapper.show()  # patchm
         self.setWatchers()
-        FreeCAD.__activePypeLine__ = None
-        FreeCAD.__activeFrameLine__ = None
+        from quetzal.infrastructure.freecad.workbench_state import clear_workbench_state
+
+        clear_workbench_state()
         Msg("Created variables in FreeCAD module:\n")
         Msg("__activePypeLine__\n")
         Msg("__activeFrameLine__\n")
@@ -172,12 +173,10 @@ class QuetzalWorkbench(Workbench):
 
     def Deactivated(self):
         Msg = FreeCAD.Console.PrintMessage
-        if hasattr(FreeCAD, "__activePypeLine__"):
-            del FreeCAD.__activePypeLine__
-            Msg("__activePypeLine__ variable deleted\n")
-        if hasattr(FreeCAD, "__activeFrameLine__"):
-            del FreeCAD.__activeFrameLine__
-            Msg("__activeFrameLine__ variable deleted\n")
+        from quetzal.infrastructure.freecad.workbench_state import clear_workbench_state
+
+        clear_workbench_state()
+        Msg("Workbench state cleared\n")
         # mw=FreeCADGui.getMainWindow()
         # mw.removeAction(FreeCAD.__dodoPMact__)
         # Msg("dodoPM shortcut removed\n")

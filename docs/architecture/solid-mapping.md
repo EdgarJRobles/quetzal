@@ -29,6 +29,8 @@ legacy hotspots remain. It is meant to be updated as the migration advances.
   valve variant registers a new strategy instead of growing `Valve.execute`.
 - `CommandSpec`/`CommandRegistry` + `quetzal.ui.layout` make a new command one
   spec plus one layout entry, with duplicate/icon/name validation.
+- `FormServices` centralizes the UI dependencies in one dataclass; forms can be
+  constructed with fakes for presenter tests.
 - `CatalogRepository` can be swapped (CSV, in-memory, future database) without
   changing consumers.
 - `standards/catalog.json` adds institutions, standards, dimensions and series
@@ -62,6 +64,8 @@ No consumer is forced to depend on FreeCAD or Qt to use these.
 - `FeatureInserter` depends on `DocumentPort`, not on `FreeCAD.ActiveDocument`.
 - `FeatureRegistry` stores plain callables; FreeCAD proxies are injected by
   the feature modules.
+- `protoPypeForm` and the frame forms depend on `FormServices` and
+  `WorkbenchState`, not on FreeCAD globals or concrete singletons.
 - `dodoDialogs.protoPypeForm.fillSizes` depends on the catalogue protocol
   instead of opening CSV files.
 - Catalogue consumers can depend on `StandardsRepository` rather than on the

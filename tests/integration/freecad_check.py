@@ -335,6 +335,31 @@ def check_standard_filters():
     return len(pipe_standards), len(section_standards)
 
 
+def check_workbench_state():
+    """The explicit state and the legacy FreeCAD attributes stay in sync."""
+
+    from quetzal.application.workbench_state import default_workbench_state
+    from quetzal.infrastructure.freecad.workbench_state import (
+        clear_workbench_state,
+        get_active_frame_line,
+        get_active_pype_line,
+        set_active_frame_line,
+        set_active_pype_line,
+    )
+
+    clear_workbench_state()
+    set_active_pype_line("PL1")
+    set_active_frame_line("FL1")
+    assert get_active_pype_line() == "PL1"
+    assert get_active_frame_line() == "FL1"
+    assert default_workbench_state().active_pype_line == "PL1"
+    assert getattr(FreeCAD, "__activePypeLine__") == "PL1"
+    clear_workbench_state()
+    assert get_active_pype_line() is None
+    assert get_active_frame_line() is None
+    return 2
+
+
 def main():
     print(f"FreeCAD {FreeCAD.Version()[0]}.{FreeCAD.Version()[1]}", flush=True)
     document = FreeCAD.newDocument("quetzal_integration")
@@ -441,6 +466,10 @@ def main():
     branch_count = check("PypeBranch link migration", check_pype_branch_links)
     if branch_count:
         print(f"     branch child groups checked: {branch_count}", flush=True)
+
+    state_count = check("workbench state bridge", check_workbench_state)
+    if state_count:
+        print(f"     state handles checked: {state_count}", flush=True)
 
     filter_counts = check("institution/standard filters", check_standard_filters)
     if filter_counts:

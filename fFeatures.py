@@ -37,7 +37,12 @@ from DraftGeomUtils import findIntersection
 from numpy.random import randint
 import pCmd
 from quetzal_config import FREECADVERSION, get_icon_path
-from quetzal.infrastructure.standard_filters import default_standard_filter_service
+from quetzal.application.form_services import FormServices
+from quetzal.infrastructure.form_services import default_form_services
+from quetzal.infrastructure.freecad.workbench_state import (
+    get_active_frame_line,
+    set_active_frame_line,
+)
 from quetzal.application.standard_filters import institution_label, standard_label
 from uCmd import label3D
 import ShpstData
@@ -209,10 +214,10 @@ class frameLineForm(QDialog):
             None
         self.combo.setMaximumWidth(100)
         self.combo.currentIndexChanged.connect(self.setCurrentFL)
-        if FreeCAD.__activeFrameLine__ and FreeCAD.__activeFrameLine__ in [
+        if get_active_frame_line() and get_active_frame_line() in [
             self.combo.itemText(i) for i in range(self.combo.count())
         ]:
-            self.combo.setCurrentIndex(self.combo.findText(FreeCAD.__activeFrameLine__))
+            self.combo.setCurrentIndex(self.combo.findText(get_active_frame_line()))
         self.secondCol.layout().addWidget(self.combo)
         self.btn0 = QPushButton("Insert")
         self.btn0.setMaximumWidth(100)
@@ -244,7 +249,7 @@ class frameLineForm(QDialog):
 
     def setCurrentFL(self, FLName=None):
         if self.combo.currentText() not in ["<none>", "<new>"]:
-            FreeCAD.__activeFrameLine__ = self.combo.currentText()
+            set_active_frame_line(self.combo.currentText())
             self.current = FreeCAD.ActiveDocument.getObjectsByLabel(self.combo.currentText())[0]
             FreeCAD.Console.PrintMessage("current FrameLine = " + self.current.Label + "\n")
             if self.current.Profile:
@@ -256,7 +261,7 @@ class frameLineForm(QDialog):
             else:
                 FreeCAD.Console.PrintMessage("Path not defined\n")
         else:
-            FreeCAD.__activeFrameLine__ = None
+            set_active_frame_line(None)
             self.current = None
             FreeCAD.Console.PrintMessage("current FrameLine = None\n")
 
@@ -375,11 +380,12 @@ class insertSectForm(QWidget):
     them inside this group."
     """
 
-    def __init__(self, winTitle="Insert section", icon="dodo.svg"):
+    def __init__(self, winTitle="Insert section", icon="dodo.svg", services=None):
         """
         __init__(self,winTitle='Title',icon='filename.svg')
         """
         super(insertSectForm, self).__init__()
+        self.services: FormServices = services or default_form_services()
         self.move(QPoint(100, 250))
         self.setWindowFlags(Qt.WindowStaysOnTopHint)
         self.setWindowTitle(winTitle)
@@ -403,7 +409,7 @@ class insertSectForm(QWidget):
         self.sectDictList = []
         self.fileList = listdir(join(dirname(abspath(__file__)), "tablez"))
         self.fillSizes()
-        self._filters = default_standard_filter_service()
+        self._filters = self.services.standard_filters
         self.PRatingsList = list(self._filters.ratings("Section"))
         self.secondCol = QWidget()
         self.secondCol.setLayout(QVBoxLayout())
@@ -1057,7 +1063,7 @@ class frameBranchForm(dodoDialogs.protoTypeDialog):
             self.form.lab1.setText("<no item selected>")
 
     def _setup_frame_filters(self):
-        self._filters = default_standard_filter_service()
+        self._filters = self.services.standard_filters
         self.institutionCombo = QComboBox()
         self.standardCombo = QComboBox()
         self.form.verticalLayout_5.insertWidget(0, QLabel("Institution:"))

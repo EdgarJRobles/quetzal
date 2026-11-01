@@ -113,6 +113,22 @@ canonical units. Adding a standard is a JSON change plus a test, not a new
 See [standards and units](docs/architecture/standards-and-units.md) and the
 [metadata README](standards/README.md).
 
+## UI services and workbench state
+
+Forms receive a small `FormServices` container instead of importing concrete
+singletons:
+
+* `catalog` – the CSV catalogue repository;
+* `standard_filters` – institution/standard rating filters;
+* `preview` – the shared `PreviewService`;
+* `state` – an explicit `WorkbenchState`;
+* `reporter` – a `UserReporter` port.
+
+`protoPypeForm`, `insertPipeForm`, `insertSectForm` and `frameBranchForm` use
+the injected services. `WorkbenchState` replaces direct reads/writes of
+`FreeCAD.__activePypeLine__`/`__activeFrameLine__`; a compatibility adapter
+keeps the legacy attributes in sync for external macros.
+
 ## Command registry and layout
 
 Every command registered through `quetzal_config.addCommand` is recorded as a

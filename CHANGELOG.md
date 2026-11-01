@@ -44,6 +44,11 @@
 - The base `protoPypeForm` now renders previews through `PreviewService`
   (pipe form already migrated), with camera/selection/visibility restoration.
 - `doBeams` uses the shared insertion transaction.
+- Add injectable `FormServices` (catalogue, filters, preview, state and
+  reporter) to the dialog base, pipe form and frame forms.
+- Replace direct `FreeCAD.__activePypeLine__`/`__activeFrameLine__` access in
+  the UI with `WorkbenchState`, keeping a compatibility bridge for macros.
+- Add a `UserReporter` port and use it for catalogue warnings in the base form.
 - Pipe and frame dialogs group every original series by institution and
   international standard, with All/All defaults. ASME schedules, ASTM A615
   rebars, Quetzal conduit, EN 10365/ASTM A615/generic sections and the BIM

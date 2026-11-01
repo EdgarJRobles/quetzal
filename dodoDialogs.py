@@ -10,8 +10,12 @@ from PySide.QtGui import *
 
 from quetzal.domain.errors import CatalogNotFoundError
 from quetzal.domain.preview import PreviewKey
-from quetzal.infrastructure.catalog import default_catalog_repository
-from quetzal.infrastructure.freecad.preview import default_preview_service
+from quetzal.application.form_services import FormServices
+from quetzal.infrastructure.form_services import default_form_services
+from quetzal.infrastructure.freecad.workbench_state import (
+    get_active_pype_line,
+    set_active_pype_line,
+)
 
 translate = FreeCAD.Qt.translate
 
@@ -114,6 +118,7 @@ class protoPypeForm(QDialog):
         x=100,
         y=350,
         preview_service=None,
+        services: FormServices | None = None,
     ):
         """
         __init__(self,winTitle='Title', PType='Pipe', PRating='SCH-STD')
@@ -145,7 +150,8 @@ class protoPypeForm(QDialog):
         self.firstCol = QWidget()
         self.firstCol.setLayout(QVBoxLayout())
         self.mainHL.addWidget(self.firstCol)
-        self._preview = preview_service or default_preview_service()
+        self.services = services or default_form_services()
+        self._preview = preview_service or self.services.preview
         self.previewSectionsPath = str(self._preview.cache.paths.write_root) + "/"
         self.gradeimagepath = str()
         self.labImage = QLabel()
@@ -238,10 +244,11 @@ class protoPypeForm(QDialog):
         except Exception as e:
             pass 
         self.existingObjs.currentIndexChanged.connect(self.setCurrentPL)
-        if FreeCAD.__activePypeLine__ and FreeCAD.__activePypeLine__ in [
+        active_line = get_active_pype_line()
+        if active_line and active_line in [
             self.existingObjs.itemText(i) for i in range(self.existingObjs.count())
         ]:
-            self.existingObjs.setCurrentIndex(self.existingObjs.findText(FreeCAD.__activePypeLine__))
+            self.existingObjs.setCurrentIndex(self.existingObjs.findText(active_line))
         self.secondCol.layout().addRow(QLabel("Standard:"))
         self.secondCol.layout().addRow(self.combostandart)
         self.secondCol.layout().addRow(QLabel("Object to modify:"))
@@ -276,13 +283,13 @@ class protoPypeForm(QDialog):
 
     def setCurrentPL(self, PLName=None):
         if self.existingObjs.currentText() not in ["<none>", "<new>"]:
-            FreeCAD.__activePypeLine__ = self.existingObjs.currentText()
-            pl_obj=FreeCAD.ActiveDocument.getObject(FreeCAD.__activePypeLine__)
+            set_active_pype_line(self.existingObjs.currentText())
+            pl_obj = FreeCAD.ActiveDocument.getObject(get_active_pype_line())
             self.ratingList.setCurrentText(pl_obj.PRating)
-            sizetext=self.sizeList.itemText(self.sizeList.findText(pl_obj.PSize))
+            sizetext = self.sizeList.itemText(self.sizeList.findText(pl_obj.PSize))
             self.sizeList.setCurrentText(sizetext)
         else:
-            FreeCAD.__activePypeLine__ = None
+            set_active_pype_line(None)
 
     def getPL(self):
         "Get a name list of Ptype on active document"
@@ -296,10 +303,10 @@ class protoPypeForm(QDialog):
         """Populate the size combo from the shared catalogue repository."""
         self.sizeList.clear()
         try:
-            table = default_catalog_repository().get_table(self.PType, self.PRating)
+            table = self.services.catalog.get_table(self.PType, self.PRating)
         except CatalogNotFoundError as exc:
             self.pipeDictList = []
-            FreeCAD.Console.PrintWarning(f"{exc}\n")
+            self.services.reporter.warning(str(exc))
             return
         self.pipeDictList = table.to_dicts()
         for row in self.pipeDictList:
@@ -393,7 +400,7 @@ class protoPypeForm(QDialog):
                 if res == -1:
                     self.existingObjs.addItem(pl)
         else:
-            FreeCAD.__activePypeLine__ = None
+            set_active_pype_line(None)
  
     def _setSizeSystem(self, system):
         """Toggle the DN/NPS display on the size list without saving to prefs."""

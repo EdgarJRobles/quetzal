@@ -326,9 +326,9 @@ class DialogQM(QtGui.QDialog):
 
     def setCurrentPL(self, PLName=None):
         if self.QM.comboPL.currentText() not in ["<none>", "<new>"]:
-            FreeCAD.__activePypeLine__ = self.QM.comboPL.currentText()
+            set_active_pype_line(self.QM.comboPL.currentText())
         else:
-            FreeCAD.__activePypeLine__ = None
+            set_active_pype_line(None)
 
     def updateSizes(self):
         self.QM.listSize.clear()
@@ -360,7 +360,7 @@ class DialogQM(QtGui.QDialog):
         else:
             pypelines = []
         if pypelines:  # updates pypelines in combo
-            pl = FreeCAD.__activePypeLine__
+            pl = get_active_pype_line()
             self.QM.comboPL.clear()
             pypelines.insert(0, "<none>")
             self.QM.comboPL.addItems(pypelines)
@@ -394,7 +394,7 @@ class pQM(DialogQM):
         pCmd.doPipes(
             self.PRating,
             [d["PSize"], float(d["OD"]), float(d["thk"]), L],
-            FreeCAD.__activePypeLine__,
+            get_active_pype_line(),
         )
         super(pQM, self).go()
 
@@ -447,7 +447,7 @@ class eQM(DialogQM):
                 ang,
                 rad,
             ],
-            pypeline=FreeCAD.__activePypeLine__,
+            pypeline=get_active_pype_line(),
             doOffset=False,
         )
         super(eQM, self).go()
@@ -481,7 +481,7 @@ class fQM(DialogQM):
             proplist.append(float(d["ODp"]))
         except:
             pass
-        pCmd.doFlanges(self.PRating, proplist, FreeCAD.__activePypeLine__)
+        pCmd.doFlanges(self.PRating, proplist, get_active_pype_line())
         super(fQM, self).go()
 
 
@@ -503,7 +503,7 @@ class vQM(DialogQM):
             float(d["H"]),
             float(d["Kv"]),
         ]
-        pCmd.doValves(proplist, FreeCAD.__activePypeLine__, self.QM.slider.value())
+        pCmd.doValves(proplist, get_active_pype_line(), self.QM.slider.value())
         super(vQM, self).go()
 
 
@@ -524,14 +524,14 @@ class cQM(DialogQM):
                     float(d["E"]),
                     d["Conn"],
                 ],
-                FreeCAD.__activePypeLine__,
+                get_active_pype_line(),
             )
         else:
             # Butt-weld cap
             pCmd.doCaps(
                 self.PRating,
                 [d["PSize"], float(d["OD"]), float(d["thk"])],
-                FreeCAD.__activePypeLine__,
+                get_active_pype_line(),
             )
         super(cQM, self).go()
 
@@ -557,7 +557,7 @@ class tQM(DialogQM):
                     float(d["G"]),
                     d["Conn"],
                 ],
-                FreeCAD.__activePypeLine__,
+                get_active_pype_line(),
             )
         else:
             # Butt-weld tee
@@ -571,7 +571,7 @@ class tQM(DialogQM):
                     float(d["C"]),
                     float(d["M"]),
                 ],
-                FreeCAD.__activePypeLine__,
+                get_active_pype_line(),
             )
         super(tQM, self).go()
 
@@ -587,6 +587,10 @@ tqm = tQM()
 # main
 mw = FreeCADGui.getMainWindow()
 from quetzal.ui.layout import GROUPS as _QUETZAL_GROUPS
+from quetzal.infrastructure.freecad.workbench_state import (
+    get_active_pype_line,
+    set_active_pype_line,
+)
 
 toolList = list(_QUETZAL_GROUPS["qm"])
 compositingManager = True
