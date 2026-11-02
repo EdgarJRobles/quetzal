@@ -271,12 +271,12 @@ Here are some of the planned developments for this Workbench:
 
 - [ ] Icrease valve design detail
 - [ ] Add HVAC duct support.
-  - [ ] Elbow
-  - [X] Reduction
-  - [ ] Branch
-  - [ ] Round duct
-  - [ ] Square duct
-  - [ ] Oval duct
+  - [X] Elbow (rectangular)
+  - [X] Reduction (rectangular)
+  - [ ] Branch — SMACNA HVAC metadata ready; geometry pending
+  - [ ] Round duct — SMACNA HVAC metadata ready; geometry pending
+  - [ ] Square duct — SMACNA HVAC metadata ready; geometry pending
+  - [ ] Oval duct — SMACNA HVAC metadata ready; geometry pending
 - [ ] Support, if possible, fitting & frame profiles types:
   - [X] Pipe
   - [X] Elbow
@@ -286,33 +286,37 @@ Here are some of the planned developments for this Workbench:
   - [X] Coupling
   - [X] Flange
   - [ ] Valve
-    - [ ] Gate Valve
+    - [X] Gate Valve
     - [X] Plug Valve
     - [X] Ball Valve
     - [X] Check Valve
-    - [ ] Globe Valve
+    - [X] Globe Valve
     - [X] Butterfly Valve
-    - [ ] Needle Valve
-    - [ ] Knife gate Valve
+    - [ ] Needle Valve — ASME B16.34 metadata ready; catalogue data pending
+    - [X] Knife gate Valve
     - [X] Pinch Valve
   - [ ] Pipe Clamping
-    - [X] U-bolt clamp
-    - [X] Beam clamp
-  - [ ] Beam joins
-- [ ] Support, if possible, International design standarts:
-  - [ ] ASME B16.5 (NPS 1/2 to 24")
-  - [ ] ASME B16.47 (NPS 26 to 60")
-  - [ ] ASME B16.36 (orifice flange)
-  - [ ] DIN 2527 (Blink flange)
-  - [ ] DIN 2543 PN16 (Flat face for welding slip on flange)
-  - [ ] DIN 2544 PN25 (Flat face for welding slip on flange)
-  - [ ] DIN 2545 PN40 (Flat face for welding slip on flange)
-  - [ ] ISO 7005-1 PN10 Raise Face(EN 1092-1 equivalent)
-  - [ ] ISO 7005-1 PN16 Raise Face(EN 1092-1 equivalent)
-  - [ ] ISO 7005-1 PN25 Raise Face(EN 1092-1 equivalent)
-  - [ ] ISO 7005-1 PN40 Raise Face(EN 1092-1 equivalent)
-  - [ ] ISO 7005-1 PN64 Raise Face(EN 1092-1 equivalent)
-  - [ ] ISO 7005-1 PN100 Raise Face(EN 1092-1 equivalent)
+    - [X] U-bolt clamp (DIN 3570)
+    - [X] Beam clamp (MSS SP-58)
+  - [ ] Beam joins — AISC 360 catalog metadata ready; connection geometry pending
+- [ ] Support, if possible, International design standards:
+  - [X] ASME B16.5 (NPS 1/2 to 24")
+  - [ ] ASME B16.47 (NPS 26 to 60") — catalog metadata and rules ready; dimensional CSV pending
+  - [ ] ASME B16.36 (orifice flange) — catalog metadata and rules ready; dimensional CSV pending
+  - [ ] DIN 2527 (blind flange) — catalog metadata and rules ready; dimensional CSV pending
+  - [X] DIN 2543 PN16 (flat face for welding slip-on flange)
+  - [ ] DIN 2544 PN25 (flat face for welding slip-on flange) — catalog metadata and rules ready; dimensional CSV pending
+  - [ ] DIN 2545 PN40 (flat face for welding slip-on flange) — catalog metadata and rules ready; dimensional CSV pending
+  - [ ] ISO 7005-1 PN10 Raised Face (EN 1092-1 equivalent) — catalog metadata and rules ready; dimensional CSV pending
+  - [ ] ISO 7005-1 PN16 Raised Face (EN 1092-1 equivalent) — catalog metadata and rules ready; dimensional CSV pending
+  - [ ] ISO 7005-1 PN25 Raised Face (EN 1092-1 equivalent) — catalog metadata and rules ready; dimensional CSV pending
+  - [ ] ISO 7005-1 PN40 Raised Face (EN 1092-1 equivalent) — catalog metadata and rules ready; dimensional CSV pending
+  - [ ] ISO 7005-1 PN64 Raised Face (EN 1092-1 equivalent) — catalog metadata and rules ready; dimensional CSV pending
+  - [ ] ISO 7005-1 PN100 Raised Face (EN 1092-1 equivalent) — catalog metadata and rules ready; dimensional CSV pending
+
+Valve standards are mapped by type: `API 594` for check valves, `API 599` for
+plug valves, `API 609` for butterfly valves, `MSS SP-81` for knife gate valves
+and `ASME B16.34` for the remaining pressure-temperature/body classifications.
 
 ## Links
 

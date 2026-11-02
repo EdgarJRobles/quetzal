@@ -70,6 +70,13 @@
       "region": "INT",
       "website": "https://github.com/EdgarJRobles/quetzal",
       "description": "Vendor or generic data without a single applicable standard."
+    },
+    {
+      "code": "AISC",
+      "name": "American Institute of Steel Construction",
+      "region": "US",
+      "website": "https://www.aisc.org",
+      "description": "Structural steel design and connection standards."
     }
   ],
   "standards": [
@@ -254,6 +261,62 @@
       "title": "Quetzal generic catalogue",
       "scope": "generic",
       "notes": "Vendor or generic data without a single applicable standard."
+    },
+    {
+      "code": "ASME B16.36",
+      "institution": "ASME",
+      "title": "Orifice Flanges",
+      "scope": "flanges",
+      "notes": "Orifice flange dimensions and pressure classes."
+    },
+    {
+      "code": "API 594",
+      "institution": "API",
+      "title": "Check Valves: Flanged, Lug, Wafer and Butt-welding",
+      "scope": "valves",
+      "notes": "Check valve design and face-to-face requirements."
+    },
+    {
+      "code": "API 599",
+      "institution": "API",
+      "title": "Metal Plug Valves - Flanged, Threaded and Welding Ends",
+      "scope": "valves",
+      "notes": "Plug valve design and pressure classes."
+    },
+    {
+      "code": "API 609",
+      "institution": "API",
+      "title": "Butterfly Valves: Double-flanged, Lug- and Wafer-type",
+      "scope": "valves",
+      "notes": "Butterfly valve design and pressure classes."
+    },
+    {
+      "code": "MSS SP-81",
+      "institution": "MSS",
+      "title": "Stainless Steel, Bonnetless, Flanged Knife Gate Valves",
+      "scope": "valves",
+      "notes": "Knife gate valve dimensions and pressure classes."
+    },
+    {
+      "code": "AISC 360",
+      "institution": "AISC",
+      "title": "Specification for Structural Steel Buildings",
+      "scope": "structural",
+      "notes": "Beam connection and structural design practice."
+    },
+    {
+      "code": "DIN 3570",
+      "institution": "DIN",
+      "title": "U-bolts for pipe supports",
+      "scope": "supports",
+      "notes": "U-bolt dimensions for pipe clamping."
+    },
+    {
+      "code": "MSS SP-58",
+      "institution": "MSS",
+      "title": "Pipe Hangers and Supports - Materials, Design, Manufacture, Selection, Application and Installation",
+      "scope": "supports",
+      "notes": "Pipe support and clamp practice."
     }
   ],
   "dimensions": {
@@ -814,6 +877,41 @@
       ],
       "rules": [
         {
+          "match": "^ASME-B16\\.36(?:-|$)",
+          "standard": "ASME B16.36",
+          "notes": "ASME B16.36 orifice flange"
+        },
+        {
+          "match": "^ASME-B16\\.47(?:-|$)",
+          "standard": "ASME B16.47",
+          "notes": "ASME B16.47 large-diameter flange"
+        },
+        {
+          "match": "^DIN-2527(?:-|$)",
+          "standard": "DIN 2527",
+          "notes": "DIN 2527 blind flange"
+        },
+        {
+          "match": "^DIN-2544(?:-|$)",
+          "standard": "DIN 2544",
+          "notes": "DIN 2544 PN25 slip-on flange"
+        },
+        {
+          "match": "^DIN-2545(?:-|$)",
+          "standard": "DIN 2545",
+          "notes": "DIN 2545 PN40 slip-on flange"
+        },
+        {
+          "match": "^DIN-2543(?:-|$)",
+          "standard": "DIN 2543",
+          "notes": "DIN 2543 PN16 slip-on flange"
+        },
+        {
+          "match": "^ISO-PN(?P<pressure_class>[0-9]+)(?:-(?P<face>[A-Z]+))?$",
+          "standard": "ISO 7005-1",
+          "notes": "ISO 7005-1 steel flange"
+        },
+        {
           "match": "^ASME-(?P<connection>[A-Z]+)-(?P<face>[A-Z]+)-(?P<pressure_class>[0-9]+lb)$",
           "standard": "ASME B16.5",
           "notes": "ASME B16.5 flange"
@@ -862,6 +960,31 @@
         "Conn2"
       ],
       "rules": [
+        {
+          "match": "^Check",
+          "standard": "API 594",
+          "notes": "API 594 check valve"
+        },
+        {
+          "match": "^Plug",
+          "standard": "API 599",
+          "notes": "API 599 plug valve"
+        },
+        {
+          "match": "^butterfly",
+          "standard": "API 609",
+          "notes": "API 609 butterfly valve"
+        },
+        {
+          "match": "^knife_gate",
+          "standard": "MSS SP-81",
+          "notes": "MSS SP-81 knife gate valve"
+        },
+        {
+          "match": "^(Ball|Gate|Globe)_",
+          "standard": "ASME B16.34",
+          "notes": "Valve pressure-temperature and body standard; see also API 6D"
+        },
         {
           "match": "^(Ball|Gate|Check|Plug)_",
           "standard": "ASME B16.34",
@@ -962,6 +1085,11 @@
           "match": "^(S|W)$",
           "standard": "ASTM A6",
           "notes": "US structural shape practice"
+        },
+        {
+          "match": "^AISC-",
+          "standard": "AISC 360",
+          "notes": "AISC structural beam/connection data"
         }
       ]
     },
@@ -984,6 +1112,18 @@
         "Y",
         "d",
         "Source"
+      ],
+      "rules": [
+        {
+          "match": "^DIN-UBolt$",
+          "standard": "DIN 3570",
+          "notes": "DIN U-bolt pipe clamp"
+        },
+        {
+          "match": "^Beam$",
+          "standard": "MSS SP-58",
+          "notes": "Beam clamp / pipe support"
+        }
       ]
     },
     "Outlet": {

@@ -148,3 +148,43 @@ def test_adding_a_standard_is_metadata_only(catalog):
     assert series.standard == "TEST 1"
     assert series.institution == "TEST"
     assert extended.dimension("Test", "OD").unit is MM
+
+
+def test_roadmap_standards_are_registered_and_classifiable(catalog):
+    roadmap = {
+        "ASME B16.36": "ASME",
+        "ASME B16.47": "ASME",
+        "DIN 2527": "DIN",
+        "DIN 2543": "DIN",
+        "DIN 2544": "DIN",
+        "DIN 2545": "DIN",
+        "ISO 7005-1": "ISO",
+        "API 594": "API",
+        "API 599": "API",
+        "API 609": "API",
+        "MSS SP-81": "MSS",
+        "AISC 360": "AISC",
+        "DIN 3570": "DIN",
+        "MSS SP-58": "MSS",
+    }
+    for code, institution in roadmap.items():
+        assert catalog.standard(code).institution == institution
+
+    expected = {
+        "Flange_ASME-B16.36-WN-RF-300lb.csv": "ASME B16.36",
+        "Flange_ASME-B16.47-WN-RF-900lb.csv": "ASME B16.47",
+        "Flange_DIN-2527-PN16.csv": "DIN 2527",
+        "Flange_DIN-2543-PN16.csv": "DIN 2543",
+        "Flange_DIN-2544-PN25.csv": "DIN 2544",
+        "Flange_DIN-2545-PN40.csv": "DIN 2545",
+        "Flange_ISO-PN16-RF.csv": "ISO 7005-1",
+        "Valve_Check-Swing_150lbRF.csv": "API 594",
+        "Valve_Plug_150lbRF.csv": "API 599",
+        "Valve_butterfly_generic.csv": "API 609",
+        "Valve_knife_gate_generic.csv": "MSS SP-81",
+        "Clamp_DIN-UBolt.csv": "DIN 3570",
+        "Clamp_Beam.csv": "MSS SP-58",
+        "Beam_AISC-W.csv": "AISC 360",
+    }
+    for filename, standard in expected.items():
+        assert catalog.series_for_file(filename).standard == standard

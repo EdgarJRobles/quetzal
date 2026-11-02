@@ -4,6 +4,9 @@
 
 ### Added
 
+- Expanded standards metadata to 11 institutions and 34 standards: ASME
+  B16.36, AISC 360, DIN 3570, MSS SP-58, API 594/599/609 and MSS SP-81, plus
+  DIN/ISO flange and clamp classification rules.
 - Layered `quetzal/` package: pure domain (catalogues, pipe sizes, ports),
   application (feature registry, insertion service), FreeCAD infrastructure
   and migrated feature proxies.
