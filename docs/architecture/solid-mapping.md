@@ -35,6 +35,7 @@ legacy hotspots remain. It is meant to be updated as the migration advances.
   does not require new branching code in the form.
 - `CatalogPresenter` turns catalogue tables into `RatingOption`/`SizeOption`
   values, so forms do not parse CSV rows or build labels themselves.
+- `PypeLineService` isolates batch line operations from the manager UI.
 - `CatalogRepository` can be swapped (CSV, in-memory, future database) without
   changing consumers.
 - `standards/catalog.json` adds institutions, standards, dimensions and series

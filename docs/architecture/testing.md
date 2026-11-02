@@ -93,7 +93,8 @@ fails. It runs without a GUI and verifies:
 23. **Preview variant contract** – forms expose a stable variant suffix.
 24. **Catalogue Qt models** – rating/size models expose presenter rows and
     roles without opening a dialog.
-25. **Registry-wired forms** – CPipe/CFrame form commands resolve through the
+25. **PypeLine batch tools** – apply parameters to all pieces and clone a line.
+26. **Registry-wired forms** – CPipe/CFrame form commands resolve through the
     lazy registry and keep the 61-command layout valid.
 26. **Declarative commands** – CUtils uses handlers; CPipe/CFrame register every
     command through `register_spec`, including the pie menus.

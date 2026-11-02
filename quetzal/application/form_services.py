@@ -13,6 +13,7 @@ from ..domain.catalog import CatalogRepository
 from .catalog_presenter import CatalogPresenter
 from .insertion_requests import FittingInserter, PipeInserter
 from .preview import PreviewService
+from .pype_line_service import PypeLineService
 from .section_catalog import SectionCatalogPresenter
 from .reporting import UserReporter
 from .standard_filters import StandardFilterService
@@ -23,6 +24,7 @@ from .workbench_state import WorkbenchState
 class FormServices:
     catalog: CatalogRepository
     pipe_inserter: PipeInserter
+    pype_line: PypeLineService
     fitting_inserter: FittingInserter
     catalog_presenter: CatalogPresenter
     section_presenter: SectionCatalogPresenter

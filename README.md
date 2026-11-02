@@ -63,6 +63,23 @@ Discussion in the FreeCAD Forum:
 
 [Drawings 2D nomeclature of tablez CVS]: ./Nomeclature.md
 
+### PypeLine Manager workflow
+
+The PypeLine Manager is the fastest path for a complete run:
+
+1. Choose a template (carbon steel `SCH-STD` or stainless `SCH-10S`) or keep
+   `Custom` and pick the rating/size manually.
+2. Set the bend radius; it defaults to `0.75 × OD` for the selected template.
+3. Create the line, draw/assign its path with **Get Path**, then use
+   **Apply to pieces** to push size, rating, wall thickness and bend radius to
+   every existing pipe and elbow in the line.
+4. Use **Clone line** to duplicate the parameters and path for a parallel or
+   modular run, **Assign selection** to move selected objects into the line,
+   and **Select pieces** before editing or exporting the part list.
+
+The reusable parameters live in `PypeLineSpec`/`PypeLineTemplate`; the form
+only calls the injected `PypeLineService` port.
+
 ## Architecture
 
 Quetzal now has a layered core under `quetzal/` (domain, application,

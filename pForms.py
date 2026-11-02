@@ -28,6 +28,7 @@ from quetzal.application.insertion_requests import (
     FittingInsertRequest,
     PipeInsertRequest,
 )
+from quetzal.application.pype_line_spec import PypeLineSpec, TEMPLATES
 from quetzal.domain.pipe_sizes import PIPE_OUTSIDE_DIAMETERS_MM as pipe_OD
 from PySide.QtWidgets import QCheckBox
 
@@ -2447,9 +2448,37 @@ class insertPypeLineForm(dodoDialogs.protoPypeForm):
         self.btn5 = QPushButton(translate("insertPypeLineForm", "Get Path"))
         self.firstCol.layout().addWidget(self.btn5)
         self.btn5.clicked.connect(self.getBase)
-        self.btnX = QPushButton(translate("insertPypeLineForm", "Get Profile"))
+        self.btnX = QPushButton(translate("insertPypeLineForm", "Apply to pieces"))
         self.firstCol.layout().addWidget(self.btnX)
         self.btnX.clicked.connect(self.apply)
+
+        self.templateList = QComboBox()
+        self.templateList.addItems([template.name for template in TEMPLATES])
+        self.secondCol.layout().addWidget(
+            QLabel(translate("insertPypeLineForm", "Template:"))
+        )
+        self.secondCol.layout().addWidget(self.templateList)
+        self.templateList.currentIndexChanged.connect(self._template_selected)
+
+        self.editBR = QLineEdit()
+        _unit_hint = qu.get_length_unit() if qu else "mm"
+        self.editBR.setPlaceholderText(
+            translate("insertPypeLineForm", "<bend radius> (") + _unit_hint + ")"
+        )
+        self.editBR.setValidator(QDoubleValidator())
+        self.secondCol.layout().addWidget(self.editBR)
+        self.sizeList.currentTextChanged.connect(self._update_default_bend)
+
+        self.btnClone = QPushButton(translate("insertPypeLineForm", "Clone line"))
+        self.secondCol.layout().addWidget(self.btnClone)
+        self.btnClone.clicked.connect(self.clone)
+        self.btnAssign = QPushButton(translate("insertPypeLineForm", "Assign selection"))
+        self.secondCol.layout().addWidget(self.btnAssign)
+        self.btnAssign.clicked.connect(self.assignSelection)
+        self.btnSelect = QPushButton(translate("insertPypeLineForm", "Select pieces"))
+        self.secondCol.layout().addWidget(self.btnSelect)
+        self.btnSelect.clicked.connect(self.selectPieces)
+
         self.color = 0.8, 0.8, 0.8
         self.existingObjs.setItemText(0, translate("insertPypeLineForm", "<new>"))
         self.btn_insert.setDefault(True)
@@ -2482,22 +2511,74 @@ class insertPypeLineForm(dodoDialogs.protoPypeForm):
             else:
                 FreeCAD.Console.PrintMessage("Path not defined\n")
 
-    def apply(self):
-        # size_selected = self.pipeDictList[self.sizeList.currentIndex()]
-        _idx = self.sizeList.currentIndex()
-        if _idx < 0 or _idx >= len(self.pipeDictList):
+    def _selected_line(self):
+        name = self.existingObjs.currentText()
+        if name == translate("insertPypeLineForm", "<new>"):
+            return None
+        found = FreeCAD.ActiveDocument.getObjectsByLabel(name)
+        return found[0] if found else None
+
+    def _current_spec(self):
+        idx = self.sizeList.currentIndex()
+        if idx < 0 or idx >= len(self.pipeDictList):
+            return None
+        row = self.pipeDictList[idx]
+        text = self.editBR.text().strip()
+        try:
+            bend_radius = float(pq(text)) if text else 0.75 * float(row["OD"])
+        except Exception:
+            self.services.reporter.error("Bend radius must be a number")
+            return None
+        try:
+            return PypeLineSpec(
+                dn=row["PSize"],
+                rating=self.ratingList.currentText(),
+                od=float(row["OD"]),
+                thk=float(row["thk"]),
+                bend_radius=bend_radius,
+            )
+        except ValueError as exc:
+            self.services.reporter.error(str(exc))
+            return None
+
+    def _template_selected(self, index=None):
+        if index is None:
+            index = self.templateList.currentIndex()
+        if index < 0 or index >= len(TEMPLATES):
             return
-        size_selected = self.pipeDictList[_idx]
-        rating = self.ratingList.currentText()
-        if self.existingObjs.currentText() != translate("insertPypeLineForm", "<new>"):
-            pl = FreeCAD.ActiveDocument.getObjectsByLabel(self.existingObjs.currentText())[0]
-            pl.PSize = size_selected["PSize"]
-            pl.PRating = self.PRating
-            pl.OD = float(size_selected["OD"])
-            pl.thk = float(size_selected["thk"])
-            self.summary()
-        else:
-            FreeCAD.Console.PrintError("Select a PypeLine to apply first\n")
+        template = TEMPLATES[index]
+        if not template.rating:
+            return
+        idx = self.ratingList.findText(template.rating)
+        if idx >= 0:
+            self.ratingList.setCurrentIndex(idx)
+        self._update_default_bend()
+
+    def _update_default_bend(self, _text=None):
+        if not hasattr(self, "templateList"):
+            return
+        index = self.templateList.currentIndex()
+        if index < 0 or index >= len(TEMPLATES):
+            return
+        template = TEMPLATES[index]
+        idx = self.sizeList.currentIndex()
+        if 0 <= idx < len(self.pipeDictList):
+            od = float(self.pipeDictList[idx]["OD"])
+            self.editBR.setText(f"{template.bend_radius_for(od):g}")
+
+    def apply(self):
+        line = self._selected_line()
+        spec = self._current_spec()
+        if line is None:
+            self.services.reporter.error("Select a PypeLine to apply first")
+            return
+        if spec is None:
+            return
+        changed = self.services.pype_line.apply(line, spec, update_children=True)
+        self.services.reporter.info(
+            f"{line.Label}: parameters applied to {changed} pieces"
+        )
+        self.summary()
 
 
     def insert(self):
@@ -2512,11 +2593,14 @@ class insertPypeLineForm(dodoDialogs.protoPypeForm):
             plLabel = self.edit1.text()
             if not plLabel:
                 plLabel = "Tubatura"
+            spec = self._current_spec()
+            bend_radius = spec.bend_radius if spec else 0.75 * float(size_selected["OD"])
             a = pCmd.makePypeLine2(
                 DN=size_selected["PSize"],
                 PRating=self.PRating,
                 OD=float(size_selected["OD"]),
                 thk=float(size_selected["thk"]),
+                BR=bend_radius,
                 lab=plLabel,
                 color=self.color,
             )
@@ -2524,17 +2608,58 @@ class insertPypeLineForm(dodoDialogs.protoPypeForm):
         else:
             plname = self.existingObjs.currentText()
             plcolor = FreeCAD.activeDocument().getObjectsByLabel(plname)[0].ViewObject.ShapeColor
+            spec = self._current_spec()
+            bend_radius = spec.bend_radius if spec else 0.75 * float(size_selected["OD"])
             pCmd.makePypeLine2(
                 DN=size_selected["PSize"],
                 PRating=self.PRating,
                 OD=float(size_selected["OD"]),
                 thk=float(size_selected["thk"]),
+                BR=bend_radius,
                 pl=plname,
                 color=plcolor,
             )
         FreeCAD.activeDocument().commitTransaction()
         FreeCAD.ActiveDocument.recompute()
         FreeCAD.ActiveDocument.recompute()
+
+    def clone(self):
+        line = self._selected_line()
+        if line is None:
+            self.services.reporter.error("Select a PypeLine to clone first")
+            return
+        from PySide.QtGui import QInputDialog
+
+        label, accepted = QInputDialog.getText(
+            None,
+            translate("insertPypeLineForm", "Clone pype line"),
+            translate("insertPypeLineForm", "New name:"),
+            text=f"{line.Label}_copy",
+        )
+        if not accepted or not label.strip():
+            return
+        clone = self.services.pype_line.clone(line, label.strip())
+        self.existingObjs.addItem(clone.Label)
+        self.existingObjs.setCurrentText(clone.Label)
+        self.summary()
+
+    def assignSelection(self):
+        line = self._selected_line()
+        if line is None:
+            self.services.reporter.error("Select a PypeLine first")
+            return
+        count = self.services.pype_line.assign(
+            line, FreeCADGui.Selection.getSelection()
+        )
+        self.services.reporter.info(f"{line.Label}: {count} objects assigned")
+
+    def selectPieces(self):
+        line = self._selected_line()
+        if line is None:
+            self.services.reporter.error("Select a PypeLine first")
+            return
+        count = self.services.pype_line.select(line)
+        self.services.reporter.info(f"{line.Label}: {count} pieces selected")
 
     def getBase(self):
         if self.existingObjs.currentText() != translate("insertPypeLineForm", "<new>"):
@@ -2582,39 +2707,27 @@ class insertPypeLineForm(dodoDialogs.protoPypeForm):
         f = qfd.getSaveFileName()[0]
         if f:
             if self.existingObjs.currentText() != translate("insertPypeLineForm", "<new>"):
-                group = FreeCAD.activeDocument().getObjectsByLabel(
-                    get_active_pype_line() + "_pieces"
-                )[0]
+                line = self._selected_line()
+                if line is None:
+                    return
                 fields = ["Label", "PType", "PSize", "Volume", "Height"]
                 rows = list()
-                for o in group.OutList:
-                    if hasattr(o, "PType"):
-                        if o.PType in [
-                            "Pipe",
-                            "Elbow",
-                            "Flange",
-                            "Clamp",
-                            "Reduct",
-                            "Cap",
-                            "Tee",
-                        ]:
-                            data = [o.Label, o.PType, o.PSize, o.Shape.Volume, "-"]
-                            if o.PType == "Pipe":
-                                data[4] = o.Height
-                            rows.append(dict(zip(fields, data)))
-                        elif o.PType in ["PypeBranch"]:
-                            for name in o.Tubes + o.Curves:
-                                pype = FreeCAD.ActiveDocument.getObject(name)
-                                data = [
-                                    pype.Label,
-                                    pype.PType,
-                                    pype.PSize,
-                                    pype.Shape.Volume,
-                                    "-",
-                                ]
-                                if pype.PType == "Pipe":
-                                    data[4] = pype.Height
-                                rows.append(dict(zip(fields, data)))
+                for o in self.services.pype_line.pieces(line):
+                    if not hasattr(o, "PType"):
+                        continue
+                    if o.PType in [
+                        "Pipe",
+                        "Elbow",
+                        "Flange",
+                        "Clamp",
+                        "Reduct",
+                        "Cap",
+                        "Tee",
+                    ]:
+                        data = [o.Label, o.PType, o.PSize, o.Shape.Volume, "-"]
+                        if o.PType == "Pipe":
+                            data[4] = o.Height
+                        rows.append(dict(zip(fields, data)))
                 plist = open(abspath(f), "w")
                 w = csv.DictWriter(plist, fields, restval="-", delimiter=";")
                 w.writeheader()

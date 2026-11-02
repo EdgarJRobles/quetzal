@@ -122,6 +122,7 @@ singletons:
 * `catalog_presenter` – UI-ready rating/size rows;
 * `standard_filters` – institution/standard rating filters;
 * `preview` – the shared `PreviewService`;
+* `pype_line` – batch pipe-line operations (`PypeLineService`);
 * `state` – an explicit `WorkbenchState`;
 * `reporter` – a `UserReporter` port.
 
@@ -146,6 +147,9 @@ no longer overwrite each other.
 `quetzal.ui.catalog_models` exposes `RatingListModel`/`SizeListModel` for
 Qt views, backed by the presenter options and without duplicating catalogue
 logic in the widgets.
+
+`PypeLineSpec`/`PypeLineTemplate` hold reusable line parameters; the manager
+form calls the injected `PypeLineService` for apply/clone/assign/select.
 
 `SectionCatalogPresenter` adds the BIM preset rows on top of the CSV sizes and
 is now used by both section/frame forms, so preset-only ratings such as `SHS`

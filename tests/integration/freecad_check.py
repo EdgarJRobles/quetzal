@@ -114,8 +114,7 @@ def check_command_contract():
     assert not orphaned, f"Layout references unregistered commands: {orphaned}"
     layout.validate_registry()
     assert sources.get("Quetzal_CreateIso") is None, (
-        "declarative commands must run through GuiCommand.Activated, not a "
-        "recursive macro source"
+        "declarative commands must run through GuiCommand.Activated, not a recursive macro source"
     )
     assert len(REGISTRY) == len(registered), (
         f"registry captured {len(REGISTRY)} of {len(registered)} commands"
@@ -441,8 +440,6 @@ def check_catalog_models():
     return ratings.rowCount(), sizes.rowCount()
 
 
-
-
 def check_cut_list_registration():
     """Importing the cut-list module registers its declarative command."""
 
@@ -454,6 +451,50 @@ def check_cut_list_registration():
     assert spec.group == "frame"
     assert spec.handler is not None
     return 1
+
+
+def check_pype_line_tools():
+    """PypeLine parameters can be applied to the whole line and cloned."""
+
+    from quetzal.application.pype_line_spec import PypeLineSpec
+    from quetzal.infrastructure.freecad.pype_line_service import FreeCADPypeLineService
+
+    service = FreeCADPypeLineService()
+    document = FreeCAD.newDocument("quetzal_pype_line_tools")
+    try:
+        base = document.addObject("Part::Feature", "Path")
+        base.Shape = Part.Wire(
+            Part.makePolygon(
+                [
+                    FreeCAD.Vector(0, 0, 0),
+                    FreeCAD.Vector(1000, 0, 0),
+                    FreeCAD.Vector(1000, 1000, 0),
+                ]
+            )
+        )
+        line = document.addObject("Part::FeaturePython", "Line")
+        pFeatures.PypeLine2(line, "SCH-STD", "DN50", 60.32, 3, 45.24, "Line")
+        line.Base = base
+        line.Proxy.update(line)
+        document.recompute()
+
+        pieces = service.pieces(line)
+        assert len(pieces) >= 2
+        spec = PypeLineSpec("DN80", "SCH-40", 88.9, 5.49, 66.675)
+        changed = service.apply(line, spec, update_children=True)
+        assert changed == len(pieces)
+        assert float(line.OD) == 88.9
+        for piece in pieces:
+            if hasattr(piece, "OD"):
+                assert float(piece.OD) == 88.9
+
+        clone = service.clone(line, "LineCopy")
+        assert clone.Label == "LineCopy"
+        assert clone.Base is base
+        assert len(service.pieces(clone)) >= 2
+        return changed
+    finally:
+        FreeCAD.closeDocument(document.Name)
 
 
 def main():
@@ -567,6 +608,10 @@ def main():
     cut_count = check("cut-list command registration", check_cut_list_registration)
     if cut_count:
         print(f"     cut-list specs checked: {cut_count}", flush=True)
+
+    pype_line_count = check("pype line batch tools", check_pype_line_tools)
+    if pype_line_count:
+        print(f"     line pieces updated: {pype_line_count}", flush=True)
 
     model_counts = check("catalogue Qt models", check_catalog_models)
     if model_counts:
