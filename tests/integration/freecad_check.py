@@ -113,8 +113,9 @@ def check_command_contract():
     orphaned = sorted(referenced - set(registered))
     assert not orphaned, f"Layout references unregistered commands: {orphaned}"
     layout.validate_registry()
-    assert "runCommand" in (sources.get("Quetzal_CreateIso") or ""), (
-        "declarative commands must keep a module-safe macro source"
+    assert sources.get("Quetzal_CreateIso") is None, (
+        "declarative commands must run through GuiCommand.Activated, not a "
+        "recursive macro source"
     )
     assert len(REGISTRY) == len(registered), (
         f"registry captured {len(REGISTRY)} of {len(registered)} commands"

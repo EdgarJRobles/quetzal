@@ -51,11 +51,14 @@ def register_spec(spec: CommandSpec, replace: bool = False) -> CommandSpec:
     """Register a declarative command with FreeCAD and the metadata registry."""
 
     REGISTRY.add(spec, replace=replace)
-    source = spec.macro_source or (
-        'import FreeCADGui\n'
-        f'FreeCADGui.runCommand("{spec.name}")\n'
-    )
     add_command = getattr(FreeCADGui, "addCommand", None)
     if add_command is not None:
-        add_command(spec.name, GuiCommand(spec), source)
+        command = GuiCommand(spec)
+        if spec.macro_source:
+            add_command(spec.name, command, spec.macro_source)
+        else:
+            # No source: FreeCAD invokes GuiCommand.Activated directly.  A
+            # generated source string runs in a bare <string> context and
+            # loses module helpers (or recurses via runCommand).
+            add_command(spec.name, command)
     return spec
