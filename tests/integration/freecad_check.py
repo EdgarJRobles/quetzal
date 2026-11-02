@@ -69,10 +69,12 @@ def check_command_contract():
     """Every registered command must be unique and point to an existing icon."""
 
     registered = {}
+    sources = {}
     original = getattr(FreeCADGui, "addCommand", None)
 
     def fake_add_command(name, command, source=None):
         registered.setdefault(name, []).append(command)
+        sources[name] = source
 
     FreeCADGui.addCommand = fake_add_command
     try:
@@ -111,6 +113,9 @@ def check_command_contract():
     orphaned = sorted(referenced - set(registered))
     assert not orphaned, f"Layout references unregistered commands: {orphaned}"
     layout.validate_registry()
+    assert "runCommand" in (sources.get("Quetzal_CreateIso") or ""), (
+        "declarative commands must keep a module-safe macro source"
+    )
     assert len(REGISTRY) == len(registered), (
         f"registry captured {len(REGISTRY)} of {len(registered)} commands"
     )

@@ -9,7 +9,6 @@ import FreeCAD
 import FreeCADGui
 
 from ...application.command_registry import REGISTRY, CommandSpec
-from ...application.macro_source import command_source
 
 
 def document_open() -> bool:
@@ -52,7 +51,10 @@ def register_spec(spec: CommandSpec, replace: bool = False) -> CommandSpec:
     """Register a declarative command with FreeCAD and the metadata registry."""
 
     REGISTRY.add(spec, replace=replace)
-    source = spec.macro_source or command_source(spec.handler or (lambda: None))
+    source = spec.macro_source or (
+        'import FreeCADGui\n'
+        f'FreeCADGui.runCommand("{spec.name}")\n'
+    )
     add_command = getattr(FreeCADGui, "addCommand", None)
     if add_command is not None:
         add_command(spec.name, GuiCommand(spec), source)
