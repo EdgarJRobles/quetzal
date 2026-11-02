@@ -322,6 +322,26 @@ class _InsertCouplingUnionCmd:
         import pForms
         pForms.insertCouplingUnionForm()
 
+class _InsertBushingPlugCmd:
+    """FreeCAD Gui command — opens the hex bushing/plug insertion dialog."""
+
+    def GetResources(self):
+        return {
+            "Pixmap":  "Quetzal_BushingPlug",
+            "MenuText": QT_TRANSLATE_NOOP("Quetzal", "Insert Bushing / Plug"),
+            "ToolTip":  QT_TRANSLATE_NOOP(
+                "Quetzal",
+                Quetzal_tooltips.bushing_plug_tooltip),
+            "Accel":    "",
+        }
+
+    def IsActive(self):
+        return FreeCAD.activeDocument() is not None
+
+    def Activated(self):
+        import pForms
+        pForms.insertBushingPlugForm()
+
 
 
 
@@ -785,6 +805,7 @@ register_legacy_command("Quetzal_InsertAnyShape", insertAnyz(), "pipe")
 register_legacy_command("Quetzal_MakeHeader", makeHeader(), "pipe")
 register_form_command("Quetzal_InsertTerminalAdapter", insertTerminalAdapter(), "pipe")
 register_form_command("Quetzal_InsertBeam", insertBeam(), "pipe")
+register_form_command("Quetzal_InsertBushing", _InsertBushingPlugCmd(), "pipe")
 
 ### QkMenus ###
 class pipeQM:

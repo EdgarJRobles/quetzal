@@ -21,6 +21,11 @@ UTILS: Tuple[str, ...] = (
     "Quetzal_HackedLine",
     "Quetzal_MoveHandle",
     "Quetzal_PressureLossCalculator",
+    "Quetzal_ImportPCF",
+    "Quetzal_ExportPCF",
+    "Quetzal_CreateIso",
+    "Quetzal_IsoFromPCF",
+    "Quetzal_UpdateIso",
 )
 
 FRAME: Tuple[str, ...] = (
@@ -51,6 +56,7 @@ PIPE: Tuple[str, ...] = (
     "Quetzal_InsertDuctReduction",
     "Quetzal_InsertCap",
     "Quetzal_InsertCoupling",
+    "Quetzal_InsertBushing",
     "Quetzal_InsertValve",
     "Quetzal_InsertFlange",
     "Quetzal_InsertGasket",

@@ -84,6 +84,7 @@ def register_default_forms() -> FormRegistry:
         ("Quetzal_InsertDuctReduction", "pForms:insertDuctReductionForm", "pipe"),
         ("Quetzal_InsertCap", "pForms:insertCapForm", "pipe"),
         ("Quetzal_InsertCoupling", "pForms:insertCouplingUnionForm", "pipe"),
+        ("Quetzal_InsertBushing", "pForms:insertBushingPlugForm", "pipe"),
         ("Quetzal_InsertValve", "pForms:insertValveForm", "pipe"),
         ("Quetzal_InsertFlange", "pForms:insertFlangeForm", "pipe"),
         ("Quetzal_InsertGasket", "pForms:insertGasketForm", "pipe"),

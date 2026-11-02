@@ -618,6 +618,21 @@
     "SW": {
       "unit": "mm",
       "description": "Support width"
+    },
+    "F": {
+      "unit": "mm",
+      "description": "Across-flats or face dimension F"
+    },
+    "L2": {
+      "unit": "mm",
+      "description": "Overall length at the secondary end"
+    },
+    "E2": {
+      "unit": "mm",
+      "description": "Engagement depth at the secondary port"
+    },
+    "Conn2": {
+      "description": "Connection type at the secondary port"
     }
   },
   "families": {
@@ -842,7 +857,9 @@
         "Kv",
         "BottomH",
         "TopH",
-        "WheelD"
+        "WheelD",
+        "E2",
+        "Conn2"
       ],
       "rules": [
         {
@@ -1101,6 +1118,48 @@
       "dimensions": [
         "Material",
         "e_abs"
+      ]
+    },
+    "Bushing": {
+      "prefix": "Bushing",
+      "description": "Threaded hex bushings (ASME B16.11)",
+      "dimensions": [
+        "PSize",
+        "PSize2",
+        "OD",
+        "OD2",
+        "F",
+        "C",
+        "L",
+        "L2",
+        "D",
+        "Conn"
+      ],
+      "rules": [
+        {
+          "match": ".*",
+          "standard": "ASME B16.11",
+          "notes": "Threaded hex bushing"
+        }
+      ]
+    },
+    "Plug": {
+      "prefix": "Plug",
+      "description": "Threaded hex plugs (ASME B16.11)",
+      "dimensions": [
+        "PSize",
+        "OD",
+        "F",
+        "C",
+        "L",
+        "Conn"
+      ],
+      "rules": [
+        {
+          "match": ".*",
+          "standard": "ASME B16.11",
+          "notes": "Threaded hex plug"
+        }
       ]
     }
   }

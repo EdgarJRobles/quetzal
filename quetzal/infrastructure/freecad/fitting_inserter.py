@@ -55,6 +55,7 @@ class FreeCADFittingInserter:
                 options.pop("pos", 0),
                 flgPropList=options.pop("flgPropList", None),
                 actuator=options.pop("actuator", "Handle"),
+                port=options.pop("port", 0),
             )
         elif kind == "gasket":
             created = pCmd.doGaskets(list(request.props), pypeline=pypeline)

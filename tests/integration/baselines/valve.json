@@ -57,19 +57,20 @@
       "PRating": "Ball_LongPatternRF",
       "PSize": "DN50",
       "PType": "Valve",
-      "TopH": "108.0 mm"
+      "TopH": "108.0 mm",
+      "WheelD": "0.0 mm"
     },
     "valid": true,
     "volume": 2270531.518539
   },
   "flanged_swing": {
-    "area": 180253.309047,
+    "area": 213653.169283,
     "bbox": [
       -76.2,
       -76.2,
       -101.5,
       76.2,
-      111.66,
+      96.50185,
       101.5
     ],
     "dirs": [
@@ -120,10 +121,11 @@
       "PRating": "Check_Swing_FullPortRF",
       "PSize": "DN50",
       "PType": "Valve",
-      "TopH": "108.0 mm"
+      "TopH": "108.0 mm",
+      "WheelD": "0.0 mm"
     },
     "valid": true,
-    "volume": 1494585.752174
+    "volume": 1117546.347107
   },
   "knife_gate": {
     "area": 56999.857656,
@@ -372,12 +374,15 @@
       ]
     ],
     "props": {
+      "Actuator": "Handle",
       "AttacherEngine": "Engine 3D",
       "AttacherType": "Attacher::AttachEngine3D",
       "AttachmentOffset": "Placement [Pos=(0,0,0), Yaw-Pitch-Roll=(0,0,0)]",
       "AttachmentSupport": "[]",
       "Conn": "SW",
+      "Conn2": "SW",
       "E": "8.0 mm",
+      "E2": "8.0 mm",
       "Height": "40.0 mm",
       "Kv": "150.0",
       "MapMode": "Deactivated",
@@ -427,12 +432,15 @@
       ]
     ],
     "props": {
+      "Actuator": "Handle",
       "AttacherEngine": "Engine 3D",
       "AttacherType": "Attacher::AttachEngine3D",
       "AttachmentOffset": "Placement [Pos=(0,0,0), Yaw-Pitch-Roll=(0,0,0)]",
       "AttachmentSupport": "[]",
       "Conn": "TH",
+      "Conn2": "TH",
       "E": "8.0 mm",
+      "E2": "8.0 mm",
       "Height": "40.0 mm",
       "Kv": "150.0",
       "MapMode": "Deactivated",

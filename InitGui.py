@@ -61,6 +61,8 @@ class QuetzalWorkbench(Workbench):
         Log = FreeCAD.Console.PrintLog
         QT_TRANSLATE_NOOP = FreeCAD.Qt.QT_TRANSLATE_NOOP
         import CUtils  # noqa: F401
+        from pcf import pcf_commands  # noqa: F401
+        from iso import iso_commands  # noqa: F401
 
         self.utilsList = list(quetzal_layout.GROUPS["utils"])
         self.appendToolbar(QT_TRANSLATE_NOOP("Workbench", "Utils"), self.utilsList)

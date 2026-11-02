@@ -53,5 +53,7 @@ def register_spec(spec: CommandSpec, replace: bool = False) -> CommandSpec:
 
     REGISTRY.add(spec, replace=replace)
     source = spec.macro_source or command_source(spec.handler or (lambda: None))
-    FreeCADGui.addCommand(spec.name, GuiCommand(spec), source)
+    add_command = getattr(FreeCADGui, "addCommand", None)
+    if add_command is not None:
+        add_command(spec.name, GuiCommand(spec), source)
     return spec

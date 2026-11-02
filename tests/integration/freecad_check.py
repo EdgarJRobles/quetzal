@@ -76,7 +76,14 @@ def check_command_contract():
 
     FreeCADGui.addCommand = fake_add_command
     try:
-        for module in ("CPipe", "CFrame", "CUtils", "cut_list.cut_list_commands"):
+        for module in (
+            "CPipe",
+            "CFrame",
+            "CUtils",
+            "cut_list.cut_list_commands",
+            "pcf.pcf_commands",
+            "iso.iso_commands",
+        ):
             importlib.import_module(module)
     finally:
         if original is None:
@@ -447,6 +454,11 @@ def main():
     print(f"FreeCAD {FreeCAD.Version()[0]}.{FreeCAD.Version()[1]}", flush=True)
     document = FreeCAD.newDocument("quetzal_integration")
 
+    baseline_count = check("Valve/Flange baselines", check_feature_baselines)
+    if baseline_count:
+        print(f"     baseline cases checked: {baseline_count}", flush=True)
+    FreeCAD.setActiveDocument(document.Name)
+
     cases = [
         ("Pipe", lambda o: pFeatures.Pipe(o, "SCH-STD")),
         ("TerminalAdapter", lambda o: pFeatures.TerminalAdapter(o, "SCH-40")),
@@ -533,10 +545,6 @@ def main():
     flow_count = check("headless insertion flows", check_insertion_flows)
     if flow_count:
         print(f"     objects created by flows: {flow_count}", flush=True)
-
-    baseline_count = check("Valve/Flange baselines", check_feature_baselines)
-    if baseline_count:
-        print(f"     baseline cases checked: {baseline_count}", flush=True)
 
     constant_count = check("module constants unchanged", check_module_constants)
     if constant_count:

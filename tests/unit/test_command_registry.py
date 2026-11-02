@@ -49,11 +49,11 @@ def test_registry_add_get_and_duplicate():
 
 
 def test_layout_has_the_expected_order_and_counts():
-    assert len(layout.GROUPS["utils"]) == 8
+    assert len(layout.GROUPS["utils"]) == 13
     assert len(layout.GROUPS["frame"]) == 16
-    assert len(layout.GROUPS["pipe"]) == 30
+    assert len(layout.GROUPS["pipe"]) == 31
     assert len(layout.GROUPS["qm"]) == 6
-    assert sum(len(names) for names in layout.GROUPS.values()) == 60
+    assert sum(len(names) for names in layout.GROUPS.values()) == 66
     assert layout.GROUPS["utils"][0] == "Quetzal_SelectSolids"
     assert layout.GROUPS["frame"][-1] == "Quetzal_CreateCutList"
     assert layout.GROUPS["pipe"][0] == "Quetzal_InsertPipe"
