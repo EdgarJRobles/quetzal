@@ -492,6 +492,8 @@ def check_pype_line_tools():
         assert clone.Label == "LineCopy"
         assert clone.Base is base
         assert len(service.pieces(clone)) >= 2
+        standalone = service.create(spec, "Standalone", (0.8, 0.8, 0.8))
+        assert standalone.Label == "Standalone"
         return changed
     finally:
         FreeCAD.closeDocument(document.Name)

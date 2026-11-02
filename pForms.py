@@ -2588,36 +2588,20 @@ class insertPypeLineForm(dodoDialogs.protoPypeForm):
             return
         size_selected = self.pipeDictList[_idx]
         rating = self.ratingList.currentText()
+        spec = self._current_spec()
+        if spec is None:
+            return
         FreeCAD.activeDocument().openTransaction(translate("Transaction", "Insert pipe line"))
         if self.existingObjs.currentText() == translate("insertPypeLineForm", "<new>"):
-            plLabel = self.edit1.text()
-            if not plLabel:
-                plLabel = "Tubatura"
-            spec = self._current_spec()
-            bend_radius = spec.bend_radius if spec else 0.75 * float(size_selected["OD"])
-            a = pCmd.makePypeLine2(
-                DN=size_selected["PSize"],
-                PRating=self.PRating,
-                OD=float(size_selected["OD"]),
-                thk=float(size_selected["thk"]),
-                BR=bend_radius,
-                lab=plLabel,
-                color=self.color,
-            )
+            plLabel = self.edit1.text().strip() or "Tubatura"
+            a = self.services.pype_line.create(spec, plLabel, self.color)
             self.existingObjs.addItem(a.Label)
         else:
-            plname = self.existingObjs.currentText()
-            plcolor = FreeCAD.activeDocument().getObjectsByLabel(plname)[0].ViewObject.ShapeColor
-            spec = self._current_spec()
-            bend_radius = spec.bend_radius if spec else 0.75 * float(size_selected["OD"])
-            pCmd.makePypeLine2(
-                DN=size_selected["PSize"],
-                PRating=self.PRating,
-                OD=float(size_selected["OD"]),
-                thk=float(size_selected["thk"]),
-                BR=bend_radius,
-                pl=plname,
-                color=plcolor,
+            line = self._selected_line()
+            if line is None:
+                return
+            self.services.pype_line.create(
+                spec, line.Label, self.color, append_to=line
             )
         FreeCAD.activeDocument().commitTransaction()
         FreeCAD.ActiveDocument.recompute()

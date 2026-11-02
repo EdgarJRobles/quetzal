@@ -12,6 +12,15 @@ class PypeLineService(Protocol):
     def spec(self, line: Any) -> PypeLineSpec:
         """Read the line parameters."""
 
+    def create(
+        self,
+        spec: PypeLineSpec,
+        label: str,
+        color: Any,
+        append_to: Any = None,
+    ) -> Any:
+        """Create a line, or append selected edges to an existing line."""
+
     def pieces(self, line: Any) -> Sequence[Any]:
         """Return the line's pipes, bends and branch children."""
 
